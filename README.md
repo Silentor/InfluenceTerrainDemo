@@ -10,6 +10,6 @@ Settings for world generator:
 
 ![World inspector](/Screenshots/15.07.2015 World settings.png?raw=true "World inspector")
 
-Thats settings are all what I need to generate some terrain (2,56 km^2, about 30 zones):
+Thats settings are all what I need to generate some terrain (2,56 km^2, about 30 zones). Terrain colors indicates an influence of zones, but not texture of the land itself:
 
 ![Terrain view](/Screenshots/15.07.2015 terrain.jpg?raw=true "Terrain view")
