@@ -17,7 +17,7 @@ namespace Assets.Code
             {
                 for (int z = -mapSize; z < mapSize; z++)
                 {
-                    FillChunk(new Vector2(x, z), interpolate);
+                    FillChunk(new Vector2i(x, z), interpolate);
                 }
             }
         }
@@ -30,13 +30,13 @@ namespace Assets.Code
             {
                 for (int z = -mapSize; z < mapSize; z++)
                 {
-                    FillChunk(new Vector2(x, z), interpolate);
+                    FillChunk(new Vector2i(x, z), interpolate);
                     yield return null;
                 }
             }
         }
 
-        public static void FillChunk(Vector2 position, bool interpolate)
+        public static void FillChunk(Vector2i position, bool interpolate)
         {
             var chunk = Generator.Generate(position, interpolate);
             var mesh = Mesher.Generate(chunk);

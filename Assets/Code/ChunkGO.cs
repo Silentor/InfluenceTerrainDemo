@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -18,7 +15,7 @@ namespace Assets.Code
 
         private MeshFilter _filter;
         private MeshRenderer _renderer;
-        private static readonly Dictionary<Vector2, ChunkGO> _cache = new Dictionary<Vector2, ChunkGO>();
+        private static readonly Dictionary<Vector2i, ChunkGO> _cache = new Dictionary<Vector2i, ChunkGO>();
 
         private static ChunkGO Get(Chunk chunk)
         {
@@ -32,7 +29,7 @@ namespace Assets.Code
                 chunkGo._renderer.sharedMaterial = Materials.Instance.Grass;
                 chunkGo._renderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
                 chunkGo._renderer.useLightProbes = false;
-                go.name = chunk.Position.x + " : " + chunk.Position.y;
+                go.name = chunk.Position.X + " : " + chunk.Position.Z;
                 _cache.Add(chunk.Position, chunkGo);
             }
             else
@@ -41,7 +38,7 @@ namespace Assets.Code
                 chunkGo._filter.sharedMesh = null;
             }
 
-            chunkGo.transform.position = new Vector3(chunk.Position.x*chunk.Size, 0, chunk.Position.y*chunk.Size);
+            chunkGo.transform.position = new Vector3(chunk.Position.X*chunk.Size, 0, chunk.Position.Z*chunk.Size);
 
             return chunkGo;
         }

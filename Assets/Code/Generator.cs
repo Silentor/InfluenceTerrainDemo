@@ -51,7 +51,7 @@ namespace Assets.Code
             }
         }
 
-        public static Chunk Generate(Vector2 position, bool interpolate)
+        public static Chunk Generate(Vector2i position, bool interpolate)
         {
             ZoneRatio corner11 = null;
             ZoneRatio corner12 = null;
@@ -62,11 +62,11 @@ namespace Assets.Code
             {
                 //Get zones influence for chunk corners
                 var chunkMin = position*ChunkSize;
-                var chunkMax = (position + Vector2.one)*ChunkSize;
-                corner11 = GetInfluence(chunkMin);
-                corner12 = GetInfluence(new Vector2(chunkMin.x, chunkMax.y));
-                corner22 = GetInfluence(chunkMax);
-                corner21 = GetInfluence(new Vector2(chunkMax.x, chunkMin.y));
+                var chunkMax = (position + Vector2i.One)*ChunkSize;
+                corner11 = GetInfluence((Vector2)chunkMin);
+                corner12 = GetInfluence(new Vector2(chunkMin.X, chunkMax.Z));
+                corner22 = GetInfluence((Vector2)chunkMax);
+                corner21 = GetInfluence(new Vector2(chunkMax.X, chunkMin.Z));
             }
 
             var chunk = new Chunk(BlocksCount, BlockSize, position, Vector4.zero);
@@ -74,8 +74,8 @@ namespace Assets.Code
             for (int x = 0; x < chunk.GridSize; x++)
                 for (int z = 0; z < chunk.GridSize; z++)
                 {
-                    var realX = x * chunk.BlockSize + position.x * chunk.Size;
-                    var realZ = z * chunk.BlockSize + position.y * chunk.Size;
+                    var realX = x * chunk.BlockSize + position.X * chunk.Size;
+                    var realZ = z * chunk.BlockSize + position.Z * chunk.Size;
 
                     ZoneRatio influence;
 
