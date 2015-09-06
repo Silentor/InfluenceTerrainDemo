@@ -8,12 +8,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b9f54af2ef4c4664db92ab6d197caef3, type: 3}
-  m_Name: Forest
+  m_Script: {fileID: 11500000, guid: 63229495f7128c14da556e491d365b9a, type: 3}
+  m_Name: NormalWorld
   m_EditorClassIdentifier: 
-  Name: Forest
-  LandColor_: {r: .0641480386, g: .404411793, b: 0, a: 1}
-  Height_: 20
-  OutScale1_: 20
-  OutScale2_: 3
-  OutScale3_: 30
+  InScale2: .200000003
+  InScale1: .0199999996
+  InScale3: .00600000005

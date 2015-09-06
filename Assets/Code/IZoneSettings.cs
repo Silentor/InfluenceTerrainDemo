@@ -2,17 +2,11 @@
 
 namespace Assets.Code
 {
-    public interface IGeneratorSettings
+    public interface IZoneSettings
     {
         Color LandColor { get; }
 
         float Height { get; }
-
-        float InScale1 { get; }
-
-        float InScale2 { get; }
-
-        float InScale3 { get; }
 
         float OutScale1 { get; }
 

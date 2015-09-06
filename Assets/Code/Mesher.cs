@@ -5,7 +5,7 @@ namespace Assets.Code
 {
     public static class Mesher
     {
-        public static GeneratorSettings[] Zones;
+        public static ZoneSettings[] Zones;
 
         public static Mesh Generate(Chunk chunk)
         {
@@ -35,17 +35,24 @@ namespace Assets.Code
             for (int i = 0; i < verts.Length; i++)
             {
                 var vert = verts[i];
-                var worldVert = chunk.Position*chunk.Size + new Vector2(vert.x, vert.z);
-                colors[i] = Lerp(Zones, Generator.GetInfluence(worldVert));
+                //var worldVert = chunk.Position*chunk.Size + new Vector2(vert.x, vert.z);
+                colors[i] = Lerp(Zones, chunk.Influence[i / chunk.GridSize, i % chunk.GridSize]);
             }
             mesh.colors = colors;
 
+            //Manual normals calculation
+            //No lighting normals
+            //var normals = new Vector3[mesh.vertexCount];
+            //for (int i = 0; i < normals.Length; i++)
+            //    normals[i] = Vector3.up;
+            //mesh.normals = normals;
+            //Traditional normals
             mesh.RecalculateNormals();
 
             return mesh;
         }
 
-        private static Color Lerp(GeneratorSettings[] zones, float[] ratio)
+        private static Color Lerp(ZoneSettings[] zones, ZoneRatio ratio)
         {
             Color result = Color.black;
             for (int i = 0; i < zones.Length; i++)
