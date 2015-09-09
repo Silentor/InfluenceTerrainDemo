@@ -13,6 +13,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: Hills
   LandColor_: {r: .237018317, g: .838235259, b: 0, a: 1}
+  Type: 0
   Height_: 0
   OutScale1_: 20
   OutScale2_: .200000003

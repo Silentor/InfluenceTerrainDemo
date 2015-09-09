@@ -1,0 +1,17 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace Assets.Code
+{
+    public enum BlockType : byte
+    {
+        Empty,
+        Grass,
+        Rock,
+        Sand,
+        Snow,
+        Water
+    }
+}

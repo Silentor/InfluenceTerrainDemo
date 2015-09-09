@@ -13,6 +13,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: Lakes
   LandColor_: {r: 0, g: .420689583, b: 1, a: 1}
+  Type: 5
   Height_: -20
   OutScale1_: 0
   OutScale2_: 0

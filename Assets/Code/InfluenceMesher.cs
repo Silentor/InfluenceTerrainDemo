@@ -1,13 +1,22 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Assets.Code
 {
-    public static class Mesher
+    /// <summary>
+    /// Simple mesher to draw zone influences by color (block type is ignored)
+    /// </summary>
+    public class InfluenceMesher
     {
-        public static ZoneSettings[] Zones;
+        private readonly Color[] _zoneInfluenceColors;
 
-        public static Mesh Generate(Chunk chunk)
+        public InfluenceMesher(IEnumerable<IZoneSettings> zones)
+        {
+            _zoneInfluenceColors = zones.Select(z => z.LandColor).ToArray();
+        }
+
+        public Mesh Generate(Chunk chunk)
         {
             var mesh = new Mesh();
 
@@ -32,11 +41,9 @@ namespace Assets.Code
             mesh.SetIndices(indx, MeshTopology.Quads, 0);
 
             var colors = new Color[mesh.vertexCount];
-            for (int i = 0; i < verts.Length; i++)
+            for (int i = 0; i < colors.Length; i++)
             {
-                var vert = verts[i];
-                //var worldVert = chunk.Position*chunk.Size + new Vector2(vert.x, vert.z);
-                colors[i] = Lerp(Zones, chunk.Influence[i / chunk.GridSize, i % chunk.GridSize]);
+                colors[i] = Lerp(_zoneInfluenceColors, chunk.Influence[i / chunk.GridSize, i % chunk.GridSize]);
             }
             mesh.colors = colors;
 
@@ -52,11 +59,11 @@ namespace Assets.Code
             return mesh;
         }
 
-        private static Color Lerp(ZoneSettings[] zones, ZoneRatio ratio)
+        private static Color Lerp(Color[] zonesColor, ZoneRatio ratio)
         {
             Color result = Color.black;
-            for (int i = 0; i < zones.Length; i++)
-                result += zones[i].LandColor_*ratio[i];
+            for (int i = 0; i < zonesColor.Length; i++)
+                result += zonesColor[i]*ratio[i];
 
             return result;
         }

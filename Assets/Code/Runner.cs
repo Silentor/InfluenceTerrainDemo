@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using Assets.Code.Generators;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -27,59 +28,50 @@ namespace Assets.Code
         [Range(1, 128)]
         public int BlockSize = 1;
         public bool Interpolate = true;
+        private Land _land;
 
 
         void Start()
         {
-            Init();
-            Generator.Init(ZonesCount);
-
             Generate();
-        }
-
-        void Init()
-        {
-            Generator.Zones = Zones;
-            Generator.WorldSize = WorldSize;
-            Generator.BlocksCount = BlocksCount;
-            Generator.BlockSize = BlockSize;
-            Generator.IDWCoeff = IDWCoeff;
-            Generator.World = WorldSettings;
-
-            Mesher.Zones = Zones;
         }
 
         public void Generate()
         {
-            StartCoroutine(GenerateCoroutine());
-        }
-
-        private IEnumerator GenerateCoroutine()
-        {
             var time = Stopwatch.StartNew();
-            Init();
 
-            Main.FillMap(WorldSize, Interpolate);
-            //yield return StartCoroutine(Main.FillMapAsync(WorldSize, Interpolate));
-            
+            _land = new Land(ZonesCount, Zones, WorldSize, BlocksCount * BlockSize, IDWCoeff, WorldSettings);
+            _land.Generate();
+
+            var land = new Dictionary<Vector2i, Chunk>();
+
+            //Generate land's chunks
+            var landGenerator = new LandGenerator(_land);
+            landGenerator.Generate(land);
+
+            //Generate land's meshes
+            var mesher = new InfluenceMesher(Zones);
+            foreach (var chunk in land)
+            {
+                var mesh = mesher.Generate(chunk.Value);
+                ChunkGO.Create(chunk.Value, mesh);
+            }
+
             time.Stop();
-            Debug.Log(Generator.GetStaticstics());
+            Debug.Log(_land.GetStaticstics());
             Debug.Log(string.Format("Total {0} ms", time.ElapsedMilliseconds));
-            yield break;
-        }
-
-        private static IEnumerator Empty()
-        {
-            yield break;
         }
 
         void OnDrawGizmosSelected()
         {
-            if(Application.isPlaying && Generator.Zones2 != null)
-                foreach (var zone in Generator.Zones2)
+            if (Application.isPlaying && _land != null && _land.Zones != null)
+                foreach (var zone in _land.Zones)
                 {
-                    Gizmos.color = Zones[zone.Id].LandColor;
-                    Gizmos.DrawSphere(new Vector3(zone.Position.x, 50, zone.Position.y), 10);
+                    if (zone.Type != ZoneType.Empty)
+                    {
+                        Gizmos.color = Zones[(int) zone.Type].LandColor;
+                        Gizmos.DrawSphere(new Vector3(zone.Center.x, 50, zone.Center.y), 10);
+                    }
                 }
         }
 

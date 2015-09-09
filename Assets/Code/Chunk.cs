@@ -13,8 +13,9 @@ namespace Assets.Code
 
         public readonly float[,] HeightMap;
         public readonly ZoneRatio[,] Influence;
+        public readonly BlockType[,] BlockType;
 
-        public Chunk(int blocksCount, int blockSize, Vector2i position, Vector4 type)
+        public Chunk(int blocksCount, int blockSize, Vector2i position)
         {
             BlockSize = blockSize;
             BlocksCount = blocksCount;
@@ -23,11 +24,23 @@ namespace Assets.Code
             Size = BlocksCount * BlockSize;
             HeightMap = new float[GridSize, GridSize];
             Influence = new ZoneRatio[GridSize, GridSize];
+            BlockType = new BlockType[BlocksCount, BlocksCount];
         }
 
-        public static Vector2 GetChunkCenter(Vector2i position)
+        /// <summary>
+        /// Calculate world position of center of chunk
+        /// </summary>
+        /// <param name="position">Chunk position</param>
+        /// <param name="chunkSize"></param>
+        /// <returns>World position</returns>
+        public static Vector2 GetChunkCenter(Vector2i position, int chunkSize)
         {
-            return Vector2.zero;
+            return new Vector2(chunkSize * (0.5f + position.X), chunkSize * (0.5f + position.Z));
+        }
+
+        public static Vector2i GetChunkPosition(Vector2 worldPosition, int chunkSize)
+        {
+            return new Vector2i(((int)worldPosition.x) / chunkSize, ((int)worldPosition.y) / chunkSize);
         }
     }
 }

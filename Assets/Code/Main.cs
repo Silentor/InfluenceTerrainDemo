@@ -9,38 +9,38 @@ namespace Assets.Code
 {
     public static class Main
     {
-        public static void FillMap(int mapSize, bool interpolate)
-        {
-            mapSize /= 2;
+        //public static void FillMap(int mapSize, bool interpolate)
+        //{
+        //    mapSize /= 2;
 
-            for (int x = -mapSize; x < mapSize; x++)
-            {
-                for (int z = -mapSize; z < mapSize; z++)
-                {
-                    FillChunk(new Vector2i(x, z), interpolate);
-                }
-            }
-        }
+        //    for (int x = -mapSize; x < mapSize; x++)
+        //    {
+        //        for (int z = -mapSize; z < mapSize; z++)
+        //        {
+        //            FillChunk(new Vector2i(x, z), interpolate);
+        //        }
+        //    }
+        //}
 
-        public static IEnumerator FillMapAsync(int mapSize, bool interpolate)
-        {
-            mapSize /= 2;
+        //public static IEnumerator FillMapAsync(int mapSize, bool interpolate)
+        //{
+        //    mapSize /= 2;
 
-            for (int x = -mapSize; x < mapSize; x++)
-            {
-                for (int z = -mapSize; z < mapSize; z++)
-                {
-                    FillChunk(new Vector2i(x, z), interpolate);
-                    yield return null;
-                }
-            }
-        }
+        //    for (int x = -mapSize; x < mapSize; x++)
+        //    {
+        //        for (int z = -mapSize; z < mapSize; z++)
+        //        {
+        //            FillChunk(new Vector2i(x, z), interpolate);
+        //            yield return null;
+        //        }
+        //    }
+        //}
 
-        public static void FillChunk(Vector2i position, bool interpolate)
-        {
-            var chunk = Generator.Generate(position, interpolate);
-            var mesh = Mesher.Generate(chunk);
-            var go = ChunkGO.Create(chunk, mesh);
-        }
+        //public static void FillChunk(Vector2i position, bool interpolate)
+        //{
+        //    var chunk = Generator.Generate(position, interpolate);
+        //    var mesh = Mesher.Generate(chunk);
+        //    var go = ChunkGO.Create(chunk, mesh);
+        //}
     }
 }
