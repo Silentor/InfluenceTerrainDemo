@@ -16,6 +16,7 @@ namespace Assets.Code.Layout
             _zones = zones.ToArray();
             _idwCoeff = settings.IDWCoeff;
             _zoneMaxType = settings.ZoneTypes.Max(z => z.Type);
+            _zoneSettings = settings.ZoneTypes.ToArray();
 
             foreach (var zone in _zones)
                 zone.Init(this);
@@ -76,7 +77,7 @@ namespace Assets.Code.Layout
 
         public IZoneNoiseSettings GetZoneNoiseSettings(ZoneRatio influence)
         {
-            return ZoneSettings.Lerp(_settings.ZoneTypes, influence);
+            return ZoneSettings.Lerp(_zoneSettings, influence);
         }
 
         public string GetStaticstics()
@@ -104,6 +105,7 @@ namespace Assets.Code.Layout
         private int _bilinearCounter;
         private float _idwCoeff;
         private ZoneType _zoneMaxType;
+        private ZoneSettings[] _zoneSettings;
 
         private float IDWSimplestWeighting(Vector2 interpolatePoint, Vector2 point)
         {

@@ -12,6 +12,7 @@ namespace Assets.Code
     {
         private readonly ILandSettings _settings;
         private readonly Color[] _zoneInfluenceColors;
+        private readonly ZoneType[] _zoneTypes;
 
         public InfluenceMesher(ILandSettings settings)
         {
@@ -19,6 +20,7 @@ namespace Assets.Code
             _zoneInfluenceColors = new Color[(int)settings.ZoneTypes.Max(z => z.Type) + 1];
             foreach (var zoneSettingse in settings.ZoneTypes)
                 _zoneInfluenceColors[(int) zoneSettingse.Type] = zoneSettingse.LandColor;
+            _zoneTypes = _settings.ZoneTypes.Select(z => z.Type).ToArray();
         }
 
         public Mesh Generate(Chunk chunk)
@@ -48,7 +50,7 @@ namespace Assets.Code
             var colors = new Color[mesh.vertexCount];
             for (int i = 0; i < colors.Length; i++)
             {
-                colors[i] = Lerp(_zoneInfluenceColors, chunk.Influence[i / chunk.GridSize, i % chunk.GridSize]);
+                colors[i] = Lerp(chunk.Influence[i / chunk.GridSize, i % chunk.GridSize]);
             }
             mesh.colors = colors;
 
@@ -64,11 +66,14 @@ namespace Assets.Code
             return mesh;
         }
 
-        private Color Lerp(Color[] zonesColor, ZoneRatio ratio)
+        private Color Lerp(ZoneRatio ratio)
         {
             var result = Color.black;
-            foreach (var zone in _settings.ZoneTypes)
-                result += zonesColor[(int) zone.Type]*ratio[zone.Type];
+            for (var i = 0; i < _zoneTypes.Length; i++)
+            {
+                var zoneType = _zoneTypes[i];
+                result += _zoneInfluenceColors[(int)zoneType] * ratio[zoneType];
+            }
 
             return result;
         }

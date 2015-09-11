@@ -11,7 +11,6 @@ namespace Assets.Code
     /// </summary>
     public class ZoneRatio
     {
-        private readonly ZoneType _maxZoneType;
         public int ZonesCount { get { return _value.Length; } }
 
         public ZoneRatio(ZoneType maxZoneType)
@@ -67,5 +66,6 @@ namespace Assets.Code
         }
 
         private readonly float[] _value;
+        private readonly ZoneType _maxZoneType;
     }
 }

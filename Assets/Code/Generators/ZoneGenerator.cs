@@ -15,7 +15,7 @@ namespace Assets.Code.Generators
         private readonly int _blockSize;
         private readonly int _chunkSize;
 
-        public ZoneGenerator(Zone zone, Land land, ILandSettings landSettings)
+        protected ZoneGenerator(Zone zone, Land land, ILandSettings landSettings)
         {
             _zone = zone;
             _land = land;

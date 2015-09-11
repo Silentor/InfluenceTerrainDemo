@@ -29,30 +29,29 @@ namespace Assets.Code
         public float Height { get { return Height_; } }
 
         public float OutScale1 { get { return OutScale1_; } }
+
         public float OutScale2 { get { return OutScale2_; } }
 
         public float OutScale3 { get { return OutScale3_; } }
 
-        public static IZoneNoiseSettings Lerp(IEnumerable<ZoneSettings> zones, ZoneRatio ratio)
+        public static IZoneNoiseSettings Lerp(ZoneSettings[] zones, ZoneRatio ratio)
         {
             var outScale1 = 0f;
             var outScale2 = 0f;
             var outScale3 = 0f;
-            var inScale1 = 0f;
-            var inScale2 = 0f;
-            var inScale3 = 0f;
             var height = 0f;
 
-            foreach (var zoneNoiseSettingse in zones)
+            for (int i = 0; i < zones.Length; i++)
             {
-                var zoneRatio = ratio[zoneNoiseSettingse.Type];
-                height += zoneNoiseSettingse.Height * zoneRatio;
-                outScale1 += zoneNoiseSettingse.OutScale1 * zoneRatio;
-                outScale2 += zoneNoiseSettingse.OutScale2 * zoneRatio;
-                outScale3 += zoneNoiseSettingse.OutScale3 * zoneRatio;
+                var zoneNoiseSettings = zones[i];
+                var zoneRatio = ratio[zoneNoiseSettings.Type];
+                height += zoneNoiseSettings.Height*zoneRatio;
+                outScale1 += zoneNoiseSettings.OutScale1*zoneRatio;
+                outScale2 += zoneNoiseSettings.OutScale2*zoneRatio;
+                outScale3 += zoneNoiseSettings.OutScale3*zoneRatio;
             }
 
-            var result = new ZoneSettings2(Color.black, height, inScale1, inScale2, inScale3, outScale1, outScale2, outScale3);
+            var result = new ZoneSettings2(Color.black, height, outScale1, outScale2, outScale3);
 
             return result;
         }
