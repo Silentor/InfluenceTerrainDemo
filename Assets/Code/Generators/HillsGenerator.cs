@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Assets.Code.Layout;
 
 namespace Assets.Code.Generators
 {
     public class HillsGenerator : ZoneGenerator
     {
-        public HillsGenerator(Zone zone, Land land, int blocksCount, int blockSize) : base(zone, land, blocksCount, blockSize)
+        public HillsGenerator(Zone zone, Land land, ILandSettings landSettings) : base(zone, land, landSettings)
         {
-
         }
 
         public override BlockType DefaultBLock { get {return BlockType.Grass;} }

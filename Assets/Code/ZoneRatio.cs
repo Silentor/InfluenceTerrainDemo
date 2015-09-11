@@ -11,16 +11,13 @@ namespace Assets.Code
     /// </summary>
     public class ZoneRatio
     {
+        private readonly ZoneType _maxZoneType;
         public int ZonesCount { get { return _value.Length; } }
 
-        public ZoneRatio(int zonesCount)
+        public ZoneRatio(ZoneType maxZoneType)
         {
-            _value = new float[zonesCount];
-        }
-
-        public ZoneRatio(float[] ratios)
-        {
-            _value = ratios;
+            _maxZoneType = maxZoneType;
+            _value = new float[(int)maxZoneType + 1];
         }
 
         public void Normalize()
@@ -35,40 +32,36 @@ namespace Assets.Code
         }
 
 
-        public float this[int i]
+        public float this[ZoneType i]
         {
-            get { return _value[i]; }
-            set { _value[i] = value; }
+            get { return _value[(int)i]; }
+            set { _value[(int)i] = value; }
         }
 
         public static ZoneRatio operator *(ZoneRatio a, float b)
         {
-            var result = new ZoneRatio(a.ZonesCount);
-            for (int i = 0; i < a.ZonesCount; i++)
-            {
-                result[i] = a[i]*b;
-            }
+            var result = new ZoneRatio(a._maxZoneType);
+            for (int i = 0; i < a._value.Length; i++)
+                result._value[i] = a._value[i]*b;
 
             return result;
         }
 
         public static ZoneRatio operator *(float a, ZoneRatio b)
         {
-            var result = new ZoneRatio(b.ZonesCount);
-            for (int i = 0; i < b.ZonesCount; i++)
-            {
-                result[i] = b[i] * a;
-            }
+            var result = new ZoneRatio(b._maxZoneType);
+            for (int i = 0; i < b._value.Length; i++)
+                result._value[i] = b._value[i] * a;
 
             return result;
         }
 
         public static ZoneRatio operator +(ZoneRatio a, ZoneRatio b)
         {
-            var result = new ZoneRatio(a.ZonesCount);
+            var result = new ZoneRatio(a._maxZoneType);
 
-            for (int i = 0; i < a.ZonesCount; i++)
-                result[i] = a[i] + b[i];
+            for (int i = 0; i < a._value.Length; i++)
+                result._value[i] = a._value[i] + b._value[i];
 
             return result;
         }

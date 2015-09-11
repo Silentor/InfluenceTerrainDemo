@@ -42,5 +42,16 @@ namespace Assets.Code
         {
             return new Vector2i(((int)worldPosition.x) / chunkSize, ((int)worldPosition.y) / chunkSize);
         }
+
+        /// <summary>
+        /// Get 2D world bounds of chunk
+        /// </summary>
+        /// <param name="position">Chunk position</param>
+        /// <param name="chunkSize"></param>
+        /// <returns>World bounds</returns>
+        public static Bounds GetChunkBounds(Vector2i position, int chunkSize)
+        {
+            return new Bounds(GetChunkCenter(position, chunkSize), new Vector3(chunkSize, chunkSize, chunkSize));
+        }
     }
 }

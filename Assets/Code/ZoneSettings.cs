@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Assets.Code
 {
     [CreateAssetMenu]
-    public class ZoneSettings : ScriptableObject, IZoneSettings
+    public class ZoneSettings : ScriptableObject, IZoneNoiseSettings
     {
         public string Name;
         public Color LandColor_ = Color.magenta;
@@ -32,7 +33,7 @@ namespace Assets.Code
 
         public float OutScale3 { get { return OutScale3_; } }
 
-        public static IZoneSettings Lerp(ZoneSettings[] zones, ZoneRatio ratio)
+        public static IZoneNoiseSettings Lerp(IEnumerable<ZoneSettings> zones, ZoneRatio ratio)
         {
             var outScale1 = 0f;
             var outScale2 = 0f;
@@ -41,12 +42,14 @@ namespace Assets.Code
             var inScale2 = 0f;
             var inScale3 = 0f;
             var height = 0f;
-            for (var i = 0; i < ratio.ZonesCount; i++)
+
+            foreach (var zoneNoiseSettingse in zones)
             {
-                height += zones[i].Height_ * ratio[i];
-                outScale1 += zones[i].OutScale1_ * ratio[i];
-                outScale2 += zones[i].OutScale2_ * ratio[i];
-                outScale3 += zones[i].OutScale3_ * ratio[i];
+                var zoneRatio = ratio[zoneNoiseSettingse.Type];
+                height += zoneNoiseSettingse.Height * zoneRatio;
+                outScale1 += zoneNoiseSettingse.OutScale1 * zoneRatio;
+                outScale2 += zoneNoiseSettingse.OutScale2 * zoneRatio;
+                outScale3 += zoneNoiseSettingse.OutScale3 * zoneRatio;
             }
 
             var result = new ZoneSettings2(Color.black, height, inScale1, inScale2, inScale3, outScale1, outScale2, outScale3);

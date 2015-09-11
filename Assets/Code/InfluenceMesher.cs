@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Assets.Code.Layout;
 using UnityEngine;
 
 namespace Assets.Code
@@ -9,11 +10,15 @@ namespace Assets.Code
     /// </summary>
     public class InfluenceMesher
     {
+        private readonly ILandSettings _settings;
         private readonly Color[] _zoneInfluenceColors;
 
-        public InfluenceMesher(IEnumerable<IZoneSettings> zones)
+        public InfluenceMesher(ILandSettings settings)
         {
-            _zoneInfluenceColors = zones.Select(z => z.LandColor).ToArray();
+            _settings = settings;
+            _zoneInfluenceColors = new Color[(int)settings.ZoneTypes.Max(z => z.Type) + 1];
+            foreach (var zoneSettingse in settings.ZoneTypes)
+                _zoneInfluenceColors[(int) zoneSettingse.Type] = zoneSettingse.LandColor;
         }
 
         public Mesh Generate(Chunk chunk)
@@ -59,11 +64,11 @@ namespace Assets.Code
             return mesh;
         }
 
-        private static Color Lerp(Color[] zonesColor, ZoneRatio ratio)
+        private Color Lerp(Color[] zonesColor, ZoneRatio ratio)
         {
-            Color result = Color.black;
-            for (int i = 0; i < zonesColor.Length; i++)
-                result += zonesColor[i]*ratio[i];
+            var result = Color.black;
+            foreach (var zone in _settings.ZoneTypes)
+                result += zonesColor[(int) zone.Type]*ratio[zone.Type];
 
             return result;
         }

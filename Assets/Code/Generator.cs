@@ -12,7 +12,7 @@ namespace Assets.Code
     {
         public static float IDWCoeff = 2;
 
-        public static WorldSettings World;
+        public static LandNoiseSettings LandNoise;
         public static ZoneSettings[] Zones;
 
         private static float NearestWeighting(Vector2 interpolatePoint, Vector2 point)

@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Assets.Code
 {
-    public struct ZoneSettings2 : IZoneSettings
+    public struct ZoneSettings2 : IZoneNoiseSettings
     {
         public Color LandColor { get; private set; }
         public float Height { get; private set; }

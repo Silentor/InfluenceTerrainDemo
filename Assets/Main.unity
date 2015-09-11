@@ -113,20 +113,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53cd20878da22614d8451fc165334d6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ZonesCount: 50
-  WorldSize: 50
-  WorldSettings: {fileID: 11400000, guid: d7826460041438940b2a318c07207ed6, type: 2}
+  ZonesCount: 20
+  LandSizeChunks: 20
+  LandNoiseSettings: {fileID: 11400000, guid: d7826460041438940b2a318c07207ed6, type: 2}
   Zones:
-  - {fileID: 11400000, guid: eb8acf702fba2d347b1e19cbd1886cab, type: 2}
   - {fileID: 11400000, guid: efe303b16c6dfa0419eaeabce0cc1f5a, type: 2}
   - {fileID: 11400000, guid: b7ea798b05685aa4086f3ad12b3c60a1, type: 2}
-  - {fileID: 11400000, guid: 6d9e47604d34fe64686ce4c7b4247a74, type: 2}
-  - {fileID: 11400000, guid: 143a1e76d1de30f43aae86242fa6b09a, type: 2}
-  - {fileID: 11400000, guid: 1d1884e8c53e2cf4585b8eb12b78019d, type: 2}
   IDWCoeff: 4
+  InterpolateInfluence: 1
   BlocksCount: 16
   BlockSize: 1
-  Interpolate: 1
 --- !u!4 &214652176
 Transform:
   m_ObjectHideFlags: 0

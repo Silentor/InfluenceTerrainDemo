@@ -22,7 +22,7 @@ namespace Assets.Code.Editor
             {
                 if (GUILayout.Button("Generate"))
                 {
-                    _target.Generate();
+                    _target.CreateLand();
                 }
             }
         }
