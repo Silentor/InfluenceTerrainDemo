@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using UnityEngine;
 
 namespace Assets.Code.Layout
@@ -15,6 +16,7 @@ namespace Assets.Code.Layout
             _settings = settings;
             _zones = zones.ToArray();
             _idwCoeff = settings.IDWCoeff;
+            _idwOffset = settings.IDWOffset;
             _zoneMaxType = settings.ZoneTypes.Max(z => z.Type);
             _zoneSettings = settings.ZoneTypes.ToArray();
 
@@ -43,10 +45,34 @@ namespace Assets.Code.Layout
 
             var result = new ZoneRatio(_zoneMaxType);
 
-            foreach (var zone in _zones/*.OrderBy(z => Vector3.SqrMagnitude(z.Position - worldPosition)).Take(6)*/)
-                result[zone.Type] += IDWSimplestWeighting(zone.Center, worldPosition);
-            
+            foreach (var zone in _zones)
+            {
+                var idwSimplestWeighting = IDWSimplestWeighting(zone.Center, worldPosition);
+                result[zone.Type] += idwSimplestWeighting;
+            }
+
+            //foreach (var zone in _zones.OrderBy(z => Vector3.SqrMagnitude(z.Center - worldPosition)).Take(10))
+            //result[zone.Type] += IDWSimplestWeighting(zone.Center, worldPosition);
+
+            //Try to compress influence information
+            //var thresholdValue = result.OrderByDescending(z => z.Value).Take(3).Last().Value;
+            //var lesserZones = result.Where(z => z.Value < thresholdValue).ToArray();
+            //if (lesserZones.Length > 0)
+            //{
+            //    var lesserAvg = lesserZones.Average(z => z.Value);
+            //    //All value lesser then threshold should be equalized
+            //    foreach (var zoneValue in result)
+            //    {
+            //        if (zoneValue.Value < thresholdValue)
+            //            //result[zoneValue.Zone] = lesserAvg;
+            //            result[zoneValue.Zone] = 0;
+            //    }
+            //}
+
             result.Normalize();
+
+            //var nearestZone = _zones.OrderBy(z => Vector3.SqrMagnitude(z.Center - worldPosition)).First();
+            //result[nearestZone.Type] = 1;
 
             _influenceTime.Stop();
             _influenceCounter++;
@@ -106,10 +132,16 @@ namespace Assets.Code.Layout
         private float _idwCoeff;
         private ZoneType _zoneMaxType;
         private ZoneSettings[] _zoneSettings;
+        private float _idwOffset;
+
+        private const float r = 100;
 
         private float IDWSimplestWeighting(Vector2 interpolatePoint, Vector2 point)
         {
-            return (float)(1 / Math.Pow(Vector2.Distance(interpolatePoint, point), _idwCoeff));
+            var d = Vector2.SqrMagnitude(interpolatePoint - point);
+            var result = (float) (1/Math.Pow(d + 0.001f, _idwCoeff));
+            //var result = 100 - Vector2.Distance(interpolatePoint,  point);
+            return (float)result;
         }
 
         private void GetChunksFloodFill(Zone zone, Vector2i from, List<Vector2i> processed, List<Vector2i> result)

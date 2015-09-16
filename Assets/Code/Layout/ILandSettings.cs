@@ -10,6 +10,7 @@ namespace Assets.Code.Layout
         IEnumerable<ZoneSettings> ZoneTypes{ get; }
         ZoneSettings this[ZoneType index] { get; }
         float IDWCoeff { get; }
+        float IDWOffset { get; }
         bool InterpolateInfluence { get; }
         int ChunkSize { get; }
         int BlockSize { get; }

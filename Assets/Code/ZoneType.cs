@@ -12,6 +12,18 @@ namespace Assets.Code
         Mountains,
         Forest,
         Desert,
-        Lake
+        Lake,
+
+
+
+        Influence1,
+        Influence2,
+        Influence3,
+        Influence4,
+        Influence5,
+        Influence6,
+        Influence7,
+        Influence8,
+
     }
 }

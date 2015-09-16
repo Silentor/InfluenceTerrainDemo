@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,7 +10,7 @@ namespace Assets.Code
     /// <summary>
     /// Collection of all zones influences for some point
     /// </summary>
-    public class ZoneRatio
+    public struct ZoneRatio : IEnumerable<ZoneValue>
     {
         public int ZonesCount { get { return _value.Length; } }
 
@@ -26,10 +27,19 @@ namespace Assets.Code
             for (var i = 0; i < _value.Length; i++)
                 sum += _value[i];
 
-            for (var i = 0; i < _value.Length; i++)
-                _value[i] /= sum;
+            if (sum != 0)
+                for (var i = 0; i < _value.Length; i++)
+                    _value[i] /= sum;
+            else
+                for (var i = 0; i < _value.Length; i++)
+                    _value[i] = 0;
         }
 
+        public void Clear()
+        {
+            for (int i = 0; i < _value.Length; i++)
+                _value[i] = 0;
+        }
 
         public float this[ZoneType i]
         {
@@ -67,5 +77,24 @@ namespace Assets.Code
 
         private readonly float[] _value;
         private readonly ZoneType _maxZoneType;
+        public IEnumerator<ZoneValue> GetEnumerator()
+        {
+            for (var i = 0; i < _value.Length; i++)
+            {
+                if(Mathf.Abs(_value[i]) > Mathf.Epsilon)
+                    yield return new ZoneValue() {Zone = (ZoneType)i, Value = _value[i]};
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+    }
+
+    public struct ZoneValue
+    {
+        public ZoneType Zone;
+        public float Value;
     }
 }

@@ -9,8 +9,16 @@ namespace Assets.Code
         public static ChunkGO Create(Chunk chunk, Mesh mesh)
         {
             var chunkGo = Get(chunk);
-            chunkGo._filter.mesh = mesh;  
+            chunkGo._filter.sharedMesh = mesh;  
             return chunkGo;
+        }
+
+        public static void Clear()
+        {
+            foreach (var chunkGo in _cache)
+            {
+                chunkGo.Value.gameObject.SetActive(false);
+            }
         }
 
         private MeshFilter _filter;
@@ -36,6 +44,7 @@ namespace Assets.Code
             {
                 Destroy(chunkGo._filter.sharedMesh);
                 chunkGo._filter.sharedMesh = null;
+                chunkGo.gameObject.SetActive(true);
             }
 
             chunkGo.transform.position = new Vector3(chunk.Position.X*chunk.Size, 0, chunk.Position.Z*chunk.Size);

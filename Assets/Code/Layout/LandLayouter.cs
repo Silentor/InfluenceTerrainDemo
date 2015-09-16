@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Assets.Code.Voronoi;
 using UnityEngine;
 
 
@@ -11,36 +12,23 @@ namespace Assets.Code.Layout
     /// </summary>
     public class LandLayouter
     {
-        public Land CreateLand(ILandSettings settings)
+        public IEnumerable<Zone> CreateLayout(IEnumerable<Cell> cells, ILandSettings settings)
         {
             var zones = new List<Zone>();
-            var landBoundsBlocks = settings.LandSizeChunks*settings.ChunkSize;
             var zoneTypes = settings.ZoneTypes.Select(z => z.Type).ToArray();
 
-            var retryCount = 0;
-
-            for (var i = 0; i < settings.ZonesCount; i++)
+            foreach (var cell in cells)
             {
-                var zoneType = zoneTypes[Random.Range(0, zoneTypes.Length)];
-                var zonePosition = new Vector2(Random.Range(landBoundsBlocks.Min.X, landBoundsBlocks.Max.X), Random.Range(landBoundsBlocks.Min.Z, landBoundsBlocks.Max.Z));
+                ZoneType zoneType;
+                if (cell.IsClosed)
+                    zoneType = zoneTypes[Random.Range(0, zoneTypes.Length)];
+                else
+                    zoneType = ZoneType.Empty;
 
-                //Discard creating zone center near existing zone
-                if (zones.Any(z => Vector2.Distance(z.Center, zonePosition) < settings.ChunkSize * 4))
-                {
-                    if (retryCount++ < 5)
-                    {
-                        i--;
-                        continue;
-                    }
-                    else
-                        break;
-                }
-
-                zones.Add(new Zone(zonePosition, zoneType));
+                zones.Add(new Zone(cell, zoneType));
             }
 
-            var land = new Land(zones, settings);
-            return land;
+            return zones;
         }
     }
 }

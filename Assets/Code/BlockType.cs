@@ -8,6 +8,7 @@ namespace Assets.Code
     public enum BlockType : byte
     {
         Empty,
+        Influence,               //Special block to visualize zone influence
         Grass,
         Rock,
         Sand,

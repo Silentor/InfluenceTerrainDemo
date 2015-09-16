@@ -1,4 +1,6 @@
-﻿using UnityEditor;
+﻿using System.Collections.Generic;
+using Assets.Code.Layout;
+using UnityEditor;
 using UnityEngine;
 
 namespace Assets.Code.Editor
@@ -7,12 +9,14 @@ namespace Assets.Code.Editor
     public class RunnerEditor : UnityEditor.Editor 
     {
         private Runner _target;
+        private IEnumerable<Zone> _layout;
+        private Dictionary<Vector2i, Chunk> _map;
+        private Land _land;
 
         void OnEnable()
         {
             _target = (Runner) target;
         }
-        
 
         public override void OnInspectorGUI()
         {
@@ -20,9 +24,14 @@ namespace Assets.Code.Editor
 
             if (Application.isPlaying)
             {
-                if (GUILayout.Button("Generate"))
+                if (GUILayout.Button("Create land"))
                 {
-                    _target.CreateLand();
+                    _target.BuildAll();
+                }
+
+                if (GUILayout.Button("Recreate map"))
+                {
+                    _target.RecreateMap();
                 }
             }
         }

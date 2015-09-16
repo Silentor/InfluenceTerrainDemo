@@ -10,10 +10,6 @@ namespace Assets.Code
     /// </summary>
     public class InfluenceMesher
     {
-        private readonly ILandSettings _settings;
-        private readonly Color[] _zoneInfluenceColors;
-        private readonly ZoneType[] _zoneTypes;
-
         public InfluenceMesher(ILandSettings settings)
         {
             _settings = settings;
@@ -65,6 +61,10 @@ namespace Assets.Code
 
             return mesh;
         }
+
+        private readonly ILandSettings _settings;
+        private readonly Color[] _zoneInfluenceColors;
+        private readonly ZoneType[] _zoneTypes;
 
         private Color Lerp(ZoneRatio ratio)
         {
