@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Assets.Code.Layout;
 using UnityEngine;
 
@@ -14,6 +15,8 @@ namespace Assets.Code.Generators
         private readonly int _blocksCount;
         private readonly int _blockSize;
         private readonly int _chunkSize;
+        private ZoneType _zoneMaxType;
+        private ZoneRatio _influence;
 
         protected ZoneGenerator(Zone zone, Land land, ILandSettings landSettings)
         {
@@ -23,6 +26,8 @@ namespace Assets.Code.Generators
             _blocksCount = landSettings.BlocksCount;
             _blockSize = landSettings.BlockSize;
             _chunkSize = _blocksCount*_blockSize;
+            _zoneMaxType = landSettings.ZoneTypes.Max(z => z.Type);
+            _influence = new ZoneRatio(_zoneMaxType);
         }
 
         public void Generate(Dictionary<Vector2i, Chunk> land)
@@ -38,20 +43,20 @@ namespace Assets.Code.Generators
 
         private Chunk GenerateChunk(Vector2i position, bool interpolate)
         {
-            ZoneRatio corner11 = null;
-            ZoneRatio corner12 = null;
-            ZoneRatio corner22 = null;
-            ZoneRatio corner21 = null;
+            //ZoneRatio corner11 = null;
+            //ZoneRatio corner12 = null;
+            //ZoneRatio corner22 = null;
+            //ZoneRatio corner21 = null;
             var chunkBounds = Chunk.GetChunkBounds(position, _chunkSize);
 
-            if (interpolate)
-            {
-                //Get zones influence for chunk corners for interpolate later
-                corner11 = _land.GetInfluence(chunkBounds.min);
-                corner12 = _land.GetInfluence(new Vector2(chunkBounds.min.x, chunkBounds.max.y));
-                corner22 = _land.GetInfluence(chunkBounds.max);
-                corner21 = _land.GetInfluence(new Vector2(chunkBounds.max.x, chunkBounds.min.y));
-            }
+            //if (interpolate)
+            //{
+            //    //Get zones influence for chunk corners for interpolate later
+            //    corner11 = _land.GetInfluence(chunkBounds.min);
+            //    corner12 = _land.GetInfluence(new Vector2(chunkBounds.min.x, chunkBounds.max.y));
+            //    corner22 = _land.GetInfluence(chunkBounds.max);
+            //    corner21 = _land.GetInfluence(new Vector2(chunkBounds.max.x, chunkBounds.min.y));
+            //}
 
             var chunk = new Chunk(_blocksCount, _blockSize, position);
 
@@ -61,32 +66,19 @@ namespace Assets.Code.Generators
                     var realX = x * chunk.BlockSize + position.X * chunk.Size;
                     var realZ = z * chunk.BlockSize + position.Z * chunk.Size;
 
-                    ZoneRatio influence;
-
                     if (interpolate)
                     {
-                        influence = _land.GetBilinearInterpolationInfluence(new Vector2(realX, realZ), chunkBounds.min, chunkBounds.max, corner11, corner12, corner21, corner22);
+                        //_influence = _land.GetBilinearInterpolationInfluence(new Vector2(realX, realZ), chunkBounds.min, chunkBounds.max, corner11, corner12, corner21, corner22);
                     }
                     else
-                        influence = _land.GetInfluence(new Vector2(realX, realZ));
+                        _influence = _land.GetInfluence(new Vector2(realX, realZ));
 
-                    var settings = _land.GetZoneNoiseSettings(influence);
+                    var settings = _land.GetZoneNoiseSettings(_influence);
 
-                    //Workaround of Unity stupid PerlinNoise symmetry
-                    realX += 1000;
-                    realZ += 1000;
-
-                    var yValue = 0f;
-                    yValue +=
-                        Mathf.PerlinNoise(realX * _landSettings.LandNoiseSettings.InScale1, realZ * _landSettings.LandNoiseSettings.InScale1) * settings.OutScale1;
-                    yValue +=
-                        Mathf.PerlinNoise(realX * _landSettings.LandNoiseSettings.InScale1, realZ * _landSettings.LandNoiseSettings.InScale2) * settings.OutScale2;
-                    yValue +=
-                        Mathf.PerlinNoise(realX * _landSettings.LandNoiseSettings.InScale3, realZ * _landSettings.LandNoiseSettings.InScale3) * settings.OutScale3;
-                    yValue += settings.Height;
+                    var yValue = GenerateBaseHeight(realX, realZ, settings);
 
                     chunk.HeightMap[x, z] = yValue;
-                    chunk.Influence[x, z] = influence;
+                    chunk.Influence[x, z] = _influence;
                 }
 
             for (int x = 0; x < chunk.BlocksCount; x++)
@@ -96,6 +88,24 @@ namespace Assets.Code.Generators
             return chunk;
         }
 
-        
+        protected virtual float GenerateBaseHeight(int worldX, int worldZ, IZoneNoiseSettings settings)
+        {
+            //Workaround of Unity stupid PerlinNoise symmetry
+            worldX += 1000;
+            worldZ += 1000;
+
+            var yValue = 0f;
+            yValue +=
+                Mathf.PerlinNoise(worldX*_landSettings.LandNoiseSettings.InScale1, worldZ*_landSettings.LandNoiseSettings.InScale1)*
+                settings.OutScale1;
+            yValue +=
+                Mathf.PerlinNoise(worldX*_landSettings.LandNoiseSettings.InScale1, worldZ*_landSettings.LandNoiseSettings.InScale2)*
+                settings.OutScale2;
+            yValue +=
+                Mathf.PerlinNoise(worldX*_landSettings.LandNoiseSettings.InScale3, worldZ*_landSettings.LandNoiseSettings.InScale3)*
+                settings.OutScale3;
+            yValue += settings.Height;
+            return yValue;
+        }
     }
 }

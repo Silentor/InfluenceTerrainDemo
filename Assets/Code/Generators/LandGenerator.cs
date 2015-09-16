@@ -23,8 +23,10 @@ namespace Assets.Code.Generators
                     generator = new HillsGenerator(zoneMarkup, _land, _settings);
                 else if (zoneMarkup.Type == ZoneType.Lake)
                     generator = new LakeGenerator(zoneMarkup, _land, _settings);
+                else if (zoneMarkup.Type >= ZoneType.Influence1 && zoneMarkup.Type <= ZoneType.Influence8)
+                    generator = new FlatGenerator(zoneMarkup, _land, _settings);
 
-                if(generator != null)
+                if (generator != null)
                     generator.Generate(land);
             }
         }
