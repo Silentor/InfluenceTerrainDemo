@@ -113,13 +113,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53cd20878da22614d8451fc165334d6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ZonesCount: 2
-  LandSizeChunks: 5
+  ZonesCount: 15
+  LandSizeChunks: 15
   LandNoiseSettings: {fileID: 11400000, guid: d7826460041438940b2a318c07207ed6, type: 2}
   Zones:
-  - {fileID: 11400000, guid: efe303b16c6dfa0419eaeabce0cc1f5a, type: 2}
-  - {fileID: 11400000, guid: b7ea798b05685aa4086f3ad12b3c60a1, type: 2}
-  IDWCoeff: 4
+  - {fileID: 11400000, guid: 516dd341c29eb164684e3650f379ff12, type: 2}
+  - {fileID: 11400000, guid: 58f6aa368c56d1a46a2051ce80a6a744, type: 2}
+  - {fileID: 11400000, guid: 4f43710d32fb4e7478462902f08d2044, type: 2}
+  - {fileID: 11400000, guid: b9382d52c3c5c194db916275dd88c874, type: 2}
+  - {fileID: 11400000, guid: 4105578820501034d944585002744b91, type: 2}
+  - {fileID: 11400000, guid: 69b5949385135074e953b12e64911180, type: 2}
+  - {fileID: 11400000, guid: 17adef2aa83b160478fa3d053f584332, type: 2}
+  - {fileID: 11400000, guid: f0cb36a271b3a3644bbe35aa021a242a, type: 2}
+  IDWCoeff: 2
+  IDWOffset: .00100000005
   InterpolateInfluence: 0
   BlocksCount: 16
   BlockSize: 1
