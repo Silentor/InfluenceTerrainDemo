@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Assets.Code.Layout;
+using Assets.Code.Settings;
 
 namespace Assets.Code.Generators
 {
@@ -23,6 +24,10 @@ namespace Assets.Code.Generators
                     generator = new HillsGenerator(zoneMarkup, _land, _settings);
                 else if (zoneMarkup.Type == ZoneType.Lake)
                     generator = new LakeGenerator(zoneMarkup, _land, _settings);
+                else if (zoneMarkup.Type == ZoneType.Forest)
+                    generator = new ForestGenerator(zoneMarkup, _land, _settings);
+                else if (zoneMarkup.Type >= ZoneType.Hills && zoneMarkup.Type <= ZoneType.Lake)
+                    generator = new DefaultGenerator(zoneMarkup, _land, _settings);
                 else if (zoneMarkup.Type >= ZoneType.Influence1 && zoneMarkup.Type <= ZoneType.Influence8)
                     generator = new FlatGenerator(zoneMarkup, _land, _settings);
 

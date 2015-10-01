@@ -1,9 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Assets.Code.Layout;
+﻿using System.Linq;
+using Assets.Code.Settings;
 using UnityEngine;
 
-namespace Assets.Code
+namespace Assets.Code.Meshing
 {
     /// <summary>
     /// Simple mesher to draw zone influences by color (block type is ignored)
@@ -46,7 +45,12 @@ namespace Assets.Code
             var colors = new Color[mesh.vertexCount];
             for (int i = 0; i < colors.Length; i++)
             {
-                colors[i] = Lerp(chunk.Influence[i / chunk.GridSize, i % chunk.GridSize]);
+                var influence = chunk.Influence[i/chunk.GridSize, i%chunk.GridSize];
+                if (_settings.InfluenceLimit == 0)
+                    influence = influence.Pack(_settings.InfluenceThreshold);
+                else
+                    influence = influence.Pack(_settings.InfluenceLimit);
+                colors[i] = Lerp(influence);
             }
             mesh.colors = colors;
 

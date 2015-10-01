@@ -6,7 +6,7 @@
 
 	SubShader {
 		Tags { 
-			"RenderType" = "Transparent"
+			"RenderType" = "Opaque"
 		}
 		CGPROGRAM
 

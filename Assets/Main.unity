@@ -117,19 +117,31 @@ MonoBehaviour:
   LandSizeChunks: 15
   LandNoiseSettings: {fileID: 11400000, guid: d7826460041438940b2a318c07207ed6, type: 2}
   Zones:
-  - {fileID: 11400000, guid: 516dd341c29eb164684e3650f379ff12, type: 2}
-  - {fileID: 11400000, guid: 58f6aa368c56d1a46a2051ce80a6a744, type: 2}
-  - {fileID: 11400000, guid: 4f43710d32fb4e7478462902f08d2044, type: 2}
-  - {fileID: 11400000, guid: b9382d52c3c5c194db916275dd88c874, type: 2}
-  - {fileID: 11400000, guid: 4105578820501034d944585002744b91, type: 2}
-  - {fileID: 11400000, guid: 69b5949385135074e953b12e64911180, type: 2}
-  - {fileID: 11400000, guid: 17adef2aa83b160478fa3d053f584332, type: 2}
-  - {fileID: 11400000, guid: f0cb36a271b3a3644bbe35aa021a242a, type: 2}
+  - {fileID: 11400000, guid: eb8acf702fba2d347b1e19cbd1886cab, type: 2}
+  - {fileID: 11400000, guid: efe303b16c6dfa0419eaeabce0cc1f5a, type: 2}
+  - {fileID: 11400000, guid: b7ea798b05685aa4086f3ad12b3c60a1, type: 2}
+  - {fileID: 11400000, guid: 6d9e47604d34fe64686ce4c7b4247a74, type: 2}
+  - {fileID: 11400000, guid: 143a1e76d1de30f43aae86242fa6b09a, type: 2}
+  - {fileID: 11400000, guid: 1d1884e8c53e2cf4585b8eb12b78019d, type: 2}
   IDWCoeff: 2
   IDWOffset: .00100000005
   InterpolateInfluence: 0
+  InfluenceThreshold: .00999999978
+  InfluenceLimit: 3
   BlocksCount: 16
   BlockSize: 1
+  Blocks:
+  - Block: 2
+    Color: {r: 0, g: 1, b: .0482759476, a: 1}
+  - Block: 3
+    Color: {r: .610294104, g: .610294104, b: .610294104, a: 1}
+  - Block: 6
+    Color: {r: 0, g: .83448267, b: 1, a: 1}
+  - Block: 4
+    Color: {r: .717444241, g: .79411763, b: 0, a: 1}
+  - Block: 5
+    Color: {r: .913711071, g: .95588237, b: .950647295, a: 1}
+  Tree: {fileID: 178060, guid: 69ee204600497b94797abb82b51602bd, type: 2}
 --- !u!4 &214652176
 Transform:
   m_ObjectHideFlags: 0

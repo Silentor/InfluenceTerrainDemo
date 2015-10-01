@@ -7,9 +7,9 @@ using Assets.Code.Settings;
 
 namespace Assets.Code.Generators
 {
-    public class LakeGenerator : ZoneGenerator
+    public class DefaultGenerator : ZoneGenerator
     {
-        public LakeGenerator(Zone zone, Land land, ILandSettings landSettings) : base(zone, land, landSettings)
+        public DefaultGenerator(Zone zone, Land land, ILandSettings landSettings) : base(zone, land, landSettings)
         {
         }
     }

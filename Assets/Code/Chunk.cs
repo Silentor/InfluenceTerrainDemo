@@ -5,15 +5,31 @@ namespace Assets.Code
 {
     public class Chunk
     {
+        /// <summary>
+        /// Blocks size (meters)
+        /// </summary>
         public readonly int BlockSize;
+        /// <summary>
+        /// Side blocks count
+        /// </summary>
         public readonly int BlocksCount;
+        /// <summary>
+        /// Chunk position (chunk units)
+        /// </summary>
         public readonly Vector2i Position;
+        /// <summary>
+        /// Heightmap points side count
+        /// </summary>
         public readonly int GridSize;
+        /// <summary>
+        /// Chunk side lenght (meters)
+        /// </summary>
         public readonly int Size;
 
         public readonly float[,] HeightMap;
         public readonly ZoneRatio[,] Influence;
         public readonly BlockType[,] BlockType;
+        public Vector3[] Flora;
 
         public Chunk(int blocksCount, int blockSize, Vector2i position)
         {

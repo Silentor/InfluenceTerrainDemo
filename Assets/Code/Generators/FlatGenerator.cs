@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Assets.Code.Layout;
+using Assets.Code.Settings;
 
 namespace Assets.Code.Generators
 {

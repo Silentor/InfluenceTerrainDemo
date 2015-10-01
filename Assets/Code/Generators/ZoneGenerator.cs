@@ -1,13 +1,34 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Assets.Code.Layout;
+using Assets.Code.Settings;
+using JetBrains.Annotations;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Assets.Code.Generators
 {
     public abstract class ZoneGenerator
     {
-        public abstract BlockType DefaultBLock { get; }
+        public virtual BlockType DefaultBLock { get; private set; }
+
+        public void Generate(Dictionary<Vector2i, Chunk> land)
+        {
+            var chunksPos = _land.GetChunks(_zone);
+
+            foreach (var chunkPos in chunksPos)
+            {
+                var newChunk = GenerateChunk(chunkPos, _landSettings.InterpolateInfluence);
+                DecorateChunk(newChunk);
+                land[chunkPos] = newChunk;
+            }
+        }
+
+        protected virtual void DecorateChunk(Chunk newChunk)
+        {
+            
+        }
 
         private readonly Zone _zone;
         private readonly Land _land;
@@ -18,8 +39,12 @@ namespace Assets.Code.Generators
         private ZoneType _zoneMaxType;
         private ZoneRatio _influence;
 
-        protected ZoneGenerator(Zone zone, Land land, ILandSettings landSettings)
+        protected ZoneGenerator([NotNull] Zone zone, [NotNull] Land land, [NotNull] ILandSettings landSettings)
         {
+            if (zone == null) throw new ArgumentNullException("zone");
+            if (land == null) throw new ArgumentNullException("land");
+            if (landSettings == null) throw new ArgumentNullException("landSettings");
+
             _zone = zone;
             _land = land;
             _landSettings = landSettings;
@@ -27,18 +52,7 @@ namespace Assets.Code.Generators
             _blockSize = landSettings.BlockSize;
             _chunkSize = _blocksCount*_blockSize;
             _zoneMaxType = landSettings.ZoneTypes.Max(z => z.Type);
-            _influence = new ZoneRatio(_zoneMaxType);
-        }
-
-        public void Generate(Dictionary<Vector2i, Chunk> land)
-        {
-            var chunksPos = _land.GetChunks(_zone);
-
-            foreach (var chunkPos in chunksPos)
-            {
-                var newChunk = GenerateChunk(chunkPos, _landSettings.InterpolateInfluence);
-                land[chunkPos] = newChunk;
-            }
+            DefaultBLock = landSettings.ZoneTypes.First(z => z.Type == zone.Type).DefaultBlock;
         }
 
         private Chunk GenerateChunk(Vector2i position, bool interpolate)
@@ -83,7 +97,36 @@ namespace Assets.Code.Generators
 
             for (int x = 0; x < chunk.BlocksCount; x++)
                 for (int z = 0; z < chunk.BlocksCount; z++)
-                    chunk.BlockType[x, z] = DefaultBLock;
+                    //chunk.BlockType[x, z] = DefaultBLock;
+                {
+                    var realX = x * chunk.BlockSize + position.X * chunk.Size;
+                    var realZ = z * chunk.BlockSize + position.Z * chunk.Size;
+                    var turbulenceX = (Mathf.PerlinNoise(realX * 0.1f, realZ * 0.1f) - 0.5f) * 10;
+                    var turbulenceZ = (Mathf.PerlinNoise(realZ * 0.1f, realX * 0.1f) - 0.5f) * 10;
+
+                    var influence = _land.GetInfluence(new Vector2(realX + turbulenceX, realZ + turbulenceZ));
+                    var block = _landSettings[influence[0].Zone].DefaultBlock;
+                    chunk.BlockType[x, z] = block;
+
+                    //var rnd = Random.value;
+                    //var influence = chunk.Influence[x, z].Pack(3);
+
+                    //if (influence[0].Value > 0.7f)
+                    //    chunk.BlockType[x, z] = DefaultBLock;
+                    //else
+                    //{
+                    //    var accum = 0f;
+                    //    foreach (var infl in influence)
+                    //        if (rnd < infl.Value + accum)
+                    //        {
+                    //            var block = _landSettings[infl.Zone].DefaultBlock;
+                    //            chunk.BlockType[x, z] = block;
+                    //            break;
+                    //        }
+                    //        else
+                    //            accum += infl.Value;
+                    //}
+                }
 
             return chunk;
         }
@@ -99,7 +142,7 @@ namespace Assets.Code.Generators
                 Mathf.PerlinNoise(worldX*_landSettings.LandNoiseSettings.InScale1, worldZ*_landSettings.LandNoiseSettings.InScale1)*
                 settings.OutScale1;
             yValue +=
-                Mathf.PerlinNoise(worldX*_landSettings.LandNoiseSettings.InScale1, worldZ*_landSettings.LandNoiseSettings.InScale2)*
+                Mathf.PerlinNoise(worldX*_landSettings.LandNoiseSettings.InScale2, worldZ*_landSettings.LandNoiseSettings.InScale2)*
                 settings.OutScale2;
             yValue +=
                 Mathf.PerlinNoise(worldX*_landSettings.LandNoiseSettings.InScale3, worldZ*_landSettings.LandNoiseSettings.InScale3)*

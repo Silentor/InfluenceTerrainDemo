@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
+using Assets.Code.Settings;
 using UnityEngine;
 
 namespace Assets.Code.Layout
@@ -18,6 +18,7 @@ namespace Assets.Code.Layout
             _idwCoeff = settings.IDWCoeff;
             _idwOffset = settings.IDWOffset;
             _zoneMaxType = settings.ZoneTypes.Max(z => z.Type);
+            _zoneTypesCount = _zones.Distinct(Zone.TypeComparer).Count();
             _zoneSettings = settings.ZoneTypes.ToArray();
 
             foreach (var zone in _zones)
@@ -43,36 +44,22 @@ namespace Assets.Code.Layout
         {
             _influenceTime.Start();
 
-            var result = new ZoneRatio(_zoneMaxType);
-
+            var lookupResult = new float[(int) _zoneMaxType + 1];
             foreach (var zone in _zones)
             {
                 var idwSimplestWeighting = IDWSimplestWeighting(zone.Center, worldPosition);
-                result[zone.Type] += idwSimplestWeighting;
+                lookupResult[(int)zone.Type] += idwSimplestWeighting;
             }
+
+            var result = new ZoneRatio(
+                lookupResult.Select((v, i) => new ZoneValue((ZoneType)i, v)).Where(v => v.Value > 0).ToArray(), 
+                _zoneTypesCount);
 
             //foreach (var zone in _zones.OrderBy(z => Vector3.SqrMagnitude(z.Center - worldPosition)).Take(10))
             //result[zone.Type] += IDWSimplestWeighting(zone.Center, worldPosition);
 
-            //Try to compress influence information
-            //var thresholdValue = result.OrderByDescending(z => z.Value).Take(3).Last().Value;
-            //var lesserZones = result.Where(z => z.Value < thresholdValue).ToArray();
-            //if (lesserZones.Length > 0)
-            //{
-            //    var lesserAvg = lesserZones.Average(z => z.Value);
-            //    //All value lesser then threshold should be equalized
-            //    foreach (var zoneValue in result)
-            //    {
-            //        if (zoneValue.Value < thresholdValue)
-            //            //result[zoneValue.Zone] = lesserAvg;
-            //            result[zoneValue.Zone] = 0;
-            //    }
-            //}
-
-            result.Normalize();
-
-            //var nearestZone = _zones.OrderBy(z => Vector3.SqrMagnitude(z.Center - worldPosition)).First();
-            //result[nearestZone.Type] = 1;
+            //var result = new ZoneRatio(_zoneMaxType);
+            //result.Normalize();
 
             _influenceTime.Stop();
             _influenceCounter++;
@@ -133,6 +120,7 @@ namespace Assets.Code.Layout
         private ZoneType _zoneMaxType;
         private ZoneSettings[] _zoneSettings;
         private float _idwOffset;
+        private int _zoneTypesCount;
 
         private const float r = 100;
 

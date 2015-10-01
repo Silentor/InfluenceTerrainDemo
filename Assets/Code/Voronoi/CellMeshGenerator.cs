@@ -190,7 +190,6 @@ namespace Assets.Code.Voronoi
             timer.Stop();
             Debug.Log(string.Format("Cellmesh calculated for {0} msec", timer.ElapsedMilliseconds));
 
-
             return result;
         }
 

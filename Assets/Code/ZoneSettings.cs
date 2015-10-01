@@ -10,6 +10,8 @@ namespace Assets.Code
         public string Name;
         public Color LandColor_ = Color.magenta;
         public ZoneType Type;
+        public BlockType DefaultBlock;
+
         public float Height_ = 0;
 
         [Header("Coarse octave")]

@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using Assets.Code.Generators;
 using Assets.Code.Layout;
+using Assets.Code.Meshing;
+using Assets.Code.Settings;
 using Assets.Code.Voronoi;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -24,10 +23,12 @@ namespace Assets.Code
 
         [Header("Influence settings")]
         public float IDWCoeff = 2;
-
         public float IDWOffset = 0;
-
         public bool InterpolateInfluence = true;
+        [Range(0, 1)]
+        public float InfluenceThreshold = 0.01f;
+        [Range(0, 20)]
+        public int InfluenceLimit = 5;
 
         [Header("Chunk settings")]
         [Range(1, 128)]
@@ -35,17 +36,25 @@ namespace Assets.Code
         [Range(1, 128)]
         public int BlockSize = 1;
 
+        public BlockColors[] Blocks;
+
+        public GameObject Tree;
+
+        public Land Land { get; private set; }
+
         public IEnumerable<Zone> MakeLayout(IEnumerable<Cell> cells)
         {
             var layouter = new LandLayouter();
-            return layouter.CreateLayout(cells, this);
+            var result = layouter.CreateLayout(cells, this);
+            CreateZonesHandle(result);
+            return result;
         }
 
         public Dictionary<Vector2i, Chunk> GenerateMap(Land land)
         {
             var time = Stopwatch.StartNew();
 
-            _land = land;
+            Land = land;
             var landMap = new Dictionary<Vector2i, Chunk>();
 
             //Generate land's chunks
@@ -53,7 +62,7 @@ namespace Assets.Code
             landGenerator.Generate(landMap);
 
             time.Stop();
-            Debug.Log(_land.GetStaticstics());
+            Debug.Log(Land.GetStaticstics());
             Debug.Log(string.Format("Total {0} ms", time.ElapsedMilliseconds));
 
             return landMap;
@@ -63,11 +72,13 @@ namespace Assets.Code
         {
             ChunkGO.Clear();
 
-            var mesher = new InfluenceMesher(this);
+            //var mesher = new InfluenceMesher(this);
+            var mesher = new ColorMesher(this);
             foreach (var chunk in landMap)
             {
                 var mesh = mesher.Generate(chunk.Value);
-                ChunkGO.Create(chunk.Value, mesh);
+                var go = ChunkGO.Create(chunk.Value, mesh);
+                go.CreateFlora(this, chunk.Value.Flora);
             }
         }
 
@@ -77,8 +88,8 @@ namespace Assets.Code
                 64);
 
             _layout = MakeLayout(_voronoi);
-            _land = new Land(_layout, this);
-            var map = GenerateMap(_land);
+            Land = new Land(_layout, this);
+            var map = GenerateMap(Land);
             MeshAndVisualize(map);
         }
 
@@ -86,8 +97,8 @@ namespace Assets.Code
         {
             if (_layout != null)
             {
-                _land = new Land(_layout, this);
-                var map = GenerateMap(_land);
+                Land = new Land(_layout, this);
+                var map = GenerateMap(Land);
                 MeshAndVisualize(map);
             }
         }
@@ -110,11 +121,32 @@ namespace Assets.Code
 
         bool ILandSettings.InterpolateInfluence { get { return InterpolateInfluence; } }
 
-        private Land _land;
+        float ILandSettings.InfluenceThreshold { get { return InfluenceThreshold; } }
+        int ILandSettings.InfluenceLimit { get { return InfluenceLimit; } }
+
+        IEnumerable<BlockColors> ILandSettings.Blocks { get { return Blocks ?? new BlockColors[0]; } }
+
+        GameObject ILandSettings.Tree { get { return Tree; } }
+
         private Bounds2i _landSizeChunks;
         private ZoneSettings[] _zoneSettingsLookup;
         private Cell[] _voronoi;
         private IEnumerable<Zone> _layout;
+        private GameObject _parentObject;
+
+        private void CreateZonesHandle(IEnumerable<Zone> result)
+        {
+            var oldZones = _parentObject.transform.GetComponentsInChildren<Transform>().Where(t => t != _parentObject.transform).ToArray();
+            foreach (var zone in oldZones)
+                Destroy(zone.gameObject);
+
+            foreach (var zone in result)
+            {
+                var zoneHandleGO = new GameObject(zone.Type.ToString());
+                zoneHandleGO.transform.position = new Vector3(zone.Center.x, 0, zone.Center.y);
+                zoneHandleGO.transform.parent = _parentObject.transform;
+            }
+        }
 
         void Awake()
         {
@@ -122,6 +154,8 @@ namespace Assets.Code
             _zoneSettingsLookup = new ZoneSettings[(int)Zones.Max(z => z.Type) + 1];
             foreach (var zoneSettings in Zones)
                 _zoneSettingsLookup[(int) zoneSettings.Type] = zoneSettings;
+
+            _parentObject = new GameObject("Zones");
         }
 
         void Start()
@@ -142,8 +176,8 @@ namespace Assets.Code
                             Gizmos.DrawLine(new Vector3(edge.Vertex1.x, 50, edge.Vertex1.y), new Vector3(edge.Vertex2.x, 50, edge.Vertex2.y));
                 }
 
-                if (_land != null && _land.Zones != null)
-                    foreach (var zone in _land.Zones)
+                if (Land != null && Land.Zones != null)
+                    foreach (var zone in Land.Zones)
                     {
                         if (zone.Type != ZoneType.Empty)
                         {

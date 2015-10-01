@@ -12,6 +12,7 @@ namespace Assets.Code
         Mountains,
         Forest,
         Desert,
+        Snow,
         Lake,
 
 
