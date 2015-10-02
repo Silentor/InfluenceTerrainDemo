@@ -15,15 +15,12 @@ namespace Assets.Code
         public float Height_ = 0;
 
         [Header("Coarse octave")]
-        [Range(0, 0.9f)]
         public float OutScale1_ = 30f;
 
         [Header("Fine octave")]
-        [Range(0, 0.9f)]
         public float OutScale2_ = 5f;
 
         [Header("Global octave")]
-        [Range(0, 0.9f)]
         public float OutScale3_ = 30f;
 
 

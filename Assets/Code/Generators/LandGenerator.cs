@@ -26,6 +26,8 @@ namespace Assets.Code.Generators
                     generator = new LakeGenerator(zoneMarkup, _land, _settings);
                 else if (zoneMarkup.Type == ZoneType.Forest)
                     generator = new ForestGenerator(zoneMarkup, _land, _settings);
+                else if (zoneMarkup.Type == ZoneType.Mountains)
+                    generator = new MountainsGenerator(zoneMarkup, _land, _settings);
                 else if (zoneMarkup.Type >= ZoneType.Hills && zoneMarkup.Type <= ZoneType.Lake)
                     generator = new DefaultGenerator(zoneMarkup, _land, _settings);
                 else if (zoneMarkup.Type >= ZoneType.Influence1 && zoneMarkup.Type <= ZoneType.Influence8)

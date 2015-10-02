@@ -15,7 +15,7 @@ namespace Assets.Code.Generators
 
         public void Generate(Dictionary<Vector2i, Chunk> land)
         {
-            var chunksPos = _land.GetChunks(_zone);
+            var chunksPos = Land.GetChunks(_zone);
 
             foreach (var chunkPos in chunksPos)
             {
@@ -31,7 +31,7 @@ namespace Assets.Code.Generators
         }
 
         private readonly Zone _zone;
-        private readonly Land _land;
+        protected readonly Land Land;
         private readonly ILandSettings _landSettings;
         private readonly int _blocksCount;
         private readonly int _blockSize;
@@ -46,7 +46,7 @@ namespace Assets.Code.Generators
             if (landSettings == null) throw new ArgumentNullException("landSettings");
 
             _zone = zone;
-            _land = land;
+            Land = land;
             _landSettings = landSettings;
             _blocksCount = landSettings.BlocksCount;
             _blockSize = landSettings.BlockSize;
@@ -85,9 +85,9 @@ namespace Assets.Code.Generators
                         //_influence = _land.GetBilinearInterpolationInfluence(new Vector2(realX, realZ), chunkBounds.min, chunkBounds.max, corner11, corner12, corner21, corner22);
                     }
                     else
-                        _influence = _land.GetInfluence(new Vector2(realX, realZ));
+                        _influence = Land.GetInfluence(new Vector2(realX, realZ));
 
-                    var settings = _land.GetZoneNoiseSettings(_influence);
+                    var settings = Land.GetZoneNoiseSettings(_influence);
 
                     var yValue = GenerateBaseHeight(realX, realZ, settings);
 
@@ -95,17 +95,18 @@ namespace Assets.Code.Generators
                     chunk.Influence[x, z] = _influence;
                 }
 
+            //Generate blocks
             for (int x = 0; x < chunk.BlocksCount; x++)
                 for (int z = 0; z < chunk.BlocksCount; z++)
                     //chunk.BlockType[x, z] = DefaultBLock;
                 {
-                    var realX = x * chunk.BlockSize + position.X * chunk.Size;
-                    var realZ = z * chunk.BlockSize + position.Z * chunk.Size;
-                    var turbulenceX = (Mathf.PerlinNoise(realX * 0.1f, realZ * 0.1f) - 0.5f) * 10;
-                    var turbulenceZ = (Mathf.PerlinNoise(realZ * 0.1f, realX * 0.1f) - 0.5f) * 10;
+                    var blockX = x * chunk.BlockSize + position.X * chunk.Size;
+                    var blockZ = z * chunk.BlockSize + position.Z * chunk.Size;
+                    //var turbulenceX = (Mathf.PerlinNoise(realX * 0.1f, 0) - 0.5f) * 10;
+                    //var turbulenceZ = (Mathf.PerlinNoise(0, realZ * 0.1f) - 0.5f) * 10;
+                    //var turbulenceZ = 0;
 
-                    var influence = _land.GetInfluence(new Vector2(realX + turbulenceX, realZ + turbulenceZ));
-                    var block = _landSettings[influence[0].Zone].DefaultBlock;
+                    var block = GenerateBlock(blockX, blockZ);
                     chunk.BlockType[x, z] = block;
 
                     //var rnd = Random.value;
@@ -129,6 +130,21 @@ namespace Assets.Code.Generators
                 }
 
             return chunk;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="blockX">World block position X</param>
+        /// <param name="blockZ">World block position Z</param>
+        /// <returns></returns>
+        protected virtual BlockType GenerateBlock(int blockX, int blockZ)
+        {
+            var turbulenceX = (Mathf.PerlinNoise(blockX * 0.1f, blockZ * 0.1f) - 0.5f) * 10;
+            var turbulenceZ = (Mathf.PerlinNoise(blockZ * 0.1f, blockX * 0.1f) - 0.5f) * 10;
+            var influence = Land.GetInfluence(new Vector2(blockX + turbulenceX, blockZ + turbulenceZ));
+            var block = _landSettings[influence[0].Zone].DefaultBlock;
+            return block;
         }
 
         protected virtual float GenerateBaseHeight(int worldX, int worldZ, IZoneNoiseSettings settings)
