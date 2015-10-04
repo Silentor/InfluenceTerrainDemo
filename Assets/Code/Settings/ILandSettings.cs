@@ -22,5 +22,7 @@ namespace Assets.Code.Settings
         IEnumerable<BlockColors> Blocks { get; }
 
         GameObject Tree { get; }
+
+        GameObject Stone { get; }
     }
 }

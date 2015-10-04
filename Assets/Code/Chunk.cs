@@ -30,6 +30,7 @@ namespace Assets.Code
         public readonly ZoneRatio[,] Influence;
         public readonly BlockType[,] BlockType;
         public Vector3[] Flora;
+        public Vector3[] Stones;
 
         public Chunk(int blocksCount, int blockSize, Vector2i position)
         {

@@ -25,7 +25,7 @@ namespace Assets.Code.Generators
             }
         }
 
-        protected virtual void DecorateChunk(Chunk newChunk)
+        protected virtual void DecorateChunk(Chunk chunk)
         {
             
         }

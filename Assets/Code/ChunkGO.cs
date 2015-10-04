@@ -33,6 +33,19 @@ namespace Assets.Code
                 }
         }
 
+        public void CreateStones(ILandSettings settings, IEnumerable<Vector3> positions)
+        {
+            if (positions != null)
+                foreach (var position in positions)
+                {
+                    var newStone = Instantiate(settings.Stone);
+                    newStone.transform.parent = transform;
+                    newStone.transform.localPosition = position;
+                    newStone.transform.rotation = Random.rotation;
+                    newStone.transform.localScale = Vector3.one*Random.Range(1, 5);
+                }
+        }
+
         private MeshFilter _filter;
         private MeshRenderer _renderer;
         private static readonly List<ChunkGO> _allChunksGO = new List<ChunkGO>();

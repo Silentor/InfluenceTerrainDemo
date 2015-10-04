@@ -142,6 +142,7 @@ MonoBehaviour:
   - Block: 5
     Color: {r: .913711071, g: .95588237, b: .950647295, a: 1}
   Tree: {fileID: 178060, guid: 69ee204600497b94797abb82b51602bd, type: 2}
+  Stone: {fileID: 127540, guid: cdcdb6005d769124082a23208f27a7ce, type: 2}
 --- !u!4 &214652176
 Transform:
   m_ObjectHideFlags: 0

@@ -40,6 +40,8 @@ namespace Assets.Code
 
         public GameObject Tree;
 
+        public GameObject Stone;
+
         public Land Land { get; private set; }
 
         public IEnumerable<Zone> MakeLayout(IEnumerable<Cell> cells)
@@ -79,6 +81,7 @@ namespace Assets.Code
                 var mesh = mesher.Generate(chunk.Value);
                 var go = ChunkGO.Create(chunk.Value, mesh);
                 go.CreateFlora(this, chunk.Value.Flora);
+                go.CreateStones(this, chunk.Value.Stones);
             }
         }
 
@@ -127,6 +130,7 @@ namespace Assets.Code
         IEnumerable<BlockColors> ILandSettings.Blocks { get { return Blocks ?? new BlockColors[0]; } }
 
         GameObject ILandSettings.Tree { get { return Tree; } }
+        GameObject ILandSettings.Stone { get { return Stone; } }
 
         private Bounds2i _landSizeChunks;
         private ZoneSettings[] _zoneSettingsLookup;

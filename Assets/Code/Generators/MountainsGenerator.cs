@@ -38,5 +38,24 @@ namespace Assets.Code.Generators
             else
                 return base.GenerateBlock(blockX, blockZ);
         }
+
+        protected override void DecorateChunk(Chunk chunk)
+        {
+            base.DecorateChunk(chunk);
+
+            var stones = new List<Vector3>();
+            for (int x = 0; x < chunk.GridSize; x++)
+                for (int z = 0; z < chunk.GridSize; z++)
+                {
+                    var mountInfluence = chunk.Influence[x, z][ZoneType.Mountains];
+                    if (mountInfluence < 0.8f)
+                        if (UnityEngine.Random.value < 0.05f * mountInfluence)
+                            stones.Add(new Vector3(x, chunk.HeightMap[x, z], z));
+                }
+
+            chunk.Stones = stones.ToArray();
+        }
+
     }
+
 }
