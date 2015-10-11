@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Assets.Code.Layout;
+using Assets.Code.Voronoi;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,9 +12,8 @@ namespace Assets.Code.Editor
     public class RunnerEditor : UnityEditor.Editor 
     {
         private Runner _target;
-        private IEnumerable<Zone> _layout;
-        private Dictionary<Vector2i, Chunk> _map;
-        private Land _land;
+        private List<Zone> _layout;
+        private Cell[] _voronoi;
 
         void OnEnable()
         {
@@ -24,17 +24,33 @@ namespace Assets.Code.Editor
         {
             base.OnInspectorGUI();
 
-            if (Application.isPlaying)
+            if (Application.isPlaying && _target != null)
             {
-                if (GUILayout.Button("Create land"))
+                if (_layout == null)
                 {
+                    //Local copy
+                    _layout = Main.Layout.Zones.ToList();
+                    _voronoi = CellMeshGenerator.Generate(_layout.Select(z => z.Center), _target.LayoutBounds);
+                }
+
+                if (GUILayout.Button("Rebuild land"))
+                {
+                    _layout = null;
+                    _voronoi = null;
                     _target.BuildAll();
                 }
 
-                if (GUILayout.Button("Recreate map"))
+                if (_layout != null && GUILayout.Button("Create map"))
                 {
-                    _target.RecreateMap();
+                    Main.Layout = new LandLayout(_target.LayoutBounds, _layout.ToArray());
+                    var map = Main.GenerateMap(_target);
+                    _target.MeshAndVisualize(map);
                 }
+
+                //if (GUILayout.Button("Set layout"))
+                //{
+                //    _target.Set Layout(_layout);
+                //}
             }
         }
 
@@ -43,6 +59,8 @@ namespace Assets.Code.Editor
             //Get intersection points
             if (Application.isPlaying)
             {
+                ShowZoneLayoutEditor();
+
                 var worldRay = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
                 var worldPlane = new Plane(Vector3.up, Vector3.zero);
                 float hitDistance;
@@ -59,9 +77,9 @@ namespace Assets.Code.Editor
 
         private void ShowInfluenceInfo(Vector2 layoutPosition)
         {
-            if (_target.Land != null)
+            if (Main.Land != null)
             {
-                var influence = _target.Land.GetInfluence(layoutPosition);
+                var influence = Main.Land.GetInfluence(layoutPosition);
 
                 Handles.BeginGUI();
 
@@ -89,7 +107,49 @@ namespace Assets.Code.Editor
                 Handles.EndGUI();
             }
         }
-        
-        
+
+        private void ShowZoneLayoutEditor()
+        {
+            if(_voronoi != null)
+            {
+                Handles.matrix = Matrix4x4.identity;
+
+                var newCenters = _voronoi.Select(c => Convert(c.Center)).ToArray();
+
+                for (int i = 0; i < _voronoi.Count(); i++)
+                {
+                    var cell = _voronoi.ElementAt(i);
+                    Handles.color = _target.Zones.First(zs => zs.Type == _layout[i].Type).LandColor;
+
+                    //Draw edges
+                    foreach (var edge in cell.Edges)
+                        Handles.DrawAAPolyLine(Convert(edge.Vertex1), Convert(edge.Vertex2));
+
+                    //Draw fill
+                    foreach (var vert in cell.Vertices)
+                        Handles.DrawLine(Convert(cell.Center), Convert(vert));
+
+                    newCenters[i] = Handles.Slider2D(newCenters[i], Vector3.forward, Vector3.forward, Vector3.right, 5, Handles.SphereCap, 0);
+                }
+
+                if (GUI.changed)
+                {
+                    _voronoi = CellMeshGenerator.Generate(newCenters.Select(c => Convert(c)), _target.LayoutBounds);
+                    for (int i = 0; i < newCenters.Length; i++)
+                        _layout[i] = new Zone(_voronoi[i].Center, _layout[i].Type);
+                }
+            }
+        }
+
+        private static Vector3 Convert(Vector2 v)
+        {
+            return new Vector3(v.x, 0, v.y);
+        }
+
+        private static Vector2 Convert(Vector3 v)
+        {
+            return new Vector2(v.x, v.z);
+        }
+
     }
 }
