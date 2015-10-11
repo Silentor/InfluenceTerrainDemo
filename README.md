@@ -1,7 +1,7 @@
 # InfluenceTerrainDemo
 Some experiments with zone-based terrain generation
 
-Simple heightmap terrain based on 3 octaves Unity native Perlin noise. Noise parameters are approximated between zones by simple IDW function. There are 6 geo zones at the map: grass hills, mountains, snow plains, desert, forests and lakes.
+Simple heightmap terrain based on 3 octaves Unity native Perlin noise. Noise parameters are approximated between zones by simple IDW function. There are 6 geo zones at the map: grass hills, mountains, snow plains, desert, forests and lakes. Zones colored using plain colors, there are no textures yet.
 
 Settings for world generator looks like:
 
