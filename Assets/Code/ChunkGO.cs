@@ -62,9 +62,19 @@ namespace Assets.Code
             go.name = chunk.Position.X + " : " + chunk.Position.Z;
             _allChunksGO.Add(chunkGo);
 
-            chunkGo.transform.position = new Vector3(chunk.Position.X*chunk.Size, 0, chunk.Position.Z*chunk.Size);
+            chunkGo.transform.position = Convert(Chunk.GetChunkCenter(chunk.Position));
 
             return chunkGo;
+        }
+
+        private static Vector3 Convert(Vector2 v)
+        {
+            return new Vector3(v.x, 0, v.y);
+        }
+
+        private static Vector2 Convert(Vector3 v)
+        {
+            return new Vector2(v.x, v.z);
         }
     }
 }

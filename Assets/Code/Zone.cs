@@ -10,27 +10,24 @@ namespace Assets.Code
 {
     public class Zone
     {
-        public readonly ZoneType Type;
+        public ZoneType Type;
         public readonly Vector2 Center;
         //public IEnumerable<Zone> Neighbours { get; private set; }
 
         public static readonly IEqualityComparer<Zone> TypeComparer = new ZoneTypeComparer();
 
-        public Zone(Cell cell, ZoneType type)
+        public Zone(Vector2 center, ZoneType type)
         {
             Type = type;
-            Center = cell.Center;
+            Center = center;
         }
 
-        public void Init(Land land)
+        public void Init(Cell meshCell)
         {
-            _land = land;
-
-            //Neighbours =
-                //land.Zones.Where(z => z != this).OrderBy(z => Vector2.SqrMagnitude(z.Center - Center)).ToArray();
+            Cell = meshCell;
         }
 
-        private Land _land;
+        public Cell Cell { get; private set; }
 
         private class ZoneTypeComparer : IEqualityComparer<Zone>
         {

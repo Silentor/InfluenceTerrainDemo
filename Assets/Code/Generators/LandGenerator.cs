@@ -15,8 +15,10 @@ namespace Assets.Code.Generators
         /// <summary>
         /// Generate land
         /// </summary>
-        public void Generate(Dictionary<Vector2i, Chunk> land)
+        public Dictionary<Vector2i, Chunk> Generate()
         {
+            var result = new Dictionary<Vector2i, Chunk>();
+
             foreach (var zoneMarkup in _land.Zones)
             {
                 ZoneGenerator generator = null;
@@ -34,8 +36,10 @@ namespace Assets.Code.Generators
                     generator = new FlatGenerator(zoneMarkup, _land, _settings);
 
                 if (generator != null)
-                    generator.Generate(land);
+                    generator.Generate(result);
             }
+
+            return result;
         }
 
         private readonly Land _land;

@@ -5,10 +5,11 @@ namespace Assets.Code.Settings
 {
     public interface ILandSettings
     {
-        Bounds2i LandSizeChunks { get; }
+        Bounds2i LandBounds { get; }
         LandNoiseSettings LandNoiseSettings { get; }
         int ZonesCount { get; }
         IEnumerable<ZoneSettings> ZoneTypes{ get; }
+        float ZoneCenterMinDistance { get; }
         ZoneSettings this[ZoneType index] { get; }
         float IDWCoeff { get; }
         float IDWOffset { get; }

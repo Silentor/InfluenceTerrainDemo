@@ -1,46 +1,35 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using UnityEngine;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
+using Assets.Code.Generators;
+using Assets.Code.Layout;
+using Assets.Code.Settings;
+using Debug = UnityEngine.Debug;
 
 namespace Assets.Code
 {
     public static class Main
     {
-        //public static void FillMap(int mapSize, bool interpolate)
-        //{
-        //    mapSize /= 2;
+        public static LandLayout Layout { get; set; }
 
-        //    for (int x = -mapSize; x < mapSize; x++)
-        //    {
-        //        for (int z = -mapSize; z < mapSize; z++)
-        //        {
-        //            FillChunk(new Vector2i(x, z), interpolate);
-        //        }
-        //    }
-        //}
+        public static Land Land { get; private set; }
 
-        //public static IEnumerator FillMapAsync(int mapSize, bool interpolate)
-        //{
-        //    mapSize /= 2;
+        public static Dictionary<Vector2i, Chunk> GenerateMap(ILandSettings settings)
+        {
+            var time = Stopwatch.StartNew();
 
-        //    for (int x = -mapSize; x < mapSize; x++)
-        //    {
-        //        for (int z = -mapSize; z < mapSize; z++)
-        //        {
-        //            FillChunk(new Vector2i(x, z), interpolate);
-        //            yield return null;
-        //        }
-        //    }
-        //}
+            Land = new Land(Layout, settings);
 
-        //public static void FillChunk(Vector2i position, bool interpolate)
-        //{
-        //    var chunk = Generator.Generate(position, interpolate);
-        //    var mesh = Mesher.Generate(chunk);
-        //    var go = ChunkGO.Create(chunk, mesh);
-        //}
+            //Generate land's chunks
+            var landGenerator = new LandGenerator(Land, settings);
+            var result = landGenerator.Generate();
+
+            time.Stop();
+            Debug.Log(Land.GetStaticstics());
+            Debug.Log(string.Format("Total {0} ms", time.ElapsedMilliseconds));
+
+            return result;
+        }
+
+
     }
 }

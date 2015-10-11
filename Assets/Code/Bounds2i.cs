@@ -42,6 +42,34 @@ namespace Assets.Code
                    pos.Z >= Min.Z && pos.Z <= Max.Z;
         }
 
+        public IEnumerable<Vector2i> Substract(Bounds2i b)
+        {
+            return this.Where(v => !b.Contains(v));
+        }
+
+        public Bounds2i Intersect(Bounds2i b)
+        {
+            int x = Math.Max(Min.X, b.Min.X);
+            int num2 = Math.Min(Min.X + Size.X, b.Min.X + b.Size.X);
+            int z = Math.Max(Min.Z, b.Min.Z);
+            int num4 = Math.Min(Min.Z + Size.Z, b.Min.Z + b.Size.Z);
+
+            if ((num2 > x) && (num4 > z))
+                return new Bounds2i(new Vector2i(x, z), num2 - x, num4 - z);
+
+            return Empty;
+        }
+
+        /// <summary>
+        /// Slide bounds by given offset
+        /// </summary>
+        /// <param name="offset"></param>
+        /// <returns></returns>
+        public Bounds2i Translate(Vector2i offset)
+        {
+            return new Bounds2i(Min + offset, Max + offset);
+        }
+
         /// <summary>
         /// Inclusive enumeration of bound
         /// </summary>
@@ -53,14 +81,9 @@ namespace Assets.Code
                     yield return new Vector2i(x, z);
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
-
         public override string ToString()
         {
-            return String.Format("Bounds2i(min = {0}, max = {1})", Min, Max);
+            return string.Format("Bounds2i(min = {0}, max = {1})", Min, Max);
         }
 
         public override int GetHashCode()
@@ -95,32 +118,9 @@ namespace Assets.Code
             return new Bounds2i(a.Min * b, a.Max*b);
         }
 
-        public IEnumerable<Vector2i> Substract(Bounds2i b)
+        IEnumerator IEnumerable.GetEnumerator()
         {
-            return this.Where(v => !b.Contains(v));
-        }
-
-        public Bounds2i Intersect(Bounds2i b)
-        {
-            int x = Math.Max(Min.X, b.Min.X);
-            int num2 = Math.Min(Min.X + Size.X, b.Min.X + b.Size.X);
-            int z = Math.Max(Min.Z, b.Min.Z);
-            int num4 = Math.Min(Min.Z + Size.Z, b.Min.Z + b.Size.Z);
-
-            if ((num2 > x) && (num4 > z))
-                return new Bounds2i(new Vector2i(x, z), num2 - x, num4 - z);
-
-            return Empty;
-        }
-
-        /// <summary>
-        /// Slide bounds by given offset
-        /// </summary>
-        /// <param name="offset"></param>
-        /// <returns></returns>
-        public Bounds2i Translate(Vector2i offset)
-        {
-            return new Bounds2i(Min + offset, Max + offset);
+            return GetEnumerator();
         }
 
         //public static void Tests()

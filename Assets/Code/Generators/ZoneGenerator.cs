@@ -61,7 +61,7 @@ namespace Assets.Code.Generators
             //ZoneRatio corner12 = null;
             //ZoneRatio corner22 = null;
             //ZoneRatio corner21 = null;
-            var chunkBounds = Chunk.GetChunkBounds(position, _chunkSize);
+            var chunkBounds = Chunk.GetChunkBounds(position);
 
             //if (interpolate)
             //{
@@ -77,8 +77,8 @@ namespace Assets.Code.Generators
             for (int x = 0; x < chunk.GridSize; x++)
                 for (int z = 0; z < chunk.GridSize; z++)
                 {
-                    var realX = x * chunk.BlockSize + position.X * chunk.Size;
-                    var realZ = z * chunk.BlockSize + position.Z * chunk.Size;
+                    var realX = x * chunk.BlockSize + position.X * Chunk.Size;
+                    var realZ = z * chunk.BlockSize + position.Z * Chunk.Size;
 
                     if (interpolate)
                     {
@@ -100,8 +100,8 @@ namespace Assets.Code.Generators
                 for (int z = 0; z < chunk.BlocksCount; z++)
                     //chunk.BlockType[x, z] = DefaultBLock;
                 {
-                    var blockX = x * chunk.BlockSize + position.X * chunk.Size;
-                    var blockZ = z * chunk.BlockSize + position.Z * chunk.Size;
+                    var blockX = x * chunk.BlockSize + position.X * Chunk.Size;
+                    var blockZ = z * chunk.BlockSize + position.Z * Chunk.Size;
                     //var turbulenceX = (Mathf.PerlinNoise(realX * 0.1f, 0) - 0.5f) * 10;
                     //var turbulenceZ = (Mathf.PerlinNoise(0, realZ * 0.1f) - 0.5f) * 10;
                     //var turbulenceZ = 0;

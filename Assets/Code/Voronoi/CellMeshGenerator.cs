@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Mono.Cecil.Cil;
 using UnityEngine;
 using UnityEngine.Assertions;
-using UnityEngine.Assertions.Must;
 using Debug = UnityEngine.Debug;
-using Random = System.Random;
+
 //using OpenTK;
 
 namespace Assets.Code.Voronoi
@@ -16,62 +16,23 @@ namespace Assets.Code.Voronoi
         /// <summary>
         /// Generate full cell mesh
         /// </summary>
-        /// <param name="desiredZonesCount">Result zones count can be less</param>
-        /// <param name="gridSize">Size of square grid of chunks</param>
+        /// <param name="cellCenters">Result zones count can be less</param>
+        /// <param name="bounds">Size of square grid of chunks</param>
         /// <returns></returns>
-        public static Cell[] Generate(int count, Bounds landBounds, int seed, float minDistance = 32)
+        public static Cell[] Generate(IEnumerable<Vector2> cellCenters, Bounds2i bounds)
         {
-            var points = GeneratePoints(count, landBounds, seed, minDistance);
-            var voronoi = GenerateVoronoi(points, landBounds);
+            var points = cellCenters.ToArray();
+            var voronoi = GenerateVoronoi(points, bounds.Min.X, bounds.Max.X, bounds.Min.Z, bounds.Max.Z);
             var mesh = ProcessVoronoi(points, voronoi);
             return mesh;
-        }
-
-        /// <summary>
-        /// Generate random centers of cells
-        /// </summary>
-        /// <param name="count"></param>
-        /// <param name="gridSize"></param>
-        /// <returns></returns>
-        public static Vector2[] GeneratePoints(int count, Bounds landBounds, int seed, float minDistance = 32)
-        {
-            //Prepare input data
-            var rnd = new Random(seed);
-            var infiniteLoopChecker = 0;
-            //var chunksGrid = new bool[gridSize * 2, gridSize * 2];
-
-            //Generate zones center coords, check that only one zone occupies one chunk
-            var zonesCoords = new List<Vector2>(count);
-            for (var i = 0; i < count; i++)
-            {
-                var zoneCenterX = rnd.Next((int)landBounds.min.x, (int)landBounds.max.x);
-                var zoneCenterY = rnd.Next((int)landBounds.min.y, (int)landBounds.max.y);
-                var newCenter = new Vector2(zoneCenterX, zoneCenterY);
-                if(zonesCoords.All(zc => Vector2.SqrMagnitude(zc - newCenter) > minDistance * minDistance))
-                //if (IsZoneAllowed(chunksGrid, new Vector2i(zoneCenterX / 16, zoneCenterY / 16), minDistance))
-                {
-                    //chunksGrid[zoneCenterX / 16, zoneCenterY / 16] = true;
-                    zonesCoords.Add(new Vector2 { x = zoneCenterX, y = zoneCenterY });
-                }
-                else
-                {
-                    if (infiniteLoopChecker++ < 100)
-                        i--;
-                    else
-                        break;
-                }
-            }
-
-            return zonesCoords.ToArray();
         }
 
         /// <summary>
         /// Generate Voronoi diagram by points
         /// </summary>
         /// <param name="cellCenters"></param>
-        /// <param name="gridSize"></param>
         /// <returns></returns>
-        public static List<GraphEdge> GenerateVoronoi(Vector2[] cellCenters, Bounds bounds)
+        private static GraphEdge[] GenerateVoronoi(Vector2[] cellCenters, float minX, float maxX, float minY, float maxY)
         {
             var voronoi = new Voronoi(0.1);
 
@@ -86,13 +47,13 @@ namespace Assets.Code.Voronoi
             }
 
             //Calc Voronoi
-            var timer = System.Diagnostics.Stopwatch.StartNew();
-            var result = voronoi.generateVoronoi(xValues, yValues, bounds.min.x, bounds.max.x, bounds.min.y, bounds.max.y);
+            var timer = Stopwatch.StartNew();
+            var result = voronoi.generateVoronoi(xValues, yValues, minX, maxX, minY, maxY);
             timer.Stop();
 
-            UnityEngine.Debug.Log(string.Format("Voronoi diagram for {0} zones calc time {1} msec", cellCenters.Length, timer.ElapsedMilliseconds));
+            Debug.Log(string.Format("Voronoi diagram for {0} zones calc time {1} msec", cellCenters.Length, timer.ElapsedMilliseconds));
 
-            return result;
+            return result.ToArray();
         }
 
         /// <summary>
@@ -101,9 +62,15 @@ namespace Assets.Code.Voronoi
         /// <param name="zonesCoords">Coords of center of every cell</param>
         /// <param name="edges">All edges of Voronoi diagram</param>
         /// <returns>Mesh of cells</returns>
-        public static Cell[] ProcessVoronoi(Vector2[] zonesCoords, List<GraphEdge> edges)
+        private static Cell[] ProcessVoronoi(Vector2[] zonesCoords, GraphEdge[] edges)
         {
             var timer = Stopwatch.StartNew();
+
+            //Clear duplicate edges (some open cell cases)
+            edges = edges.Distinct(GraphEdgeComparer.Default).ToArray();
+
+            //Clear zero length edges (some open cell cases)
+            edges = edges.Where(e => e.x1 != e.x2 && e.y1 != e.y2).ToArray();
 
             //Prepare temp collection for sorting cell edges clockwise
             var cellsEdges = new List<GraphEdge>[zonesCoords.Length];
@@ -126,8 +93,8 @@ namespace Assets.Code.Voronoi
                 for (var edgeIndex = 0; edgeIndex < cellEdges.Count; edgeIndex++)
                 {
                     var edge = cellEdges[edgeIndex];
-                    if (ClockWiseComparer(new Vector2((float) edge.x1, (float) edge.y1),
-                            new Vector2((float) edge.x2, (float) edge.y2), zonesCoords[cellIndex]) > 0)
+                    if (ClockWiseComparer(new Vector2((float)edge.x1, (float)edge.y1),
+                            new Vector2((float)edge.x2, (float)edge.y2), zonesCoords[cellIndex]) > 0)
                     {
                         //Inverse direction of edge
                         cellEdges[edgeIndex] = new GraphEdge() { site1 = edge.site1, site2 = edge.site2, x1 = edge.x2, y1 = edge.y2, x2 = edge.x1, y2 = edge.y1 };
@@ -142,13 +109,13 @@ namespace Assets.Code.Voronoi
 
                 var isCellClosed = false;
                 //So, we get edges in clockwise order, check if cell is closed
-                if(cellEdges.Count > 2)
+                if (cellEdges.Count > 2)
                 {
                     isCellClosed = true;
                     for (int i = 0; i < cellEdges.Count; i++)
                     {
                         var edge = cellEdges[i];
-                        var nextEdge = cellEdges[(i + 1)%cellEdges.Count];
+                        var nextEdge = cellEdges[(i + 1) % cellEdges.Count];
                         if (Math.Abs(edge.x2 - nextEdge.x1) > 0.1 || Math.Abs(edge.y2 - nextEdge.y1) > 0.1)
                         {
                             isCellClosed = false;
@@ -175,7 +142,11 @@ namespace Assets.Code.Voronoi
                     IsClosed = isCellsClosed[i],
                     Edges = (cellsEdges[i].Select(e => new Cell.Edge(
                         new Vector2((float)e.x1, (float)e.y1), new Vector2((float)e.x2, (float)e.y2)))).ToArray(),
-                    Vertices = cellsEdges[i].Select(e => new Vector2((float)e.x1, (float)e.y1)).ToArray()
+                    Vertices = isCellsClosed[i] 
+                        ? cellsEdges[i].Select(e => new Vector2((float)e.x1, (float)e.y1)).ToArray() 
+                        : cellsEdges[i].SelectMany(e => new[] {
+                                                new Vector2((float)e.x1, (float)e.y1),
+                                                new Vector2((float)e.x2, (float)e.y2)}).Distinct().ToArray()
                 };
             }
 
@@ -216,7 +187,7 @@ namespace Assets.Code.Voronoi
             //    return b.Y > a.Y;
             //}
 
-            if(a == center || b == center)
+            if (a == center || b == center)
                 throw new InvalidOperationException("Some input points match the center point");
 
             if (a == b)
@@ -225,7 +196,7 @@ namespace Assets.Code.Voronoi
             // compute the pseudoscalar product of vectors (center -> a) x (center -> b)
             var ca = center - a;
             var cb = center - b;
-            var det = ca.x*cb.y - cb.x*ca.y;
+            var det = ca.x * cb.y - cb.x * ca.y;
             if (det > 0)
                 return 1;
             if (det < 0)
@@ -253,6 +224,24 @@ namespace Assets.Code.Voronoi
             }
 
             return true;
+        }
+
+        private class GraphEdgeComparer : IEqualityComparer<GraphEdge>
+        {
+            public static readonly GraphEdgeComparer Default = new GraphEdgeComparer();
+
+            public bool Equals(GraphEdge x, GraphEdge y)
+            {
+                return Math.Abs(x.x1 - y.x1) <= 0.001 &&
+                       Math.Abs(x.x2 - y.x2) <= 0.001 &&
+                       Math.Abs(x.y1 - y.y1) <= 0.001 &&
+                       Math.Abs(x.y2 - y.y2) <= 0.001;
+            }
+
+            public int GetHashCode(GraphEdge obj)
+            {
+                return obj.x1.GetHashCode() ^ obj.x2.GetHashCode() ^ obj.y1.GetHashCode() ^ obj.y2.GetHashCode();
+            }
         }
     }
 }

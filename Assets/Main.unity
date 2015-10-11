@@ -114,7 +114,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ZonesCount: 15
-  LandSizeChunks: 15
+  LandSize: 20
   LandNoiseSettings: {fileID: 11400000, guid: d7826460041438940b2a318c07207ed6, type: 2}
   Zones:
   - {fileID: 11400000, guid: eb8acf702fba2d347b1e19cbd1886cab, type: 2}
@@ -123,6 +123,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 6d9e47604d34fe64686ce4c7b4247a74, type: 2}
   - {fileID: 11400000, guid: 143a1e76d1de30f43aae86242fa6b09a, type: 2}
   - {fileID: 11400000, guid: 1d1884e8c53e2cf4585b8eb12b78019d, type: 2}
+  ZoneCenterMinDistance: 32
   IDWCoeff: 2
   IDWOffset: .00100000005
   InterpolateInfluence: 0

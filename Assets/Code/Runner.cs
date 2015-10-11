@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Assets.Code.Generators;
@@ -14,12 +15,14 @@ namespace Assets.Code
 {
     public class Runner : MonoBehaviour, ILandSettings
     {
-        [Header("Land settings")] 
+        [Header("Land settings")]
         [Range(1, 100)]
         public int ZonesCount = 16;
-        public int LandSizeChunks = 30;
+        public int LandSize = 30;                           //Chunks
         public LandNoiseSettings LandNoiseSettings;
         public ZoneSettings[] Zones;
+        [Range(16, 1024)]
+        public float ZoneCenterMinDistance = 32;
 
         [Header("Influence settings")]
         public float IDWCoeff = 2;
@@ -42,36 +45,12 @@ namespace Assets.Code
 
         public GameObject Stone;
 
-        public Land Land { get; private set; }
-
-        public IEnumerable<Zone> MakeLayout(IEnumerable<Cell> cells)
-        {
-            var layouter = new LandLayouter();
-            var result = layouter.CreateLayout(cells, this);
-            CreateZonesHandle(result);
-            return result;
-        }
-
-        public Dictionary<Vector2i, Chunk> GenerateMap(Land land)
-        {
-            var time = Stopwatch.StartNew();
-
-            Land = land;
-            var landMap = new Dictionary<Vector2i, Chunk>();
-
-            //Generate land's chunks
-            var landGenerator = new LandGenerator(land, this);
-            landGenerator.Generate(landMap);
-
-            time.Stop();
-            Debug.Log(Land.GetStaticstics());
-            Debug.Log(string.Format("Total {0} ms", time.ElapsedMilliseconds));
-
-            return landMap;
-        }
+        public Bounds2i LayoutBounds { get; private set; }
 
         public void MeshAndVisualize(Dictionary<Vector2i, Chunk> landMap)
         {
+            CreateZonesHandle(Main.Layout.Zones);
+
             ChunkGO.Clear();
 
             //var mesher = new InfluenceMesher(this);
@@ -87,38 +66,26 @@ namespace Assets.Code
 
         public void BuildAll()
         {
-            _voronoi = CellMeshGenerator.Generate(ZonesCount, new Bounds(Vector3.zero, 2 * Vector3.one * LandSizeChunks * BlocksCount * BlockSize), Random.Range(int.MinValue, int.MaxValue),
-                64);
-
-            _layout = MakeLayout(_voronoi);
-            Land = new Land(_layout, this);
-            var map = GenerateMap(Land);
+            var newLayouter = new RandomLayouter(this);
+            Main.Layout = newLayouter.CreateLayout();
+            var map = Main.GenerateMap(this);
             MeshAndVisualize(map);
         }
 
-        public void RecreateMap()
-        {
-            if (_layout != null)
-            {
-                Land = new Land(_layout, this);
-                var map = GenerateMap(Land);
-                MeshAndVisualize(map);
-            }
-        }
-
-        int ILandSettings.ChunkSize { get { return BlocksCount * BlockSize;} }
+        int ILandSettings.ChunkSize { get { return BlocksCount * BlockSize; } }
         int ILandSettings.BlockSize { get { return BlockSize; } }
         int ILandSettings.BlocksCount { get { return BlocksCount; } }
         int ILandSettings.ZonesCount { get { return ZonesCount; } }
         IEnumerable<ZoneSettings> ILandSettings.ZoneTypes { get { return Zones; } }
+        float ILandSettings.ZoneCenterMinDistance { get { return ZoneCenterMinDistance; } }
 
         public ZoneSettings this[ZoneType index]
         {
-            get { return _zoneSettingsLookup[(int) index]; }
+            get { return _zoneSettingsLookup[(int)index]; }
         }
 
         LandNoiseSettings ILandSettings.LandNoiseSettings { get { return LandNoiseSettings; } }
-        Bounds2i ILandSettings.LandSizeChunks { get { return _landSizeChunks; } }
+        Bounds2i ILandSettings.LandBounds { get { return LayoutBounds; } }
         float ILandSettings.IDWCoeff { get { return IDWCoeff; } }
         float ILandSettings.IDWOffset { get { return IDWOffset; } }
 
@@ -132,10 +99,8 @@ namespace Assets.Code
         GameObject ILandSettings.Tree { get { return Tree; } }
         GameObject ILandSettings.Stone { get { return Stone; } }
 
-        private Bounds2i _landSizeChunks;
+        //private Bounds2i _landSizeChunks;
         private ZoneSettings[] _zoneSettingsLookup;
-        private Cell[] _voronoi;
-        private IEnumerable<Zone> _layout;
         private GameObject _parentObject;
 
         private void CreateZonesHandle(IEnumerable<Zone> result)
@@ -154,43 +119,52 @@ namespace Assets.Code
 
         void Awake()
         {
-            _landSizeChunks = new Bounds2i(Vector2i.Zero, LandSizeChunks);
+            if (BlockSize*BlocksCount != Chunk.Size)
+                throw new ArgumentException("Block size and blocks count invalid");
+
             _zoneSettingsLookup = new ZoneSettings[(int)Zones.Max(z => z.Type) + 1];
             foreach (var zoneSettings in Zones)
-                _zoneSettingsLookup[(int) zoneSettings.Type] = zoneSettings;
+                _zoneSettingsLookup[(int)zoneSettings.Type] = zoneSettings;
 
             _parentObject = new GameObject("Zones");
+
+            BuildAll();
         }
 
-        void Start()
+        void OnValidate()
         {
-            BuildAll();
+            //Update Land bounds
+            var landMin = -LandSize / 2;
+            var landMax = landMin + LandSize;
+            LayoutBounds = new Bounds2i(Vector2i.One * landMin * BlocksCount, Vector2i.One * landMax * BlocksCount);
+
+            
         }
 
         void OnDrawGizmosSelected()
         {
-            if (Application.isPlaying)
-            {
-                if (_voronoi != null)
-                {
-                    Gizmos.color = Color.white;
+            //if (Application.isPlaying)
+            //{
+            //    if (_voronoi != null)
+            //    {
+            //        Gizmos.color = Color.white;
 
-                    foreach (var cell in _voronoi)
-                        foreach (var edge in cell.Edges)
-                            Gizmos.DrawLine(new Vector3(edge.Vertex1.x, 50, edge.Vertex1.y), new Vector3(edge.Vertex2.x, 50, edge.Vertex2.y));
-                }
+            //        foreach (var cell in _voronoi)
+            //            foreach (var edge in cell.Edges)
+            //                Gizmos.DrawLine(new Vector3(edge.Vertex1.x, 50, edge.Vertex1.y), new Vector3(edge.Vertex2.x, 50, edge.Vertex2.y));
+            //    }
 
-                if (Land != null && Land.Zones != null)
-                    foreach (var zone in Land.Zones)
-                    {
-                        if (zone.Type != ZoneType.Empty)
-                        {
-                            Gizmos.color = this[zone.Type].LandColor;
-                            Gizmos.DrawSphere(new Vector3(zone.Center.x, 50, zone.Center.y), 10);
-                        }
-                    }
+            //    if (Land != null && Land.Zones != null)
+            //        foreach (var zone in Land.Zones)
+            //        {
+            //            if (zone.Type != ZoneType.Empty)
+            //            {
+            //                Gizmos.color = this[zone.Type].LandColor;
+            //                Gizmos.DrawSphere(new Vector3(zone.Center.x, 50, zone.Center.y), 10);
+            //            }
+            //        }
 
-            }
+            //}
         }
 
     }

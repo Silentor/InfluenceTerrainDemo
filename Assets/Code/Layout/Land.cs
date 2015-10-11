@@ -11,18 +11,17 @@ namespace Assets.Code.Layout
     {
         public IEnumerable<Zone> Zones { get { return _zones; } }
 
-        public Land(IEnumerable<Zone> zones, ILandSettings settings)
+        public Land(LandLayout layout, ILandSettings settings)
         {
             _settings = settings;
-            _zones = zones.ToArray();
+            _zones = layout.Zones.ToArray();
             _idwCoeff = settings.IDWCoeff;
             _idwOffset = settings.IDWOffset;
             _zoneMaxType = settings.ZoneTypes.Max(z => z.Type);
             _zoneTypesCount = _zones.Distinct(Zone.TypeComparer).Count();
             _zoneSettings = settings.ZoneTypes.ToArray();
-
-            foreach (var zone in _zones)
-                zone.Init(this);
+            _chunksBounds = new Bounds2i(settings.LandBounds.Min/(settings.BlocksCount*settings.BlockSize),
+                settings.LandBounds.Max/(settings.BlocksCount*settings.BlockSize));
         }
 
         /// <summary>
@@ -32,7 +31,7 @@ namespace Assets.Code.Layout
         /// <returns></returns>
         public IEnumerable<Vector2i> GetChunks(Zone zone)
         {
-            var centerChunk = Chunk.GetChunkPosition(zone.Center, _settings.ChunkSize);
+            var centerChunk = Chunk.GetChunkPosition(zone.Center);
             var result = new List<Vector2i>();
             var processed = new List<Vector2i>();
 
@@ -121,6 +120,7 @@ namespace Assets.Code.Layout
         private ZoneSettings[] _zoneSettings;
         private float _idwOffset;
         private int _zoneTypesCount;
+        private Bounds2i _chunksBounds;
 
         private const float r = 100;
 
@@ -157,10 +157,10 @@ namespace Assets.Code.Layout
         /// <returns></returns>
         private bool CheckChunk(Vector2i chunkPosition, Zone zone)
         {
-            if (!_settings.LandSizeChunks.Contains(chunkPosition))
+            if (!_chunksBounds.Contains(chunkPosition))
                 return false;
 
-            var chunkCenter = Chunk.GetChunkCenter(chunkPosition, _settings.ChunkSize);
+            var chunkCenter = Chunk.GetChunkCenter(chunkPosition);
             var distance = Vector2.SqrMagnitude(zone.Center - chunkCenter);
 
             for (var i = 0; i < _zones.Length; i++)
