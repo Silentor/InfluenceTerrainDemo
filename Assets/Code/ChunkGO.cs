@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
+using Assets.Code.Settings;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -12,38 +10,71 @@ namespace Assets.Code
         public static ChunkGO Create(Chunk chunk, Mesh mesh)
         {
             var chunkGo = Get(chunk);
-            chunkGo._filter.mesh = mesh;  
+            chunkGo._filter.sharedMesh = mesh;  
             return chunkGo;
+        }
+
+        public static void Clear()
+        {
+            foreach (var chunkGo in _allChunksGO)
+                Destroy(chunkGo.gameObject);
+            _allChunksGO.Clear();
+        }
+
+        public void CreateFlora(ILandSettings settings, IEnumerable<Vector3> positions)
+        {
+            if(positions != null)
+                foreach (var position in positions)
+                {
+                    var newTree = Instantiate(settings.Tree);
+                    newTree.transform.parent = transform;
+                    newTree.transform.localPosition = position;
+                    newTree.transform.rotation = Quaternion.Euler(0, Random.Range(0, 359), 0);
+                }
+        }
+
+        public void CreateStones(ILandSettings settings, IEnumerable<Vector3> positions)
+        {
+            if (positions != null)
+                foreach (var position in positions)
+                {
+                    var newStone = Instantiate(settings.Stone);
+                    newStone.transform.parent = transform;
+                    newStone.transform.localPosition = position;
+                    newStone.transform.rotation = Random.rotation;
+                    newStone.transform.localScale = Vector3.one*Random.Range(1, 5);
+                }
         }
 
         private MeshFilter _filter;
         private MeshRenderer _renderer;
-        private static readonly Dictionary<Vector2, ChunkGO> _cache = new Dictionary<Vector2, ChunkGO>();
+        private static readonly List<ChunkGO> _allChunksGO = new List<ChunkGO>();
 
         private static ChunkGO Get(Chunk chunk)
         {
-            ChunkGO chunkGo;
-            if (!_cache.TryGetValue(chunk.Position, out chunkGo))
-            {
-                var go = new GameObject();
-                chunkGo = go.AddComponent<ChunkGO>();
-                chunkGo._filter = go.AddComponent<MeshFilter>();
-                chunkGo._renderer = go.AddComponent<MeshRenderer>();
-                chunkGo._renderer.sharedMaterial = Materials.Instance.Grass;
-                chunkGo._renderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
-                chunkGo._renderer.useLightProbes = false;
-                go.name = chunk.Position.x + " : " + chunk.Position.y;
-                _cache.Add(chunk.Position, chunkGo);
-            }
-            else
-            {
-                Destroy(chunkGo._filter.sharedMesh);
-                chunkGo._filter.sharedMesh = null;
-            }
+            var go = new GameObject();
+            var chunkGo = go.AddComponent<ChunkGO>();
+            chunkGo._filter = go.AddComponent<MeshFilter>();
+            chunkGo._renderer = go.AddComponent<MeshRenderer>();
+            chunkGo._renderer.sharedMaterial = Materials.Instance.Grass;
+            chunkGo._renderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
+            chunkGo._renderer.useLightProbes = false;
+            go.name = chunk.Position.X + " : " + chunk.Position.Z;
+            _allChunksGO.Add(chunkGo);
 
-            chunkGo.transform.position = new Vector3(chunk.Position.x*chunk.Size, 0, chunk.Position.y*chunk.Size);
+            chunkGo.transform.position = Chunk.GetChunkBounds(chunk.Position).min;
 
             return chunkGo;
+        }
+
+        private static Vector3 Convert(Vector2 v)
+        {
+            return new Vector3(v.x, 0, v.y);
+        }
+
+        private static Vector2 Convert(Vector3 v)
+        {
+            return new Vector2(v.x, v.z);
         }
     }
 }

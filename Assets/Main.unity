@@ -37,9 +37,6 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
---- !u!127 &3
-LevelGameManager:
-  m_ObjectHideFlags: 0
 --- !u!157 &4
 LightmapSettings:
   m_ObjectHideFlags: 0
@@ -68,6 +65,7 @@ LightmapSettings:
     m_TextureCompression: 1
     m_FinalGather: 0
     m_FinalGatherRayCount: 1024
+    m_ReflectionCompression: 2
   m_LightmapSnapshot: {fileID: 0}
   m_RuntimeCPUUsage: 25
 --- !u!196 &5
@@ -115,9 +113,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53cd20878da22614d8451fc165334d6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ZonesCount: 50
-  WorldSize: 20
-  WorldSettings: {fileID: 11400000, guid: d7826460041438940b2a318c07207ed6, type: 2}
+  ZonesCount: 60
+  LandSize: 30
+  LandNoiseSettings: {fileID: 11400000, guid: d7826460041438940b2a318c07207ed6, type: 2}
   Zones:
   - {fileID: 11400000, guid: eb8acf702fba2d347b1e19cbd1886cab, type: 2}
   - {fileID: 11400000, guid: efe303b16c6dfa0419eaeabce0cc1f5a, type: 2}
@@ -125,10 +123,27 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 6d9e47604d34fe64686ce4c7b4247a74, type: 2}
   - {fileID: 11400000, guid: 143a1e76d1de30f43aae86242fa6b09a, type: 2}
   - {fileID: 11400000, guid: 1d1884e8c53e2cf4585b8eb12b78019d, type: 2}
-  IDWCoeff: 4
+  ZoneCenterMinDistance: 32
+  IDWCoeff: 2
+  IDWOffset: .00100000005
+  InterpolateInfluence: 0
+  InfluenceThreshold: .00999999978
+  InfluenceLimit: 3
   BlocksCount: 16
   BlockSize: 1
-  Interpolate: 1
+  Blocks:
+  - Block: 2
+    Color: {r: 0, g: 1, b: .0482759476, a: 1}
+  - Block: 3
+    Color: {r: .610294104, g: .610294104, b: .610294104, a: 1}
+  - Block: 6
+    Color: {r: 0, g: .83448267, b: 1, a: 1}
+  - Block: 4
+    Color: {r: .717444241, g: .79411763, b: 0, a: 1}
+  - Block: 5
+    Color: {r: .913711071, g: .95588237, b: .950647295, a: 1}
+  Tree: {fileID: 178060, guid: 69ee204600497b94797abb82b51602bd, type: 2}
+  Stone: {fileID: 127540, guid: cdcdb6005d769124082a23208f27a7ce, type: 2}
 --- !u!4 &214652176
 Transform:
   m_ObjectHideFlags: 0

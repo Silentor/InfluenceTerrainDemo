@@ -1,13 +1,24 @@
 ﻿using System.Linq;
+using Assets.Code.Settings;
 using UnityEngine;
 
-namespace Assets.Code
+namespace Assets.Code.Meshing
 {
-    public static class Mesher
+    /// <summary>
+    /// Simple mesher to draw zone influences by color (block type is ignored)
+    /// </summary>
+    public class InfluenceMesher
     {
-        public static ZoneSettings[] Zones;
+        public InfluenceMesher(ILandSettings settings)
+        {
+            _settings = settings;
+            _zoneInfluenceColors = new Color[(int)settings.ZoneTypes.Max(z => z.Type) + 1];
+            foreach (var zoneSettingse in settings.ZoneTypes)
+                _zoneInfluenceColors[(int) zoneSettingse.Type] = zoneSettingse.LandColor;
+            _zoneTypes = _settings.ZoneTypes.Select(z => z.Type).ToArray();
+        }
 
-        public static Mesh Generate(Chunk chunk)
+        public Mesh Generate(Chunk chunk)
         {
             var mesh = new Mesh();
 
@@ -32,11 +43,14 @@ namespace Assets.Code
             mesh.SetIndices(indx, MeshTopology.Quads, 0);
 
             var colors = new Color[mesh.vertexCount];
-            for (int i = 0; i < verts.Length; i++)
+            for (int i = 0; i < colors.Length; i++)
             {
-                var vert = verts[i];
-                //var worldVert = chunk.Position*chunk.Size + new Vector2(vert.x, vert.z);
-                colors[i] = Lerp(Zones, chunk.Influence[i / chunk.GridSize, i % chunk.GridSize]);
+                var influence = chunk.Influence[i/chunk.GridSize, i%chunk.GridSize];
+                if (_settings.InfluenceLimit == 0)
+                    influence = influence.Pack(_settings.InfluenceThreshold);
+                else
+                    influence = influence.Pack(_settings.InfluenceLimit);
+                colors[i] = Lerp(influence);
             }
             mesh.colors = colors;
 
@@ -52,11 +66,18 @@ namespace Assets.Code
             return mesh;
         }
 
-        private static Color Lerp(ZoneSettings[] zones, ZoneRatio ratio)
+        private readonly ILandSettings _settings;
+        private readonly Color[] _zoneInfluenceColors;
+        private readonly ZoneType[] _zoneTypes;
+
+        private Color Lerp(ZoneRatio ratio)
         {
-            Color result = Color.black;
-            for (int i = 0; i < zones.Length; i++)
-                result += zones[i].LandColor_*ratio[i];
+            var result = Color.black;
+            for (var i = 0; i < _zoneTypes.Length; i++)
+            {
+                var zoneType = _zoneTypes[i];
+                result += _zoneInfluenceColors[(int)zoneType] * ratio[zoneType];
+            }
 
             return result;
         }

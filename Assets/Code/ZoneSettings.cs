@@ -1,25 +1,26 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Assets.Code
 {
     [CreateAssetMenu]
-    public class ZoneSettings : ScriptableObject, IZoneSettings
+    public class ZoneSettings : ScriptableObject, IZoneNoiseSettings
     {
         public string Name;
         public Color LandColor_ = Color.magenta;
+        public ZoneType Type;
+        public BlockType DefaultBlock;
+
         public float Height_ = 0;
 
         [Header("Coarse octave")]
-        [Range(0, 0.9f)]
         public float OutScale1_ = 30f;
 
         [Header("Fine octave")]
-        [Range(0, 0.9f)]
         public float OutScale2_ = 5f;
 
         [Header("Global octave")]
-        [Range(0, 0.9f)]
         public float OutScale3_ = 30f;
 
 
@@ -27,28 +28,29 @@ namespace Assets.Code
         public float Height { get { return Height_; } }
 
         public float OutScale1 { get { return OutScale1_; } }
+
         public float OutScale2 { get { return OutScale2_; } }
 
         public float OutScale3 { get { return OutScale3_; } }
 
-        public static IZoneSettings Lerp(ZoneSettings[] zones, ZoneRatio ratio)
+        public static IZoneNoiseSettings Lerp(ZoneSettings[] zones, ZoneRatio ratio)
         {
             var outScale1 = 0f;
             var outScale2 = 0f;
             var outScale3 = 0f;
-            var inScale1 = 0f;
-            var inScale2 = 0f;
-            var inScale3 = 0f;
             var height = 0f;
-            for (var i = 0; i < ratio.ZonesCount; i++)
+
+            for (int i = 0; i < zones.Length; i++)
             {
-                height += zones[i].Height_ * ratio[i];
-                outScale1 += zones[i].OutScale1_ * ratio[i];
-                outScale2 += zones[i].OutScale2_ * ratio[i];
-                outScale3 += zones[i].OutScale3_ * ratio[i];
+                var zoneNoiseSettings = zones[i];
+                var zoneRatio = ratio[zoneNoiseSettings.Type];
+                height += zoneNoiseSettings.Height*zoneRatio;
+                outScale1 += zoneNoiseSettings.OutScale1*zoneRatio;
+                outScale2 += zoneNoiseSettings.OutScale2*zoneRatio;
+                outScale3 += zoneNoiseSettings.OutScale3*zoneRatio;
             }
 
-            var result = new ZoneSettings2(Color.black, height, inScale1, inScale2, inScale3, outScale1, outScale2, outScale3);
+            var result = new ZoneSettings2(Color.black, height, outScale1, outScale2, outScale3);
 
             return result;
         }

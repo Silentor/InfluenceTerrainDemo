@@ -2,9 +2,9 @@
 
 namespace Assets.Code
 {
-    public interface IZoneSettings
+    public interface IZoneNoiseSettings
     {
-        Color LandColor { get; }
+        //Color LandColor { get; }
 
         float Height { get; }
 

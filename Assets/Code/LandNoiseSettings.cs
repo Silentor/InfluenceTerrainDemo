@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Assets.Code
 {
     [CreateAssetMenu]
-    public class WorldSettings : ScriptableObject
+    public class LandNoiseSettings : ScriptableObject
     {
         [Header("Fine octave")]
         [Range(0, 0.9f)]

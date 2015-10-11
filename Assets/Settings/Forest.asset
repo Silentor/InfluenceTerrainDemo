@@ -13,7 +13,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: Forest
   LandColor_: {r: .0641480386, g: .404411793, b: 0, a: 1}
-  Height_: 20
+  Type: 3
+  DefaultBlock: 2
+  Height_: 0
   OutScale1_: 20
-  OutScale2_: 3
-  OutScale3_: 30
+  OutScale2_: .200000003
+  OutScale3_: 100
