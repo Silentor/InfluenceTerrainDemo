@@ -21,9 +21,10 @@ namespace Assets.Code.Generators
             var height = base.GenerateBaseHeight(worldX, worldZ, settings);
             var mountInfluence = Land.GetInfluence(new Vector2(worldX, worldZ))[ZoneType.Mountains];
 
+            //Slightly raise up heightmap of Mountain zone
             if (mountInfluence > 0.7f)
             {
-                var additional = Math.Pow(((mountInfluence - 0.7f)*4), 2) + 1;
+                var additional = Math.Pow(((mountInfluence - 0.7f)*2), 2) + 1;
                 height *= (float)additional;
             }
 

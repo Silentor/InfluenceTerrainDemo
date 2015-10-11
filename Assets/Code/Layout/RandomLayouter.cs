@@ -75,10 +75,10 @@ namespace Assets.Code.Layout
             foreach (var cell in cells)
             {
                 ZoneType zoneType;
-                //if (cell.IsClosed)
-                zoneType = zoneTypes[Random.Range(0, zoneTypes.Length)];
-                //else
-                //zoneType = ZoneType.Empty;
+                if (cell.IsClosed)
+                    zoneType = zoneTypes[Random.Range(0, zoneTypes.Length)];
+                else
+                    zoneType = ZoneType.Empty;
 
                 zones.Add(new Zone(cell.Center, zoneType));
             }

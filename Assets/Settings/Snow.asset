@@ -15,7 +15,7 @@ MonoBehaviour:
   LandColor_: {r: 1, g: 1, b: 1, a: 1}
   Type: 5
   DefaultBlock: 5
-  Height_: 30
+  Height_: 10
   OutScale1_: 10
   OutScale2_: 0
-  OutScale3_: 15
+  OutScale3_: 100

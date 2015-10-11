@@ -73,25 +73,21 @@ namespace Assets.Code
         /// <returns>World bounds</returns>
         public static Bounds GetChunkBounds(Vector2i position)
         {
-            return new Bounds(GetChunkCenter(position), new Vector3(Size, Size, Size));
+            var center = GetChunkCenter(position);
+            return new Bounds(new Vector3(center.x, 0, center.y), new Vector3(Size, 0, Size));
         }
 
         private static void Test()
         {
-            var a = 16 >> 4;
-            var b = -17 >> 4;
-            var c = -17 / 16;
+            //var testCenter = new Vector2(-110.1f, -55.7f);
+            ////var testCenter = new Vector2(-1f, -1f);
 
-            const int chunkSize = 16;
-            var testCenter = new Vector2(-110.1f, -55.7f);
-            //var testCenter = new Vector2(-1f, -1f);
+            //var chunkPos = GetChunkPosition(testCenter);
+            //var chunkCenter = GetChunkCenter(chunkPos);
 
-            var chunkPos = GetChunkPosition(testCenter);
-            var chunkCenter = GetChunkCenter(chunkPos);
+            //var assertDistance = Vector2.Distance(testCenter, chunkCenter);
 
-            var assertDistance = Vector2.Distance(testCenter, chunkCenter);
-
-            Assert.IsTrue(assertDistance <= Mathf.Sqrt(chunkSize * chunkSize * 2));
+            //Assert.IsTrue(assertDistance <= Mathf.Sqrt(chunkSize * chunkSize * 2));
         }
     }
 }

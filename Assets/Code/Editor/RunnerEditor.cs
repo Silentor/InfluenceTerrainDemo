@@ -119,7 +119,7 @@ namespace Assets.Code.Editor
                 for (int i = 0; i < _voronoi.Count(); i++)
                 {
                     var cell = _voronoi.ElementAt(i);
-                    Handles.color = _target.Zones.First(zs => zs.Type == _layout[i].Type).LandColor;
+                    Handles.color = _layout[i].Type != ZoneType.Empty ? _target.Zones.First(zs => zs.Type == _layout[i].Type).LandColor : Color.black;
 
                     //Draw edges
                     foreach (var edge in cell.Edges)

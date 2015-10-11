@@ -113,8 +113,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53cd20878da22614d8451fc165334d6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ZonesCount: 15
-  LandSize: 20
+  ZonesCount: 60
+  LandSize: 30
   LandNoiseSettings: {fileID: 11400000, guid: d7826460041438940b2a318c07207ed6, type: 2}
   Zones:
   - {fileID: 11400000, guid: eb8acf702fba2d347b1e19cbd1886cab, type: 2}

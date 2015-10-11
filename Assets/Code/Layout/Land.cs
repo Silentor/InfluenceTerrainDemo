@@ -18,7 +18,7 @@ namespace Assets.Code.Layout
             _idwCoeff = settings.IDWCoeff;
             _idwOffset = settings.IDWOffset;
             _zoneMaxType = settings.ZoneTypes.Max(z => z.Type);
-            _zoneTypesCount = _zones.Distinct(Zone.TypeComparer).Count();
+            _zoneTypesCount = _zones.Where(z => z.Type != ZoneType.Empty).Distinct(Zone.TypeComparer).Count();
             _zoneSettings = settings.ZoneTypes.ToArray();
             _chunksBounds = new Bounds2i(settings.LandBounds.Min/(settings.BlocksCount*settings.BlockSize),
                 settings.LandBounds.Max/(settings.BlocksCount*settings.BlockSize));
@@ -46,8 +46,11 @@ namespace Assets.Code.Layout
             var lookupResult = new float[(int) _zoneMaxType + 1];
             foreach (var zone in _zones)
             {
-                var idwSimplestWeighting = IDWSimplestWeighting(zone.Center, worldPosition);
-                lookupResult[(int)zone.Type] += idwSimplestWeighting;
+                if (zone.Type != ZoneType.Empty)
+                {
+                    var idwSimplestWeighting = IDWSimplestWeighting(zone.Center, worldPosition);
+                    lookupResult[(int) zone.Type] += idwSimplestWeighting;
+                }
             }
 
             var result = new ZoneRatio(

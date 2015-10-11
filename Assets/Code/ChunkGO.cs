@@ -62,7 +62,7 @@ namespace Assets.Code
             go.name = chunk.Position.X + " : " + chunk.Position.Z;
             _allChunksGO.Add(chunkGo);
 
-            chunkGo.transform.position = Convert(Chunk.GetChunkCenter(chunk.Position));
+            chunkGo.transform.position = Chunk.GetChunkBounds(chunk.Position).min;
 
             return chunkGo;
         }
