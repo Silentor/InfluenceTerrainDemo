@@ -66,7 +66,7 @@ namespace Assets.Code
 
         public void BuildAll()
         {
-            var newLayouter = new RandomLayouter(this);
+            ILayouter newLayouter = new ClusteredLayouter(this);;
             Main.Layout = newLayouter.CreateLayout();
             var map = Main.GenerateMap(this);
             MeshAndVisualize(map);

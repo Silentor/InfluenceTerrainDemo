@@ -14,6 +14,7 @@ namespace Assets.Code
         public readonly Vector2 Center;
         //public IEnumerable<Zone> Neighbours { get; private set; }
 
+        public Cell Cell { get; private set; }
         public static readonly IEqualityComparer<Zone> TypeComparer = new ZoneTypeComparer();
 
         public Zone(Vector2 center, ZoneType type)
@@ -26,8 +27,6 @@ namespace Assets.Code
         {
             Cell = meshCell;
         }
-
-        public Cell Cell { get; private set; }
 
         private class ZoneTypeComparer : IEqualityComparer<Zone>
         {

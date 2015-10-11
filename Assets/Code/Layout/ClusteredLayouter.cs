@@ -4,16 +4,17 @@ using System.Text;
 using Assets.Code.Settings;
 using Assets.Code.Voronoi;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 
 namespace Assets.Code.Layout
 {
     /// <summary>
-    /// Makes simple pure random layout for land
+    /// Combine zones of some types together
     /// </summary>
-    public class RandomLayouter : ILayouter
+    public class ClusteredLayouter : ILayouter
     {
-        public RandomLayouter(ILandSettings settings)
+        public ClusteredLayouter(ILandSettings settings)
         {
             _settings = settings;
         }
@@ -69,21 +70,55 @@ namespace Assets.Code.Layout
         private Zone[] SetZoneTypes(Vector2[] zoneCenters, ILandSettings settings)
         {
             var cells = CellMeshGenerator.Generate(zoneCenters, settings.LandBounds);
-            var zones = new List<Zone>();
+            
             var zoneTypes = settings.ZoneTypes.Select(z => z.Type).ToArray();
+            var zones = new Zone[cells.Length];
 
-            foreach (var cell in cells)
+            for (int i = 0; i < zones.Length; i++)
             {
-                ZoneType zoneType;
-                //if (cell.IsClosed)
-                    zoneType = zoneTypes[Random.Range(0, zoneTypes.Length)];
-                //else
-                    //zoneType = ZoneType.Empty;
-
-                zones.Add(new Zone(cell.Center, zoneType));
+                if (zones[i] == null)
+                {
+                    //Start cluster
+                    var zoneType = zoneTypes[Random.Range(0, zoneTypes.Length)];
+                    var clusterSize = Random.Range(2, 5);
+                    var zoneIndexes = GetFreeNeighborsDepthFirst(cells, zones, i, clusterSize);
+                    foreach (var zoneIndex in zoneIndexes)
+                        zones[zoneIndex] = new Zone(cells[zoneIndex].Center, zoneType);
+                }
             }
 
             return zones.ToArray();
+        }
+
+        private IEnumerable<int> GetFreeNeighborsDepthFirst(Cell[] cells, Zone[] zones, int startIndex, int count)
+        {
+            var result = new List<int>(count);
+
+            var assertCount = count;
+            GetFreeNeighborsDepthFirstRecursive(cells, zones, startIndex, ref count, result);
+            Assert.IsTrue(result.Count <= assertCount);
+
+            return result;
+        }
+
+        private void GetFreeNeighborsDepthFirstRecursive(Cell[] cells, Zone[] zones, int startIndex, ref int count,
+            List<int> result)
+        {
+            if (zones[startIndex] != null || result.Contains(startIndex) || count <= 0)
+                return;
+
+            count --;
+            result.Add(startIndex);
+
+            if (count == 0)
+                return;
+
+            var freeNeighbors = cells[startIndex].Neighbors.Where(nc => zones[nc.Id] == null).ToArray();
+            if (freeNeighbors.Length > 0)
+            {
+                var neighborIndex = freeNeighbors[Random.Range(0, freeNeighbors.Length)].Id;
+                GetFreeNeighborsDepthFirstRecursive(cells, zones, neighborIndex, ref count, result);
+            }
         }
     }
 }
