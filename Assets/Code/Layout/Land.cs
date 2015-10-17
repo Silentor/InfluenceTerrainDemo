@@ -31,7 +31,7 @@ namespace Assets.Code.Layout
         /// <returns></returns>
         public IEnumerable<Vector2i> GetChunks(Zone zone)
         {
-            var centerChunk = Chunk.GetChunkPosition(zone.Center);
+            var centerChunk = Chunk.GetPosition(zone.Center);
             var result = new List<Vector2i>();
             var processed = new List<Vector2i>();
 
@@ -163,7 +163,7 @@ namespace Assets.Code.Layout
             if (!_chunksBounds.Contains(chunkPosition))
                 return false;
 
-            var chunkCenter = Chunk.GetChunkCenter(chunkPosition);
+            var chunkCenter = Chunk.GetCenter(chunkPosition);
             var distance = Vector2.SqrMagnitude(zone.Center - chunkCenter);
 
             for (var i = 0; i < _zones.Length; i++)

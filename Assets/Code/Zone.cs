@@ -10,23 +10,28 @@ namespace Assets.Code
 {
     public class Zone
     {
-        public ZoneType Type;
+        public readonly ZoneType Type;
         public readonly Vector2 Center;
-        //public IEnumerable<Zone> Neighbours { get; private set; }
+        public IEnumerable<Zone> Neighbours { get; private set; }
 
-        public Cell Cell { get; private set; }
         public static readonly IEqualityComparer<Zone> TypeComparer = new ZoneTypeComparer();
 
-        public Zone(Vector2 center, ZoneType type)
+        public Zone(Cell cell, ZoneType type)
         {
             Type = type;
-            Center = center;
+            Center = cell.Center;
+            _cell = cell;
         }
 
-        public void Init(Cell meshCell)
+        public void Init(Dictionary<Cell, Zone> allZones)
         {
-            Cell = meshCell;
+            var neighbours = new Zone[_cell.Neighbors.Length];
+            for (var i = 0; i < neighbours.Length; i++)
+                neighbours[i] = allZones[_cell.Neighbors[i]];
+            Neighbours = neighbours;
         }
+
+        private readonly Cell _cell;
 
         private class ZoneTypeComparer : IEqualityComparer<Zone>
         {

@@ -23,8 +23,8 @@ namespace Assets.Code.Meshing
             var mesh = new Mesh();
 
             var verts = new Vector3[chunk.BlocksCount * chunk.BlocksCount * 4];
-            for (int x = 0; x < chunk.BlocksCount; x++)
-                for (int z = 0; z < chunk.BlocksCount; z++)
+            for (int x = 0; x < chunk.BlocksCount - 1; x++)
+                for (int z = 0; z < chunk.BlocksCount - 1; z++)
                 {
                     var vertIndex = (z + x*chunk.BlocksCount) * 4;
                     verts[vertIndex] = new Vector3(x * chunk.BlockSize, chunk.HeightMap[x, z], z * chunk.BlockSize);

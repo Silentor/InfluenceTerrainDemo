@@ -70,11 +70,11 @@ namespace Assets.Code.Layout
         private Zone[] SetZoneTypes(Vector2[] zoneCenters, ILandSettings settings)
         {
             var cells = CellMeshGenerator.Generate(zoneCenters, settings.LandBounds);
-            
             var zoneTypes = settings.ZoneTypes.Select(z => z.Type).ToArray();
             var zones = new Zone[cells.Length];
 
-            for (int i = 0; i < zones.Length; i++)
+            //Calculate zone types
+            for (var i = 0; i < zones.Length; i++)
             {
                 if (zones[i] == null)
                 {
@@ -83,11 +83,18 @@ namespace Assets.Code.Layout
                     var clusterSize = Random.Range(2, 5);
                     var zoneIndexes = GetFreeNeighborsDepthFirst(cells, zones, i, clusterSize);
                     foreach (var zoneIndex in zoneIndexes)
-                        zones[zoneIndex] = new Zone(cells[zoneIndex].Center, zoneType);
+                        zones[zoneIndex] = new Zone(cells[i], zoneType);
                 }
             }
 
-            return zones.ToArray();
+            //Init zones
+            var allZones = new Dictionary<Cell, Zone>(zones.Length);
+            for (var i = 0; i < zones.Length; i++)
+                allZones.Add(cells[i], zones[i]);
+            for (var i = 0; i < zones.Length; i++)
+                zones[i].Init(allZones);
+
+            return zones;
         }
 
         private IEnumerable<int> GetFreeNeighborsDepthFirst(Cell[] cells, Zone[] zones, int startIndex, int count)

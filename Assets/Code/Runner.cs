@@ -7,6 +7,7 @@ using Assets.Code.Layout;
 using Assets.Code.Meshing;
 using Assets.Code.Settings;
 using Assets.Code.Voronoi;
+using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
@@ -103,19 +104,7 @@ namespace Assets.Code
         private ZoneSettings[] _zoneSettingsLookup;
         private GameObject _parentObject;
 
-        private void CreateZonesHandle(IEnumerable<Zone> result)
-        {
-            var oldZones = _parentObject.transform.GetComponentsInChildren<Transform>().Where(t => t != _parentObject.transform).ToArray();
-            foreach (var zone in oldZones)
-                Destroy(zone.gameObject);
-
-            foreach (var zone in result)
-            {
-                var zoneHandleGO = new GameObject(zone.Type.ToString());
-                zoneHandleGO.transform.position = new Vector3(zone.Center.x, 0, zone.Center.y);
-                zoneHandleGO.transform.parent = _parentObject.transform;
-            }
-        }
+        #region Unity
 
         void Awake()
         {
@@ -143,29 +132,49 @@ namespace Assets.Code
 
         void OnDrawGizmosSelected()
         {
-            //if (Application.isPlaying)
-            //{
-            //    if (_voronoi != null)
-            //    {
-            //        Gizmos.color = Color.white;
+            //Get intersection points
+            if (Application.isPlaying)
+            {
+                var worldRay = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
+                var worldPlane = new Plane(Vector3.up, Vector3.zero);
+                float hitDistance;
+                if (worldPlane.Raycast(worldRay, out hitDistance))
+                {
+                    var layoutHitPoint3 = worldRay.GetPoint(hitDistance);
+                    var layoutHitPoint = new Vector2(layoutHitPoint3.x, layoutHitPoint3.z);
 
-            //        foreach (var cell in _voronoi)
-            //            foreach (var edge in cell.Edges)
-            //                Gizmos.DrawLine(new Vector3(edge.Vertex1.x, 50, edge.Vertex1.y), new Vector3(edge.Vertex2.x, 50, edge.Vertex2.y));
-            //    }
-
-            //    if (Land != null && Land.Zones != null)
-            //        foreach (var zone in Land.Zones)
-            //        {
-            //            if (zone.Type != ZoneType.Empty)
-            //            {
-            //                Gizmos.color = this[zone.Type].LandColor;
-            //                Gizmos.DrawSphere(new Vector3(zone.Center.x, 50, zone.Center.y), 10);
-            //            }
-            //        }
-
-            //}
+                    ShowChunkBounds(layoutHitPoint);
+                }
+            }
         }
 
+        #endregion
+
+        #region Develop visualisation
+
+        private void CreateZonesHandle(IEnumerable<Zone> result)
+        {
+            var oldZones = _parentObject.transform.GetComponentsInChildren<Transform>().Where(t => t != _parentObject.transform).ToArray();
+            foreach (var zone in oldZones)
+                Destroy(zone.gameObject);
+
+            foreach (var zone in result)
+            {
+                var zoneHandleGO = new GameObject(zone.Type.ToString());
+                zoneHandleGO.transform.position = new Vector3(zone.Center.x, 0, zone.Center.y);
+                zoneHandleGO.transform.parent = _parentObject.transform;
+            }
+        }
+
+        private static void ShowChunkBounds(Vector2 worldPosition)
+        {
+            var chunkPos = Chunk.GetPosition(worldPosition);
+            var chunkBounds = Chunk.GetBounds(chunkPos);
+
+            Gizmos.color = Color.gray;
+            Gizmos.DrawWireCube(chunkBounds.center, chunkBounds.size);
+        }
+
+        #endregion
     }
 }

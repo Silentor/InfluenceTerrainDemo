@@ -61,7 +61,7 @@ namespace Assets.Code.Generators
             //ZoneRatio corner12 = null;
             //ZoneRatio corner22 = null;
             //ZoneRatio corner21 = null;
-            var chunkBounds = Chunk.GetChunkBounds(position);
+            var chunkBounds = Chunk.GetBounds(position);
 
             //if (interpolate)
             //{

@@ -69,7 +69,7 @@ namespace Assets.Code.Layout
         private Zone[] SetZoneTypes(Vector2[] zoneCenters, ILandSettings settings)
         {
             var cells = CellMeshGenerator.Generate(zoneCenters, settings.LandBounds);
-            var zones = new List<Zone>();
+            var zones = new List<Zone>(cells.Length);
             var zoneTypes = settings.ZoneTypes.Select(z => z.Type).ToArray();
 
             foreach (var cell in cells)
@@ -80,8 +80,14 @@ namespace Assets.Code.Layout
                 //else
                     //zoneType = ZoneType.Empty;
 
-                zones.Add(new Zone(cell.Center, zoneType));
+                zones.Add(new Zone(cell, zoneType));
             }
+
+            var allZones = new Dictionary<Cell, Zone>(zones.Count);
+            for (int i = 0; i < zones.Count; i++)
+                allZones.Add(cells[i], zones[i]);
+            foreach (var zone in zones)
+                zone.Init(allZones);
 
             return zones.ToArray();
         }

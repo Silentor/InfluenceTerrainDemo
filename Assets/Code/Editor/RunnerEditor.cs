@@ -9,7 +9,7 @@ using UnityEngine;
 namespace Assets.Code.Editor
 {
     [CustomEditor(typeof(Runner))]
-    public class RunnerEditor : UnityEditor.Editor 
+    public class RunnerEditor : UnityEditor.Editor
     {
         private Runner _target;
         private List<Zone> _layout;
@@ -17,7 +17,7 @@ namespace Assets.Code.Editor
 
         void OnEnable()
         {
-            _target = (Runner) target;
+            _target = (Runner)target;
         }
 
         public override void OnInspectorGUI()
@@ -61,19 +61,27 @@ namespace Assets.Code.Editor
             {
                 ShowZoneLayoutEditor();
 
-                var worldRay = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
-                var worldPlane = new Plane(Vector3.up, Vector3.zero);
-                float hitDistance;
-                if (worldPlane.Raycast(worldRay, out hitDistance))
+                var pos = Event.current.mousePosition;
+                if (pos.x >= 0 && pos.x <= Screen.width && pos.y >= 0 && pos.y <= Screen.height)
                 {
-                    var layoutHitPoint3 = worldRay.GetPoint(hitDistance);
-                    var layoutHitPoint = new Vector2(layoutHitPoint3.x, layoutHitPoint3.z);
+                    var worldRay = HandleUtility.GUIPointToWorldRay(pos);
+                    var worldPlane = new Plane(Vector3.up, Vector3.zero);
+                    float hitDistance;
+                    if (worldPlane.Raycast(worldRay, out hitDistance))
+                    {
+                        var layoutHitPoint3 = worldRay.GetPoint(hitDistance);
+                        var layoutHitPoint = new Vector2(layoutHitPoint3.x, layoutHitPoint3.z);
 
-                    if(Event.current.shift)
-                        ShowInfluenceInfo(layoutHitPoint);
+                        if (Event.current.shift)
+                            ShowInfluenceInfo(layoutHitPoint);
+
+                        ShowChunkInfo(layoutHitPoint);
+                    }
                 }
             }
         }
+
+        
 
         private void ShowInfluenceInfo(Vector2 layoutPosition)
         {
@@ -110,7 +118,7 @@ namespace Assets.Code.Editor
 
         private void ShowZoneLayoutEditor()
         {
-            if(_voronoi != null)
+            if (_voronoi != null)
             {
                 Handles.matrix = Matrix4x4.identity;
 
@@ -136,9 +144,24 @@ namespace Assets.Code.Editor
                 {
                     _voronoi = CellMeshGenerator.Generate(newCenters.Select(c => Convert(c)), _target.LayoutBounds);
                     for (int i = 0; i < newCenters.Length; i++)
-                        _layout[i] = new Zone(_voronoi[i].Center, _layout[i].Type);
+                        _layout[i] = new Zone(_voronoi[i], _layout[i].Type);
                 }
             }
+        }
+
+        private static void ShowChunkInfo(Vector2 worldPosition)
+        {
+            var chunkPos = Chunk.GetPosition(worldPosition);
+            var chunkBounds = Chunk.GetBounds(chunkPos);
+
+            Handles.BeginGUI();
+            GUILayout.BeginArea(new Rect(0, Screen.height - 120, 200, 110));
+            GUILayout.Label("World_f " + worldPosition);
+            GUILayout.Label("World_i " + (Vector2i)worldPosition);
+            GUILayout.Label("Chunk " + chunkPos + " : " + Chunk.GetLocalPosition(worldPosition));
+            GUILayout.Label("Bounds " + chunkBounds.min + "-" + chunkBounds.max);
+            GUILayout.EndArea();
+            Handles.EndGUI();
         }
 
         private static Vector3 Convert(Vector2 v)
@@ -150,6 +173,5 @@ namespace Assets.Code.Editor
         {
             return new Vector2(v.x, v.z);
         }
-
     }
 }

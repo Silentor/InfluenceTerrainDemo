@@ -1,5 +1,3 @@
-//using UnityEngine;
-
 using UnityEngine;
 
 namespace Assets.Code
@@ -77,7 +75,7 @@ namespace Assets.Code
 
         public override string ToString()
         {
-            return "Vector2i(" + X + ", " + Z + ")";
+            return "(" + X + ", " + Z + ")";
         }
 
         public static bool operator ==(Vector2i a, Vector2i b)
@@ -119,7 +117,9 @@ namespace Assets.Code
 
         public static explicit operator Vector2i(Vector2 v)
         {
-            return new Vector2i((int)v.x, (int)v.y);
+            var resultX = v.x >= 0 ? (int) v.x : (int) (v.x - 1f);
+            var resultY = v.y >= 0 ? (int)v.y : (int)(v.y - 1f);
+            return new Vector2i(resultX, resultY);
         }
 
         //public static Vector2i Unity2MapPosition(Vector2 position)
