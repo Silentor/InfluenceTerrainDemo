@@ -39,6 +39,22 @@ namespace Assets.Code.Layout
             return result;
         }
 
+        /// <summary>
+        /// Get all chunks conservative belongs to given zone
+        /// </summary>
+        /// <param name="zone"></param>
+        /// <returns></returns>
+        public IEnumerable<Vector2i> GetConservativeChunks(Zone zone)
+        {
+            var centerChunk = Chunk.GetPosition(zone.Center);
+            var result = new List<Vector2i>();
+            var processed = new List<Vector2i>();
+
+            GetChunksFloodFill(zone, centerChunk, processed, result);
+            return result;
+        }
+
+
         public ZoneRatio GetInfluence(Vector2 worldPosition)
         {
             _influenceTime.Start();
@@ -173,6 +189,39 @@ namespace Assets.Code.Layout
             }
 
             return true;
+        }
+
+        private bool CheckChunkConservative(Vector2i chunkPosition, Zone zone)
+        {
+            if (!_chunksBounds.Contains(chunkPosition))
+                return false;
+
+            var chunkCenter = Chunk.GetCenter(chunkPosition);
+            var chunkBounds = Chunk.GetBounds(chunkPosition);
+            var chunkCorner1 = chunkBounds.Min;
+            var chunkCorner2 = chunkBounds.Min;
+            var chunkCorner3 = chunkBounds.Min;
+            var chunkCorner4 = chunkBounds.Min;
+            var distance = Vector2.SqrMagnitude(zone.Center - chunkCenter);
+            var distanceCorner1 = Vector2.SqrMagnitude(zone.Center - chunkCenter);
+
+            for (var i = 0; i < _zones.Length; i++)
+            {
+                if (_zones[i] != zone && Vector2.SqrMagnitude(_zones[i].Center - chunkCenter) < distance)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static Vector3 Convert(Vector2 v)
+        {
+            return new Vector3(v.x, 0, v.y);
+        }
+
+        private static Vector2 Convert(Vector3 v)
+        {
+            return new Vector2(v.x, v.z);
         }
     }
 }

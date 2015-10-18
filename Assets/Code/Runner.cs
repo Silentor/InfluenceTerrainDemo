@@ -6,6 +6,7 @@ using Assets.Code.Generators;
 using Assets.Code.Layout;
 using Assets.Code.Meshing;
 using Assets.Code.Settings;
+using Assets.Code.Tools;
 using Assets.Code.Voronoi;
 using UnityEditor;
 using UnityEngine;
@@ -124,14 +125,18 @@ namespace Assets.Code
         {
             //Update Land bounds
             var landMin = -LandSize / 2;
-            var landMax = landMin + LandSize;
-            LayoutBounds = new Bounds2i(Vector2i.One * landMin * BlocksCount, Vector2i.One * landMax * BlocksCount);
+            var landMax = landMin + LandSize - 1;
+            var minChunkBounds = Chunk.GetBounds(new Vector2i(landMin, landMin));
+            var maxChunkBounds = Chunk.GetBounds(new Vector2i(landMax, landMax));
 
-            
+            LayoutBounds = new Bounds2i(minChunkBounds.Min, maxChunkBounds.Max);
         }
 
         void OnDrawGizmosSelected()
         {
+            //Draw land bounds
+            DrawRectangle.ForGizmo(LayoutBounds, Color.gray);
+
             //Get intersection points
             if (Application.isPlaying)
             {
@@ -170,9 +175,8 @@ namespace Assets.Code
         {
             var chunkPos = Chunk.GetPosition(worldPosition);
             var chunkBounds = Chunk.GetBounds(chunkPos);
-
-            Gizmos.color = Color.gray;
-            Gizmos.DrawWireCube(chunkBounds.center, chunkBounds.size);
+            
+            DrawRectangle.ForGizmo(chunkBounds, Color.gray);
         }
 
         #endregion

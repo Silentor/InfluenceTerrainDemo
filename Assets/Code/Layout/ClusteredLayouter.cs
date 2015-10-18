@@ -83,7 +83,7 @@ namespace Assets.Code.Layout
                     var clusterSize = Random.Range(2, 5);
                     var zoneIndexes = GetFreeNeighborsDepthFirst(cells, zones, i, clusterSize);
                     foreach (var zoneIndex in zoneIndexes)
-                        zones[zoneIndex] = new Zone(cells[i], zoneType);
+                        zones[zoneIndex] = new Zone(cells[zoneIndex], zoneType);
                 }
             }
 

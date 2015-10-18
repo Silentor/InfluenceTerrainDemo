@@ -31,6 +31,11 @@ namespace Assets.Code
             Neighbours = neighbours;
         }
 
+        public override string ToString()
+        {
+            return string.Format("[{0}, {1}]", Center, Type);
+        }
+
         private readonly Cell _cell;
 
         private class ZoneTypeComparer : IEqualityComparer<Zone>

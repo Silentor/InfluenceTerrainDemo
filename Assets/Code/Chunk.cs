@@ -72,10 +72,11 @@ namespace Assets.Code
         /// </summary>
         /// <param name="position">Chunk position</param>
         /// <returns>World bounds</returns>
-        public static Bounds GetBounds(Vector2i position)
+        public static Bounds2i GetBounds(Vector2i position)
         {
-            var center = GetCenter(position);
-            return new Bounds(new Vector3(center.x, 0, center.y), new Vector3(Size, 0, Size));
+            var min = new Vector2i(position.X << Shift, position.Z << Shift);
+            var max = new Vector2i(min.X + Size - 1, min.Z + Size - 1);
+            return new Bounds2i(min, max);
         }
 
         public static Vector2i GetLocalPosition(Vector2 worldPosition)

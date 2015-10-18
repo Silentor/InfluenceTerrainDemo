@@ -62,7 +62,8 @@ namespace Assets.Code
             go.name = chunk.Position.X + " : " + chunk.Position.Z;
             _allChunksGO.Add(chunkGo);
 
-            chunkGo.transform.position = Chunk.GetBounds(chunk.Position).min;
+            var minCorner = Chunk.GetBounds(chunk.Position).Min;
+            chunkGo.transform.position = new Vector3(minCorner.X, 0, minCorner.Z);
 
             return chunkGo;
         }

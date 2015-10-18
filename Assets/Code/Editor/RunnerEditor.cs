@@ -159,7 +159,7 @@ namespace Assets.Code.Editor
             GUILayout.Label("World_f " + worldPosition);
             GUILayout.Label("World_i " + (Vector2i)worldPosition);
             GUILayout.Label("Chunk " + chunkPos + " : " + Chunk.GetLocalPosition(worldPosition));
-            GUILayout.Label("Bounds " + chunkBounds.min + "-" + chunkBounds.max);
+            GUILayout.Label("Bounds " + chunkBounds.Min + "-" + chunkBounds.Max);
             GUILayout.EndArea();
             Handles.EndGUI();
         }
