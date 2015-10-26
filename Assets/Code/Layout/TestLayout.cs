@@ -19,7 +19,7 @@ namespace Assets.Code.Layout
 
         protected override Vector2[] GeneratePoints(int count, Bounds2i landBounds, float minDistance = 32)
         {
-            return new[] {new Vector2(8, 9), new Vector2(-8, 24),};
+            return new[] {new Vector2(8, 9), new Vector2(-8, 24), new Vector2(10, -8), new Vector2(17, 18) };
         }
 
         protected override ZoneType[] SetZoneTypes(Cell[] cells, ILandSettings settings)

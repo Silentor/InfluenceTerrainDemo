@@ -182,7 +182,6 @@ namespace Assets.Code.Layout
             var distanceCorner3 = float.MaxValue;
             var distanceCorner4 = float.MaxValue;
 
-
             foreach (var z in Zones)
             {
                 if (Vector2.SqrMagnitude(z.Center - chunkCorner1) < distanceCorner1)
@@ -212,7 +211,7 @@ namespace Assets.Code.Layout
 
             //Check zone vertices in chunk
             foreach (var vert in zone.Cell.Vertices)
-                if (floatBounds.Contains(vert))
+                if (floatBounds.Contains(Convert(vert)))
                     return true;
 
             return false;
