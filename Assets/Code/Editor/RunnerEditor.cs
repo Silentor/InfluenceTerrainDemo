@@ -130,13 +130,23 @@ namespace Assets.Code.Editor
                 Gizmos.color = zoneColor;
 
                 //Draw zone bounds
-                DrawRectangle.ForGizmo(selectedZone.Bounds, zoneColor);
+                //foreach (var chunk in selectedZone.ChunkBounds)
+                    //DrawRectangle.ForGizmo(Chunk.GetBounds(chunk), zoneColor);
+
+                foreach (var chunk in Main.Layout.GetChunks(selectedZone))
+                    DrawRectangle.ForGizmo(Chunk.GetBounds(chunk), zoneColor);
 
                 //Draw additional rays to highlight zone
                 foreach (var edge in selectedZone.Cell.Edges)
                 {
-                    var edgeCenter = new Vector3((edge.Vertex1.x + edge.Vertex2.x)/2, 0, (edge.Vertex1.y + edge.Vertex2.y) / 2);
-                    Gizmos.DrawLine(Convert(selectedZone.Center), edgeCenter);
+                    //var edgeCenter = new Vector3((edge.Vertex1.x + edge.Vertex2.x)/2, 0, (edge.Vertex1.y + edge.Vertex2.y) / 2);
+                    //Gizmos.DrawLine(Convert(selectedZone.Center), edgeCenter);
+                    Gizmos.DrawLine(Convert((edge.Vertex1 - selectedZone.Center) * 0.99f + selectedZone.Center),
+                        Convert((edge.Vertex2 - selectedZone.Center) * 0.99f + selectedZone.Center));
+                    Gizmos.DrawLine(Convert((edge.Vertex1 - selectedZone.Center) * 0.9f + selectedZone.Center),
+                        Convert((edge.Vertex2 - selectedZone.Center) * 0.9f + selectedZone.Center));
+                    Gizmos.DrawLine(Convert((edge.Vertex1 - selectedZone.Center) * 0.7f + selectedZone.Center),
+                        Convert((edge.Vertex2 - selectedZone.Center) * 0.7f + selectedZone.Center));
                 }
 
                 //Draw zone chunks

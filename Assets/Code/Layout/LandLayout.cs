@@ -158,6 +158,12 @@ namespace Assets.Code.Layout
             }
         }
 
+        /// <summary>
+        /// Check chunk corners and zone vertices
+        /// </summary>
+        /// <param name="chunkPosition"></param>
+        /// <param name="zone"></param>
+        /// <returns></returns>
         private bool CheckChunkConservative(Vector2i chunkPosition, ZoneLayout zone)
         {
             if (!zone.ChunkBounds.Contains(chunkPosition))
@@ -179,32 +185,37 @@ namespace Assets.Code.Layout
 
             foreach (var z in Zones)
             {
-                //if (z != zone)
+                if (Vector2.SqrMagnitude(z.Center - chunkCorner1) < distanceCorner1)
                 {
-                    if (Vector2.SqrMagnitude(z.Center - chunkCorner1) < distanceCorner1)
-                    {
-                        zone1 = z;
-                        distanceCorner1 = Vector2.SqrMagnitude(z.Center - chunkCorner1);
-                    }
-                    if (Vector2.SqrMagnitude(z.Center - chunkCorner2) < distanceCorner2)
-                    {
-                        zone2 = z;
-                        distanceCorner2 = Vector2.SqrMagnitude(z.Center - chunkCorner2);
-                    }
-                    if (Vector2.SqrMagnitude(z.Center - chunkCorner3) < distanceCorner3)
-                    {
-                        zone3 = z;
-                        distanceCorner3 = Vector2.SqrMagnitude(z.Center - chunkCorner3);
-                    }
-                    if (Vector2.SqrMagnitude(z.Center - chunkCorner4) < distanceCorner4)
-                    {
-                        zone4 = z;
-                        distanceCorner4 = Vector2.SqrMagnitude(z.Center - chunkCorner4);
-                    }
+                    zone1 = z;
+                    distanceCorner1 = Vector2.SqrMagnitude(z.Center - chunkCorner1);
+                }
+                if (Vector2.SqrMagnitude(z.Center - chunkCorner2) < distanceCorner2)
+                {
+                    zone2 = z;
+                    distanceCorner2 = Vector2.SqrMagnitude(z.Center - chunkCorner2);
+                }
+                if (Vector2.SqrMagnitude(z.Center - chunkCorner3) < distanceCorner3)
+                {
+                    zone3 = z;
+                    distanceCorner3 = Vector2.SqrMagnitude(z.Center - chunkCorner3);
+                }
+                if (Vector2.SqrMagnitude(z.Center - chunkCorner4) < distanceCorner4)
+                {
+                    zone4 = z;
+                    distanceCorner4 = Vector2.SqrMagnitude(z.Center - chunkCorner4);
                 }
             }
 
-            return zone1 == zone || zone2 == zone || zone3 == zone || zone4 == zone;
+            if (zone1 == zone || zone2 == zone || zone3 == zone || zone4 == zone)
+                return true;
+
+            //Check zone vertices in chunk
+            foreach (var vert in zone.Cell.Vertices)
+                if (floatBounds.Contains(vert))
+                    return true;
+
+            return false;
         }
 
         private float IDWSimplestWeighting(Vector2 interpolatePoint, Vector2 point)
