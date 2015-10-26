@@ -68,10 +68,16 @@ namespace Assets.Code
 
         public void BuildAll()
         {
-            ILayouter newLayouter = new ClusteredLayouter(this);;
-            Main.Layout = newLayouter.CreateLayout();
+            Main.Layout = new ClusteredLayout(this);
+            //Main.Layout = new RandomLayout(this);
+            //Main.Layout = new TestLayout(this);
             var map = Main.GenerateMap(this);
             MeshAndVisualize(map);
+        }
+
+        public ZoneSettings this[ZoneType index]
+        {
+            get { return _zoneSettingsLookup[(int)index]; }
         }
 
         int ILandSettings.ChunkSize { get { return BlocksCount * BlockSize; } }
@@ -80,11 +86,6 @@ namespace Assets.Code
         int ILandSettings.ZonesCount { get { return ZonesCount; } }
         IEnumerable<ZoneSettings> ILandSettings.ZoneTypes { get { return Zones; } }
         float ILandSettings.ZoneCenterMinDistance { get { return ZoneCenterMinDistance; } }
-
-        public ZoneSettings this[ZoneType index]
-        {
-            get { return _zoneSettingsLookup[(int)index]; }
-        }
 
         LandNoiseSettings ILandSettings.LandNoiseSettings { get { return LandNoiseSettings; } }
         Bounds2i ILandSettings.LandBounds { get { return LayoutBounds; } }
@@ -123,6 +124,8 @@ namespace Assets.Code
 
         void OnValidate()
         {
+            if (LandSize < 1) LandSize = 1;
+
             //Update Land bounds
             var landMin = -LandSize / 2;
             var landMax = landMin + LandSize - 1;
@@ -132,32 +135,11 @@ namespace Assets.Code
             LayoutBounds = new Bounds2i(minChunkBounds.Min, maxChunkBounds.Max);
         }
 
-        void OnDrawGizmosSelected()
-        {
-            //Draw land bounds
-            DrawRectangle.ForGizmo(LayoutBounds, Color.gray);
-
-            //Get intersection points
-            if (Application.isPlaying)
-            {
-                var worldRay = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
-                var worldPlane = new Plane(Vector3.up, Vector3.zero);
-                float hitDistance;
-                if (worldPlane.Raycast(worldRay, out hitDistance))
-                {
-                    var layoutHitPoint3 = worldRay.GetPoint(hitDistance);
-                    var layoutHitPoint = new Vector2(layoutHitPoint3.x, layoutHitPoint3.z);
-
-                    ShowChunkBounds(layoutHitPoint);
-                }
-            }
-        }
-
         #endregion
 
-        #region Develop visualisation
+        #region Develop
 
-        private void CreateZonesHandle(IEnumerable<Zone> result)
+        private void CreateZonesHandle(IEnumerable<ZoneLayout> result)
         {
             var oldZones = _parentObject.transform.GetComponentsInChildren<Transform>().Where(t => t != _parentObject.transform).ToArray();
             foreach (var zone in oldZones)
@@ -169,14 +151,6 @@ namespace Assets.Code
                 zoneHandleGO.transform.position = new Vector3(zone.Center.x, 0, zone.Center.y);
                 zoneHandleGO.transform.parent = _parentObject.transform;
             }
-        }
-
-        private static void ShowChunkBounds(Vector2 worldPosition)
-        {
-            var chunkPos = Chunk.GetPosition(worldPosition);
-            var chunkBounds = Chunk.GetBounds(chunkPos);
-            
-            DrawRectangle.ForGizmo(chunkBounds, Color.gray);
         }
 
         #endregion

@@ -118,8 +118,15 @@ namespace Assets.Code
         public static explicit operator Vector2i(Vector2 v)
         {
             var resultX = v.x >= 0 ? (int) v.x : (int) (v.x - 1f);
-            var resultY = v.y >= 0 ? (int)v.y : (int)(v.y - 1f);
-            return new Vector2i(resultX, resultY);
+            var resultZ = v.y >= 0 ? (int)v.y : (int)(v.y - 1f);
+            return new Vector2i(resultX, resultZ);
+        }
+
+        public static explicit operator Vector2i(Vector3 v)
+        {
+            var resultX = v.x >= 0 ? (int)v.x : (int)(v.x - 1f);
+            var resultZ = v.z >= 0 ? (int)v.z : (int)(v.z - 1f);
+            return new Vector2i(resultX, resultZ);
         }
 
         //public static Vector2i Unity2MapPosition(Vector2 position)

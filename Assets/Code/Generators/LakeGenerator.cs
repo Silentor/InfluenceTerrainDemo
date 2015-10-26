@@ -10,7 +10,7 @@ namespace Assets.Code.Generators
 {
     public class LakeGenerator : ZoneGenerator
     {
-        public LakeGenerator(Zone zone, Land land, ILandSettings landSettings) : base(zone, land, landSettings)
+        public LakeGenerator(ZoneLayout zone, LandLayout land, ILandSettings landSettings) : base(zone, land, landSettings)
         {
         }
 

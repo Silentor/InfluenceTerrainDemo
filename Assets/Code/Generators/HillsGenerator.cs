@@ -9,7 +9,7 @@ namespace Assets.Code.Generators
 {
     public class HillsGenerator : ZoneGenerator
     {
-        public HillsGenerator(Zone zone, Land land, ILandSettings landSettings) : base(zone, land, landSettings)
+        public HillsGenerator(ZoneLayout zone, LandLayout land, ILandSettings landSettings) : base(zone, land, landSettings)
         {
         }
 

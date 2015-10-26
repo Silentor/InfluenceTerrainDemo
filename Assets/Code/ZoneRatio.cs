@@ -71,6 +71,8 @@ namespace Assets.Code
         /// <returns></returns>
         public ZoneRatio Pack(int remainValues)
         {
+            if (remainValues > _value.Length) remainValues = _value.Length;
+
             var result = new ZoneValue[remainValues];
 
             for (var i = 0; i < remainValues; i++)

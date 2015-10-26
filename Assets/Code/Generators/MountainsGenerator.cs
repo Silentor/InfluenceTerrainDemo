@@ -10,7 +10,7 @@ namespace Assets.Code.Generators
 {
     public class MountainsGenerator : ZoneGenerator
     {
-        public MountainsGenerator(Zone zone, Land land, ILandSettings landSettings) : base(zone, land, landSettings)
+        public MountainsGenerator(ZoneLayout zone, LandLayout land, ILandSettings landSettings) : base(zone, land, landSettings)
         {
         }
 

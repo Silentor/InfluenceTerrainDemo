@@ -6,7 +6,7 @@ namespace Assets.Code.Generators
 {
     public class LandGenerator
     {
-        public LandGenerator(Land land, ILandSettings settings)
+        public LandGenerator(LandLayout land, ILandSettings settings)
         {
             _land = land;
             _settings = settings;
@@ -42,7 +42,7 @@ namespace Assets.Code.Generators
             return result;
         }
 
-        private readonly Land _land;
+        private readonly LandLayout _land;
         private readonly ILandSettings _settings;
     }
 }

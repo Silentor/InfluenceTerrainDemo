@@ -11,7 +11,7 @@ using Debug = UnityEngine.Debug;
 
 namespace Assets.Code.Voronoi
 {
-    public class CellMeshGenerator
+    public static class CellMeshGenerator
     {
         /// <summary>
         /// Generate full cell mesh
@@ -19,11 +19,11 @@ namespace Assets.Code.Voronoi
         /// <param name="cellCenters">Result zones count can be less</param>
         /// <param name="bounds">Size of square grid of chunks</param>
         /// <returns></returns>
-        public static Cell[] Generate(IEnumerable<Vector2> cellCenters, Bounds2i bounds)
+        public static Cell[] Generate(IEnumerable<Vector2> cellCenters, Bounds bounds)
         {
             var points = cellCenters.ToArray();
-            var voronoi = GenerateVoronoi(points, bounds.Min.X, bounds.Max.X, bounds.Min.Z, bounds.Max.Z);
-            var mesh = ProcessVoronoi(points, voronoi);
+            var voronoi = GenerateVoronoi(points, bounds.min.x, bounds.max.x, bounds.min.z, bounds.max.z);
+            var mesh = ProcessVoronoi(points, voronoi, bounds);
             return mesh;
         }
 
@@ -62,7 +62,7 @@ namespace Assets.Code.Voronoi
         /// <param name="zonesCoords">Coords of center of every cell</param>
         /// <param name="edges">All edges of Voronoi diagram</param>
         /// <returns>Mesh of cells</returns>
-        private static Cell[] ProcessVoronoi(Vector2[] zonesCoords, GraphEdge[] edges)
+        private static Cell[] ProcessVoronoi(Vector2[] zonesCoords, GraphEdge[] edges, Bounds bounds)
         {
             var timer = Stopwatch.StartNew();
 
@@ -135,19 +135,18 @@ namespace Assets.Code.Voronoi
             //Create cells
             for (int i = 0; i < result.Length; i++)
             {
-                result[i] = new Cell
-                {
-                    Id = i,
-                    Center = zonesCoords[i],
-                    IsClosed = isCellsClosed[i],
-                    Edges = (cellsEdges[i].Select(e => new Cell.Edge(
-                        new Vector2((float)e.x1, (float)e.y1), new Vector2((float)e.x2, (float)e.y2)))).ToArray(),
-                    Vertices = isCellsClosed[i] 
-                        ? cellsEdges[i].Select(e => new Vector2((float)e.x1, (float)e.y1)).ToArray() 
-                        : cellsEdges[i].SelectMany(e => new[] {
-                                                new Vector2((float)e.x1, (float)e.y1),
-                                                new Vector2((float)e.x2, (float)e.y2)}).Distinct().ToArray()
-                };
+                var vertices = isCellsClosed[i]
+                    ? cellsEdges[i].Select(e => new Vector2((float) e.x1, (float) e.y1)).ToArray()
+                    : cellsEdges[i].SelectMany(e => new[]
+                    {
+                        new Vector2((float) e.x1, (float) e.y1),
+                        new Vector2((float) e.x2, (float) e.y2)
+                    }).Distinct().ToArray();
+
+                var cellEdges = (cellsEdges[i].Select(e => new Cell.Edge(
+                    new Vector2((float) e.x1, (float) e.y1), new Vector2((float) e.x2, (float) e.y2)))).ToArray();
+
+                result[i] = new Cell(i, zonesCoords[i], isCellsClosed[i], vertices, cellEdges, bounds);
             }
 
             //Fill cells references
@@ -155,7 +154,7 @@ namespace Assets.Code.Voronoi
             {
                 var cell = result[i];
                 var cellEdges = cellsEdges[i];
-                cell.Neighbors = cellEdges.Select(e => e.site1 == cell.Id ? result[e.site2] : result[e.site1]).ToArray();
+                cell.Init(cellEdges.Select(e => e.site1 == cell.Id ? result[e.site2] : result[e.site1]).ToArray());
             }
 
             timer.Stop();

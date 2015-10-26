@@ -9,7 +9,7 @@ namespace Assets.Code.Generators
 {
     public class DefaultGenerator : ZoneGenerator
     {
-        public DefaultGenerator(Zone zone, Land land, ILandSettings landSettings) : base(zone, land, landSettings)
+        public DefaultGenerator(ZoneLayout zone, LandLayout land, ILandSettings landSettings) : base(zone, land, landSettings)
         {
         }
     }

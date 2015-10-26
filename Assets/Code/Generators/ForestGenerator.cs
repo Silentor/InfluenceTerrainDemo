@@ -10,7 +10,7 @@ namespace Assets.Code.Generators
 {
     public class ForestGenerator : ZoneGenerator
     {
-        public ForestGenerator(Zone zone, Land land, ILandSettings landSettings) : base(zone, land, landSettings)
+        public ForestGenerator(ZoneLayout zone, LandLayout land, ILandSettings landSettings) : base(zone, land, landSettings)
         {
         }
 

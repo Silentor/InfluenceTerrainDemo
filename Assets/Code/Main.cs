@@ -17,14 +17,14 @@ namespace Assets.Code
         {
             var time = Stopwatch.StartNew();
 
-            Land = new Land(Layout, settings);
+            //Land = new Land(Layout, settings);
 
             //Generate land's chunks
-            var landGenerator = new LandGenerator(Land, settings);
+            var landGenerator = new LandGenerator(Layout, settings);
             var result = landGenerator.Generate();
 
             time.Stop();
-            Debug.Log(Land.GetStaticstics());
+            //Debug.Log(Land.GetStaticstics());
             Debug.Log(string.Format("Total {0} ms", time.ElapsedMilliseconds));
 
             return result;

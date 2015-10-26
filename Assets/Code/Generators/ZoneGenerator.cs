@@ -19,9 +19,12 @@ namespace Assets.Code.Generators
 
             foreach (var chunkPos in chunksPos)
             {
-                var newChunk = GenerateChunk(chunkPos, _landSettings.InterpolateInfluence);
-                DecorateChunk(newChunk);
-                land[chunkPos] = newChunk;
+                if (!land.ContainsKey(chunkPos))
+                {
+                    var newChunk = GenerateChunk(chunkPos, _landSettings.InterpolateInfluence);
+                    DecorateChunk(newChunk);
+                    land[chunkPos] = newChunk;
+                }
             }
         }
 
@@ -30,8 +33,8 @@ namespace Assets.Code.Generators
             
         }
 
-        private readonly Zone _zone;
-        protected readonly Land Land;
+        private readonly ZoneLayout _zone;
+        protected readonly LandLayout Land;
         private readonly ILandSettings _landSettings;
         private readonly int _blocksCount;
         private readonly int _blockSize;
@@ -39,9 +42,8 @@ namespace Assets.Code.Generators
         private ZoneType _zoneMaxType;
         private ZoneRatio _influence;
 
-        protected ZoneGenerator([NotNull] Zone zone, [NotNull] Land land, [NotNull] ILandSettings landSettings)
+        protected ZoneGenerator(ZoneLayout zone, [NotNull] LandLayout land, [NotNull] ILandSettings landSettings)
         {
-            if (zone == null) throw new ArgumentNullException("zone");
             if (land == null) throw new ArgumentNullException("land");
             if (landSettings == null) throw new ArgumentNullException("landSettings");
 

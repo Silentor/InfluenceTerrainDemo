@@ -12,15 +12,19 @@ namespace Assets.Code
     {
         public readonly ZoneType Type;
         public readonly Vector2 Center;
+        public readonly Bounds2i Bounds;
+        public readonly ZoneLayout Layout;
         public IEnumerable<Zone> Neighbours { get; private set; }
 
         public static readonly IEqualityComparer<Zone> TypeComparer = new ZoneTypeComparer();
 
-        public Zone(Cell cell, ZoneType type)
+        public Zone(ZoneLayout layout)
         {
-            Type = type;
-            Center = cell.Center;
-            _cell = cell;
+            Type = layout.Type;
+            Center = layout.Center;
+            Bounds = layout.Bounds;
+            Layout = layout;
+            _cell = layout.Cell;
         }
 
         public void Init(Dictionary<Cell, Zone> allZones)

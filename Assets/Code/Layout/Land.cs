@@ -11,10 +11,18 @@ namespace Assets.Code.Layout
     {
         public IEnumerable<Zone> Zones { get { return _zones; } }
 
+        /// <summary>
+        /// World coords bounds
+        /// </summary>
+        public Bounds2i Bounds { get { return _settings.LandBounds; } }
+
+        public readonly LandLayout Layout;
+
         public Land(LandLayout layout, ILandSettings settings)
         {
             _settings = settings;
-            _zones = layout.Zones.ToArray();
+            _zones = layout.Zones.Select(z => new Zone(z)).ToArray();
+            Layout = layout;
             _idwCoeff = settings.IDWCoeff;
             _idwOffset = settings.IDWOffset;
             _zoneMaxType = settings.ZoneTypes.Max(z => z.Type);
@@ -25,35 +33,26 @@ namespace Assets.Code.Layout
         }
 
         /// <summary>
-        /// Get all chunks of given zone
+        /// Get zone to which given point belongs
         /// </summary>
-        /// <param name="zone"></param>
+        /// <param name="worldPosition"></param>
         /// <returns></returns>
-        public IEnumerable<Vector2i> GetChunks(Zone zone)
+        private Zone GetZoneBy(Vector2 worldPosition)
         {
-            var centerChunk = Chunk.GetPosition(zone.Center);
-            var result = new List<Vector2i>();
-            var processed = new List<Vector2i>();
+            if (!Bounds.Contains((Vector2i)worldPosition))
+                return null;
 
-            GetChunksFloodFill(zone, centerChunk, processed, result);
+            Zone result = null;
+            var minDistance = float.MaxValue;
+            for (var i = 0; i < _zones.Length; i++)
+            {
+                var distance = Vector2.SqrMagnitude(_zones[i].Center - worldPosition);
+                if (distance < minDistance)
+                    result = _zones[i];
+            }
+
             return result;
         }
-
-        /// <summary>
-        /// Get all chunks conservative belongs to given zone
-        /// </summary>
-        /// <param name="zone"></param>
-        /// <returns></returns>
-        public IEnumerable<Vector2i> GetConservativeChunks(Zone zone)
-        {
-            var centerChunk = Chunk.GetPosition(zone.Center);
-            var result = new List<Vector2i>();
-            var processed = new List<Vector2i>();
-
-            GetChunksFloodFill(zone, centerChunk, processed, result);
-            return result;
-        }
-
 
         public ZoneRatio GetInfluence(Vector2 worldPosition)
         {
@@ -84,6 +83,8 @@ namespace Assets.Code.Layout
 
             return result;
         }
+
+
 
         public ZoneRatio GetBilinearInterpolationInfluence(Vector2 position, Vector2 min, Vector2 max, ZoneRatio q11, ZoneRatio q12, ZoneRatio q21, ZoneRatio q22)
         {
@@ -151,77 +152,12 @@ namespace Assets.Code.Layout
             return (float)result;
         }
 
-        private void GetChunksFloodFill(Zone zone, Vector2i from, List<Vector2i> processed, List<Vector2i> result)
-        {
-            if (!processed.Contains(@from))
-            {
-                processed.Add(from);
+        
 
-                if (CheckChunk(from, zone))
-                {
-                    result.Add(from);    
-                    GetChunksFloodFill(zone, from + Vector2i.Forward, processed, result);
-                    GetChunksFloodFill(zone, from + Vector2i.Back, processed, result);
-                    GetChunksFloodFill(zone, from + Vector2i.Left, processed, result);
-                    GetChunksFloodFill(zone, from + Vector2i.Right, processed, result);
-                }
-            }
-        }
+        
 
-        /// <summary>
-        /// Is chunk belongs to zone?
-        /// </summary>
-        /// <param name="chunkPosition"></param>
-        /// <param name="zone"></param>
-        /// <returns></returns>
-        private bool CheckChunk(Vector2i chunkPosition, Zone zone)
-        {
-            if (!_chunksBounds.Contains(chunkPosition))
-                return false;
+        
 
-            var chunkCenter = Chunk.GetCenter(chunkPosition);
-            var distance = Vector2.SqrMagnitude(zone.Center - chunkCenter);
-
-            for (var i = 0; i < _zones.Length; i++)
-            {
-                if (_zones[i] != zone && Vector2.SqrMagnitude(_zones[i].Center - chunkCenter) < distance)
-                    return false;
-            }
-
-            return true;
-        }
-
-        private bool CheckChunkConservative(Vector2i chunkPosition, Zone zone)
-        {
-            if (!_chunksBounds.Contains(chunkPosition))
-                return false;
-
-            var chunkCenter = Chunk.GetCenter(chunkPosition);
-            var chunkBounds = Chunk.GetBounds(chunkPosition);
-            var chunkCorner1 = chunkBounds.Min;
-            var chunkCorner2 = chunkBounds.Min;
-            var chunkCorner3 = chunkBounds.Min;
-            var chunkCorner4 = chunkBounds.Min;
-            var distance = Vector2.SqrMagnitude(zone.Center - chunkCenter);
-            var distanceCorner1 = Vector2.SqrMagnitude(zone.Center - chunkCenter);
-
-            for (var i = 0; i < _zones.Length; i++)
-            {
-                if (_zones[i] != zone && Vector2.SqrMagnitude(_zones[i].Center - chunkCenter) < distance)
-                    return false;
-            }
-
-            return true;
-        }
-
-        private static Vector3 Convert(Vector2 v)
-        {
-            return new Vector3(v.x, 0, v.y);
-        }
-
-        private static Vector2 Convert(Vector3 v)
-        {
-            return new Vector2(v.x, v.z);
-        }
+        
     }
 }
