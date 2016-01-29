@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Name: Lakes
   m_EditorClassIdentifier: 
   Name: Lakes
-  LandColor_: {r: 0, g: .420689583, b: 1, a: 1}
+  LandColor_: {r: 0, g: 0.42068958, b: 1, a: 1}
   Type: 6
   DefaultBlock: 2
-  Height_: 20
+  Height_: -10
   OutScale1_: 0
   OutScale2_: 0
-  OutScale3_: 0
+  OutScale3_: 100
