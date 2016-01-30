@@ -29,7 +29,7 @@ namespace TerrainDemo
         public readonly float[,] HeightMap;
         public readonly ZoneRatio[,] Influence;
         public readonly BlockType[,] BlockType;
-        public List<Vector3> Flora = new List<Vector3>();
+        public readonly List<Vector3> Flora = new List<Vector3>();
         public Vector3[] Stones;
 
         public Chunk(int blocksCount, int blockSize, Vector2i position)

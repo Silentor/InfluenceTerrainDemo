@@ -1,19 +1,21 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using TerrainDemo.Generators;
+using TerrainDemo.Layout;
 using TerrainDemo.Settings;
-using UnityEngine;
 
 namespace TerrainDemo.Map
 {
     public class LandMap
     {
-        private readonly ILandSettings _settings;
         public readonly Dictionary<Vector2i, Chunk> Map = new Dictionary<Vector2i, Chunk>();
 
-        public LandMap(ILandSettings settings)
+        public LandLayout Layout { get; private set; }
+
+        public LandMap(ILandSettings settings, LandLayout layout)
         {
             _settings = settings;
+            Layout = layout;
         }
 
         /// <summary>
@@ -68,5 +70,28 @@ namespace TerrainDemo.Map
                 }
             }
         }
+
+        /// <summary>
+        /// Get block from land map of empty block
+        /// </summary>
+        /// <param name="position">World</param>
+        /// <returns></returns>
+        public BlockType GetBlock(Vector2i position)
+        {
+            if (_settings.LandBounds.Contains(position))
+            {
+                var chunkPosition = Chunk.GetPosition(position);
+                Chunk chunk;
+                if (Map.TryGetValue(chunkPosition, out chunk))
+                {
+                    var localPos = Chunk.GetLocalPosition(position);
+                    return chunk.BlockType[localPos.X, localPos.Z];
+                }
+            }
+
+            return BlockType.Empty;
+        }
+
+        private readonly ILandSettings _settings;
     }
 }

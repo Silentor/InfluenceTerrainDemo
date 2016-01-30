@@ -43,9 +43,11 @@ namespace TerrainDemo
 
         public Bounds2i LayoutBounds { get; private set; }
 
+        public Main Main { get; private set; }
+
         public void MeshAndVisualize(LandMap landMap)
         {
-            CreateZonesHandle(Main.Layout.Zones);
+            CreateZonesHandle(landMap.Layout.Zones);
 
             ChunkGO.Clear();
 
@@ -60,14 +62,15 @@ namespace TerrainDemo
             }
         }
 
+        public void BuildLayout()
+        {
+            Main.GenerateLayout(new PoissonClusteredLayout(this));
+        }
+
+
         public void BuildAll()
         {
-            Main.Layout = new PoissonClusteredLayout(this);
-            //Main.Layout = new RandomLayout(this);
-            //Main.Layout = new TestLayout(this);
-            //var map = Main.GenerateMap(this);
-            //MeshAndVisualize(map);
-
+            Main.GenerateLayout(new PoissonClusteredLayout(this));
             var map = Main.GenerateMap(this);
             MeshAndVisualize(map);
         }
@@ -116,7 +119,9 @@ namespace TerrainDemo
 
             _parentObject = new GameObject("Zones");
 
-            BuildAll();
+            Main = new Main(new PoissonClusteredLayout(this));
+
+            BuildLayout();
         }
 
         void OnValidate()

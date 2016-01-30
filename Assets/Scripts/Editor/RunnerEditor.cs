@@ -1,26 +1,32 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using TerrainDemo;
 using TerrainDemo.Layout;
 using TerrainDemo.Tools;
-using TerrainDemo.Voronoi;
 using UnityEditor;
 using UnityEngine;
 
-namespace Assets.Code.Editor
+namespace TerrainDemo.Editor
 {
     [CustomEditor(typeof(Runner))]
     public class RunnerEditor : UnityEditor.Editor
     {
         private Runner _target;
-        private List<ZoneLayout> _layout;
-        private Cell[] _voronoi;
+        private LandLayout _layout;
+        private Main _main;
+        private static RunnerEditor _self;
 
         void OnEnable()
         {
-            _target = (Runner)target;
+            if (Application.isPlaying)
+            {
+                _target = (Runner)target;
+                _main = _target.Main;
+                _layout = _main.LandLayout;
+                _self = this;
+            }
         }
+
+        #region Unity
 
         public override void OnInspectorGUI()
         {
@@ -28,30 +34,17 @@ namespace Assets.Code.Editor
 
             if (Application.isPlaying && _target != null)
             {
-                if (_layout == null)
-                {
-                    //Local copy
-                    _layout = Main.Layout.Zones.ToList();
-                    _voronoi = CellMeshGenerator.Generate(_layout.Select(z => z.Center), (Bounds)_target.LayoutBounds);
-                }
-
                 if (GUILayout.Button("Rebuild land"))
                 {
-                    _layout = null;
-                    _voronoi = null;
                     _target.BuildAll();
+                    _layout = _main.LandLayout;
                 }
 
-                if (_layout != null && GUILayout.Button("Create map"))
+                if (GUILayout.Button("Create map"))
                 {
-                    var map = Main.GenerateMap(_target);
+                    var map = _main.GenerateMap(_target);
                     _target.MeshAndVisualize(map);
                 }
-
-                //if (GUILayout.Button("Set layout"))
-                //{
-                //    _target.Set Layout(_layout);
-                //}
             }
         }
 
@@ -78,13 +71,14 @@ namespace Assets.Code.Editor
 
                         ShowChunkInfo(layoutHitPoint);
                         ShowZoneInfo(layoutHitPoint);
+                        ShowBlockInfo(layoutHitPoint);
                     }
                 }
             }
         }
 
-        [DrawGizmo(GizmoType.Selected, typeof(Runner))]
-        static void OnGizmoDraw(Runner target, GizmoType gizmoType)
+        [DrawGizmo(GizmoType.Selected)]
+        static void DrawGizmos(Runner target, GizmoType gizmoType)
         {
             //Draw land bounds
             DrawRectangle.ForGizmo(target.LayoutBounds, Color.gray);
@@ -101,13 +95,15 @@ namespace Assets.Code.Editor
                     var layoutHitPoint = new Vector2(layoutHitPoint3d.x, layoutHitPoint3d.z);
 
                     ShowChunkBounds(layoutHitPoint);
-                    DrawSelectedZone(target, layoutHitPoint);
+                    _self.DrawSelectedZone(target, layoutHitPoint);
                 }
 
                 //писать зону под курсором
                 //визуализировать чанки зоны, личные и общие
             }
         }
+
+        #endregion
 
         private static void ShowChunkBounds(Vector2 worldPosition)
         {
@@ -120,21 +116,21 @@ namespace Assets.Code.Editor
             DrawRectangle.ForGizmo(new Bounds2i((Vector2i)worldPosition, 1, 1), Color.gray);
         }
 
-        private static void DrawSelectedZone(Runner target, Vector2 worldPosition)
+        private void DrawSelectedZone(Runner target, Vector2 worldPosition)
         {
             //Calc zone under cursor
-            if (Main.Layout != null && Main.Layout.Zones.Any() && Main.Layout.Bounds.Contains((Vector2i)worldPosition))
+            if (_main.LandLayout != null && _main.LandLayout.Zones.Any() && _main.LandLayout.Bounds.Contains((Vector2i)worldPosition))
             {
-                var selectedZone = Main.Layout.Zones.OrderBy(z => Vector2.SqrMagnitude(z.Center - worldPosition)).First();
+                var selectedZone = _main.LandLayout.Zones.OrderBy(z => Vector2.SqrMagnitude(z.Center - worldPosition)).First();
                 var zoneColor = target[selectedZone.Type].LandColor;
 
                 Gizmos.color = zoneColor;
 
                 //Draw zone bounds
                 //foreach (var chunk in selectedZone.ChunkBounds)
-                    //DrawRectangle.ForGizmo(Chunk.GetBounds(chunk), zoneColor);
+                //DrawRectangle.ForGizmo(Chunk.GetBounds(chunk), zoneColor);
 
-                foreach (var chunk in Main.Layout.GetChunks(selectedZone))
+                foreach (var chunk in _main.LandLayout.GetChunks(selectedZone))
                     DrawRectangle.ForGizmo(Chunk.GetBounds(chunk), zoneColor);
 
                 foreach (var block in selectedZone.GetBlocks2())
@@ -155,15 +151,15 @@ namespace Assets.Code.Editor
 
                 //Draw zone chunks
                 //foreach (var chunk in Main.Layout.GetChunks(selectedZone))
-                    //DrawRectangle.ForGizmo(Chunk.GetBounds(chunk), zoneColor);
+                //DrawRectangle.ForGizmo(Chunk.GetBounds(chunk), zoneColor);
             }
         }
 
         private void ShowInfluenceInfo(Vector2 layoutPosition)
         {
-            if (Main.Layout != null)
+            if (_layout != null)
             {
-                var influence = Main.Layout.GetInfluence(layoutPosition);
+                var influence = _layout.GetInfluence(layoutPosition);
 
                 Handles.BeginGUI();
 
@@ -194,25 +190,25 @@ namespace Assets.Code.Editor
 
         private void ShowZoneLayoutEditor()
         {
-            if (_voronoi != null)
+            var zones = _layout.Zones.ToArray();
             {
                 Handles.matrix = Matrix4x4.identity;
 
-                var newCenters = _voronoi.Select(c => Convert(c.Center)).ToArray();
+                var newCenters = zones.Select(c => Convert(c.Center)).ToArray();
 
-                for (int i = 0; i < _voronoi.Count(); i++)
+                for (int i = 0; i < zones.Count(); i++)
                 {
-                    var cell = _voronoi.ElementAt(i);
-                    Handles.color = _layout[i].Type != ZoneType.Empty ? _target.Zones.First(zs => zs.Type == _layout[i].Type).LandColor : Color.black;
+                    var zone = zones[i];
+                    Handles.color = _layout.Zones.ElementAt(i).Type != ZoneType.Empty ? _target[zone.Type].LandColor : Color.black;
 
                     //Draw edges
-                    foreach (var edge in cell.Edges)
+                    foreach (var edge in zone.Cell.Edges)
                         Handles.DrawAAPolyLine(Convert(edge.Vertex1), Convert(edge.Vertex2));
 
                     //Draw fill
-                    Handles.color = new Color(Handles.color.r/2, Handles.color.g/2, Handles.color.b/2, Handles.color.a / 2);
-                    foreach (var vert in cell.Vertices)
-                        Handles.DrawLine(Convert(cell.Center), Convert(vert));
+                    Handles.color = new Color(Handles.color.r / 2, Handles.color.g / 2, Handles.color.b / 2, Handles.color.a / 2);
+                    foreach (var vert in zone.Cell.Vertices)
+                        Handles.DrawLine(Convert(zone.Center), Convert(vert));
 
                     newCenters[i] = Handles.Slider2D(newCenters[i], Vector3.forward, Vector3.forward, Vector3.right, 5, Handles.SphereCap, 0);
                 }
@@ -241,12 +237,12 @@ namespace Assets.Code.Editor
             Handles.EndGUI();
         }
 
-        private static void ShowZoneInfo(Vector2 worldPosition)
+        private void ShowZoneInfo(Vector2 worldPosition)
         {
             //Calc zone under cursor
-            if (Main.Layout != null && Main.Layout.Zones.Any() && Main.Layout.Bounds.Contains((Vector2i)worldPosition))
+            if (_layout != null && _layout.Zones.Any() && _layout.Bounds.Contains((Vector2i)worldPosition))
             {
-                var selectedZone = Main.Layout.Zones.OrderBy(z => Vector2.SqrMagnitude(z.Center - worldPosition)).First();
+                var selectedZone = _layout.Zones.OrderBy(z => Vector2.SqrMagnitude(z.Center - worldPosition)).First();
 
                 Handles.BeginGUI();
                 GUILayout.BeginArea(new Rect(0, Screen.height - 200, 200, 110));
@@ -254,6 +250,22 @@ namespace Assets.Code.Editor
                 GUILayout.EndArea();
                 Handles.EndGUI();
             }
+        }
+
+        private void ShowBlockInfo(Vector2 worldPosition)
+        {
+            if (_main.Map == null)
+                return;
+
+            //Calc block under cursor
+            var blockPos = (Vector2i) worldPosition;
+            var block = _main.Map.GetBlock(blockPos);
+
+            Handles.BeginGUI();
+            GUILayout.BeginArea(new Rect(0, Screen.height - 400, 200, 110));
+            GUILayout.Label("Block: " + block);
+            GUILayout.EndArea();
+            Handles.EndGUI();
         }
 
         private static Vector3 Convert(Vector2 v)

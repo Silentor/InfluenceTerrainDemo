@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using JetBrains.Annotations;
 using TerrainDemo.Generators;
 using TerrainDemo.Layout;
 using TerrainDemo.Map;
@@ -8,28 +10,41 @@ using Debug = UnityEngine.Debug;
 
 namespace TerrainDemo
 {
-    public static class Main
+    public class Main
     {
-        public static LandLayout Layout { get; set; }
+        public LandLayout LandLayout { get; private set; }
+        public LandMap Map { get; private set; }
 
-        public static Land Land { get; private set; }
+        public Main([NotNull] LandLayout landLayout)
+        {
+            if (landLayout == null) throw new ArgumentNullException("landLayout");
+            LandLayout = landLayout;
+        }
 
-        public static LandMap GenerateMap(ILandSettings settings)
+        public void GenerateLayout([NotNull] LandLayout landLayout)
+        {
+            if (landLayout == null) throw new ArgumentNullException("landLayout");
+
+            //Empty for now
+            LandLayout = landLayout;
+        }
+
+        public LandMap GenerateMap(ILandSettings settings)
         {
             var time = Stopwatch.StartNew();
 
             //Land = new Land(Layout, settings);
 
             //Generate land's chunks
-            var map = new LandMap(settings);
-            var landGenerator = new LandGenerator(Layout, settings);
-            var result = landGenerator.Generate(map);
+            var map = new LandMap(settings, LandLayout);
+            var landGenerator = new LandGenerator(LandLayout, settings);
+            Map = landGenerator.Generate(map);
 
             time.Stop();
             //Debug.Log(Land.GetStaticstics());
             Debug.Log(string.Format("Total {0} ms", time.ElapsedMilliseconds));
 
-            return result;
+            return Map;
         }
 
 

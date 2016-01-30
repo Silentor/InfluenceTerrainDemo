@@ -6,8 +6,6 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using Debug = UnityEngine.Debug;
 
-//using OpenTK;
-
 namespace TerrainDemo.Voronoi
 {
     public static class CellMeshGenerator
