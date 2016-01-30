@@ -19,6 +19,8 @@ namespace TerrainDemo
         public LandNoiseSettings LandNoiseSettings;
         public ZoneSettings[] Zones;
         public Vector2 ZonesDensity = new Vector2(30, 40);
+        public bool GenerateSeed = true;
+        public int LandSeed = 0;
 
         [Header("Influence settings")]
         public float IDWCoeff = 2;
@@ -64,12 +66,14 @@ namespace TerrainDemo
 
         public void BuildLayout()
         {
+            SetSeed();
             Main.GenerateLayout(new PoissonClusteredLayout(this));
         }
 
 
         public void BuildAll()
         {
+            SetSeed();
             Main.GenerateLayout(new PoissonClusteredLayout(this));
             var map = Main.GenerateMap(this);
             MeshAndVisualize(map);
@@ -106,10 +110,19 @@ namespace TerrainDemo
         private ZoneSettings[] _zoneSettingsLookup;
         private GameObject _parentObject;
 
+        private void SetSeed()
+        {
+            if (GenerateSeed)
+                LandSeed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
+            UnityEngine.Random.seed = LandSeed;
+        }
+
         #region Unity
 
         void Awake()
         {
+            SetSeed();
+
             if (BlockSize*BlocksCount != Chunk.Size)
                 throw new ArgumentException("Block size and blocks count invalid");
 

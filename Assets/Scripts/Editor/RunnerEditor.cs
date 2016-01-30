@@ -134,7 +134,10 @@ namespace TerrainDemo.Editor
                     DrawRectangle.ForGizmo(Chunk.GetBounds(chunk), zoneColor);
 
                 foreach (var block in selectedZone.GetBlocks2())
-                    DrawRectangle.ForGizmo(new Bounds2i(block, 1, 1), zoneColor);
+                {
+                    var blockBounds = new Bounds2i(block, 1, 1);
+                    DrawRectangle.ForGizmo(blockBounds, zoneColor);
+                }
 
                 //Draw additional rays to highlight zone
                 foreach (var edge in selectedZone.Cell.Edges)
@@ -246,7 +249,8 @@ namespace TerrainDemo.Editor
 
                 Handles.BeginGUI();
                 GUILayout.BeginArea(new Rect(0, Screen.height - 200, 200, 110));
-                GUILayout.Label("Zone " + selectedZone.Type);
+                GUILayout.Label(string.Format("Zone {0} - {1}", selectedZone.Cell.Id, selectedZone.Type));
+                GUILayout.Label(string.Format("Is closed: {0}", selectedZone.Cell.IsClosed));
                 GUILayout.EndArea();
                 Handles.EndGUI();
             }
@@ -271,6 +275,11 @@ namespace TerrainDemo.Editor
         private static Vector3 Convert(Vector2 v)
         {
             return new Vector3(v.x, 0, v.y);
+        }
+
+        private static Vector3 Convert(Vector2i v)
+        {
+            return Convert((Vector2) v);
         }
 
         private static Vector2 Convert(Vector3 v)

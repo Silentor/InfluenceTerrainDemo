@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using TerrainDemo.Layout;
 using TerrainDemo.Map;
 using TerrainDemo.Settings;
@@ -19,7 +20,7 @@ namespace TerrainDemo.Generators
         /// <param name="map"></param>
         public LandMap Generate(LandMap map)
         {
-            foreach (var zoneMarkup in _land.Zones)
+            foreach (var zoneMarkup in _land.Zones.Where(z => z.Cell.IsClosed))
             {
                 ZoneGenerator generator = null;
                 if (zoneMarkup.Type == ZoneType.Hills)

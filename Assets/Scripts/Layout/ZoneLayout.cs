@@ -62,7 +62,8 @@ namespace TerrainDemo.Layout
             foreach (var edge in Cell.Edges)
                 edges.AddRange(DDA(edge.Vertex1, edge.Vertex2));
 
-            edges = edges.Distinct().ToList();
+            var bounds = Bounds;
+            edges = edges.Where(e => bounds.Contains(e)).Distinct().ToList();
             edges.Sort();
 
             for (int i = 0; i < edges.Count;)
@@ -297,7 +298,7 @@ namespace TerrainDemo.Layout
             }
 
             // set final pixel
-            yield return (Vector2i)p2;
+            //yield return (Vector2i)p2;
         }
 
 

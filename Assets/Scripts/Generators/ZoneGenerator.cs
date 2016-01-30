@@ -20,7 +20,7 @@ namespace TerrainDemo.Generators
             var zoneNormalmap = new Vector3[zoneBounds.Size.X + 1, zoneBounds.Size.Z + 1];
             var zoneBlocks = new BlockType[zoneBounds.Size.X, zoneBounds.Size.Z];
 
-            Blocks = _zone.GetBlocks().ToArray();
+            Blocks = _zone.GetBlocks2().ToArray();
             foreach (var blockPos in Blocks)
             {
                 var localPos = blockPos - zoneBounds.Min;
