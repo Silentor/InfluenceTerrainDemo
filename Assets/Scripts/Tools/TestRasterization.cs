@@ -32,7 +32,7 @@ namespace TerrainDemo.Tools
                 var p1 = new Vector2(_handle1.transform.position.x, _handle1.transform.position.z);
                 var p2 = new Vector2(_handle2.transform.position.x, _handle2.transform.position.z);
 
-                var points = ZoneLayout.DDA(p1, p2);
+                var points = Rasterization.DDA(p1, p2);
                 foreach (var p in points)
                     DrawRectangle.ForGizmo(new Bounds2i(p, 1, 1));
             }

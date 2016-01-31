@@ -3,6 +3,7 @@ using System.Linq;
 using TerrainDemo.Generators;
 using TerrainDemo.Layout;
 using TerrainDemo.Settings;
+using TerrainDemo.Tools;
 using UnityEngine;
 
 namespace TerrainDemo.Map
@@ -97,6 +98,49 @@ namespace TerrainDemo.Map
             }
 
             return new BlockInfo(position, BlockType.Empty, 0, Vector3.zero);
+        }
+
+        public Vector3? GetRayMapIntersection(Ray ray)
+        {
+            var from = new Vector2(ray.origin.x, ray.origin.z);
+            var to = new Vector2(ray.GetPoint(100).x, ray.GetPoint(100).z);
+            var blocks = Rasterization.DDA(from, to);
+
+            foreach (var blockPos in blocks)
+            {
+                if (_settings.LandBounds.Contains(blockPos))
+                {
+                    var chunkPosition = Chunk.GetPosition(blockPos);
+                    Chunk chunk;
+                    if (Map.TryGetValue(chunkPosition, out chunk))
+                    {
+                        var localPos = Chunk.GetLocalPosition(blockPos);
+                        var tr1 = new Vector3(blockPos.X, chunk.HeightMap[localPos.X, localPos.Z], blockPos.Z);
+                        var tr2 = new Vector3(blockPos.X + 1, chunk.HeightMap[localPos.X + 1, localPos.Z], blockPos.Z);
+                        var tr3 = new Vector3(blockPos.X, chunk.HeightMap[localPos.X, localPos.Z + 1], blockPos.Z + 1);
+                        var tr4 = new Vector3(blockPos.X + 1, chunk.HeightMap[localPos.X + 1, localPos.Z + 1], blockPos.Z + 1);
+
+                        Vector3 i;
+                        var ir = Intersections.LineTriangleIntersection(ray, tr1, tr2, tr3, out i);
+                        if (ir == 1)
+                        {
+                            DrawRectangle.ForDebug(tr1, tr2, tr4, tr3, Color.red);
+                            return i;
+                        }
+                        else
+                        {
+                            ir = Intersections.LineTriangleIntersection(ray, tr2, tr3, tr4, out i);
+                            if (ir == 1)
+                            {
+                                DrawRectangle.ForDebug(tr1, tr2, tr4, tr3, Color.red);
+                                return i;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return null;
         }
 
         private readonly ILandSettings _settings;

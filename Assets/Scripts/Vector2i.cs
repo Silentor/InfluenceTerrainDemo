@@ -30,6 +30,8 @@ namespace TerrainDemo
             Left + Back, Right + Back,
         };
 
+        internal const float ConversionOffset = 0.999f;
+
         public Vector2i(int x, int z)
         {
             this.X = x;
@@ -38,7 +40,7 @@ namespace TerrainDemo
 
         public Vector2i(float x, float z)
         {
-            var tempValue = (Vector2i)(new Vector2(x, z));
+            var tempValue = (Vector2i)new Vector2(x, z);
             X = tempValue.X;
             Z = tempValue.Z;
         }
@@ -132,15 +134,15 @@ namespace TerrainDemo
 
         public static explicit operator Vector2i(Vector2 v)
         {
-            var resultX = v.x >= 0 ? (int) v.x : (int) (v.x - 0.999f);
-            var resultZ = v.y >= 0 ? (int)v.y : (int)(v.y - 0.999f);
+            var resultX = v.x >= 0 ? (int) v.x : (int) (v.x - ConversionOffset);
+            var resultZ = v.y >= 0 ? (int)v.y : (int)(v.y - ConversionOffset);
             return new Vector2i(resultX, resultZ);
         }
 
         public static explicit operator Vector2i(Vector3 v)
         {
-            var resultX = v.x >= 0 ? (int)v.x : (int)(v.x - 0.999f);
-            var resultZ = v.z >= 0 ? (int)v.z : (int)(v.z - 0.999f);
+            var resultX = v.x >= 0 ? (int)v.x : (int)(v.x - ConversionOffset);
+            var resultZ = v.z >= 0 ? (int)v.z : (int)(v.z - ConversionOffset);
             return new Vector2i(resultX, resultZ);
         }
 

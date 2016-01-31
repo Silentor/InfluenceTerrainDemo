@@ -100,6 +100,17 @@ namespace TerrainDemo.Editor
 
                 //писать зону под курсором
                 //визуализировать чанки зоны, личные и общие
+
+                //Draw cursor-map intersection
+                if (_self._main.Map != null)
+                {
+                    var mapInter = _self._main.Map.GetRayMapIntersection(worldRay);
+                    if (mapInter != null)
+                    {
+                        Gizmos.color = Color.red;
+                        Gizmos.DrawSphere(mapInter.Value, 0.2f);
+                    }
+                }
             }
         }
 

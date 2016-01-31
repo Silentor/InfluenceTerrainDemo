@@ -35,5 +35,13 @@ namespace TerrainDemo.Tools
             Debug.DrawLine(corner3, corner4, color, duration);
             Debug.DrawLine(corner4, corner1, color, duration);
         }
+
+        public static void ForDebug(Vector3 r1, Vector3 r2, Vector3 r3, Vector3 r4, Color color, float duration = 0)
+        {
+            Debug.DrawLine(r1, r2, color, duration);
+            Debug.DrawLine(r2, r3, color, duration);
+            Debug.DrawLine(r3, r4, color, duration);
+            Debug.DrawLine(r4, r1, color, duration);
+        }
     }
 }
