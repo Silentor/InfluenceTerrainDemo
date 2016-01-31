@@ -29,6 +29,7 @@ namespace TerrainDemo
         public readonly float[,] HeightMap;
         public readonly ZoneRatio[,] Influence;
         public readonly BlockType[,] BlockType;
+        public readonly Vector3[,] NormalMap;
         public readonly List<Vector3> Flora = new List<Vector3>();
         public Vector3[] Stones;
 
@@ -41,6 +42,7 @@ namespace TerrainDemo
             HeightMap = new float[GridSize, GridSize];
             Influence = new ZoneRatio[GridSize, GridSize];
             BlockType = new BlockType[BlocksCount, BlocksCount];
+            NormalMap = new Vector3[GridSize, GridSize];
 
             //Debug
             Test();

@@ -225,19 +225,36 @@ namespace TerrainDemo.Editor
             }
         }
 
-        private static void ShowChunkInfo(Vector2 worldPosition)
+        private void ShowChunkInfo(Vector2 worldPosition)
         {
             var chunkPos = Chunk.GetPosition(worldPosition);
             var chunkBounds = Chunk.GetBounds(chunkPos);
+            var localPos = Chunk.GetLocalPosition(worldPosition);
+            var blockPos = (Vector2i)worldPosition;
 
             Handles.BeginGUI();
             GUILayout.BeginArea(new Rect(0, Screen.height - 120, 200, 110));
             GUILayout.Label("World_f " + worldPosition);
-            GUILayout.Label("World_i " + (Vector2i)worldPosition);
-            GUILayout.Label("Chunk " + chunkPos + " : " + Chunk.GetLocalPosition(worldPosition));
+            GUILayout.Label("World_i " + blockPos);
+            GUILayout.Label("Chunk " + chunkPos + " : " + localPos);
             GUILayout.Label("Bounds " + chunkBounds.Min + "-" + chunkBounds.Max);
             GUILayout.EndArea();
             Handles.EndGUI();
+
+            if (_main.Map != null)
+            {
+                Chunk chunk;
+                if (_main.Map.Map.TryGetValue(chunkPos, out chunk))
+                {
+                    var vertNormal = chunk.NormalMap[localPos.X, localPos.Z];
+                    var vertHeight = chunk.HeightMap[localPos.X, localPos.Z];
+                    if (vertNormal != Vector3.zero)
+                    {
+                        Handles.color = Color.red;
+                        Handles.ArrowCap(0, new Vector3(blockPos.X, vertHeight, blockPos.Z),
+                            Quaternion.LookRotation(vertNormal, Vector3.up), 1);}
+                }
+            }
         }
 
         private void ShowZoneInfo(Vector2 worldPosition)
@@ -267,9 +284,13 @@ namespace TerrainDemo.Editor
 
             Handles.BeginGUI();
             GUILayout.BeginArea(new Rect(0, Screen.height - 400, 200, 110));
-            GUILayout.Label("Block: " + block);
+            GUILayout.Label("Block: " + block.Type);
+            GUILayout.Label(string.Format("Block height: {0:F1}", block.Height));
+            GUILayout.Label("Block inclination: " + (int)Vector3.Angle(block.Normal, Vector3.up));
             GUILayout.EndArea();
             Handles.EndGUI();
+
+            
         }
 
         private static Vector3 Convert(Vector2 v)
