@@ -53,7 +53,7 @@ namespace TerrainDemo.Editor
             //Get intersection points
             if (Application.isPlaying)
             {
-                ShowZoneLayoutEditor();
+                ShowZoneLayout();
 
                 var pos = Event.current.mousePosition;
                 if (pos.x >= 0 && pos.x <= Screen.width && pos.y >= 0 && pos.y <= Screen.height)
@@ -80,32 +80,32 @@ namespace TerrainDemo.Editor
         [DrawGizmo(GizmoType.Selected)]
         static void DrawGizmos(Runner target, GizmoType gizmoType)
         {
+            _self.DrawGizmos2();
+        }
+
+        private void DrawGizmos2()
+        {
             //Draw land bounds
-            DrawRectangle.ForGizmo(target.LayoutBounds, Color.gray);
+            DrawRectangle.ForGizmo(_target.LayoutBounds, Color.gray);
 
             //Get intersection points
             if (Application.isPlaying)
             {
-                var worldRay = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
-                var worldPlane = new Plane(Vector3.up, Vector3.zero);
-                float hitDistance;
-                if (worldPlane.Raycast(worldRay, out hitDistance))
+                if (IsLayoutMode())
                 {
-                    var layoutHitPoint3d = worldRay.GetPoint(hitDistance);
-                    var layoutHitPoint = new Vector2(layoutHitPoint3d.x, layoutHitPoint3d.z);
-
-                    ShowChunkBounds(layoutHitPoint);
-                    _self.DrawSelectedZone(target, layoutHitPoint);
+                    var layoutHit = GetLayoutIntersection();
+                    if (layoutHit.HasValue)
+                    {
+                        ShowChunkAndBlockBounds(layoutHit.Value);
+                        DrawSelectedZone(layoutHit.Value);
+                    }
                 }
 
-                //писать зону под курсором
-                //визуализировать чанки зоны, личные и общие
-
-                //Draw cursor-map intersection
-                if (_self._main.Map != null)
+                if (IsMapMode())
                 {
-                    var mapInter = _self._main.Map.GetRayMapIntersection(worldRay);
-                    if (mapInter != null)
+                    //Draw cursor-map intersection
+                    var mapInter = GetMapIntersection();
+                    if (mapInter.HasValue)
                     {
                         Gizmos.color = Color.red;
                         Gizmos.DrawSphere(mapInter.Value, 0.2f);
@@ -116,7 +116,7 @@ namespace TerrainDemo.Editor
 
         #endregion
 
-        private static void ShowChunkBounds(Vector2 worldPosition)
+        private void ShowChunkAndBlockBounds(Vector2 worldPosition)
         {
             //Draw chunk bounds
             var chunkPos = Chunk.GetPosition(worldPosition);
@@ -127,13 +127,13 @@ namespace TerrainDemo.Editor
             DrawRectangle.ForGizmo(new Bounds2i((Vector2i)worldPosition, 1, 1), Color.gray);
         }
 
-        private void DrawSelectedZone(Runner target, Vector2 worldPosition)
+        private void DrawSelectedZone(Vector2 worldPosition)
         {
             //Calc zone under cursor
             if (_main.LandLayout != null && _main.LandLayout.Zones.Any() && _main.LandLayout.Bounds.Contains((Vector2i)worldPosition))
             {
                 var selectedZone = _main.LandLayout.Zones.OrderBy(z => Vector2.SqrMagnitude(z.Center - worldPosition)).First();
-                var zoneColor = target[selectedZone.Type].LandColor;
+                var zoneColor = _target[selectedZone.Type].LandColor;
 
                 Gizmos.color = zoneColor;
 
@@ -202,38 +202,42 @@ namespace TerrainDemo.Editor
             }
         }
 
-        private void ShowZoneLayoutEditor()
+        private void ShowZoneLayout()
         {
+            if (!IsLayoutMode())
+                return;
+
             var zones = _layout.Zones.ToArray();
+            Handles.matrix = Matrix4x4.identity;
+
+            var newCenters = zones.Select(c => Convert(c.Center)).ToArray();
+
+            for (int i = 0; i < zones.Count(); i++)
             {
-                Handles.matrix = Matrix4x4.identity;
+                var zone = zones[i];
+                Handles.color = _layout.Zones.ElementAt(i).Type != ZoneType.Empty
+                    ? _target[zone.Type].LandColor
+                    : Color.black;
 
-                var newCenters = zones.Select(c => Convert(c.Center)).ToArray();
+                //Draw edges
+                foreach (var edge in zone.Cell.Edges)
+                    Handles.DrawAAPolyLine(Convert(edge.Vertex1), Convert(edge.Vertex2));
 
-                for (int i = 0; i < zones.Count(); i++)
-                {
-                    var zone = zones[i];
-                    Handles.color = _layout.Zones.ElementAt(i).Type != ZoneType.Empty ? _target[zone.Type].LandColor : Color.black;
+                //Draw fill
+                Handles.color = new Color(Handles.color.r/2, Handles.color.g/2, Handles.color.b/2, Handles.color.a/2);
+                foreach (var vert in zone.Cell.Vertices)
+                    Handles.DrawLine(Convert(zone.Center), Convert(vert));
 
-                    //Draw edges
-                    foreach (var edge in zone.Cell.Edges)
-                        Handles.DrawAAPolyLine(Convert(edge.Vertex1), Convert(edge.Vertex2));
-
-                    //Draw fill
-                    Handles.color = new Color(Handles.color.r / 2, Handles.color.g / 2, Handles.color.b / 2, Handles.color.a / 2);
-                    foreach (var vert in zone.Cell.Vertices)
-                        Handles.DrawLine(Convert(zone.Center), Convert(vert));
-
-                    newCenters[i] = Handles.Slider2D(newCenters[i], Vector3.forward, Vector3.forward, Vector3.right, 5, Handles.SphereCap, 0);
-                }
-
-                //if (GUI.changed)
-                //{
-                //    _voronoi = CellMeshGenerator.Generate(newCenters.Select(c => Convert(c)), (Bounds)_target.LayoutBounds);
-                //    for (int i = 0; i < newCenters.Length; i++)
-                //        _layout[i] = new Zone(_voronoi[i], _layout[i].Type);
-                //}
+                newCenters[i] = Handles.Slider2D(newCenters[i], Vector3.forward, Vector3.forward, Vector3.right, 5,
+                    Handles.SphereCap, 0);
             }
+
+            //if (GUI.changed)
+            //{
+            //    _voronoi = CellMeshGenerator.Generate(newCenters.Select(c => Convert(c)), (Bounds)_target.LayoutBounds);
+            //    for (int i = 0; i < newCenters.Length; i++)
+            //        _layout[i] = new Zone(_voronoi[i], _layout[i].Type);
+            //}
         }
 
         private void ShowChunkInfo(Vector2 worldPosition)
@@ -303,6 +307,59 @@ namespace TerrainDemo.Editor
 
             
         }
+
+        private bool IsLayoutMode()
+        {
+            return _main.Map == null ||
+                   (SceneView.currentDrawingSceneView.camera.orthographic &&
+                    Vector3.Angle(SceneView.currentDrawingSceneView.camera.transform.forward, Vector3.down) < 1);
+        }
+
+        private bool IsMapMode()
+        {
+            return _main.Map != null;
+        }
+
+        /// <summary>
+        /// Get cursor-map intersection point
+        /// </summary>
+        /// <returns>null if cursor is not on map of map is not generated</returns>
+        private Vector3? GetMapIntersection()
+        {
+            if (Application.isPlaying && _main.Map != null)
+            {
+                var worldRay = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
+                return _main.Map.GetRayMapIntersection(worldRay);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Get cursor-layout intersection point
+        /// </summary>
+        /// <returns>null if cursor is not on map of map is not generated</returns>
+        private Vector2? GetLayoutIntersection()
+        {
+            if (Application.isPlaying)
+            {
+                {
+                    var worldRay = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
+                    var worldPlane = new Plane(Vector3.up, Vector3.zero);
+                    float hitDistance;
+                    if (worldPlane.Raycast(worldRay, out hitDistance))
+                    {
+                        var layoutHitPoint3d = worldRay.GetPoint(hitDistance);
+                        var layoutHitPoint = new Vector2(layoutHitPoint3d.x, layoutHitPoint3d.z);
+                        if (_main.LandLayout.Bounds.Contains((Vector2i) layoutHitPoint))
+                            return layoutHitPoint;
+                    }
+                }
+            }
+
+            return null;
+        }
+
 
         private static Vector3 Convert(Vector2 v)
         {
