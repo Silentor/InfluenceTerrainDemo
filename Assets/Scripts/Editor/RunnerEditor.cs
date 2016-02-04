@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Assets.Code.Tools;
 using TerrainDemo.Layout;
@@ -84,7 +85,7 @@ namespace TerrainDemo.Editor
         [DrawGizmo(GizmoType.Selected)]
         static void DrawGizmos(Runner target, GizmoType gizmoType)
         {
-            if(_self != null)
+            if(Application.isPlaying && _self != null)
                 _self.DrawGizmos2();
         }
 
@@ -123,6 +124,8 @@ namespace TerrainDemo.Editor
 
         private void DrawChunkAndBlock(Vector2 worldPosition)
         {
+            const float yOffset = 0.1f;
+
             if (IsMapMode())
             {
                 var chunkPos = Chunk.GetPosition(worldPosition);
@@ -131,14 +134,14 @@ namespace TerrainDemo.Editor
                 {
                     //Draw chunk bounds
                     var chunkBounds = (Bounds)Chunk.GetBounds(chunkPos);
-                    const float yOffset = 0.1f;
+                    
                     var r1 = new Vector3(chunkBounds.min.x, chunk.HeightMap[0, 0] + yOffset, chunkBounds.min.z);
                     var r2 = new Vector3(chunkBounds.max.x, chunk.HeightMap[chunk.GridSize - 1, 0] + yOffset, chunkBounds.min.z);
                     var r3 = new Vector3(chunkBounds.min.x, chunk.HeightMap[0, chunk.GridSize - 1] + yOffset, chunkBounds.max.z);
                     var r4 = new Vector3(chunkBounds.max.x, chunk.HeightMap[chunk.GridSize - 1, chunk.GridSize - 1] + yOffset,
                         chunkBounds.max.z);
 
-                    DrawRectangle.ForDebug(r1, r2, r4, r3, Color.red);
+                    DrawPolyline.ForGizmo(GetChunkPolyBound(chunk, yOffset), Color.red);
 
                     //Draw block bounds
                     var blockPos = (Vector2i) worldPosition;
@@ -408,6 +411,37 @@ namespace TerrainDemo.Editor
             return _cachedLayoutIntersection;
         }
 
+        private Vector3[] GetChunkPolyBound(Chunk chunk, float yOffset)
+        {
+            var result = new List<Vector3>();
+            var chunkWorldPos = (Vector3)Chunk.GetBounds(chunk.Position).Min;
+
+            for (int i = 0; i < chunk.GridSize; i++)
+            {
+                var localPos = new Vector3(0, chunk.HeightMap[0, i] + yOffset, i);
+                result.Add(chunkWorldPos + localPos);
+            }
+
+            for (int i = 0; i < chunk.GridSize; i++)
+            {
+                var localPos = new Vector3(i, chunk.HeightMap[i, chunk.GridSize - 1] + yOffset, chunk.GridSize - 1);
+                result.Add(chunkWorldPos + localPos);
+            }
+
+            for (int i = chunk.GridSize - 1; i >= 0; i--)
+            {
+                var localPos = new Vector3(chunk.GridSize - 1, chunk.HeightMap[chunk.GridSize - 1, i] + yOffset, i);
+                result.Add(chunkWorldPos + localPos);
+            }
+
+            for (int i = chunk.GridSize - 1; i >= 0; i--)
+            {
+                var localPos = new Vector3(i, chunk.HeightMap[i, 0] + yOffset, 0);
+                result.Add(chunkWorldPos + localPos);
+            }
+
+            return result.ToArray();
+        }
 
         private static Vector3 Convert(Vector2 v)
         {
