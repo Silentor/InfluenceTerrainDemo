@@ -60,9 +60,6 @@ namespace TerrainDemo.Map
                             chunk.Influence[localChunkPos.X, localChunkPos.Z + 1] = content.Influences[localZonePos.X, localZonePos.Z + 1];
                             chunk.Influence[localChunkPos.X + 1, localChunkPos.Z + 1] = content.Influences[localZonePos.X + 1, localZonePos.Z + 1];
                             chunk.NormalMap[localChunkPos.X, localChunkPos.Z] = content.NormalMap[localZonePos.X, localZonePos.Z];
-                            chunk.NormalMap[localChunkPos.X + 1, localChunkPos.Z] = content.NormalMap[localZonePos.X + 1, localZonePos.Z];
-                            chunk.NormalMap[localChunkPos.X, localChunkPos.Z + 1] = content.NormalMap[localZonePos.X, localZonePos.Z + 1];
-                            chunk.NormalMap[localChunkPos.X + 1, localChunkPos.Z + 1] = content.NormalMap[localZonePos.X + 1, localZonePos.Z + 1];
                             chunk.BlockType[localChunkPos.X, localChunkPos.Z] = content.Blocks[localZonePos.X, localZonePos.Z];
                         }
                     }
@@ -103,7 +100,7 @@ namespace TerrainDemo.Map
         public Vector3? GetRayMapIntersection(Ray ray)
         {
             var from = new Vector2(ray.origin.x, ray.origin.z);
-            var to = new Vector2(ray.GetPoint(100).x, ray.GetPoint(100).z);
+            var to = new Vector2(ray.GetPoint(1000).x, ray.GetPoint(1000).z);
             var blocks = Rasterization.DDA(from, to);
 
             foreach (var blockPos in blocks)
@@ -124,7 +121,6 @@ namespace TerrainDemo.Map
                         var ir = Intersections.LineTriangleIntersection(ray, tr1, tr2, tr3, out i);
                         if (ir == 1)
                         {
-                            DrawRectangle.ForDebug(tr1, tr2, tr4, tr3, Color.red);
                             return i;
                         }
                         else
@@ -132,7 +128,6 @@ namespace TerrainDemo.Map
                             ir = Intersections.LineTriangleIntersection(ray, tr2, tr3, tr4, out i);
                             if (ir == 1)
                             {
-                                DrawRectangle.ForDebug(tr1, tr2, tr4, tr3, Color.red);
                                 return i;
                             }
                         }

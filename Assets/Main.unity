@@ -114,7 +114,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ZonesCount: 100
-  LandSize: 20
+  LandSize: 10
   LandNoiseSettings: {fileID: 11400000, guid: d7826460041438940b2a318c07207ed6, type: 2}
   Zones:
   - {fileID: 11400000, guid: efe303b16c6dfa0419eaeabce0cc1f5a, type: 2}
@@ -146,6 +146,7 @@ MonoBehaviour:
     Color: {r: 0.9137111, g: 0.9558824, b: 0.9506473, a: 1}
   Tree: {fileID: 178060, guid: 69ee204600497b94797abb82b51602bd, type: 2}
   Stone: {fileID: 127540, guid: cdcdb6005d769124082a23208f27a7ce, type: 2}
+  EditorSkin: {fileID: 11400000, guid: a2cf74fc94d946a46ab009d6c347299e, type: 2}
 --- !u!4 &214652176
 Transform:
   m_ObjectHideFlags: 0

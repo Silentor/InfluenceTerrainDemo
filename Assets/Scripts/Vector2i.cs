@@ -132,6 +132,11 @@ namespace TerrainDemo
             return new Vector2(v.X, v.Z);
         }
 
+        public static explicit operator Vector3(Vector2i v)
+        {
+            return new Vector3(v.X, 0, v.Z);
+        }
+
         public static explicit operator Vector2i(Vector2 v)
         {
             var resultX = v.x >= 0 ? (int) v.x : (int) (v.x - ConversionOffset);

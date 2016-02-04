@@ -5,7 +5,7 @@ namespace TerrainDemo
 {
     public class Chunk
     {
-        public const int Size = 16;
+        public const int Size = 16;                 //Chunk linear size (meters) = BlockSize * BlockCount
         private const int Shift = 4;
         private const int Mask = 0x0F;
 
@@ -42,7 +42,7 @@ namespace TerrainDemo
             HeightMap = new float[GridSize, GridSize];
             Influence = new ZoneRatio[GridSize, GridSize];
             BlockType = new BlockType[BlocksCount, BlocksCount];
-            NormalMap = new Vector3[GridSize, GridSize];
+            NormalMap = new Vector3[BlocksCount, BlocksCount];
 
             //Debug
             Test();
@@ -56,6 +56,17 @@ namespace TerrainDemo
         public static Vector2 GetCenter(Vector2i chunkPosition)
         {
             return new Vector2((chunkPosition.X << Shift) + Size / 2, (chunkPosition.Z << Shift) + Size / 2);
+        }
+
+        /// <summary>
+        /// Get world block position
+        /// </summary>
+        /// <param name="chunkPosition"></param>
+        /// <param name="localPosition">Local block position in chunk</param>
+        /// <returns></returns>
+        public static Vector2i GetWorldPosition(Vector2i chunkPosition, Vector2i localPosition)
+        {
+            return new Vector2i(chunkPosition.X << Shift | (localPosition.X & Mask), chunkPosition.Z << Shift | (localPosition.Z & Mask));
         }
 
         public static Vector2i GetPosition(Vector2 worldPosition)

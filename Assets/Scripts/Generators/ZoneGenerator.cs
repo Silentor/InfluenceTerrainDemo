@@ -17,7 +17,7 @@ namespace TerrainDemo.Generators
             var zoneBounds = _zone.Bounds;
             var zoneInfluences = new ZoneRatio[zoneBounds.Size.X + 1, zoneBounds.Size.Z + 1];
             var zoneHeightmap = new float[zoneBounds.Size.X + 1, zoneBounds.Size.Z + 1];
-            var zoneNormalmap = new Vector3[zoneBounds.Size.X + 1, zoneBounds.Size.Z + 1];
+            var zoneNormalmap = new Vector3[zoneBounds.Size.X, zoneBounds.Size.Z];
             var zoneBlocks = new BlockType[zoneBounds.Size.X, zoneBounds.Size.Z];
 
             Blocks = _zone.GetBlocks2().ToArray();
@@ -131,9 +131,10 @@ namespace TerrainDemo.Generators
 
         private Vector3 CalculateNormal(Vector2i localBlockPos, float[,] zoneHeightmap)
         {
+            //Based on http://gamedev.stackexchange.com/questions/70546/problem-calculating-normals-for-heightmaps
             var dx = zoneHeightmap[localBlockPos.X, localBlockPos.Z] - zoneHeightmap[localBlockPos.X + 1, localBlockPos.Z + 1];
             var dz = zoneHeightmap[localBlockPos.X, localBlockPos.Z + 1] - zoneHeightmap[localBlockPos.X + 1, localBlockPos.Z];
-            return Vector3.Normalize(new Vector3(dx, 2, dz));
+            return Vector3.Normalize(new Vector3(dx, 2 * Mathf.Sqrt(3/2f), -dz));
         }
 
         private void CalculateVertex(Vector2i vertPos, ZoneRatio[,] zoneInfluences, float[,] zoneHeightmap)
