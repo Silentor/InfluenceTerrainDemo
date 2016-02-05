@@ -61,7 +61,7 @@ namespace TerrainDemo.Layout
         {
             var edges = new List<Vector2i>();
             foreach (var edge in Cell.Edges)
-                edges.AddRange(Rasterization.DDA(edge.Vertex1, edge.Vertex2));
+                edges.AddRange(Rasterization.DDA(edge.Vertex1, edge.Vertex2, false));
 
             var bounds = Bounds;
             edges = edges.Where(e => bounds.Contains(e)).Distinct().ToList();

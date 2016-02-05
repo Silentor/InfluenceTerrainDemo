@@ -124,7 +124,7 @@ namespace TerrainDemo.Editor
 
         private void DrawChunkAndBlock(Vector2 worldPosition)
         {
-            const float yOffset = 0.1f;
+            const float yOffset = 0.01f;
 
             if (IsMapMode())
             {

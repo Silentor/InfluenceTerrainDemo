@@ -6,44 +6,14 @@ namespace TerrainDemo.Tools
 {
     public static class Rasterization
     {
-        public static IEnumerable<Vector2i> DDA(Vector2i p1, Vector2i p2)
+        public static IEnumerable<Vector2i> DDA(Vector2i p1, Vector2i p2, bool conservative)
         {
-            //Base on http://www.sunshine2k.de/coding/java/Bresenham/RasterisingLinesCircles.pdf
-            //Todo replace by Bresenham algorithm
-
-            float len = Mathf.Max(Mathf.Abs(p2.X - p1.X), Mathf.Abs(p2.Z - p1.Z));
-
-            //Short path
-            if (Mathf.Approximately(len, 0))
-            {
-                yield return p1;
-                yield break;
-            }
-
-            // calculate increments
-            var dx = (p2.X - p1.X) / len;
-            var dy = (p2.Z - p1.Z) / len;
-
-            // start point
-            float x = p1.X;
-            float y = p1.Z;
-
-            for (var i = 0; i < len; i++)
-            {
-                yield return new Vector2i(x, y);
-                x = x + dx;
-                y = y + dy;
-            }
-
-            // set final pixel
-            //yield return p2;
+            return DDA(new Vector2(p1.X + 0.5f, p1.Z + 0.5f), new Vector2(p2.X + 0.5f, p2.Z + 0.5f), conservative);
         }
 
-        public static IEnumerable<Vector2i> DDA(Vector2 p1, Vector2 p2)
+        public static IEnumerable<Vector2i> DDA(Vector2 p1, Vector2 p2, bool conservative)
         {
-            //Base on http://www.sunshine2k.de/coding/java/Bresenham/RasterisingLinesCircles.pdf
-            //Todo replace by Bresenham algorithm
-
+            //Based on http://www.sunshine2k.de/coding/java/Bresenham/RasterisingLinesCircles.pdf
             float len = Mathf.Max(Mathf.Abs(p2.x - p1.x), Mathf.Abs(p2.y - p1.y));
 
             //Short path
@@ -61,22 +31,37 @@ namespace TerrainDemo.Tools
             float x = p1.x;
             float y = p1.y;
 
+            //Additional blocks for conservative rasterization
+            var addX = new Vector2i(Mathf.Sign(dx), 0);
+            var addZ = new Vector2i(0, Mathf.Sign(dy));
+
+            var result = (Vector2i)p1;
             for (var i = 0; i < len; i++)
             {
-                yield return new Vector2i(x, y);
+                var newResult = new Vector2i(x, y);
+
+                //Add conservative blocks todo improve, calculate only one additional block
+                if (conservative && newResult.X != result.X && newResult.Z != result.Z)
+                {
+                    yield return result + addX;
+                    yield return result + addZ;
+                }
+
+                yield return newResult;
+                result = newResult;
+
                 x = x + dx;
                 y = y + dy;
             }
 
             // set final pixel
-            //yield return (Vector2i)p2;
+            if (result != (Vector2i) p2)
+                yield return (Vector2i) p2;
         }
 
         public static IEnumerable<Vector3i> DDA(Vector3 p1, Vector3 p2)
         {
-            //Base on http://www.sunshine2k.de/coding/java/Bresenham/RasterisingLinesCircles.pdf
-            //Todo replace by Bresenham algorithm
-
+            //Based on http://www.sunshine2k.de/coding/java/Bresenham/RasterisingLinesCircles.pdf
             float len = Mathf.Max(Mathf.Abs(p2.x - p1.x), Mathf.Abs(p2.y - p1.y), Mathf.Abs(p2.z - p1.z));
 
             //Short path
@@ -96,16 +81,19 @@ namespace TerrainDemo.Tools
             float y = p1.y;
             float z = p1.z;
 
+            Vector3i result = (Vector3i)p1;
             for (var i = 0; i < len; i++)
             {
-                yield return new Vector3i(x, y, z);
+                result = new Vector3i(x, y, z);
+                yield return result;
                 x = x + dx;
                 y = y + dy;
                 z = z + dz;
             }
 
             // set final pixel
-            //yield return (Vector2i)p2;
+            if(result != (Vector3i)p2)
+                yield return (Vector3i)p2;
         }
 
         public static IEnumerable<Vector2i> BresenhamInt(Vector2i p1, Vector2i p2)
@@ -241,3 +229,4 @@ namespace TerrainDemo.Tools
         }
     }
 }
+
