@@ -57,9 +57,7 @@ namespace TerrainDemo.Meshing
 
             var uv = new Vector2[mesh.vertexCount];
             for (int i = 0; i < uv.Length; i++)
-            {
-                uv[i] = new Vector2(verts[i].x / 16, verts[i].z / 16);
-            }
+                uv[i] = new Vector2(verts[i].x/chunk.GridSize, verts[i].z/chunk.GridSize);
             mesh.uv = uv;
 
             mesh.RecalculateNormals();
@@ -68,24 +66,25 @@ namespace TerrainDemo.Meshing
 
             //Generate texture
             _textureTimer.Start();
-            //var tex = GenerateTexture(chunk);
+            //var tex = GenerateTextureCPU(chunk);
             var tex = GenerateTextureShader(chunk);
             _textureTimer.Stop();
 
-            //Debug.Log(timer.ElapsedTicks);
+            var material = new Material(Materials.Instance.Grass);
+            material.mainTexture = tex;
 
-            return new ChunkModel {Mesh = mesh, Tex = tex };
+            return new ChunkModel {Mesh = mesh, Material = material };
         }
 
-        private Color[] _grass;
-        private Color[] _stone;
-        private Texture2D _grassTex;
-        private Texture2D _stoneTex;
-        private Texture2D _waterTex;
-        private Texture2D _sandTex;
+        private readonly Color[] _grass;
+        private readonly Color[] _stone;
+        private readonly Texture2D _grassTex;
+        private readonly Texture2D _stoneTex;
+        private readonly Texture2D _waterTex;
+        private readonly Texture2D _sandTex;
         private RenderTexture _renderTexture;
-        private AverageTimer _meshTimer = new AverageTimer();
-        private AverageTimer _textureTimer = new AverageTimer();
+        private readonly AverageTimer _meshTimer = new AverageTimer();
+        private readonly AverageTimer _textureTimer = new AverageTimer();
 
         private RenderTexture GetRenderTexture()
         {
@@ -125,11 +124,11 @@ namespace TerrainDemo.Meshing
 
         private Texture GenerateTextureShader(Chunk chunk)
         {
-            var mask = new Texture2D(16, 16, TextureFormat.RGB24, false);      //todo consider pass mask as ComputeBuffer, to avoid create texture costs
+            var mask = new Texture2D(chunk.BlocksCount, chunk.BlocksCount, TextureFormat.RGB24, false);      //todo consider pass mask as ComputeBuffer, to avoid create texture costs
             mask.wrapMode = TextureWrapMode.Clamp;
-            var pixels = new Color[16*16];
-            for (int z = 0; z < 16; z++)
-                for (int x = 0; x < 16; x++)
+            var pixels = new Color[chunk.BlocksCount * chunk.BlocksCount];
+            for (int z = 0; z < chunk.BlocksCount; z++)
+                for (int x = 0; x < chunk.BlocksCount; x++)
                 {
                     var blockType = chunk.BlockType[x, z];
                     if (blockType == BlockType.Rock)
@@ -154,25 +153,21 @@ namespace TerrainDemo.Meshing
             shader.SetTexture(0, "result", renderTex);
             shader.Dispatch(0, renderTex.width / 8, renderTex.height / 8, 1);
 
-            //Flush render texture to Texture2D, VERY time consuming
-            //var oldRT = RenderTexture.active;
-            //RenderTexture.active = renderTex;
-            //var result = new Texture2D(renderTex.width, renderTex.height, TextureFormat.RGB24, true);
-            //result.wrapMode = TextureWrapMode.Clamp;
-            //result.ReadPixels(new Rect(0, 0, 1024, 1024), 0, 0, false);
-            //RenderTexture.active = null;
-            //result.Apply(true, false);
-            //result.Compress(true);
-            
+            //Render computed texture to another one to generate auto mipmaps
+            var renderTex2 = new RenderTexture(renderTex.width, renderTex.height, 0);
+            renderTex2.useMipMap = true;
+            renderTex2.generateMips = true;
+            renderTex2.wrapMode = TextureWrapMode.Clamp;
+            renderTex2.Create();
+            Graphics.Blit(renderTex, renderTex2);
 
-            //return result;
-            return renderTex;
+            return renderTex2;
         }
 
         public struct ChunkModel
         {
             public Mesh Mesh;
-            public Texture Tex;
+            public Material Material;
         }
     }
 }

@@ -122,8 +122,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 143a1e76d1de30f43aae86242fa6b09a, type: 2}
   - {fileID: 11400000, guid: b7ea798b05685aa4086f3ad12b3c60a1, type: 2}
   ZonesDensity: {x: 30, y: 40}
-  GenerateSeed: 1
-  LandSeed: 436766488
+  GenerateSeed: 0
+  LandSeed: 666
   IDWCoeff: 2
   IDWOffset: 0.001
   InterpolateInfluence: 0

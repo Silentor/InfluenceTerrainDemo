@@ -77,8 +77,7 @@ namespace TerrainDemo
 
         public void BuildAll()
         {
-            SetSeed();
-            Main.GenerateLayout(new PoissonClusteredLayout(this));
+            BuildLayout();
             var map = Main.GenerateMap(this);
             MeshAndVisualize(map);
         }

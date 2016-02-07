@@ -11,8 +11,7 @@ namespace TerrainDemo
         public static ChunkGO Create(Chunk chunk, TextureMesher.ChunkModel model)
         {
             var chunkGo = Get(chunk);
-            chunkGo._filter.mesh = model.Mesh;
-            chunkGo._renderer.material.mainTexture = model.Tex;
+            chunkGo.Init(model);
             return chunkGo;
         }
 
@@ -21,6 +20,12 @@ namespace TerrainDemo
             foreach (var chunkGo in _allChunksGO)
                 Destroy(chunkGo.gameObject);
             _allChunksGO.Clear();
+        }
+
+        public void Init(TextureMesher.ChunkModel model)
+        {
+            _filter.sharedMesh = model.Mesh;
+            _renderer.sharedMaterial = model.Material;
         }
 
         public void CreateFlora(ILandSettings settings, IEnumerable<Vector3> positions)
@@ -58,7 +63,6 @@ namespace TerrainDemo
             var chunkGo = go.AddComponent<ChunkGO>();
             chunkGo._filter = go.AddComponent<MeshFilter>();
             chunkGo._renderer = go.AddComponent<MeshRenderer>();
-            chunkGo._renderer.sharedMaterial = Materials.Instance.Grass;
             chunkGo._renderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
             chunkGo._renderer.useLightProbes = false;
             go.name = chunk.Position.X + " : " + chunk.Position.Z;
