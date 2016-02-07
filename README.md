@@ -1,5 +1,14 @@
 # InfluenceTerrainDemo
-Some experiments with zone-based terrain generation. Inspired by http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/
+Some experiments with zone-based terrain generation. Inspired by http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/ and http://www.shamusyoung.com/twentysidedtale/?p=141
+
+v0.2 reading:
+Inverse Distance Weighting http://www.gitta.info/ContiSpatVar/en/html/Interpolatio_learningObject2.xhtml
+
+v0.3 reading:
+Rasterization http://www.sunshine2k.de/coding/java/Bresenham/RasterisingLinesCircles.pdf
+
+v0.4 reading:
+Compute shaders in Unity https://scrawkblog.com/2014/06/24/directcompute-tutorial-for-unity-introduction/
 
 Simple heightmap terrain based on 3 octaves Unity native Perlin noise. Noise parameters are approximated between zones by simple IDW function. There are 6 geo zones at the map: grass hills, mountains, snow plains, desert, forests and lakes. Zones colored using plain colors, there are no textures yet.
 
