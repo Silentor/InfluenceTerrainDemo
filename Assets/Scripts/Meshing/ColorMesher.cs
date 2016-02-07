@@ -6,7 +6,7 @@ using UnityEngine;
 namespace TerrainDemo.Meshing
 {
     /// <summary>
-    /// Simple mesher to draw zone influences by color (block type is ignored)
+    /// Simple mesher, generate block hard colors as vertex color (needs appropriate shader )
     /// </summary>
     public class ColorMesher
     {
@@ -16,7 +16,6 @@ namespace TerrainDemo.Meshing
             _blocksColors = new Color[(int)settings.Blocks.Max(z => z.Block) + 1];
             foreach (var blockColor in settings.Blocks)
                 _blocksColors[(int) blockColor.Block] = blockColor.Color;
-            _zoneTypes = _settings.ZoneTypes.Select(z => z.Type).ToArray();
         }
 
         public Mesh Generate(Chunk chunk)
@@ -72,33 +71,11 @@ namespace TerrainDemo.Meshing
             mesh.colors = colors;
             mesh.normals = normals;
 
-            //Manual normals calculation
-            //No lighting normals
-            //var normals = new Vector3[mesh.vertexCount];
-            //for (int i = 0; i < normals.Length; i++)
-            //    normals[i] = Vector3.up;
-            //mesh.normals = normals;
-            //Traditional normals
-            //mesh.RecalculateNormals();
-
             return mesh;
         }
 
         private readonly ILandSettings _settings;
         private readonly Color[] _blocksColors;
-        private readonly ZoneType[] _zoneTypes;
-
-        private Color Lerp(ZoneRatio ratio)
-        {
-            var result = Color.black;
-            for (var i = 0; i < _zoneTypes.Length; i++)
-            {
-                var zoneType = _zoneTypes[i];
-                result += _blocksColors[(int)zoneType] * ratio[zoneType];
-            }
-
-            return result;
-        }
 
         private Vector3[,] PrecalculateNormals(Chunk chunk)
         {

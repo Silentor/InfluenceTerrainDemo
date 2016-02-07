@@ -5,6 +5,7 @@ using TerrainDemo.Layout;
 using TerrainDemo.Map;
 using TerrainDemo.Meshing;
 using TerrainDemo.Settings;
+using TerrainDemo.Tools;
 using UnityEngine;
 
 namespace TerrainDemo
@@ -54,14 +55,17 @@ namespace TerrainDemo
             ChunkGO.Clear();
 
             //var mesher = new InfluenceMesher(this);
-            var mesher = new ColorMesher(this);
-            foreach (var chunk in landMap.Map)
+            //var mesher = new ColorMesher(this);
+            var mesher = new TextureMesher(this);
+            foreach (var chunk in landMap.Map)          
             {
                 var mesh = mesher.Generate(chunk.Value);
                 var go = ChunkGO.Create(chunk.Value, mesh);
                 go.CreateFlora(this, chunk.Value.Flora);
                 go.CreateStones(this, chunk.Value.Stones);
             }
+
+            Debug.LogFormat("Mesh generation timings: mesh {0} ms, texture {1} ms, {2} ops", mesher.MeshTimer.AvgTimeMs, mesher.TextureTimer.AvgTimeMs, mesher.TextureTimer.SamplesCount);
         }
 
         public void BuildLayout()

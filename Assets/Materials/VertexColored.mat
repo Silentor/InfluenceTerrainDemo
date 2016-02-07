@@ -6,7 +6,7 @@ Material:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: Universal
+  m_Name: VertexColored
   m_Shader: {fileID: 4800000, guid: f84f4d946eec1fb4a8768b6aab608e9d, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 5

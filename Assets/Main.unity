@@ -118,14 +118,12 @@ MonoBehaviour:
   LandNoiseSettings: {fileID: 11400000, guid: d7826460041438940b2a318c07207ed6, type: 2}
   Zones:
   - {fileID: 11400000, guid: efe303b16c6dfa0419eaeabce0cc1f5a, type: 2}
-  - {fileID: 11400000, guid: eb8acf702fba2d347b1e19cbd1886cab, type: 2}
-  - {fileID: 11400000, guid: b7ea798b05685aa4086f3ad12b3c60a1, type: 2}
   - {fileID: 11400000, guid: 6d9e47604d34fe64686ce4c7b4247a74, type: 2}
   - {fileID: 11400000, guid: 143a1e76d1de30f43aae86242fa6b09a, type: 2}
-  - {fileID: 11400000, guid: 1d1884e8c53e2cf4585b8eb12b78019d, type: 2}
+  - {fileID: 11400000, guid: b7ea798b05685aa4086f3ad12b3c60a1, type: 2}
   ZonesDensity: {x: 30, y: 40}
   GenerateSeed: 1
-  LandSeed: 3
+  LandSeed: 436766488
   IDWCoeff: 2
   IDWOffset: 0.001
   InterpolateInfluence: 0
@@ -136,14 +134,19 @@ MonoBehaviour:
   Blocks:
   - Block: 2
     Color: {r: 0, g: 1, b: 0.048275948, a: 1}
+    Texture: {fileID: 2800000, guid: daf6a200dfc15564797eb8513a253a4b, type: 3}
   - Block: 3
     Color: {r: 0.6102941, g: 0.6102941, b: 0.6102941, a: 1}
+    Texture: {fileID: 2800000, guid: 655baec2b6d179442a8df3573e025ad4, type: 3}
   - Block: 6
     Color: {r: 0, g: 0.83448267, b: 1, a: 1}
+    Texture: {fileID: 2800000, guid: b766c4ffca7260e4d943ad5e9b6d700b, type: 3}
   - Block: 4
     Color: {r: 0.71744424, g: 0.7941176, b: 0, a: 1}
+    Texture: {fileID: 2800000, guid: 23afafc09f993fe4b971155856b20ecb, type: 3}
   - Block: 5
     Color: {r: 0.9137111, g: 0.9558824, b: 0.9506473, a: 1}
+    Texture: {fileID: 0}
   Tree: {fileID: 178060, guid: 69ee204600497b94797abb82b51602bd, type: 2}
   Stone: {fileID: 127540, guid: cdcdb6005d769124082a23208f27a7ce, type: 2}
 --- !u!4 &214652176
@@ -169,7 +172,51 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a9c82ca8e517f53419e99173e239e67c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Grass: {fileID: 2100000, guid: 5ae6f60a03e107e4d9e469815a34517d, type: 2}
+  Grass: {fileID: 2100000, guid: cf4bbfe466f303742b1c4030ee57c04b, type: 2}
+  TextureBlendShader: {fileID: 7200000, guid: d585ce2608b9451429edd609756aba4f, type: 3}
+--- !u!1 &653313276
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 4
+  m_Component:
+  - 4: {fileID: 653313278}
+  - 114: {fileID: 653313277}
+  m_Layer: 0
+  m_Name: TestComputeShader
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &653313277
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 653313276}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e53ff160ddb1f4e4e98890b0acfdb5b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shader: {fileID: 7200000, guid: d585ce2608b9451429edd609756aba4f, type: 3}
+  Mask: {fileID: 2800000, guid: 53aa89c128dc01b43b9c45f30d54b9b9, type: 3}
+  InputTexture1: {fileID: 2800000, guid: f46974fac2044034ca89b230dfceb756, type: 3}
+  InputTexture2: {fileID: 2800000, guid: 655baec2b6d179442a8df3573e025ad4, type: 3}
+--- !u!4 &653313278
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 653313276}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -278.88, y: -47.963028, z: 299.388}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 5
 --- !u!1 &1293065045
 GameObject:
   m_ObjectHideFlags: 0

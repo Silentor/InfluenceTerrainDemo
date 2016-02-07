@@ -1,0 +1,30 @@
+﻿#pragma kernel CSMain
+
+Texture2D<float4> mask;
+Texture2D<float4> grass;
+Texture2D<float4> stone;
+Texture2D<float4> water;
+Texture2D<float4> sand;
+RWTexture2D<float4> result;				//Result baked texture
+
+SamplerState _LinearClamp;
+
+[numthreads(8,8,1)]
+void CSMain (uint2 id : SV_DispatchThreadID)
+{
+	float w, h;
+    result.GetDimensions(w, h);
+    float2 uv = float2(id.x/w, id.y/h);
+
+	//Calculate mask color texel
+	float4 masked = mask.SampleLevel(_LinearClamp, uv, 0);
+
+	//Lerp textures
+	//float4 resultPixel = masked;									//To peek resampled mask texture
+	float4 resultPixel = grass[id];
+	resultPixel = lerp(resultPixel, stone[id], masked.r);
+	resultPixel = lerp(resultPixel, water[id], masked.g);
+	resultPixel = lerp(resultPixel, sand[id], masked.b);
+
+    result[id] = resultPixel;
+}

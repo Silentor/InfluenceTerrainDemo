@@ -8,5 +8,6 @@ namespace TerrainDemo.Settings
     {
         public BlockType Block;
         public Color Color;
+        public Texture2D Texture;
     }
 }

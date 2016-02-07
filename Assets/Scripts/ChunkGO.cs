@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using TerrainDemo.Meshing;
 using TerrainDemo.Settings;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -7,10 +8,11 @@ namespace TerrainDemo
 {
     public class ChunkGO : MonoBehaviour
     {
-        public static ChunkGO Create(Chunk chunk, Mesh mesh)
+        public static ChunkGO Create(Chunk chunk, TextureMesher.ChunkModel model)
         {
             var chunkGo = Get(chunk);
-            chunkGo._filter.sharedMesh = mesh;  
+            chunkGo._filter.mesh = model.Mesh;
+            chunkGo._renderer.material.mainTexture = model.Tex;
             return chunkGo;
         }
 

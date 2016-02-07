@@ -5,6 +5,7 @@ namespace TerrainDemo
     public class Materials : MonoBehaviour
     {
         public Material Grass;
+        public ComputeShader TextureBlendShader;
 
         public static Materials Instance
         {
