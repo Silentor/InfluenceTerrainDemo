@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Assets.Code.Tools;
 using TerrainDemo.Settings;
 using TerrainDemo.Tools;
 using UnityEngine;
@@ -19,8 +21,8 @@ namespace TerrainDemo.Meshing
             _sandTex = settings.Blocks.Where(b => b.Block == BlockType.Sand).Select(b => b.Texture).First();
 
             //Legacy texture generation
-            _grass = _grassTex.GetPixels();
-            _stone = _stoneTex.GetPixels();
+            //_grass = _grassTex.GetPixels();
+            //_stone = _stoneTex.GetPixels();
         }
 
         ~TextureMesher()
@@ -29,38 +31,39 @@ namespace TerrainDemo.Meshing
             //    _renderTexture.Release();     
         }
 
-        public ChunkModel Generate(Chunk chunk)
+        public ChunkModel Generate(Chunk chunk, Dictionary<Vector2i, Chunk> map)
         {
             _meshTimer.Start();
 
             var mesh = new Mesh();
 
             var verts = new Vector3[chunk.GridSize * chunk.GridSize];
-            for (int x = 0; x < chunk.GridSize; x++)
-                for (int z = 0; z < chunk.GridSize; z++)
-                    verts[z + x * chunk.GridSize] = new Vector3(x * chunk.BlockSize, chunk.HeightMap[x, z], z * chunk.BlockSize);
-
+            for (int z = 0; z < chunk.GridSize; z++)
+                for (int x = 0; x < chunk.GridSize; x++)
+                    verts[x + z * chunk.GridSize] = new Vector3(x * chunk.BlockSize, chunk.HeightMap[x, z], z * chunk.BlockSize);
             mesh.vertices = verts;
 
             var indx = new int[(chunk.GridSize - 1) * (chunk.GridSize - 1) * 4];
-            for (int x = 0; x < chunk.GridSize - 1; x++)
-                for (int z = 0; z < chunk.GridSize - 1; z++)
+            for (int z = 0; z < chunk.GridSize - 1; z++)
+                for (int x = 0; x < chunk.GridSize - 1; x++)
                 {
-                    var index = (z + x * (chunk.GridSize - 1)) * 4;
-                    indx[index + 0] = z + x * chunk.GridSize;
-                    indx[index + 1] = z + 1 + x * chunk.GridSize;
-                    indx[index + 2] = z + 1 + (x + 1) * chunk.GridSize;
-                    indx[index + 3] = z + (x + 1) * chunk.GridSize;
+                    var index = (x + z * (chunk.GridSize - 1)) * 4;
+                    indx[index + 0] = x + z * chunk.GridSize;
+                    indx[index + 1] = x + (z + 1) * chunk.GridSize; 
+                    indx[index + 2] = x + 1 + (z + 1) * chunk.GridSize;
+                    indx[index + 3] = x + 1 + z * chunk.GridSize;
                 }
-
             mesh.SetIndices(indx, MeshTopology.Quads, 0);
 
             var uv = new Vector2[mesh.vertexCount];
             for (int i = 0; i < uv.Length; i++)
-                uv[i] = new Vector2(verts[i].x/chunk.GridSize, verts[i].z/chunk.GridSize);
+                uv[i] = new Vector2(verts[i].x/(chunk.GridSize - 1), verts[i].z/(chunk.GridSize - 1));
             mesh.uv = uv;
 
-            mesh.RecalculateNormals();
+            //mesh.RecalculateNormals();
+            mesh.normals = CalculateNormals(chunk, map);
+
+            mesh.RecalculateBounds();
 
             _meshTimer.Stop();
 
@@ -86,21 +89,6 @@ namespace TerrainDemo.Meshing
         private readonly AverageTimer _meshTimer = new AverageTimer();
         private readonly AverageTimer _textureTimer = new AverageTimer();
 
-        private RenderTexture GetRenderTexture()
-        {
-            //if (_renderTexture == null)
-            {
-                _renderTexture = new RenderTexture(1024, 1024, 0);
-                _renderTexture.wrapMode = TextureWrapMode.Clamp;
-                _renderTexture.enableRandomWrite = true;
-                _renderTexture.useMipMap = false;
-                _renderTexture.generateMips = false;
-                _renderTexture.Create();
-            }
-
-            return _renderTexture;
-        }
-
         private Texture2D GenerateTextureCPU(Chunk chunk)
         {
             var result = new Texture2D(1024, 1024, TextureFormat.RGB24, true);
@@ -120,6 +108,21 @@ namespace TerrainDemo.Meshing
             result.Apply();
 
             return result;
+        }
+
+        private RenderTexture GetRenderTexture()
+        {
+            //if (_renderTexture == null)
+            {
+                _renderTexture = new RenderTexture(1024, 1024, 0);
+                _renderTexture.wrapMode = TextureWrapMode.Clamp;
+                _renderTexture.enableRandomWrite = true;
+                _renderTexture.useMipMap = false;
+                _renderTexture.generateMips = false;
+                _renderTexture.Create();
+            }
+
+            return _renderTexture;
         }
 
         private Texture GenerateTextureShader(Chunk chunk)
@@ -157,17 +160,114 @@ namespace TerrainDemo.Meshing
             var renderTex2 = new RenderTexture(renderTex.width, renderTex.height, 0);
             renderTex2.useMipMap = true;
             renderTex2.generateMips = true;
-            renderTex2.wrapMode = TextureWrapMode.Clamp;
+            renderTex2.wrapMode = renderTex.wrapMode;
             renderTex2.Create();
             Graphics.Blit(renderTex, renderTex2);
 
+            //Destroy old texture
+            renderTex.Release();
+            Object.Destroy(renderTex);
+
             return renderTex2;
+        }
+
+        Vector3[] CalculateNormals(Chunk chunk, Dictionary<Vector2i, Chunk> map)
+        {
+            Chunk top, bottom, left, right;
+
+            map.TryGetValue(chunk.Position + Vector2i.Forward, out top);
+            map.TryGetValue(chunk.Position + Vector2i.Back, out bottom);
+            map.TryGetValue(chunk.Position + Vector2i.Left, out left);
+            map.TryGetValue(chunk.Position + Vector2i.Right, out right);
+
+            Vector3[] result = new Vector3[chunk.GridSize * chunk.GridSize];
+
+            //Inner loop
+            for (int z = 1; z < chunk.GridSize - 1; z++)
+                for (int x = 1; x < chunk.GridSize - 1; x++)
+                    result[x + z*chunk.GridSize] = CalculateNormal(chunk.HeightMap[x - 1, z], chunk.HeightMap[x + 1, z],
+                        chunk.HeightMap[x, z - 1], chunk.HeightMap[x, z + 1]);
+
+            //Outer loops
+            for (int i = 1; i < chunk.GridSize - 1; i++)
+            {
+                var x = 0;
+                var z = i;
+                if (left != null)
+                    result[x + z*chunk.GridSize] = CalculateNormal(left.HeightMap[chunk.GridSize - 2, z],
+                        chunk.HeightMap[x + 1, z], chunk.HeightMap[x, z - 1], chunk.HeightMap[x, z + 1]);
+                x = chunk.GridSize - 1;
+                if (right != null)
+                    result[x + z * chunk.GridSize] = CalculateNormal(chunk.HeightMap[x - 1, z],  
+                        right.HeightMap[1, z], chunk.HeightMap[x, z - 1], chunk.HeightMap[x, z + 1]);
+                x = i;
+                z = 0;
+                if (bottom != null)
+                    result[x + z * chunk.GridSize] = CalculateNormal(chunk.HeightMap[x - 1, z], chunk.HeightMap[x + 1, z], 
+                        bottom.HeightMap[x, chunk.GridSize - 2], chunk.HeightMap[x, z + 1]);
+                z = chunk.GridSize - 1;
+                if (top != null)
+                    result[x + z * chunk.GridSize] = CalculateNormal(chunk.HeightMap[x - 1, z], chunk.HeightMap[x + 1, z],
+                        chunk.HeightMap[x, z - 1], top.HeightMap[x, 1]);
+            }
+
+            //Corners
+            if (bottom != null && left != null)
+            {
+                var x = 0;
+                var z = 0;
+                result[x + z * chunk.GridSize] = CalculateNormal(left.HeightMap[chunk.GridSize - 2, z], chunk.HeightMap[x + 1, z],
+                    bottom.HeightMap[x, chunk.GridSize - 2], chunk.HeightMap[x, z + 1]);
+            }
+            if (top != null && left != null)
+            {
+                var x = 0;
+                var z = chunk.GridSize - 1;
+                result[x + z * chunk.GridSize] = CalculateNormal(left.HeightMap[chunk.GridSize - 2, z], chunk.HeightMap[x + 1, z],
+                    chunk.HeightMap[x, z - 1], top.HeightMap[x, 1]);
+            }
+            if (top != null && right != null)
+            {
+                var x = chunk.GridSize - 1;
+                var z = chunk.GridSize - 1;
+                result[x + z * chunk.GridSize] = CalculateNormal(chunk.HeightMap[x - 1, z], right.HeightMap[1, z],
+                    chunk.HeightMap[x, z - 1], top.HeightMap[x, 1]);
+            }
+            if (bottom != null && right != null)
+            {
+                var x = chunk.GridSize - 1;
+                var z = 0;
+                result[x + z * chunk.GridSize] = CalculateNormal(chunk.HeightMap[x - 1, z], right.HeightMap[1, z],
+                    bottom.HeightMap[x, chunk.GridSize - 2], chunk.HeightMap[x, z + 1]);
+            }
+
+            return result;
+        }
+
+        private Vector3 CalculateNormal(float heightX0, float heightx1, float heightZ0, float heightZ1)
+        {
+            //Based on http://gamedev.stackexchange.com/questions/70546/problem-calculating-normals-for-heightmaps
+            var sx = heightX0 - heightx1;
+            var sy = heightZ0 - heightZ1;
+
+            return new Vector3(sx, 2, sy).normalized;
         }
 
         public struct ChunkModel
         {
             public Mesh Mesh;
             public Material Material;
+        }
+
+        public class ChunkHeightmapExtender
+        {
+            private readonly Chunk _mainChunk;
+            private readonly Chunk _topChunk;
+
+            public ChunkHeightmapExtender(Chunk mainChunk, Dictionary<Vector2i, Chunk> map)
+            {
+                _mainChunk = mainChunk;
+            }
         }
     }
 }

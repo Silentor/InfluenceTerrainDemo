@@ -59,7 +59,7 @@ namespace TerrainDemo
             var mesher = new TextureMesher(this);
             foreach (var chunk in landMap.Map)          
             {
-                var mesh = mesher.Generate(chunk.Value);
+                var mesh = mesher.Generate(chunk.Value, landMap.Map);
                 var go = ChunkGO.Create(chunk.Value, mesh);
                 go.CreateFlora(this, chunk.Value.Flora);
                 go.CreateStones(this, chunk.Value.Stones);
