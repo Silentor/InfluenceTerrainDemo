@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9f54af2ef4c4664db92ab6d197caef3, type: 3}
+  m_Name: Checkboard
+  m_EditorClassIdentifier: 
+  Name: Checkboard
+  LandColor_: {r: 0, g: 0.04827571, b: 1, a: 1}
+  Type: 15
+  DefaultBlock: 0
+  Height_: 0
+  OutScale1_: 0
+  OutScale2_: 0
+  OutScale3_: 0
