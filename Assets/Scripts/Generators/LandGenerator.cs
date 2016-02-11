@@ -35,6 +35,8 @@ namespace TerrainDemo.Generators
                     generator = new DefaultGenerator(zoneMarkup, _land, _settings);
                 else if (zoneMarkup.Type >= ZoneType.Influence1 && zoneMarkup.Type <= ZoneType.Influence8)
                     generator = new FlatGenerator(zoneMarkup, _land, _settings);
+                else if(zoneMarkup.Type == ZoneType.Checkboard)
+                    generator = new CheckboardGenerator(zoneMarkup, _land, _settings);
 
                 if (generator != null)
                 {

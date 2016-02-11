@@ -57,7 +57,10 @@ namespace TerrainDemo
             //var mesher = new InfluenceMesher(this);
             //var mesher = new ColorMesher(this);
             var mesher = new TextureMesher(this);
-            foreach (var chunk in landMap.Map)          
+            //var mesh = mesher.Generate(landMap.Map[Vector2i.Zero], landMap.Map);
+            //var go = ChunkGO.Create(landMap.Map[Vector2i.Zero], mesh);
+
+            foreach (var chunk in landMap.Map)
             {
                 var mesh = mesher.Generate(chunk.Value, landMap.Map);
                 var go = ChunkGO.Create(chunk.Value, mesh);

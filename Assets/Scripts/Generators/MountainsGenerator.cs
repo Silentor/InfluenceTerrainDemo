@@ -26,16 +26,22 @@ namespace TerrainDemo.Generators
                 height *= (float)additional;
             }
 
+            
+
             return height;
         }
 
         protected override BlockType GenerateBlock(Vector2i worldPosition, Vector2i turbulence, Vector3 normal, ZoneRatio influence)
         {
             var mountInfluence = influence[ZoneType.Mountains];
+
+            if (mountInfluence > 0.85f && Vector3.Angle(Vector3.up, normal) < 45)
+                return BlockType.Snow;
+
             if (mountInfluence > 0.7f || Vector3.Angle(Vector3.up, normal) > 20)
                 return BlockType.Rock;
-            else
-                return base.GenerateBlock(worldPosition, turbulence, normal, influence);
+            
+            return base.GenerateBlock(worldPosition, turbulence, normal, influence);
         }
 
         //protected override void DecorateZone(Chunk chunk)

@@ -119,8 +119,11 @@ MonoBehaviour:
   Zones:
   - {fileID: 11400000, guid: efe303b16c6dfa0419eaeabce0cc1f5a, type: 2}
   - {fileID: 11400000, guid: 143a1e76d1de30f43aae86242fa6b09a, type: 2}
+  - {fileID: 11400000, guid: 6d9e47604d34fe64686ce4c7b4247a74, type: 2}
+  - {fileID: 11400000, guid: b7ea798b05685aa4086f3ad12b3c60a1, type: 2}
+  - {fileID: 11400000, guid: 1d1884e8c53e2cf4585b8eb12b78019d, type: 2}
   ZonesDensity: {x: 30, y: 40}
-  GenerateSeed: 0
+  GenerateSeed: 1
   LandSeed: 1551252636
   IDWCoeff: 2
   IDWOffset: 0.001
@@ -144,7 +147,7 @@ MonoBehaviour:
     Texture: {fileID: 2800000, guid: 23afafc09f993fe4b971155856b20ecb, type: 3}
   - Block: 5
     Color: {r: 0.9137111, g: 0.9558824, b: 0.9506473, a: 1}
-    Texture: {fileID: 0}
+    Texture: {fileID: 2800000, guid: f1910ca6b9545cc468d22ca9434a9f82, type: 3}
   Tree: {fileID: 178060, guid: 69ee204600497b94797abb82b51602bd, type: 2}
   Stone: {fileID: 127540, guid: cdcdb6005d769124082a23208f27a7ce, type: 2}
 --- !u!4 &214652176

@@ -1,16 +1,28 @@
 ﻿#pragma kernel CSMain
 
 Texture2D<float4> mask;
+int border;
 RWTexture2D<float4> result;				//Result baked texture
 
 SamplerState _LinearClamp;
+
+float2 scaleUV(float2 uv, float borderF)
+{
+    float2 result = float2(uv.x * (1 - borderF * 2) + borderF, uv.y * (1 - borderF * 2) + borderF);		//todo consider use FMA function
+	return result; 
+}
 
 [numthreads(8,8,1)]
 void CSMain (uint2 id : SV_DispatchThreadID)
 {
 	float w, h;
     result.GetDimensions(w, h);
-    float2 uv = float2(id.x/(w - 1), id.y/(h - 1));
+	float maskW, maskH;
+	mask.GetDimensions(maskW, maskH);
+	float borderF = border/maskW;
+
+	float2 uv = float2(id.x/(w - 1), id.y/(h - 1));
+	uv = scaleUV(uv, borderF);
 
 	//Calculate mask color texel
 	float4 masked = mask.SampleLevel(_LinearClamp, uv, 0);
@@ -19,3 +31,5 @@ void CSMain (uint2 id : SV_DispatchThreadID)
 	float4 resultPixel = masked;									
     result[id] = resultPixel;
 }
+
+

@@ -21,5 +21,7 @@
         Influence7,
         Influence8,
 
+        Checkboard
+
     }
 }
