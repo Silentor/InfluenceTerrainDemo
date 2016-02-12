@@ -2,9 +2,12 @@
 
 Texture2D<float4> mask;
 int border;
+float turbulence = 0.1;
+Texture2D<float4> noise;
 RWTexture2D<float4> result;				//Result baked texture
 
 SamplerState _LinearClamp;
+SamplerState _LinearRepeat;
 
 float2 scaleUV(float2 uv, float borderF)
 {
@@ -22,14 +25,18 @@ void CSMain (uint2 id : SV_DispatchThreadID)
 	float borderF = border/maskW;
 
 	float2 uv = float2(id.x/(w - 1), id.y/(h - 1));
+
+	//Get turbulence for mask
+	float4 turbulenceValue = (noise.SampleLevel(_LinearRepeat, uv, 0) - 0.5) * turbulence;
+
 	uv = scaleUV(uv, borderF);
+	uv = uv + float2(turbulenceValue.x, turbulenceValue.y);
 
 	//Calculate mask color texel
-	float4 masked = mask.SampleLevel(_LinearClamp, uv, 0);
+	float4 masked = mask.SampleLevel(_LinearClamp, uv, 0); 
 
 	//Peek resampled mask texture
-	float4 resultPixel = masked;									
-    result[id] = resultPixel;
+    result[id] = masked;
 }
 
 

@@ -2,6 +2,8 @@
 
 Texture2D<float4> mask;
 int border;
+float turbulence = 0.1;
+Texture2D<float4> noise;
 Texture2D<float4> grass;
 Texture2D<float4> stone;
 Texture2D<float4> water;
@@ -10,6 +12,7 @@ Texture2D<float4> snow;
 RWTexture2D<float4> result;				//Result baked texture
 
 SamplerState _LinearClamp;
+SamplerState _LinearRepeat;
 
 float2 scaleUV(float2 uv, float borderF)
 {
@@ -22,14 +25,22 @@ void CSMain (uint2 id : SV_DispatchThreadID)
 {
 	float w, h;
     result.GetDimensions(w, h);
+	float2 uv = float2(id.x/(w - 1), id.y/(h - 1));
+
+	//Calculate turbulence for mask
+	float4 turbulenceValue = (noise.SampleLevel(_LinearRepeat, uv, 0) - 0.5) * turbulence;
+
+	//Compensate mask border
 	float maskW, maskH;
 	mask.GetDimensions(maskW, maskH);
 	float borderF = border/maskW;
 
-	float2 uv = float2(id.x/(w - 1), id.y/(h - 1));
 	uv = scaleUV(uv, borderF);
 
-	//Calculate mask color texel
+	//Apply turbulence to mask
+	uv = uv + float2(turbulenceValue.x, turbulenceValue.y);
+
+	//Get mask value for texel
 	float4 masked = mask.SampleLevel(_LinearClamp, uv, 0);
 
 	//Lerp textures

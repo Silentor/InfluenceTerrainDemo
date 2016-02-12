@@ -136,12 +136,14 @@ namespace TerrainDemo.Meshing
             var renderTex = GetRenderTexture();
             var shader = Materials.Instance.TextureBlendShader;
             shader.SetTexture(0, "mask", mask);
+            shader.SetInt("border", border);
+            shader.SetFloat("turbulence", 0.1f);
+            shader.SetTexture(0, "noise", Materials.Instance.NoiseTexture);
             shader.SetTexture(0, "grass", _grassTex);
             shader.SetTexture(0, "stone", _stoneTex);
             shader.SetTexture(0, "sand", _sandTex);
             shader.SetTexture(0, "water", _waterTex);
             shader.SetTexture(0, "snow", _snowTex);
-            shader.SetInt("border", border);
             shader.SetTexture(0, "result", renderTex);
             shader.Dispatch(0, renderTex.width / 8, renderTex.height / 8, 1);
 

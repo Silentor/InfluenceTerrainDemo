@@ -6,6 +6,7 @@ namespace TerrainDemo
     {
         public Material Grass;
         public ComputeShader TextureBlendShader;
+        public Texture2D NoiseTexture;
 
         public static Materials Instance
         {
