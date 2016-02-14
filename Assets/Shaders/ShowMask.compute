@@ -8,11 +8,155 @@ RWTexture2D<float4> result;				//Result baked texture
 
 SamplerState _LinearClamp;
 SamplerState _LinearRepeat;
+SamplerState _PointClamp;
 
 float2 scaleUV(float2 uv, float borderF)
 {
     float2 result = float2(uv.x * (1 - borderF * 2) + borderF, uv.y * (1 - borderF * 2) + borderF);		//todo consider use FMA function
 	return result; 
+}
+
+/*
+float4 cubic(float v)
+{
+    float4 n = float4(1.0, 2.0, 3.0, 4.0) - v;
+    float4 s = n * n * n;
+    float x = s.x;
+    float y = s.y - 4.0 * s.x;
+    float z = s.z - 4.0 * s.y + 6.0 * s.x;
+    float w = 6.0 - x - y - z;
+    return float4(x, y, z, w);
+}
+*/
+
+/*
+float4 cubic(float x)
+{
+    float x2 = x * x;
+    float x3 = x2 * x;
+    float4 w;
+    w.x =   -x3 + 3*x2 - 3*x + 1;
+    w.y =  3*x3 - 6*x2       + 4;
+    w.z = -3*x3 + 3*x2 + 3*x + 1;
+    w.w =  x3;
+    return w / 6.f;
+}
+*/
+
+/*
+float4 cubFilter(Texture2D<float4> source, float2 texcoord, float2 texscale)
+{
+    float fx = frac(texcoord.x);
+    float fy = frac(texcoord.y);
+    texcoord.x -= fx;
+    texcoord.y -= fy;
+
+    float4 xcubic = cubic(fx);
+    float4 ycubic = cubic(fy);
+
+    float4 c = float4(texcoord.x - 0.5, texcoord.x + 1.5, texcoord.y - 0.5, texcoord.y + 1.5);
+    float4 s = float4(xcubic.x + xcubic.y, xcubic.z + xcubic.w, ycubic.x + ycubic.y, ycubic.z + ycubic.w);
+    float4 offset = c + float4(xcubic.y, xcubic.w, ycubic.y, ycubic.w) / s;
+
+    float4 sample0 = source.SampleLevel(_LinearRepeat, float2(offset.x, offset.z) * texscale, 0);
+    float4 sample1 = source.SampleLevel(_LinearRepeat, float2(offset.y, offset.z) * texscale, 0);
+    float4 sample2 = source.SampleLevel(_LinearRepeat, float2(offset.x, offset.w) * texscale, 0);
+    float4 sample3 = source.SampleLevel(_LinearRepeat, float2(offset.y, offset.w) * texscale, 0);
+
+    float sx = s.x / (s.x + s.y);
+    float sy = s.z / (s.z + s.w);
+
+    return lerp(lerp(sample3, sample2, sx), lerp(sample1, sample0, sx), sy);
+}
+*/
+
+
+float Triangular( float f )
+{
+	f = f / 2.0;
+	if( f < 0.0 )
+	{
+		return ( f + 1.0 );
+	}
+	else
+	{
+		return ( 1.0 - f );
+	}
+	return 0.0;
+}
+
+float BSpline( float x )
+{
+	float f = x;
+	if( f < 0.0 ) {
+		f = -f;
+	}
+  
+	if( f >= 0.0 && f <= 1.0 ) {
+		return ( 2.0 / 3.0 ) + ( 0.5 ) * ( f* f * f ) - (f*f);
+	}
+	else if( f > 1.0 && f <= 2.0 ) {
+		return 1.0 / 6.0 * pow( ( 2.0 - f  ), 3.0 );
+	}
+	return 1.0;
+}
+
+float CatMullRom( float x )
+{
+    const float B = 0.0;
+    const float C = 0.5;
+    float f = x;
+    if( f < 0.0 )
+    {
+        f = -f;
+    }
+    if( f < 1.0 )
+    {
+        return ( ( 12 - 9 * B - 6 * C ) * ( f * f * f ) +
+            ( -18 + 12 * B + 6 *C ) * ( f * f ) +
+            ( 6 - 2 * B ) ) / 6.0;
+    }
+    else if( f >= 1.0 && f < 2.0 )
+    {
+        return ( ( -B - 6 * C ) * ( f * f * f )
+            + ( 6 * B + 30 * C ) * ( f *f ) +
+            ( - ( 12 * B ) - 48 * C  ) * f +
+            8 * B + 24 * C)/ 6.0;
+    }
+    else
+    {
+        return 0.0;
+    }
+} 
+
+//Naive
+float4 BiCubic(Texture2D<float4> source, float2 TexCoord, float fWidth, float fHeight )
+{
+    float texelSizeX = 1.0 / fWidth;						//size of one texel 
+    float texelSizeY = 1.0 / fHeight;						//size of one texel 
+    float4 nSum = float4( 0.0, 0.0, 0.0, 0.0 );
+    float4 nDenom = float4( 0.0, 0.0, 0.0, 0.0 );
+    float a = frac( TexCoord.x * fWidth ); // get the decimal part
+    float b = frac( TexCoord.y * fHeight ); // get the decimal part
+    for( int m = -1; m <=2; m++ )
+    {
+        for( int n =-1; n<= 2; n++)
+        {
+			float4 vecData = source.SampleLevel(_PointClamp, TexCoord + float2(texelSizeX * float( m ), texelSizeY * float( n )), 0);
+			float f  = BSpline( float( m ) - a );
+			float4 vecCooef1 = float4( f,f,f,f );
+			float f1 = BSpline ( -( float( n ) - b ) );
+			float4 vecCoeef2 = float4( f1, f1, f1, f1 );
+            nSum = nSum + ( vecData * vecCoeef2 * vecCooef1  );
+            nDenom = nDenom + (( vecCoeef2 * vecCooef1 ));
+        }
+    }
+    return nSum / nDenom;
+}
+
+float4 Compress(float4 value)
+{
+	
 }
 
 [numthreads(8,8,1)]
@@ -27,13 +171,18 @@ void CSMain (uint2 id : SV_DispatchThreadID)
 	float2 uv = float2(id.x/(w - 1), id.y/(h - 1));
 
 	//Get turbulence for mask
-	float4 turbulenceValue = (noise.SampleLevel(_LinearRepeat, uv, 0) - 0.5) * turbulence;
+	float4 turbulenceValue = (noise.SampleLevel(_LinearRepeat, uv, 0) - 0.25) * turbulence;		//Bad noise, avg = 0.25
 
 	uv = scaleUV(uv, borderF);
-	uv = uv + float2(turbulenceValue.x, turbulenceValue.y);
+	uv += float2(turbulenceValue.x, turbulenceValue.y);
 
 	//Calculate mask color texel
-	float4 masked = mask.SampleLevel(_LinearClamp, uv, 0); 
+	//float4 masked = mask.SampleLevel(_LinearClamp, uv, 0);  
+	//float4 masked = mask.SampleLevel(_PointClamp, uv, 0);  
+	//float4 masked = cubFilter(mask, uv * float2(maskW, maskH), float2(1, 1));
+	float4 masked = BiCubic(mask, uv, maskW, maskH);
+
+
 
 	//Peek resampled mask texture
     result[id] = masked;

@@ -13,11 +13,53 @@ RWTexture2D<float4> result;				//Result baked texture
 
 SamplerState _LinearClamp;
 SamplerState _LinearRepeat;
+SamplerState _PointClamp;
 
 float2 scaleUV(float2 uv, float borderF)
 {
     float2 result = float2(uv.x * (1 - borderF * 2) + borderF, uv.y * (1 - borderF * 2) + borderF);		//todo consider use FMA function
 	return result; 
+}
+
+float BSpline( float x )
+{
+	float f = x;
+	if( f < 0.0 ) {
+		f = -f;
+	}
+  
+	if( f >= 0.0 && f <= 1.0 ) {
+		return ( 2.0 / 3.0 ) + ( 0.5 ) * ( f* f * f ) - (f*f);
+	}
+	else if( f > 1.0 && f <= 2.0 ) {
+		return 1.0 / 6.0 * pow( ( 2.0 - f  ), 3.0 );
+	}
+	return 1.0;
+}
+
+//Naive
+float4 BiCubic(Texture2D<float4> source, float2 TexCoord, float fWidth, float fHeight )
+{
+    float texelSizeX = 1.0 / fWidth;						//size of one texel 
+    float texelSizeY = 1.0 / fHeight;						//size of one texel 
+    float4 nSum = float4( 0.0, 0.0, 0.0, 0.0 );
+    float4 nDenom = float4( 0.0, 0.0, 0.0, 0.0 );
+    float a = frac( TexCoord.x * fWidth ); // get the decimal part
+    float b = frac( TexCoord.y * fHeight ); // get the decimal part
+    for( int m = -1; m <=2; m++ )
+    {
+        for( int n =-1; n<= 2; n++)
+        {
+			float4 vecData = source.SampleLevel(_PointClamp, TexCoord + float2(texelSizeX * float( m ), texelSizeY * float( n )), 0);
+			float f  = BSpline( float( m ) - a );
+			float4 vecCooef1 = float4( f,f,f,f );
+			float f1 = BSpline ( -( float( n ) - b ) );
+			float4 vecCoeef2 = float4( f1, f1, f1, f1 );
+            nSum = nSum + ( vecData * vecCoeef2 * vecCooef1  );
+            nDenom = nDenom + (( vecCoeef2 * vecCooef1 ));
+        }
+    }
+    return nSum / nDenom;
 }
 
 [numthreads(8,8,1)]
@@ -27,21 +69,23 @@ void CSMain (uint2 id : SV_DispatchThreadID)
     result.GetDimensions(w, h);
 	float2 uv = float2(id.x/(w - 1), id.y/(h - 1));
 
-	//Calculate turbulence for mask
-	float4 turbulenceValue = (noise.SampleLevel(_LinearRepeat, uv, 0) - 0.5) * turbulence;
+	//Get turbulence for mask
+	float4 turbulenceValue = (noise.SampleLevel(_LinearRepeat, uv, 0) - 0.25) * turbulence;		//Bad noise, avg = 0.25
 
 	//Compensate mask border
 	float maskW, maskH;
 	mask.GetDimensions(maskW, maskH);
 	float borderF = border/maskW;
 
+	//Scale uv because of mask border
 	uv = scaleUV(uv, borderF);
 
 	//Apply turbulence to mask
-	uv = uv + float2(turbulenceValue.x, turbulenceValue.y);
+	uv += float2(turbulenceValue.x, turbulenceValue.y);
 
 	//Get mask value for texel
-	float4 masked = mask.SampleLevel(_LinearClamp, uv, 0);
+	//float4 masked = mask.SampleLevel(_LinearClamp, uv, 0);
+	float4 masked = BiCubic(mask, uv, maskW, maskH);
 
 	//Lerp textures
 	float4 resultPixel = sand[id];

@@ -11,8 +11,10 @@ namespace TerrainDemo.Meshing
         public AverageTimer MeshTimer { get { return _meshTimer;} }
         public AverageTimer TextureTimer { get { return _textureTimer; } }
 
-        public TextureMesher(ILandSettings settings)
+        public TextureMesher(ILandSettings settings, MesherSettings meshSettings)
         {
+            _meshSettings = meshSettings;
+
             _grassTex =
                 settings.Blocks.Where(b => b.Block == BlockType.Grass).Select(b => b.Texture).First();
             _stoneTex = settings.Blocks.Where(b => b.Block == BlockType.Rock).Select(b => b.Texture).First();
@@ -73,11 +75,13 @@ namespace TerrainDemo.Meshing
             var tex = GenerateTextureShader(chunk, map);
             _textureTimer.Stop();
 
-            var material = new Material(Materials.Instance.Grass);
+            var material = new Material(_meshSettings.Material);
             material.mainTexture = tex;
 
             return new ChunkModel {Mesh = mesh, Material = material };
         }
+
+        private readonly MesherSettings _meshSettings;
 
         private readonly Color[] _grass;
         private readonly Color[] _stone;
@@ -113,7 +117,7 @@ namespace TerrainDemo.Meshing
         private RenderTexture GetRenderTexture()
         {
             //Cant reuse texture if drawing many textures for one frame
-            var renderTexture = new RenderTexture(1024, 1024, 0);
+            var renderTexture = new RenderTexture(_meshSettings.TextureSize, _meshSettings.TextureSize, 0);
             renderTexture.wrapMode = TextureWrapMode.Clamp;
             renderTexture.enableRandomWrite = true;
             renderTexture.useMipMap = false;
@@ -125,8 +129,7 @@ namespace TerrainDemo.Meshing
 
         private Texture GenerateTextureShader(Chunk chunk, Dictionary<Vector2i, Chunk> map)
         {
-            const int border = 1;
-
+            var border = _meshSettings.MaskBorder;
             var mask = new Texture2D(chunk.BlocksCount + 2*border, chunk.BlocksCount + 2 * border, TextureFormat.RGBA32, false);      //todo consider pass mask as ComputeBuffer, to avoid create texture costs
             mask.wrapMode = TextureWrapMode.Clamp;
             var maskColors = CalculateBlockMask(chunk, border, map);
@@ -134,11 +137,11 @@ namespace TerrainDemo.Meshing
             mask.Apply(false);
 
             var renderTex = GetRenderTexture();
-            var shader = Materials.Instance.TextureBlendShader;
+            var shader = _meshSettings.TextureBlendShader;
             shader.SetTexture(0, "mask", mask);
             shader.SetInt("border", border);
-            shader.SetFloat("turbulence", 0.1f);
-            shader.SetTexture(0, "noise", Materials.Instance.NoiseTexture);
+            shader.SetFloat("turbulence", _meshSettings.Turbulence);
+            shader.SetTexture(0, "noise", _meshSettings.NoiseTexture);
             shader.SetTexture(0, "grass", _grassTex);
             shader.SetTexture(0, "stone", _stoneTex);
             shader.SetTexture(0, "sand", _sandTex);

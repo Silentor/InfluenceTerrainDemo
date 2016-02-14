@@ -120,8 +120,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: efe303b16c6dfa0419eaeabce0cc1f5a, type: 2}
   - {fileID: 11400000, guid: 143a1e76d1de30f43aae86242fa6b09a, type: 2}
   ZonesDensity: {x: 30, y: 40}
-  GenerateSeed: 1
-  LandSeed: 1632395788
+  GenerateSeed: 0
+  LandSeed: 1050446272
   IDWCoeff: 2
   IDWOffset: 0.001
   InterpolateInfluence: 0
@@ -167,12 +167,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 214652174}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a9c82ca8e517f53419e99173e239e67c, type: 3}
+  m_Script: {fileID: 11500000, guid: 2975cf88f56da0644bb546e5be64bbdb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Grass: {fileID: 2100000, guid: cf4bbfe466f303742b1c4030ee57c04b, type: 2}
-  TextureBlendShader: {fileID: 7200000, guid: de9b1eaf4b4e4e645bfccadc0e897bdd, type: 3}
+  TextureSize: 1024
+  MaskBorder: 2
+  Turbulence: 0.2
   NoiseTexture: {fileID: 2800000, guid: 53f6543b5c6260e47854d3e26253d1ff, type: 3}
+  Material: {fileID: 2100000, guid: cf4bbfe466f303742b1c4030ee57c04b, type: 2}
+  TextureBlendShader: {fileID: 7200000, guid: d585ce2608b9451429edd609756aba4f, type: 3}
 --- !u!1 &653313276
 GameObject:
   m_ObjectHideFlags: 0

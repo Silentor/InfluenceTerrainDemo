@@ -56,7 +56,8 @@ namespace TerrainDemo
 
             //var mesher = new InfluenceMesher(this);
             //var mesher = new ColorMesher(this);
-            var mesher = new TextureMesher(this);
+            var mesherSettings = GetComponent<MesherSettings>();
+            var mesher = new TextureMesher(this, mesherSettings);
             //var mesh = mesher.Generate(landMap.Map[Vector2i.Zero], landMap.Map);
             //var go = ChunkGO.Create(landMap.Map[Vector2i.Zero], mesh);
 

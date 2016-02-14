@@ -6,7 +6,6 @@ using TerrainDemo.Layout;
 using TerrainDemo.Tools;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.VR;
 
 namespace TerrainDemo.Editor
 {
@@ -106,6 +105,9 @@ namespace TerrainDemo.Editor
                         Gizmos.color = Color.red;
                         Gizmos.DrawSphere(mapInter.Value, 0.05f);
                         DrawChunkAndBlock(Convert(mapInter.Value));
+
+                        if(IsLayoutMode())
+                            DrawSelectedZone(Convert(mapInter.Value));
                     }
                 }
                 else if (IsLayoutMode())
