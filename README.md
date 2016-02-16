@@ -8,7 +8,12 @@ v0.3 reading:
 Rasterization http://www.sunshine2k.de/coding/java/Bresenham/RasterisingLinesCircles.pdf
 
 v0.4 reading:
-Compute shaders in Unity https://scrawkblog.com/2014/06/24/directcompute-tutorial-for-unity-introduction/ http://forum.unity3d.com/threads/compute-shaders.148874/#post-1021130 https://software.intel.com/en-us/blogs/2014/07/15/an-investigation-of-fast-real-time-gpu-based-image-blur-algorithms
+Compute shaders in Unity 
+https://scrawkblog.com/2014/06/24/directcompute-tutorial-for-unity-introduction/ 
+http://forum.unity3d.com/threads/compute-shaders.148874/#post-1021130 
+https://software.intel.com/en-us/blogs/2014/07/15/an-investigation-of-fast-real-time-gpu-based-image-blur-algorithms
+http://www.gamasutra.com/blogs/AndreyMishkinis/20130716/196339/Advanced_Terrain_Texture_Splatting.php
+http://gamedevelopment.tutsplus.com/articles/use-tri-planar-texture-mapping-for-better-terrain--gamedev-13821
 
 Simple heightmap terrain based on 3 octaves Unity native Perlin noise. Noise parameters are approximated between zones by simple IDW function. There are 6 geo zones at the map: grass hills, mountains, snow plains, desert, forests and lakes. Zones colored using plain colors, there are no textures yet.
 

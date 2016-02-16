@@ -62,6 +62,44 @@ float4 BiCubic(Texture2D<float4> source, float2 TexCoord, float fWidth, float fH
     return nSum / nDenom;
 }
 
+float4 SoftDepthBlend(float4 texture1, float4 texture2, float alpha, float delta)
+{
+	//Based on http://www.gamedev.net/page/resources/_/technical/graphics-programming-and-theory/advanced-terrain-texture-splatting-r3287
+	float a1 = 1 - alpha;
+	float a2 = alpha;
+	float depth = delta;				//Default 0.2
+    float ma = max(texture1.a + a1, texture2.a + a2) - depth;
+
+    float b1 = max(texture1.a + a1 - ma, 0);
+    float b2 = max(texture2.a + a2 - ma, 0);
+
+	float4 result = (texture1 * b1 + texture2 * b2) / (b1 + b2);
+	return result;
+}
+
+float4 SoftDepthBlend(float4 texture1, float4 texture2, float alpha)
+{
+	return SoftDepthBlend(texture1, texture2, alpha, 0.2);
+}
+
+float4 HardDepthBlend(float4 texture1, float4 texture2, float alpha)
+{
+	//Based on http://www.gamedev.net/page/resources/_/technical/graphics-programming-and-theory/advanced-terrain-texture-splatting-r3287
+    return texture1.a + (1 - alpha) > texture2.a + alpha ? texture1 : texture2;
+}
+
+//Compress 0..1 value to 0....0..1....1 value
+float Compress(float a, float ratio)
+{
+	float y = (ratio*(a - 0.5));				//More ratio - narrower blend band
+	return clamp(y, 0, 1);
+}
+
+float4 NoDepthBlend(float4 texture1, float4 texture2, float alpha, float compressAlpha)
+{
+    return lerp(texture1, texture2, Compress(alpha, compressAlpha));
+}
+
 [numthreads(8,8,1)]
 void CSMain (uint2 id : SV_DispatchThreadID)
 {
@@ -88,11 +126,11 @@ void CSMain (uint2 id : SV_DispatchThreadID)
 	float4 masked = BiCubic(mask, uv, maskW, maskH);
 
 	//Lerp textures
-	float4 resultPixel = sand[id];
-	resultPixel = lerp(resultPixel, stone[id], masked.r);
-	resultPixel = lerp(resultPixel, grass[id], masked.g);
-	resultPixel = lerp(resultPixel, water[id], masked.b);
-	resultPixel = lerp(resultPixel, snow[id], masked.a);
+	float4 resultPixel = float4(sand[id].r, sand[id].g, sand[id].b, 0);
+	resultPixel =  SoftDepthBlend(resultPixel, stone[id], masked.r);
+	resultPixel = SoftDepthBlend(resultPixel, grass[id], masked.g);
+	resultPixel = SoftDepthBlend(resultPixel, water[id], masked.b);
+	resultPixel = NoDepthBlend(resultPixel, snow[id], masked.a, 50);
 
-    result[id] = resultPixel;
+    result[id] = resultPixel; 
 }

@@ -182,8 +182,6 @@ void CSMain (uint2 id : SV_DispatchThreadID)
 	//float4 masked = cubFilter(mask, uv * float2(maskW, maskH), float2(1, 1));
 	float4 masked = BiCubic(mask, uv, maskW, maskH);
 
-
-
 	//Peek resampled mask texture
     result[id] = masked;
 }
