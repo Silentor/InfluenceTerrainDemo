@@ -4,16 +4,17 @@ using UnityEngine;
 
 namespace TerrainDemo.Generators
 {
-    public class DefaultGenerator : ZoneGenerator
+    public class SnowGenerator : ZoneGenerator
     {
-        public DefaultGenerator(ZoneLayout zone, LandLayout land, ILandSettings landSettings) : base(zone, land, landSettings)
+        public SnowGenerator(ZoneLayout zone, LandLayout land, ILandSettings landSettings) : base(zone, land, landSettings)
         {
-            
         }
+
+        public override BlockType DefaultBlock { get {return BlockType.Snow;} }
 
         protected override BlockType GenerateBlock(Vector2i worldPosition, Vector2i turbulence, Vector3 normal, ZoneRatio influence)
         {
-            if (Vector3.Angle(Vector3.up, normal) > 50)
+            if (Vector3.Angle(Vector3.up, normal) > 75)
                 return BlockType.Rock;
 
             return base.GenerateBlock(worldPosition, turbulence, normal, influence);

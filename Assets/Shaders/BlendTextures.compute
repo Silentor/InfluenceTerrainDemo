@@ -6,20 +6,18 @@ float turbulence = 0.1;
 Texture2D<float4> noise;
 Texture2D<float4> grass;
 Texture2D<float4> stone;
+//Texture2D<float3> stoneNrm;
 Texture2D<float4> water;
 Texture2D<float4> sand;
 Texture2D<float4> snow;
-RWTexture2D<float4> result;				//Result baked texture
+RWTexture2D<float4> result;					//Result baked texture
+//RWTexture2D<float4> resultNrm;				//Result baked texture
 
 SamplerState _LinearClamp;
 SamplerState _LinearRepeat;
 SamplerState _PointClamp;
 
-float2 scaleUV(float2 uv, float borderF)
-{
-    float2 result = float2(uv.x * (1 - borderF * 2) + borderF, uv.y * (1 - borderF * 2) + borderF);		//todo consider use FMA function
-	return result; 
-}
+#include "Assets\Shaders\Common.cginc"
 
 float BSpline( float x )
 {
@@ -62,42 +60,23 @@ float4 BiCubic(Texture2D<float4> source, float2 TexCoord, float fWidth, float fH
     return nSum / nDenom;
 }
 
-float4 SoftDepthBlend(float4 texture1, float4 texture2, float alpha, float delta)
-{
-	//Based on http://www.gamedev.net/page/resources/_/technical/graphics-programming-and-theory/advanced-terrain-texture-splatting-r3287
-	float a1 = 1 - alpha;
-	float a2 = alpha;
-	float depth = delta;				//Default 0.2
-    float ma = max(texture1.a + a1, texture2.a + a2) - depth;
-
-    float b1 = max(texture1.a + a1 - ma, 0);
-    float b2 = max(texture2.a + a2 - ma, 0);
-
-	float4 result = (texture1 * b1 + texture2 * b2) / (b1 + b2);
-	return result;
-}
-
-float4 SoftDepthBlend(float4 texture1, float4 texture2, float alpha)
-{
-	return SoftDepthBlend(texture1, texture2, alpha, 0.2);
-}
-
 float4 HardDepthBlend(float4 texture1, float4 texture2, float alpha)
 {
 	//Based on http://www.gamedev.net/page/resources/_/technical/graphics-programming-and-theory/advanced-terrain-texture-splatting-r3287
     return texture1.a + (1 - alpha) > texture2.a + alpha ? texture1 : texture2;
 }
 
-//Compress 0..1 value to 0....0..1....1 value
-float Compress(float a, float ratio)
-{
-	float y = (ratio*(a - 0.5));				//More ratio - narrower blend band
-	return clamp(y, 0, 1);
-}
-
 float4 NoDepthBlend(float4 texture1, float4 texture2, float alpha, float compressAlpha)
 {
-    return lerp(texture1, texture2, Compress(alpha, compressAlpha));
+    return lerp(texture1, texture2, Compress01(alpha, compressAlpha));
+}
+
+//Convert normal from RGB to AG
+float4 PackNormal(float3 rgbNormal)
+{
+	float4 result = (float4)0;
+	result.ag = rgbNormal.xy;
+	return result;
 }
 
 [numthreads(8,8,1)]
@@ -110,13 +89,10 @@ void CSMain (uint2 id : SV_DispatchThreadID)
 	//Get turbulence for mask
 	float4 turbulenceValue = (noise.SampleLevel(_LinearRepeat, uv, 0) - 0.25) * turbulence;		//Bad noise, avg = 0.25
 
-	//Compensate mask border
+	//Scale uv because of mask border
 	float maskW, maskH;
 	mask.GetDimensions(maskW, maskH);
-	float borderF = border/maskW;
-
-	//Scale uv because of mask border
-	uv = scaleUV(uv, borderF);
+	uv = scaleUV(uv, border, maskW);
 
 	//Apply turbulence to mask
 	uv += float2(turbulenceValue.x, turbulenceValue.y);
@@ -125,12 +101,14 @@ void CSMain (uint2 id : SV_DispatchThreadID)
 	//float4 masked = mask.SampleLevel(_LinearClamp, uv, 0);
 	float4 masked = BiCubic(mask, uv, maskW, maskH);
 
-	//Lerp textures
-	float4 resultPixel = float4(sand[id].r, sand[id].g, sand[id].b, 0);
-	resultPixel =  SoftDepthBlend(resultPixel, stone[id], masked.r);
+	//Blend textures
+	float4 resultPixel = float4(stone[id].r, stone[id].g, stone[id].b, 0);
+	resultPixel =  SoftDepthBlend(resultPixel, sand[id], masked.r);
 	resultPixel = SoftDepthBlend(resultPixel, grass[id], masked.g);
 	resultPixel = SoftDepthBlend(resultPixel, water[id], masked.b);
 	resultPixel = NoDepthBlend(resultPixel, snow[id], masked.a, 50);
 
+	//Result
     result[id] = resultPixel; 
+	//resultNrm[id] = PackNormal(stoneNrm[id]);
 }

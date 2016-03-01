@@ -26,10 +26,26 @@ namespace TerrainDemo
         /// </summary>
         public readonly int GridSize;
 
+        /// <summary>
+        /// Heightmap of chunk grid
+        /// </summary>
         public readonly float[,] HeightMap;
+
+        /// <summary>
+        /// Influence of zones for chunk grid
+        /// </summary>
         public readonly ZoneRatio[,] Influence;
+
+        /// <summary>
+        /// Types of blocks
+        /// </summary>
         public readonly BlockType[,] BlockType;
+
+        /// <summary>
+        /// Normals of blocks
+        /// </summary>
         public readonly Vector3[,] NormalMap;
+
         public readonly List<Vector3> Flora = new List<Vector3>();
         public Vector3[] Stones;
 

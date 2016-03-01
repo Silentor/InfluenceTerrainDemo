@@ -31,6 +31,8 @@ namespace TerrainDemo.Generators
                     generator = new ForestGenerator(zoneMarkup, _land, _settings);
                 else if (zoneMarkup.Type == ZoneType.Mountains)
                     generator = new MountainsGenerator(zoneMarkup, _land, _settings);
+                else if (zoneMarkup.Type == ZoneType.Snow)
+                    generator = new SnowGenerator(zoneMarkup, _land, _settings);
                 else if (zoneMarkup.Type >= ZoneType.Hills && zoneMarkup.Type <= ZoneType.Lake)
                     generator = new DefaultGenerator(zoneMarkup, _land, _settings);
                 else if (zoneMarkup.Type >= ZoneType.Influence1 && zoneMarkup.Type <= ZoneType.Influence8)

@@ -10,5 +10,6 @@ namespace TerrainDemo.Settings
         public Texture2D NoiseTexture;
         public Material Material;
         public ComputeShader TextureBlendShader;
+        public ComputeShader TriplanarTextureShader;
     }
 }

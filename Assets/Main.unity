@@ -118,13 +118,10 @@ MonoBehaviour:
   LandNoiseSettings: {fileID: 11400000, guid: d7826460041438940b2a318c07207ed6, type: 2}
   Zones:
   - {fileID: 11400000, guid: 143a1e76d1de30f43aae86242fa6b09a, type: 2}
-  - {fileID: 11400000, guid: 1d1884e8c53e2cf4585b8eb12b78019d, type: 2}
-  - {fileID: 11400000, guid: efe303b16c6dfa0419eaeabce0cc1f5a, type: 2}
-  - {fileID: 11400000, guid: 6d9e47604d34fe64686ce4c7b4247a74, type: 2}
   - {fileID: 11400000, guid: b7ea798b05685aa4086f3ad12b3c60a1, type: 2}
   ZonesDensity: {x: 30, y: 40}
   GenerateSeed: 1
-  LandSeed: 1050446272
+  LandSeed: 269515894
   IDWCoeff: 2
   IDWOffset: 0.001
   InterpolateInfluence: 0
@@ -135,19 +132,39 @@ MonoBehaviour:
   Blocks:
   - Block: 2
     Color: {r: 0, g: 1, b: 0.048275948, a: 1}
-    Texture: {fileID: 2800000, guid: daf6a200dfc15564797eb8513a253a4b, type: 3}
+    FlatTexture: {fileID: 2800000, guid: daf6a200dfc15564797eb8513a253a4b, type: 3}
+    TextureNrm: {fileID: 0}
+    SteepTexture: {fileID: 2800000, guid: 19f19ae4b957dfc428a8d283e48a5916, type: 3}
+    SteepAngles: {x: 45, y: 55}
+    Texture2Nrm: {fileID: 0}
   - Block: 3
     Color: {r: 0.6102941, g: 0.6102941, b: 0.6102941, a: 1}
-    Texture: {fileID: 2800000, guid: 655baec2b6d179442a8df3573e025ad4, type: 3}
+    FlatTexture: {fileID: 2800000, guid: 655baec2b6d179442a8df3573e025ad4, type: 3}
+    TextureNrm: {fileID: 2800000, guid: 6cadedd8e39735342b7363f3570eac52, type: 3}
+    SteepTexture: {fileID: 2800000, guid: 655baec2b6d179442a8df3573e025ad4, type: 3}
+    SteepAngles: {x: 45, y: 55}
+    Texture2Nrm: {fileID: 2800000, guid: c96b0eb73b1292f4ba9fc885be143ae7, type: 3}
   - Block: 6
     Color: {r: 0, g: 0.83448267, b: 1, a: 1}
-    Texture: {fileID: 2800000, guid: b766c4ffca7260e4d943ad5e9b6d700b, type: 3}
+    FlatTexture: {fileID: 2800000, guid: b766c4ffca7260e4d943ad5e9b6d700b, type: 3}
+    TextureNrm: {fileID: 0}
+    SteepTexture: {fileID: 2800000, guid: b766c4ffca7260e4d943ad5e9b6d700b, type: 3}
+    SteepAngles: {x: 0, y: 0}
+    Texture2Nrm: {fileID: 0}
   - Block: 4
     Color: {r: 0.71744424, g: 0.7941176, b: 0, a: 1}
-    Texture: {fileID: 2800000, guid: 23afafc09f993fe4b971155856b20ecb, type: 3}
+    FlatTexture: {fileID: 2800000, guid: 23afafc09f993fe4b971155856b20ecb, type: 3}
+    TextureNrm: {fileID: 0}
+    SteepTexture: {fileID: 2800000, guid: 4f0301d578f7f534a903ca772338b658, type: 3}
+    SteepAngles: {x: 25, y: 45}
+    Texture2Nrm: {fileID: 0}
   - Block: 5
     Color: {r: 0.9137111, g: 0.9558824, b: 0.9506473, a: 1}
-    Texture: {fileID: 2800000, guid: f1910ca6b9545cc468d22ca9434a9f82, type: 3}
+    FlatTexture: {fileID: 2800000, guid: f1910ca6b9545cc468d22ca9434a9f82, type: 3}
+    TextureNrm: {fileID: 0}
+    SteepTexture: {fileID: 2800000, guid: 09fbca0223a8ef6428d4af988a104d4f, type: 3}
+    SteepAngles: {x: 35, y: 50}
+    Texture2Nrm: {fileID: 0}
   Tree: {fileID: 178060, guid: 69ee204600497b94797abb82b51602bd, type: 2}
   Stone: {fileID: 127540, guid: cdcdb6005d769124082a23208f27a7ce, type: 2}
 --- !u!4 &214652176
@@ -179,6 +196,8 @@ MonoBehaviour:
   NoiseTexture: {fileID: 2800000, guid: 53f6543b5c6260e47854d3e26253d1ff, type: 3}
   Material: {fileID: 2100000, guid: cf4bbfe466f303742b1c4030ee57c04b, type: 2}
   TextureBlendShader: {fileID: 7200000, guid: d585ce2608b9451429edd609756aba4f, type: 3}
+  TriplanarTextureShader: {fileID: 7200000, guid: 57e860f02739ed64bb22fa8aedb19138,
+    type: 3}
 --- !u!1 &653313276
 GameObject:
   m_ObjectHideFlags: 0
@@ -222,81 +241,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 5
---- !u!1 &990786462
-GameObject:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  serializedVersion: 4
-  m_Component:
-  - 4: {fileID: 990786466}
-  - 33: {fileID: 990786465}
-  - 64: {fileID: 990786464}
-  - 23: {fileID: 990786463}
-  m_Layer: 0
-  m_Name: Quad
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!23 &990786463
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 990786462}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_Materials:
-  - {fileID: 2100000, guid: cf4bbfe466f303742b1c4030ee57c04b, type: 2}
-  m_SubsetIndices: 
-  m_StaticBatchRoot: {fileID: 0}
-  m_UseLightProbes: 1
-  m_ReflectionProbeUsage: 1
-  m_ProbeAnchor: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_PreserveUVs: 1
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingOrder: 0
---- !u!64 &990786464
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 990786462}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Convex: 0
-  m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
---- !u!33 &990786465
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 990786462}
-  m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
---- !u!4 &990786466
-Transform:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 990786462}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -32.049355, y: 61.003906, z: 19.009838}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 6
 --- !u!1 &1293065045
 GameObject:
   m_ObjectHideFlags: 0
@@ -516,7 +460,7 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1902875634}
-  m_LocalRotation: {x: 0.40821794, y: -0.23456973, z: 0.109381676, w: 0.87542605}
+  m_LocalRotation: {x: -0.4967319, y: 0.40957588, z: -0.2867882, w: -0.70940655}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []

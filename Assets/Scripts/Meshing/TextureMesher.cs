@@ -15,16 +15,11 @@ namespace TerrainDemo.Meshing
         {
             _meshSettings = meshSettings;
 
-            _grassTex =
-                settings.Blocks.Where(b => b.Block == BlockType.Grass).Select(b => b.Texture).First();
-            _stoneTex = settings.Blocks.Where(b => b.Block == BlockType.Rock).Select(b => b.Texture).First();
-            _waterTex = settings.Blocks.Where(b => b.Block == BlockType.Water).Select(b => b.Texture).First();
-            _sandTex = settings.Blocks.Where(b => b.Block == BlockType.Sand).Select(b => b.Texture).First();
-            _snowTex = settings.Blocks.Where(b => b.Block == BlockType.Snow).Select(b => b.Texture).First();
-
-            //Legacy texture generation
-            //_grass = _grassTex.GetPixels();
-            //_stone = _stoneTex.GetPixels();
+            foreach (var block in settings.Blocks)
+            {
+                if(block.FlatTexture != null)
+                    _blockSettings.Add(block.Block, block);
+            }
         }
 
         ~TextureMesher()
@@ -76,43 +71,39 @@ namespace TerrainDemo.Meshing
             _textureTimer.Stop();
 
             var material = new Material(_meshSettings.Material);
-            material.mainTexture = tex;
+            material.mainTexture = tex.Diffuse;
 
             return new ChunkModel {Mesh = mesh, Material = material };
         }
 
         private readonly MesherSettings _meshSettings;
 
-        private readonly Color[] _grass;
-        private readonly Color[] _stone;
-        private readonly Texture2D _grassTex;
-        private readonly Texture2D _stoneTex;
-        private readonly Texture2D _waterTex;
-        private readonly Texture2D _sandTex;
-        private readonly Texture2D _snowTex;
         private readonly AverageTimer _meshTimer = new AverageTimer();
         private readonly AverageTimer _textureTimer = new AverageTimer();
+        
+        private readonly Dictionary<BlockType, BlockRenderSettings> _blockSettings = new Dictionary<BlockType, BlockRenderSettings>();
+        private readonly Dictionary<BlockType, RenderTexture> _blockResult = new Dictionary<BlockType, RenderTexture>();
 
-        private Texture2D GenerateTextureCPU(Chunk chunk)
-        {
-            var result = new Texture2D(1024, 1024, TextureFormat.RGB24, true);
-            var pixels = result.GetPixels();
+        //private Texture2D GenerateTextureCPU(Chunk chunk)
+        //{
+        //    var result = new Texture2D(1024, 1024, TextureFormat.RGB24, true);
+        //    var pixels = result.GetPixels();
 
-            for (int z = 0; z < 1024 - 1; z++)
-                for (int x = 0; x < 1024 - 1; x++)
-                {
-                    var blockType = chunk.BlockType[x/64, z/64];
-                    if (blockType == BlockType.Rock)
-                        pixels[x + z*1024] = _stone[x + z * 1024];
-                    else
-                        pixels[x + z*1024] = _grass[x + z * 1024];
-                }
+        //    for (int z = 0; z < 1024 - 1; z++)
+        //        for (int x = 0; x < 1024 - 1; x++)
+        //        {
+        //            var blockType = chunk.BlockType[x/64, z/64];
+        //            if (blockType == BlockType.Rock)
+        //                pixels[x + z*1024] = _stone[x + z * 1024];
+        //            else
+        //                pixels[x + z*1024] = _grass[x + z * 1024];
+        //        }
 
-            result.SetPixels(pixels);
-            result.Apply();
+        //    result.SetPixels(pixels);
+        //    result.Apply();
 
-            return result;
-        }
+        //    return result;
+        //}
 
         private RenderTexture GetRenderTexture()
         {
@@ -127,29 +118,64 @@ namespace TerrainDemo.Meshing
             return renderTexture;
         }
 
-        private Texture GenerateTextureShader(Chunk chunk, Dictionary<Vector2i, Chunk> map)
+        private RenderTexture GetTextureFor(BlockType block, Texture2D geoMap, HeightMap heightMap, int mapBorder)
+        {
+            var settings = _blockSettings[block];
+
+            var renderTriTex = GetRenderTexture();
+            var triShader = _meshSettings.TriplanarTextureShader;
+            triShader.SetTexture(0, "FlatTexture", settings.FlatTexture);
+            triShader.SetTexture(0, "SteepTexture", settings.SteepTexture);
+            triShader.SetTexture(0, "HeightMap", heightMap.Map);
+            triShader.SetTexture(0, "Normals", geoMap);
+            triShader.SetInt("Border", mapBorder);
+            triShader.SetFloat("Lower", heightMap.Lower);
+            triShader.SetFloat("Upper", heightMap.Upper);
+            triShader.SetFloat("SteepAngleFrom", settings.SteepAngles.x);
+            triShader.SetFloat("SteepAngleTo", settings.SteepAngles.y);
+            triShader.SetTexture(0, "Result", renderTriTex);
+            triShader.Dispatch(0, renderTriTex.width / 8, renderTriTex.height / 8, 1);
+
+            return renderTriTex;
+        }
+
+        private Textures GenerateTextureShader(Chunk chunk, Dictionary<Vector2i, Chunk> map)
         {
             var border = _meshSettings.MaskBorder;
-            var mask = new Texture2D(chunk.BlocksCount + 2*border, chunk.BlocksCount + 2 * border, TextureFormat.RGBA32, false);      //todo consider pass mask as ComputeBuffer, to avoid create texture costs
-            mask.wrapMode = TextureWrapMode.Clamp;
-            var maskColors = CalculateBlockMask(chunk, border, map);
-            mask.SetPixels(maskColors);
-            mask.Apply(false);
 
+            var mask = CalculateBlockMask(chunk, border, map);
+            
+            var geoMask = PrepareGeometryMask(mask);
+            var heightMask = PrepareHeightMask(chunk);
+            
+            foreach (var blockType in _blockSettings.Keys)
+            {
+                var renderTriTex = GetTextureFor(blockType, geoMask, heightMask, border);
+                _blockResult[blockType] = renderTriTex;
+            }
+            
+            var blockMask = PrepareBlockTypeMask(mask);
             var renderTex = GetRenderTexture();
+            //var renderTexNrm = GetRenderTexture();
             var shader = _meshSettings.TextureBlendShader;
-            shader.SetTexture(0, "mask", mask);
+            shader.SetTexture(0, "mask", blockMask);
             shader.SetInt("border", border);
             shader.SetFloat("turbulence", _meshSettings.Turbulence);
             shader.SetTexture(0, "noise", _meshSettings.NoiseTexture);
-            shader.SetTexture(0, "grass", _grassTex);
-            shader.SetTexture(0, "stone", _stoneTex);
-            shader.SetTexture(0, "sand", _sandTex);
-            shader.SetTexture(0, "water", _waterTex);
-            shader.SetTexture(0, "snow", _snowTex);
+            if(_blockResult.ContainsKey(BlockType.Grass))
+                shader.SetTexture(0, "grass", _blockResult[BlockType.Grass]);
+            if (_blockResult.ContainsKey(BlockType.Rock))
+                shader.SetTexture(0, "stone", _blockResult[BlockType.Rock]);
+            if (_blockResult.ContainsKey(BlockType.Sand))
+                shader.SetTexture(0, "sand", _blockResult[BlockType.Sand]);
+            if (_blockResult.ContainsKey(BlockType.Water))
+                shader.SetTexture(0, "water", _blockResult[BlockType.Water]);
+            if (_blockResult.ContainsKey(BlockType.Snow))
+                shader.SetTexture(0, "snow", _blockResult[BlockType.Snow]);
             shader.SetTexture(0, "result", renderTex);
+            //shader.SetTexture(0, "resultNrm", renderTexNrm);
             shader.Dispatch(0, renderTex.width / 8, renderTex.height / 8, 1);
-
+            
             //Render computed texture to another one to generate auto mipmaps
             var renderTex2 = new RenderTexture(renderTex.width, renderTex.height, 0);
             renderTex2.useMipMap = true;
@@ -158,14 +184,94 @@ namespace TerrainDemo.Meshing
             renderTex2.Create();
             Graphics.Blit(renderTex, renderTex2);
 
-            //Destroy old texture
+            //Destroy old textures
             renderTex.Release();
             Object.Destroy(renderTex);
 
-            return renderTex2;
+            foreach (var blockResult in _blockResult)
+            {
+                blockResult.Value.Release();
+                Object.Destroy(blockResult.Value);
+            }
+            _blockResult.Clear();
+
+            return new Textures() {Diffuse = renderTex2/*, Normal = renderTex2Nrm*/};
         }
 
-        private Color[] CalculateBlockMask(Chunk chunk, int border, Dictionary<Vector2i, Chunk> map)
+        private HeightMap PrepareHeightMask(Chunk chunk)
+        {
+            var lowerHeight = float.MaxValue;
+            var upperHeight = float.MinValue;
+            for (int z = 0; z < chunk.GridSize; z++)
+                for (int x = 0; x < chunk.GridSize; x++)
+                {
+                    if (chunk.HeightMap[x, z] > upperHeight)
+                        upperHeight = chunk.HeightMap[x, z];
+                    if (chunk.HeightMap[x, z] < lowerHeight)
+                        lowerHeight = chunk.HeightMap[x, z];
+                }
+
+            var mask = new Color[chunk.GridSize*chunk.GridSize];
+            for (int z = 0; z < chunk.GridSize; z++)
+                for (int x = 0; x < chunk.GridSize; x++)
+                {
+                    mask[x + z*chunk.GridSize] = new Color(0, Mathf.InverseLerp(lowerHeight, upperHeight, chunk.HeightMap[x, z]), 0);
+                }
+
+            var result = new Texture2D(chunk.GridSize, chunk.GridSize, TextureFormat.RGB24, false);
+            result.wrapMode = TextureWrapMode.Clamp;
+            result.SetPixels(mask);
+            result.Apply(false, true);
+
+            return new HeightMap {Lower = lowerHeight, Upper = upperHeight, Map = result};
+        }
+
+        private Texture2D PrepareBlockTypeMask(ChunkMaskBlock[,] blocks)
+        {
+            var result = new Color[blocks.Length];
+            for (int z = 0; z <= blocks.GetUpperBound(1); z++)
+                for (int x = 0; x <= blocks.GetUpperBound(0); x++)
+                {
+                    var blockType = blocks[x, z].Block;
+                    if (blockType == BlockType.Grass)
+                        result[x + z * blocks.GetLength(1)] = new Color(0, 1, 0, 0);
+                    else if (blockType == BlockType.Sand)
+                        result[x + z * blocks.GetLength(1)] = new Color(1, 0, 0, 0);
+                    else if (blockType == BlockType.Water)
+                        result[x + z * blocks.GetLength(1)] = new Color(0, 0, 1, 0);
+                    else if (blockType == BlockType.Snow)
+                        result[x + z * blocks.GetLength(1)] = new Color(0, 0, 0, 1);
+                    //Stone - no color at all
+                }
+
+            var resultTexture = new Texture2D(blocks.GetLength(0), blocks.GetLength(1), TextureFormat.RGBA32, false);
+            resultTexture.wrapMode = TextureWrapMode.Clamp;
+            resultTexture.SetPixels(result);
+            resultTexture.Apply(false, true);
+            return resultTexture;
+        }
+
+        private Texture2D PrepareGeometryMask(ChunkMaskBlock[,] blocks)
+        {
+            var result = new Color[blocks.Length];
+            for (int z = 0; z <= blocks.GetUpperBound(1); z++)
+                for (int x = 0; x <= blocks.GetUpperBound(0); x++)
+                {
+                    var normal = blocks[x, z].Normal;
+                    result[x + z * blocks.GetLength(1)].r = normal.x / 2 + 0.5f;
+                    result[x + z * blocks.GetLength(1)].g = normal.y / 2 + 0.5f;
+                    result[x + z * blocks.GetLength(1)].b = normal.z / 2 + 0.5f;
+                    result[x + z * blocks.GetLength(1)].a = Vector3.Angle(normal, Vector3.up)/90f;
+                }
+
+            var resultTexture = new Texture2D(blocks.GetLength(0), blocks.GetLength(1), TextureFormat.RGBA32, false);
+            resultTexture.wrapMode = TextureWrapMode.Clamp;
+            resultTexture.SetPixels(result);
+            resultTexture.Apply(false, true);
+            return resultTexture;
+        }
+
+        private ChunkMaskBlock[,] CalculateBlockMask(Chunk chunk, int border, Dictionary<Vector2i, Chunk> map)
         {
             Chunk top, bottom, left, right, topleft, bottomleft, topright, bottomright;
             map.TryGetValue(chunk.Position + Vector2i.Forward, out top);
@@ -178,50 +284,34 @@ namespace TerrainDemo.Meshing
             map.TryGetValue(chunk.Position + Vector2i.Back + Vector2i.Right, out bottomright);
 
             var bc = chunk.BlocksCount;
-            var blocks = new BlockType[chunk.BlocksCount + 2*border, chunk.BlocksCount + 2*border];
+            var blocks = new ChunkMaskBlock[chunk.BlocksCount + 2*border, chunk.BlocksCount + 2*border];
 
-            CopyBlocks(chunk.BlockType, blocks, new Bounds2i(Vector2i.Zero, Vector2i.One*(bc - 1)), Vector2i.One*border);
+            CopyBlocks(chunk, blocks, new Bounds2i(Vector2i.Zero, Vector2i.One*(bc - 1)), Vector2i.One*border);
 
             if (border > 0)
             {
                 if(bottomleft != null)
-                    CopyBlocks(bottomleft.BlockType, blocks, new Bounds2i(Vector2i.One * (bc - border), border, border), Vector2i.Zero);
+                    CopyBlocks(bottomleft, blocks, new Bounds2i(Vector2i.One * (bc - border), border, border), Vector2i.Zero);
                 if (bottom != null)
-                    CopyBlocks(bottom.BlockType, blocks, new Bounds2i(new Vector2i(0, bc - border), bc, border), new Vector2i(border, 0));
+                    CopyBlocks(bottom, blocks, new Bounds2i(new Vector2i(0, bc - border), bc, border), new Vector2i(border, 0));
                 if (bottomright != null)
-                    CopyBlocks(bottomright.BlockType, blocks, new Bounds2i(new Vector2i(0, bc - border), border, border), new Vector2i(bc + border, 0));
+                    CopyBlocks(bottomright, blocks, new Bounds2i(new Vector2i(0, bc - border), border, border), new Vector2i(bc + border, 0));
                 if (left != null)
-                    CopyBlocks(left.BlockType, blocks, new Bounds2i(new Vector2i(bc - border, 0), border, bc), new Vector2i(0, border));
+                    CopyBlocks(left, blocks, new Bounds2i(new Vector2i(bc - border, 0), border, bc), new Vector2i(0, border));
                 if (right != null)
-                    CopyBlocks(right.BlockType, blocks, new Bounds2i(new Vector2i(0, 0), border, bc), new Vector2i(bc+border, border));
+                    CopyBlocks(right, blocks, new Bounds2i(new Vector2i(0, 0), border, bc), new Vector2i(bc+border, border));
                 if (topleft != null)
-                    CopyBlocks(topleft.BlockType, blocks, new Bounds2i(new Vector2i(bc - border, 0), border, border), new Vector2i(0, bc + border));
+                    CopyBlocks(topleft, blocks, new Bounds2i(new Vector2i(bc - border, 0), border, border), new Vector2i(0, bc + border));
                 if (top != null)
-                    CopyBlocks(top.BlockType, blocks, new Bounds2i(new Vector2i(0, 0), bc, border), new Vector2i(border, bc+border));
+                    CopyBlocks(top, blocks, new Bounds2i(new Vector2i(0, 0), bc, border), new Vector2i(border, bc+border));
                 if (topright != null)
-                    CopyBlocks(topright.BlockType, blocks, new Bounds2i(Vector2i.Zero, border, border), new Vector2i(bc + border));
+                    CopyBlocks(topright, blocks, new Bounds2i(Vector2i.Zero, border, border), new Vector2i(bc + border));
             }
 
-            var result = new Color[(bc + 2*border)*(bc + 2*border)];
-            for (int z = 0; z <= blocks.GetUpperBound(1); z++)
-                for (int x = 0; x <= blocks.GetUpperBound(0); x++)
-                {
-                    var blockType = blocks[x, z];
-                    if (blockType == BlockType.Grass)
-                        result[x + z * (bc + 2 * border)] = new Color(0, 1, 0, 0);
-                    else if (blockType == BlockType.Rock)
-                        result[x + z * (bc + 2 * border)] = new Color(1, 0, 0, 0);
-                    else if (blockType == BlockType.Water)
-                        result[x + z * (bc + 2 * border)] = new Color(0, 0, 1, 0);
-                    else if(blockType == BlockType.Snow)
-                        result[x + z * (bc + 2 * border)] = new Color(0, 0, 0, 1);
-                    //Sand aka dirt - no color at all
-                }
-
-            return result;
+            return blocks;
         }
 
-        private void CopyBlocks(BlockType[,] src, BlockType[,] dest, Bounds2i srcBounds, Vector2i destPosition)
+        private void CopyBlocks(Chunk src, ChunkMaskBlock[,] dest, Bounds2i srcBounds, Vector2i destPosition)
         {
             for (int z = srcBounds.Min.Z; z <= srcBounds.Max.Z; z++)
             {
@@ -229,7 +319,8 @@ namespace TerrainDemo.Meshing
                 for (int x = srcBounds.Min.X; x <= srcBounds.Max.X; x++)
                 {
                     var destPosX = destPosition.X + (x - srcBounds.Min.X);
-                    dest[destPosX, destPosZ] = src[x, z];
+                    dest[destPosX, destPosZ].Block = src.BlockType[x, z];
+                    dest[destPosX, destPosZ].Normal = src.NormalMap[x, z];
                 }
             }
         }
@@ -320,6 +411,26 @@ namespace TerrainDemo.Meshing
         {
             public Mesh Mesh;
             public Material Material;
+        }
+
+        public struct ChunkMaskBlock
+        {
+            public BlockType Block;
+            //public float Inclination;
+            public Vector3 Normal;
+        }
+
+        public struct Textures
+        {
+            public Texture Diffuse;
+            public Texture Normal;
+        }
+
+        public struct HeightMap
+        {
+            public Texture2D Map;
+            public float Lower;
+            public float Upper;
         }
     }
 }

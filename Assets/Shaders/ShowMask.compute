@@ -154,11 +154,6 @@ float4 BiCubic(Texture2D<float4> source, float2 TexCoord, float fWidth, float fH
     return nSum / nDenom;
 }
 
-float4 Compress(float4 value)
-{
-	
-}
-
 [numthreads(8,8,1)]
 void CSMain (uint2 id : SV_DispatchThreadID)
 {
@@ -177,9 +172,6 @@ void CSMain (uint2 id : SV_DispatchThreadID)
 	uv += float2(turbulenceValue.x, turbulenceValue.y);
 
 	//Calculate mask color texel
-	//float4 masked = mask.SampleLevel(_LinearClamp, uv, 0);  
-	//float4 masked = mask.SampleLevel(_PointClamp, uv, 0);  
-	//float4 masked = cubFilter(mask, uv * float2(maskW, maskH), float2(1, 1));
 	float4 masked = BiCubic(mask, uv, maskW, maskH);
 
 	//Peek resampled mask texture

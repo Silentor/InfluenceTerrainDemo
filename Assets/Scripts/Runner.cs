@@ -38,7 +38,7 @@ namespace TerrainDemo
         [Range(1, 128)]
         public int BlockSize = 1;
 
-        public BlockColors[] Blocks;
+        public BlockRenderSettings[] Blocks;
 
         public GameObject Tree;
 
@@ -108,7 +108,7 @@ namespace TerrainDemo
         float ILandSettings.InfluenceThreshold { get { return InfluenceThreshold; } }
         int ILandSettings.InfluenceLimit { get { return InfluenceLimit; } }
 
-        IEnumerable<BlockColors> ILandSettings.Blocks { get { return Blocks ?? new BlockColors[0]; } }
+        IEnumerable<BlockRenderSettings> ILandSettings.Blocks { get { return Blocks ?? new BlockRenderSettings[0]; } }
 
         GameObject ILandSettings.Tree { get { return Tree; } }
         GameObject ILandSettings.Stone { get { return Stone; } }
