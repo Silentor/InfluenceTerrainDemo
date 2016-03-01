@@ -1,0 +1,11 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+Texture2D<float4> Texture;			//Large source chunk texture
+RWTexture2D<float4> Result;			//Large result chunk texture
+
+[numthreads(8,8,1)]
+void CSMain (uint2 pix : SV_DispatchThreadID)
+{
+	Result[pix] = Texture[pix];
+}
