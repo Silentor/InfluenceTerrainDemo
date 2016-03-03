@@ -1,0 +1,29 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+Texture2D<float4> Texture;			//Large source chunk texture
+Texture2D<float4> Noise;			//Perlin noise
+float NoiseScale;
+float4 FromColor;					//Color for noise 0
+float4 ToColor;						//Color for noise 1
+int2 ChunkPos;						//Chunk position
+
+RWTexture2D<float4> Result;			//Large result chunk texture
+
+SamplerState _LinearClamp;
+SamplerState _PointClamp;
+SamplerState _LinearRepeat;
+
+[numthreads(8,8,1)]
+void CSMain (uint2 id : SV_DispatchThreadID)
+{
+	float2 dim;	
+    Result.GetDimensions(dim.x, dim.y);
+	float2 uv = float2(id.x/(dim.x - 1), id.y/(dim.y - 1));
+
+	float noise = Noise.SampleLevel(_LinearRepeat, (ChunkPos + uv) * NoiseScale, 0).x * 2.0;						//Bad noise (from 0 to 0.5)
+	float4 tintColor = lerp(FromColor, ToColor, noise); 
+	float3 resultColor = lerp(Texture[id].rgb, tintColor.rgb, tintColor.a);				//Todo consider HSBC tint, but harder tweaking
+	Result[id] = float4(resultColor.rgb, Texture[id].a);								//Some unexpected whitening (Gamma space issue?)
+}
+

@@ -118,14 +118,33 @@ namespace TerrainDemo.Meshing
             return renderTexture;
         }
 
-        private RenderTexture GetTextureFor(BlockType block, Texture2D geoMap, HeightMap heightMap, int mapBorder)
+        private RenderTexture GetTextureFor(BlockType block, Texture2D geoMap, HeightMap heightMap, int mapBorder, Vector2i chunkPos)
         {
             var settings = _blockSettings[block];
 
+            //Tint flat texture
+            var tintedFlat = GetRenderTexture();
+            var tintedShader = _meshSettings.TintShader;
+            tintedShader.SetTexture(0, "Texture", settings.FlatTexture);
+            tintedShader.SetTexture(0, "Noise", _meshSettings.NoiseTexture);
+            tintedShader.SetVector("FromColor", settings.TintFrom);
+            tintedShader.SetVector("ToColor", settings.TintTo);
+            tintedShader.SetFloat("NoiseScale", settings.TintNoiseScale);
+            tintedShader.SetInts("ChunkPos", chunkPos.X, chunkPos.Z);
+            tintedShader.SetTexture(0, "Result", tintedFlat);
+            tintedShader.Dispatch(0, tintedFlat.width / 8, tintedFlat.height / 8, 1);
+
+            //Tint steep texture
+            var tintedSteep = GetRenderTexture();
+            tintedShader.SetTexture(0, "Texture", settings.SteepTexture);
+            tintedShader.SetTexture(0, "Result", tintedSteep);
+            tintedShader.Dispatch(0, tintedFlat.width / 8, tintedFlat.height / 8, 1);
+
+            //Triplanar combine flat and steep texture
             var renderTriTex = GetRenderTexture();
             var triShader = _meshSettings.TriplanarTextureShader;
-            triShader.SetTexture(0, "FlatTexture", settings.FlatTexture);
-            triShader.SetTexture(0, "SteepTexture", settings.SteepTexture);
+            triShader.SetTexture(0, "FlatTexture", tintedFlat);
+            triShader.SetTexture(0, "SteepTexture", tintedSteep);
             triShader.SetTexture(0, "HeightMap", heightMap.Map);
             triShader.SetTexture(0, "Normals", geoMap);
             triShader.SetInt("Border", mapBorder);
@@ -135,6 +154,11 @@ namespace TerrainDemo.Meshing
             triShader.SetFloat("SteepAngleTo", settings.SteepAngles.y);
             triShader.SetTexture(0, "Result", renderTriTex);
             triShader.Dispatch(0, renderTriTex.width / 8, renderTriTex.height / 8, 1);
+
+            tintedFlat.Release();
+            Object.Destroy(tintedFlat);
+            tintedSteep.Release();
+            Object.Destroy(tintedSteep);
 
             return renderTriTex;
         }
@@ -150,7 +174,7 @@ namespace TerrainDemo.Meshing
             
             foreach (var blockType in _blockSettings.Keys)
             {
-                var renderTriTex = GetTextureFor(blockType, geoMask, heightMask, border);
+                var renderTriTex = GetTextureFor(blockType, geoMask, heightMask, border, chunk.Position);
                 _blockResult[blockType] = renderTriTex;
             }
             
@@ -175,7 +199,7 @@ namespace TerrainDemo.Meshing
             shader.SetTexture(0, "result", renderTex);
             //shader.SetTexture(0, "resultNrm", renderTexNrm);
             shader.Dispatch(0, renderTex.width / 8, renderTex.height / 8, 1);
-            
+
             //Render computed texture to another one to generate auto mipmaps
             var renderTex2 = new RenderTexture(renderTex.width, renderTex.height, 0);
             renderTex2.useMipMap = true;

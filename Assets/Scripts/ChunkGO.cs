@@ -18,7 +18,12 @@ namespace TerrainDemo
         public static void Clear()
         {
             foreach (var chunkGo in _allChunksGO)
+            {
+                Destroy(chunkGo._filter.sharedMesh);
+                Destroy(chunkGo._renderer.sharedMaterial.mainTexture);
+                Destroy(chunkGo._renderer.sharedMaterial);
                 Destroy(chunkGo.gameObject);
+            }
             _allChunksGO.Clear();
         }
 

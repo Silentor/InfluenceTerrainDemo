@@ -13,5 +13,11 @@ namespace TerrainDemo.Settings
         public Texture2D SteepTexture;
         public Vector2 SteepAngles;
         public Texture2D Texture2Nrm;
+
+        //Tint
+        public Color TintFrom;
+        public Color TintTo;
+        public float TintNoiseScale;
+
     }
 }

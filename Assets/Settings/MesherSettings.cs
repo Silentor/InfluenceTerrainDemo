@@ -11,5 +11,6 @@ namespace TerrainDemo.Settings
         public Material Material;
         public ComputeShader TextureBlendShader;
         public ComputeShader TriplanarTextureShader;
+        public ComputeShader TintShader;
     }
 }

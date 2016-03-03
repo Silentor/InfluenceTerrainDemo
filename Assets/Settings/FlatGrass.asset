@@ -9,12 +9,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b9f54af2ef4c4664db92ab6d197caef3, type: 3}
-  m_Name: Test1
+  m_Name: FlatGrass
   m_EditorClassIdentifier: 
-  Name: Test1
-  LandColor_: {r: 0, g: 1, b: 0.2551725, a: 1}
+  Name: Hills
+  LandColor_: {r: 0.23701832, g: 0.83823526, b: 0, a: 1}
   Type: 1
-  DefaultBlock: 5
+  DefaultBlock: 2
   Height_: 0
   OutScale1_: 0
   OutScale2_: 0
