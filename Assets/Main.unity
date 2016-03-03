@@ -114,14 +114,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ZonesCount: 100
-  LandSize: 12
+  LandSize: 10
   LandNoiseSettings: {fileID: 11400000, guid: d7826460041438940b2a318c07207ed6, type: 2}
   Zones:
-  - {fileID: 11400000, guid: efe303b16c6dfa0419eaeabce0cc1f5a, type: 2}
-  - {fileID: 11400000, guid: b7ea798b05685aa4086f3ad12b3c60a1, type: 2}
-  - {fileID: 11400000, guid: 6d9e47604d34fe64686ce4c7b4247a74, type: 2}
-  - {fileID: 11400000, guid: 143a1e76d1de30f43aae86242fa6b09a, type: 2}
-  - {fileID: 11400000, guid: 1d1884e8c53e2cf4585b8eb12b78019d, type: 2}
+  - {fileID: 11400000, guid: 516dd341c29eb164684e3650f379ff12, type: 2}
   ZonesDensity: {x: 30, y: 40}
   GenerateSeed: 1
   LandSeed: 269515894
@@ -140,8 +136,8 @@ MonoBehaviour:
     SteepTexture: {fileID: 2800000, guid: 19f19ae4b957dfc428a8d283e48a5916, type: 3}
     SteepAngles: {x: 45, y: 55}
     Texture2Nrm: {fileID: 0}
-    TintFrom: {r: 0, g: 0.35686275, b: 0.047058824, a: 0.23921569}
-    TintTo: {r: 0.58431375, g: 0.7176471, b: 0.27058825, a: 0.16862746}
+    TintFrom: {r: 0.17254902, g: 0.38039216, b: 0.003921569, a: 0.49411765}
+    TintTo: {r: 0.58431375, g: 0.7176471, b: 0.27058825, a: 0.5019608}
     TintNoiseScale: 0.09677419
   - Block: 3
     Color: {r: 0.6102941, g: 0.6102941, b: 0.6102941, a: 1}
@@ -150,8 +146,8 @@ MonoBehaviour:
     SteepTexture: {fileID: 2800000, guid: 655baec2b6d179442a8df3573e025ad4, type: 3}
     SteepAngles: {x: 45, y: 55}
     Texture2Nrm: {fileID: 2800000, guid: c96b0eb73b1292f4ba9fc885be143ae7, type: 3}
-    TintFrom: {r: 0.46666667, g: 0.23529412, b: 0.23529412, a: 0.13333334}
-    TintTo: {r: 0.7764706, g: 0.9019608, b: 0.9607843, a: 0.1882353}
+    TintFrom: {r: 0.46666667, g: 0.23529412, b: 0.23529412, a: 0.5372549}
+    TintTo: {r: 0.46666667, g: 0.7764706, b: 0.7764706, a: 0}
     TintNoiseScale: 0.2285714
   - Block: 6
     Color: {r: 0, g: 0.83448267, b: 1, a: 1}
@@ -170,8 +166,8 @@ MonoBehaviour:
     SteepTexture: {fileID: 2800000, guid: 4f0301d578f7f534a903ca772338b658, type: 3}
     SteepAngles: {x: 25, y: 45}
     Texture2Nrm: {fileID: 0}
-    TintFrom: {r: 0.9843137, g: 0.96862745, b: 0.74509805, a: 0.24313726}
-    TintTo: {r: 0.89411765, g: 0.76862746, b: 0.2627451, a: 0.23921569}
+    TintFrom: {r: 0.9843137, g: 0.96862745, b: 0.74509805, a: 0.5137255}
+    TintTo: {r: 0.70980394, g: 0.6039216, b: 0.17254902, a: 0.47058824}
     TintNoiseScale: 0.3285714
   - Block: 5
     Color: {r: 0.9137111, g: 0.9558824, b: 0.9506473, a: 1}
