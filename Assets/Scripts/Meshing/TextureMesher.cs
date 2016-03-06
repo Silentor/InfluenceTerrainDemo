@@ -170,16 +170,14 @@ namespace TerrainDemo.Meshing
             return result;
         }
 
-        private Texture GetTriplanarTexture(Texture flatInput, Texture steepInput, HeightMap height, TerrainMap normals, BlockRenderSettings settings)
+        private Texture GetTriplanarTexture(Texture flatInput, Texture steepInput, ComputeBuffer height, TerrainMap normals, BlockRenderSettings settings)
         {
             //Triplanar combine flat and steep texture
             var result = GetRenderTexture();
             var triShader = _meshSettings.TriplanarTextureShader;
             triShader.SetTexture(0, "FlatTexture", flatInput);
             triShader.SetTexture(0, "SteepTexture", steepInput);
-            triShader.SetTexture(0, "HeightMap", height.Map);
-            triShader.SetFloat("Lower", height.Lower);
-            triShader.SetFloat("Upper", height.Upper);
+            triShader.SetBuffer(0, "HeightMap", height);
             triShader.SetTexture(0, "Normals", normals.Map);
             triShader.SetInt("Border", normals.Border);
             triShader.SetFloat("SteepAngleFrom", settings.SteepAngles.x);
@@ -190,7 +188,7 @@ namespace TerrainDemo.Meshing
             return result;
         }
 
-        private Texture GetTextureFor(BlockType block, HeightMap heightMap, TerrainMap normals, Vector2i chunkPos)
+        private Texture GetTextureFor(BlockType block, ComputeBuffer heightMap, TerrainMap normals, Vector2i chunkPos)
         {
             var settings = _blockSettings[block];
             Texture flat = settings.FlatTexture.Texture;
@@ -232,6 +230,8 @@ namespace TerrainDemo.Meshing
                 _blockResult[blockType] = renderTriTex;
             }
 
+            heightMap.Dispose();
+
             var blockMask = PrepareBlockTypeMask(mask);
             var renderTex = GetRenderTexture();
             //var renderTexNrm = GetRenderTexture();
@@ -265,32 +265,17 @@ namespace TerrainDemo.Meshing
             return new Textures() {Diffuse = renderTex2/*, Normal = renderTex2Nrm*/};
         }
 
-        private HeightMap PrepareHeightMap(Chunk chunk)
+        private ComputeBuffer PrepareHeightMap(Chunk chunk)
         {
-            var lowerHeight = float.MaxValue;
-            var upperHeight = float.MinValue;
+            var heightBuf = new ComputeBuffer(chunk.GridSize * chunk.GridSize, sizeof(float));
+            var heightMap = new float[chunk.GridSize*chunk.GridSize];
+
             for (int z = 0; z < chunk.GridSize; z++)
                 for (int x = 0; x < chunk.GridSize; x++)
-                {
-                    if (chunk.HeightMap[x, z] > upperHeight)
-                        upperHeight = chunk.HeightMap[x, z];
-                    if (chunk.HeightMap[x, z] < lowerHeight)
-                        lowerHeight = chunk.HeightMap[x, z];
-                }
+                    heightMap[x + z*chunk.GridSize] = chunk.HeightMap[x, z];
 
-            var mask = new Color[chunk.GridSize*chunk.GridSize];
-            for (int z = 0; z < chunk.GridSize; z++)
-                for (int x = 0; x < chunk.GridSize; x++)
-                {
-                    mask[x + z*chunk.GridSize] = new Color(0, Mathf.InverseLerp(lowerHeight, upperHeight, chunk.HeightMap[x, z]), 0);
-                }
-
-            var result = new Texture2D(chunk.GridSize, chunk.GridSize, TextureFormat.RGB24, false);
-            result.wrapMode = TextureWrapMode.Clamp;
-            result.SetPixels(mask);
-            result.Apply(false, true);
-
-            return new HeightMap {Lower = lowerHeight, Upper = upperHeight, Map = result};
+            heightBuf.SetData(heightMap);
+            return heightBuf;
         }
 
         private Texture2D PrepareBlockTypeMask(ChunkMaskBlock[,] blocks)

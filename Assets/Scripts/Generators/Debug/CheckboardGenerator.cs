@@ -1,10 +1,9 @@
-﻿using System;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 using TerrainDemo.Layout;
 using TerrainDemo.Settings;
 using UnityEngine;
 
-namespace TerrainDemo.Generators
+namespace TerrainDemo.Generators.Debug
 {
     public class CheckboardGenerator : ZoneGenerator
     {

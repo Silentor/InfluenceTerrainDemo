@@ -21,7 +21,9 @@
         Influence7,
         Influence8,
 
-        Checkboard
+        Checkboard,
+        Cone,
+        Slope
 
     }
 }

@@ -117,11 +117,7 @@ MonoBehaviour:
   LandSize: 12
   LandNoiseSettings: {fileID: 11400000, guid: d7826460041438940b2a318c07207ed6, type: 2}
   Zones:
-  - {fileID: 11400000, guid: 6d9e47604d34fe64686ce4c7b4247a74, type: 2}
-  - {fileID: 11400000, guid: efe303b16c6dfa0419eaeabce0cc1f5a, type: 2}
-  - {fileID: 11400000, guid: b7ea798b05685aa4086f3ad12b3c60a1, type: 2}
-  - {fileID: 11400000, guid: 143a1e76d1de30f43aae86242fa6b09a, type: 2}
-  - {fileID: 11400000, guid: 1d1884e8c53e2cf4585b8eb12b78019d, type: 2}
+  - {fileID: 11400000, guid: 40fe222dcfb4cf6449177d88aca4855c, type: 2}
   ZonesDensity: {x: 30, y: 40}
   GenerateSeed: 1
   LandSeed: -1337262326
@@ -516,7 +512,7 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1902875634}
-  m_LocalRotation: {x: -0.4967319, y: 0.40957588, z: -0.2867882, w: -0.70940655}
+  m_LocalRotation: {x: -0.33849975, y: -0.6612924, z: 0.46304208, w: -0.48342773}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []

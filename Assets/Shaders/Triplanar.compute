@@ -3,11 +3,9 @@
 
 Texture2D<float4> FlatTexture;			//Large source chunk texture
 Texture2D<float4> SteepTexture;			//Large source chunk texture
-Texture2D<float3> HeightMap;			//Small vertex height map
+StructuredBuffer<float> HeightMap;		//Vertex height map
 Texture2D<float3> Normals;				//Small block normal map
 int Border;								//Normal map border (for proper cross-chunk blending)
-float Lower;							//World meters height for 0 in HeightMap
-float Upper;							//World meters height for 1 in HeightMap
 float SteepAngleFrom;					//From-To angles to blend between Flat and Steep textures
 float SteepAngleTo;
 //int2 WorldPos;
@@ -18,9 +16,59 @@ SamplerState _LinearClamp;
 SamplerState _PointClamp;
 
 #include "Assets\Shaders\Common.cginc"
+#include "Assets\Shaders\Constants.cginc"
 
-//Chunk size in meters
-#define CHUNK_SIZE_M					16.0
+float GetHeight(float2 uv)
+{
+	//Get heightmap corners
+	int2 c00;
+	float2 miniUV = modf(uv * BLOCKS_COUNT, c00);
+	int2 c11 = c00 + int2(1, 1);
+
+	//Todo rework bilinear stuff to barycentric
+	float height00 = HeightMap[c00.x + c00.y * GRID_SIZE];
+	float height10 = HeightMap[c11.x + c00.y * GRID_SIZE];
+	float height01 = HeightMap[c00.x + c11.y * GRID_SIZE];
+	float height11 = HeightMap[c11.x + c11.y * GRID_SIZE];
+	
+	//Bilinear
+	//float heightY0 = lerp(height00, height01, miniUV.y);
+	//float heightY1 = lerp(height10, height11, miniUV.y);
+	//return lerp(heightY0, heightY1, miniUV.x);
+
+	//Barycentric, based on http://answers.unity3d.com/questions/383804/calculate-uv-coordinates-of-3d-point-on-plane-of-m.html
+	float3 uv3 = float3(miniUV.x, 0, miniUV.y);
+	float3 p1, p2, p3;
+	float h1, h2, h3;
+
+	p1 = float3(0, 0, 0);
+	h1 = height00;
+	if(uv3.x > uv3.z)
+	{
+		p2 = float3(1, 0, 0);
+		p3 = float3(1, 0, 1);
+		h2 = height10;
+		h3 = height11;
+	}
+	else
+	{
+		p2 = float3(1, 0, 1);
+		p3 = float3(0, 0, 1);
+		h2 = height11;
+		h3 = height01;
+	}
+
+	float3 f1 = p1 - uv3;
+	float3 f2 = p2 - uv3;
+	float3 f3 = p3 - uv3;
+
+	float a = length(cross(p1 - p2, p2 - p3));
+	float a1 = length(cross(f2, f3)) / a;
+	float a2 = length(cross(f3, f1)) / a;
+	float a3 = length(cross(f1, f2)) / a;
+
+	return h1 * a1 + h2 * a2 + h3 * a3;
+}
 
 [numthreads(8,8,1)]
 void CSMain (uint2 id : SV_DispatchThreadID)
@@ -31,14 +79,9 @@ void CSMain (uint2 id : SV_DispatchThreadID)
     Result.GetDimensions(dim.x, dim.y);
 	float2 uv = float2(id.x/(dim.x - 1), id.y/(dim.y - 1));
 
-	//Get Y world space
-	float heightMapSize;
-	HeightMap.GetDimensions(heightMapSize, heightMapSize);
-	float2 heightUV = scaleUV(uv, 0.5, heightMapSize);
-	float3 wTexel = HeightMap.SampleLevel(_LinearClamp, heightUV, 0);			//Set normalized height as y
-	wTexel.x = uv.x;
-	wTexel.z = uv.y;
-	wTexel.y = (lerp(Lower, Upper, wTexel.y) % CHUNK_SIZE_M) / CHUNK_SIZE_M;			//World meters to uv
+	//Get 'world' uv
+	float worldHeight = GetHeight(uv);
+	float3 worldUV = float3(uv.x, (worldHeight % CHUNK_SIZE_M) / CHUNK_SIZE_M, uv.y);
 
 	//Scale uv because of border
 	float normalsSize;
@@ -55,9 +98,9 @@ void CSMain (uint2 id : SV_DispatchThreadID)
 	float2 slopeAxis = float2(blending.x, blending.z);
 	float slopeSum = blending.x + blending.z;
 	slopeAxis /= float2(slopeSum, slopeSum);
-	float4 xPixel = SteepTexture.SampleLevel(_LinearClamp, wTexel.zy, 0);
-	float4 zPixel = SteepTexture.SampleLevel(_LinearClamp, wTexel.xy, 0);
-	float4 steepPixel = SoftDepthBlend(xPixel, zPixel, slopeAxis.y);			
+	float4 xPixel = SteepTexture.SampleLevel(_LinearClamp, worldUV.zy, 0);
+	float4 zPixel = SteepTexture.SampleLevel(_LinearClamp, worldUV.xy, 0);
+	float4 steepPixel = SoftDepthBlend(xPixel, zPixel, Compress01(slopeAxis.y, 2));			
 
 	//Blend with flat texture
 	float angle = degrees(acos(wNorm.y));			//Get fragment world angle to vertical
