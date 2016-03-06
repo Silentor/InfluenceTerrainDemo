@@ -19,6 +19,9 @@ SamplerState _PointClamp;
 
 #include "Assets\Shaders\Common.cginc"
 
+//Chunk size in meters
+#define CHUNK_SIZE_M					16.0
+
 [numthreads(8,8,1)]
 void CSMain (uint2 id : SV_DispatchThreadID)
 {
@@ -27,17 +30,16 @@ void CSMain (uint2 id : SV_DispatchThreadID)
 	float2 dim;	
     Result.GetDimensions(dim.x, dim.y);
 	float2 uv = float2(id.x/(dim.x - 1), id.y/(dim.y - 1));
-	float texSize = dim.x / 16;
 
-	//Get texel world space
+	//Get Y world space
 	float heightMapSize;
 	HeightMap.GetDimensions(heightMapSize, heightMapSize);
 	float2 heightUV = scaleUV(uv, 0.5, heightMapSize);
 	float3 wTexel = HeightMap.SampleLevel(_LinearClamp, heightUV, 0);			//Set normalized height as y
-	wTexel.x = id.x;
-	wTexel.z = id.y;
-	wTexel.y = (lerp(Lower, Upper, wTexel.y));
-	
+	wTexel.x = uv.x;
+	wTexel.z = uv.y;
+	wTexel.y = (lerp(Lower, Upper, wTexel.y) % CHUNK_SIZE_M) / CHUNK_SIZE_M;			//World meters to uv
+
 	//Scale uv because of border
 	float normalsSize;
 	Normals.GetDimensions(normalsSize, normalsSize);
@@ -50,13 +52,14 @@ void CSMain (uint2 id : SV_DispatchThreadID)
 	blending = normalize(max(blending, 0.00001)); 
 
 	//Get blending for slope textures
-	wTexel.y = (wTexel.y * texSize) % dim.x;				//Convert meters to texels
 	float2 slopeAxis = float2(blending.x, blending.z);
 	float slopeSum = blending.x + blending.z;
 	slopeAxis /= float2(slopeSum, slopeSum);
-	float4 steepPixel = SoftDepthBlend(SteepTexture[wTexel.zy], SteepTexture[wTexel.xy], slopeAxis.y);			//Check members
+	float4 xPixel = SteepTexture.SampleLevel(_LinearClamp, wTexel.zy, 0);
+	float4 zPixel = SteepTexture.SampleLevel(_LinearClamp, wTexel.xy, 0);
+	float4 steepPixel = SoftDepthBlend(xPixel, zPixel, slopeAxis.y);			
 
 	//Blend with flat texture
 	float angle = degrees(acos(wNorm.y));			//Get fragment world angle to vertical
-	Result[id] = SoftDepthBlend(FlatTexture[wTexel.xz], steepPixel, Compress(angle, SteepAngleFrom, SteepAngleTo));
+	Result[id] = SoftDepthBlend(FlatTexture.SampleLevel(_LinearClamp, uv, 0), steepPixel, Compress(angle, SteepAngleFrom, SteepAngleTo));
 }

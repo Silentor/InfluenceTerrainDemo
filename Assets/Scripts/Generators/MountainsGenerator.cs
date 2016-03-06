@@ -38,8 +38,8 @@ namespace TerrainDemo.Generators
             if (mountInfluence > 0.85f && Vector3.Angle(Vector3.up, normal) < 45)
                 return BlockType.Snow;
 
-            if (mountInfluence > 0.7f || Vector3.Angle(Vector3.up, normal) > 20)
-                return BlockType.Rock;
+            if (mountInfluence < 0.6f)
+                return BlockType.Grass;
             
             return base.GenerateBlock(worldPosition, turbulence, normal, influence);
         }

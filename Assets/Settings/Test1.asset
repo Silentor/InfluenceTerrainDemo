@@ -14,8 +14,8 @@ MonoBehaviour:
   Name: Test1
   LandColor_: {r: 0, g: 1, b: 0.2551725, a: 1}
   Type: 4
-  DefaultBlock: 4
-  Height_: 0
+  DefaultBlock: 2
+  Height_: 5
   OutScale1_: 0
   OutScale2_: 0
   OutScale3_: 0

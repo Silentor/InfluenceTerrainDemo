@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace TerrainDemo.Settings
 {
@@ -9,8 +10,11 @@ namespace TerrainDemo.Settings
         public float Turbulence = 0.1f;
         public Texture2D NoiseTexture;
         public Material Material;
+
+        public BlockRenderSettings[] Blocks;
+
         public ComputeShader TextureBlendShader;
         public ComputeShader TriplanarTextureShader;
-        public ComputeShader TintShader;
+        public ComputeShader MixTintShader;
     }
 }

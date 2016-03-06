@@ -26,6 +26,21 @@ float4 SoftDepthBlend(float4 texture1, float4 texture2, float ratio)
 	return SoftDepthBlend(texture1, texture2, ratio, 0.2);
 }
 
+float3 Overlay (float3 cBase, float4 cBlend)
+{
+	//Based on http://tech-artists.org/wiki/Blending_functions
+
+	float3 cNew = step(0.5, cBase);
+
+	//cBlend alpha defines blend strength
+	float3 blend = lerp(float4(0.5, 0.5, 0.5, 1), cBlend, cBlend.a).rgb;
+
+	//todo Consider replace fake lerp with ?: (branching is mature in Shader Model 5)
+	cNew = lerp((cBase * blend * 2), (1.0 - (2.0 * (1.0 - cBase) * (1.0 - blend))), cNew);
+
+	return cNew;
+}
+
 //Compress 0..1 value to 0....0..1....1 value. ratio - steepeness
 float Compress01(float x, float ratio)
 {

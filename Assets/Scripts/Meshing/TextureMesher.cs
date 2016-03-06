@@ -15,10 +15,9 @@ namespace TerrainDemo.Meshing
         {
             _meshSettings = meshSettings;
 
-            foreach (var block in settings.Blocks)
+            foreach (var block in meshSettings.Blocks)
             {
-                if(block.FlatTexture != null)
-                    _blockSettings.Add(block.Block, block);
+                _blockSettings.Add(block.Block, block);
             }
         }
 
@@ -82,7 +81,10 @@ namespace TerrainDemo.Meshing
         private readonly AverageTimer _textureTimer = new AverageTimer();
         
         private readonly Dictionary<BlockType, BlockRenderSettings> _blockSettings = new Dictionary<BlockType, BlockRenderSettings>();
-        private readonly Dictionary<BlockType, RenderTexture> _blockResult = new Dictionary<BlockType, RenderTexture>();
+        private readonly Dictionary<BlockType, Texture> _blockResult = new Dictionary<BlockType, Texture>();
+
+        private readonly List<RenderTexture> _cachedTextures = new List<RenderTexture>();
+        private readonly List<RenderTexture> _allocatedTextures = new List<RenderTexture>();
 
         //private Texture2D GenerateTextureCPU(Chunk chunk)
         //{
@@ -107,77 +109,129 @@ namespace TerrainDemo.Meshing
 
         private RenderTexture GetRenderTexture()
         {
-            //Cant reuse texture if drawing many textures for one frame
-            var renderTexture = new RenderTexture(_meshSettings.TextureSize, _meshSettings.TextureSize, 0);
-            renderTexture.wrapMode = TextureWrapMode.Clamp;
-            renderTexture.enableRandomWrite = true;
-            renderTexture.useMipMap = false;
-            renderTexture.generateMips = false;
-            renderTexture.Create();
+            if (_cachedTextures.Count == 0)
+            {
+                //Cant reuse texture if drawing many textures for one frame
+                var renderTexture = new RenderTexture(_meshSettings.TextureSize, _meshSettings.TextureSize, 0);
+                renderTexture.wrapMode = TextureWrapMode.Clamp;
+                renderTexture.enableRandomWrite = true;
+                renderTexture.useMipMap = false;
+                renderTexture.generateMips = false;
+                renderTexture.Create();
+                
+                _cachedTextures.Add(renderTexture);
+            }
 
-            return renderTexture;
+            var allocated = _cachedTextures.Last();
+            _cachedTextures.RemoveAt(_cachedTextures.Count - 1);
+            _allocatedTextures.Add(allocated);
+            return allocated;
         }
 
-        private RenderTexture GetTextureFor(BlockType block, Texture2D geoMap, HeightMap heightMap, int mapBorder, Vector2i chunkPos)
+        public void ReleaseRenderTextures()
         {
-            var settings = _blockSettings[block];
+            foreach (var allocatedTexture in _allocatedTextures)
+            {
+                allocatedTexture.Release();
+                _cachedTextures.Add(allocatedTexture);
+            }
 
-            //Tint flat texture
-            var tintedFlat = GetRenderTexture();
-            var tintedShader = _meshSettings.TintShader;
-            tintedShader.SetTexture(0, "Texture", settings.FlatTexture);
-            tintedShader.SetTexture(0, "Noise", _meshSettings.NoiseTexture);
-            tintedShader.SetVector("FromColor", settings.TintFrom);
-            tintedShader.SetVector("ToColor", settings.TintTo);
-            tintedShader.SetFloat("NoiseScale", settings.TintNoiseScale);
-            tintedShader.SetInts("ChunkPos", chunkPos.X, chunkPos.Z);
-            tintedShader.SetTexture(0, "Result", tintedFlat);
-            tintedShader.Dispatch(0, tintedFlat.width / 8, tintedFlat.height / 8, 1);
+            _allocatedTextures.Clear();
+        }
 
-            //Tint steep texture
-            var tintedSteep = GetRenderTexture();
-            tintedShader.SetTexture(0, "Texture", settings.SteepTexture);
-            tintedShader.SetTexture(0, "Result", tintedSteep);
-            tintedShader.Dispatch(0, tintedFlat.width / 8, tintedFlat.height / 8, 1);
+        private Texture GetMixedTintedTexture(Texture input, TextureSettings settings, bool mixTint, Vector2i chunkPos)
+        {
+            var kernelId = mixTint
+                ? _meshSettings.MixTintShader.FindKernel("MixAndTint")
+                : _meshSettings.MixTintShader.FindKernel("MixOnly");
 
+            var result = GetRenderTexture();
+            var mixShader = _meshSettings.MixTintShader;
+
+            //Set mix only settings
+            mixShader.SetTexture(kernelId, "Texture", input);
+            mixShader.SetTexture(kernelId, "Noise", _meshSettings.NoiseTexture);
+            mixShader.SetTexture(kernelId, "MixTexture", settings.MixTexture);
+            mixShader.SetFloat("MixNoiseScale", settings.MixNoiseScale);
+            mixShader.SetFloat("MixTextureScale", settings.MixTextureScale);
+            mixShader.SetFloat("MixTextureAngle", settings.MixTextureAngle);
+            mixShader.SetInts("ChunkPos", chunkPos.X, chunkPos.Z);
+
+            if (mixTint)                    //Set tint settings
+            {
+                mixShader.SetFloat("TintNoiseScale", settings.TintNoiseScale);
+                mixShader.SetVector("FromColor", settings.TintFrom);
+                mixShader.SetVector("ToColor", settings.TintTo);
+            }
+
+            mixShader.SetTexture(kernelId, "Result", result);
+            mixShader.Dispatch(kernelId, result.width / 8, result.height / 8, 1);
+
+            return result;
+        }
+
+        private Texture GetTriplanarTexture(Texture flatInput, Texture steepInput, HeightMap height, TerrainMap normals, BlockRenderSettings settings)
+        {
             //Triplanar combine flat and steep texture
-            var renderTriTex = GetRenderTexture();
+            var result = GetRenderTexture();
             var triShader = _meshSettings.TriplanarTextureShader;
-            triShader.SetTexture(0, "FlatTexture", tintedFlat);
-            triShader.SetTexture(0, "SteepTexture", tintedSteep);
-            triShader.SetTexture(0, "HeightMap", heightMap.Map);
-            triShader.SetTexture(0, "Normals", geoMap);
-            triShader.SetInt("Border", mapBorder);
-            triShader.SetFloat("Lower", heightMap.Lower);
-            triShader.SetFloat("Upper", heightMap.Upper);
+            triShader.SetTexture(0, "FlatTexture", flatInput);
+            triShader.SetTexture(0, "SteepTexture", steepInput);
+            triShader.SetTexture(0, "HeightMap", height.Map);
+            triShader.SetFloat("Lower", height.Lower);
+            triShader.SetFloat("Upper", height.Upper);
+            triShader.SetTexture(0, "Normals", normals.Map);
+            triShader.SetInt("Border", normals.Border);
             triShader.SetFloat("SteepAngleFrom", settings.SteepAngles.x);
             triShader.SetFloat("SteepAngleTo", settings.SteepAngles.y);
-            triShader.SetTexture(0, "Result", renderTriTex);
-            triShader.Dispatch(0, renderTriTex.width / 8, renderTriTex.height / 8, 1);
+            triShader.SetTexture(0, "Result", result);
+            triShader.Dispatch(0, result.width / 8, result.height / 8, 1);
 
-            tintedFlat.Release();
-            Object.Destroy(tintedFlat);
-            tintedSteep.Release();
-            Object.Destroy(tintedSteep);
+            return result;
+        }
 
-            return renderTriTex;
+        private Texture GetTextureFor(BlockType block, HeightMap heightMap, TerrainMap normals, Vector2i chunkPos)
+        {
+            var settings = _blockSettings[block];
+            Texture flat = settings.FlatTexture.Texture;
+            Texture steep = settings.SteepTexture.Texture;
+
+            //Prepare flat texture
+            if (!settings.FlatTexture.BypassMix)
+            {
+                var mode = !settings.FlatTexture.BypassTint;
+                flat = GetMixedTintedTexture(flat, settings.FlatTexture, mode, chunkPos);
+            }
+
+            if (!settings.BypassTriplanar)
+            {
+                //Prepare steep texture
+                if (!settings.SteepTexture.BypassMix)
+                {
+                    var mode = !settings.SteepTexture.BypassTint;
+                    steep = GetMixedTintedTexture(steep, settings.SteepTexture, mode, chunkPos);
+                }
+
+                flat = GetTriplanarTexture(flat, steep, heightMap, normals, settings);
+            }
+
+            return flat;
         }
 
         private Textures GenerateTextureShader(Chunk chunk, Dictionary<Vector2i, Chunk> map)
         {
             var border = _meshSettings.MaskBorder;
 
-            var mask = CalculateBlockMask(chunk, border, map);
-            
-            var geoMask = PrepareGeometryMask(mask);
-            var heightMask = PrepareHeightMask(chunk);
+            var mask = CalculateBlockMap(chunk, border, map);
+            var geoMap = PrepareGeometryMap(mask, border);
+            var heightMap = PrepareHeightMap(chunk);
             
             foreach (var blockType in _blockSettings.Keys)
             {
-                var renderTriTex = GetTextureFor(blockType, geoMask, heightMask, border, chunk.Position);
+                var renderTriTex = GetTextureFor(blockType, heightMap, geoMap, chunk.Position);
                 _blockResult[blockType] = renderTriTex;
             }
-            
+
             var blockMask = PrepareBlockTypeMask(mask);
             var renderTex = GetRenderTexture();
             //var renderTexNrm = GetRenderTexture();
@@ -204,25 +258,14 @@ namespace TerrainDemo.Meshing
             var renderTex2 = new RenderTexture(renderTex.width, renderTex.height, 0);
             renderTex2.useMipMap = true;
             renderTex2.generateMips = true;
-            renderTex2.wrapMode = renderTex.wrapMode;
+            renderTex2.wrapMode = TextureWrapMode.Clamp;
             renderTex2.Create();
             Graphics.Blit(renderTex, renderTex2);
-
-            //Destroy old textures
-            renderTex.Release();
-            Object.Destroy(renderTex);
-
-            foreach (var blockResult in _blockResult)
-            {
-                blockResult.Value.Release();
-                Object.Destroy(blockResult.Value);
-            }
-            _blockResult.Clear();
 
             return new Textures() {Diffuse = renderTex2/*, Normal = renderTex2Nrm*/};
         }
 
-        private HeightMap PrepareHeightMask(Chunk chunk)
+        private HeightMap PrepareHeightMap(Chunk chunk)
         {
             var lowerHeight = float.MaxValue;
             var upperHeight = float.MinValue;
@@ -275,7 +318,7 @@ namespace TerrainDemo.Meshing
             return resultTexture;
         }
 
-        private Texture2D PrepareGeometryMask(ChunkMaskBlock[,] blocks)
+        private TerrainMap PrepareGeometryMap(ChunkMaskBlock[,] blocks, int border)
         {
             var result = new Color[blocks.Length];
             for (int z = 0; z <= blocks.GetUpperBound(1); z++)
@@ -292,10 +335,10 @@ namespace TerrainDemo.Meshing
             resultTexture.wrapMode = TextureWrapMode.Clamp;
             resultTexture.SetPixels(result);
             resultTexture.Apply(false, true);
-            return resultTexture;
+            return new TerrainMap() {Map = resultTexture, Border = border};
         }
 
-        private ChunkMaskBlock[,] CalculateBlockMask(Chunk chunk, int border, Dictionary<Vector2i, Chunk> map)
+        private ChunkMaskBlock[,] CalculateBlockMap(Chunk chunk, int border, Dictionary<Vector2i, Chunk> map)
         {
             Chunk top, bottom, left, right, topleft, bottomleft, topright, bottomright;
             map.TryGetValue(chunk.Position + Vector2i.Forward, out top);
@@ -450,11 +493,23 @@ namespace TerrainDemo.Meshing
             public Texture Normal;
         }
 
+        /// <summary>
+        /// 2d texture map of heigth
+        /// </summary>
         public struct HeightMap
         {
             public Texture2D Map;
-            public float Lower;
-            public float Upper;
+            public float Lower;             //Lowest height value
+            public float Upper;             //Most upper height value
+        }
+
+        /// <summary>
+        /// 2d texture map of blocks properties (normal for now)
+        /// </summary>
+        public struct TerrainMap
+        {
+            public Texture2D Map;
+            public int Border;                      //Map is larger of place of interest by given border (for proper filtering)
         }
     }
 }

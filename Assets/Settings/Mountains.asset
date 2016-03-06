@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Name: Mountains
   m_EditorClassIdentifier: 
   Name: Mountains
-  LandColor_: {r: .588235259, g: .588235259, b: .588235259, a: 1}
+  LandColor_: {r: 0.58823526, g: 0.58823526, b: 0.58823526, a: 1}
   Type: 2
-  DefaultBlock: 2
+  DefaultBlock: 3
   Height_: 20
   OutScale1_: 20
   OutScale2_: 5

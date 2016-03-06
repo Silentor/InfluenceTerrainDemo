@@ -1,0 +1,78 @@
+﻿#pragma kernel MixOnly
+#pragma kernel MixAndTint
+
+//Common settings
+Texture2D<float4> Texture;			//Large source chunk texture
+Texture2D<float4> Noise;			//Perlin noise
+int2 ChunkPos;						//Chunk position
+
+//Mix settings
+float MixNoiseScale;
+Texture2D<float4> MixTexture;			//Large mix chunk texture
+float MixTextureScale;
+float MixTextureAngle;
+
+//Tint settings
+float TintNoiseScale;
+float4 FromColor;					//Color for noise 0
+float4 ToColor;						//Color for noise 1
+
+//Result
+RWTexture2D<float4> Result;			//Large result chunk texture
+
+SamplerState _LinearRepeat;
+SamplerState _LinearClamp;
+
+#include "Assets\Shaders\Common.cginc"
+
+float4 Mix(float4 input, float2 uv)
+{
+	//Rotate and scale mix texture
+	float mixSin, mixCos;
+	sincos(radians(MixTextureAngle), mixSin, mixCos);
+	float2 mixPosition = (ChunkPos + uv) * MixTextureScale;
+	mixPosition = float2(mixPosition.x * mixCos - mixPosition.y * mixSin, mixPosition.y * mixCos + mixPosition.x * mixSin);
+	float4 mixTex = MixTexture.SampleLevel(_LinearRepeat, mixPosition, 0);
+
+	//Rotate and scale mix noise
+	sincos(radians(MixTextureAngle - 45), mixSin, mixCos);
+	mixPosition = (ChunkPos + uv) * MixNoiseScale;
+	mixPosition = float2(mixPosition.x * mixCos - mixPosition.y * mixSin, mixPosition.y * mixCos + mixPosition.x * mixSin);
+	float noise = Noise.SampleLevel(_LinearRepeat, mixPosition, 0).z * 2.0;						//Bad noise (from 0 to 0.5), rescale to 0..1
+	noise = Compress01(noise, 10);						//Make noise  a little more contrast
+
+	//return float4(noise, noise, noise, 1);
+
+	return SoftDepthBlend(Texture.SampleLevel(_LinearClamp, uv, 0), mixTex, noise);	
+}
+
+float4 Tint(float4 input, float2 uv)
+{
+	float noise = Noise.SampleLevel(_LinearRepeat, (ChunkPos + uv) * TintNoiseScale, 0).x * 2.0;						//Bad noise (from 0 to 0.5)
+	float4 tintColor = lerp(FromColor, ToColor, noise); 
+	float3 resultColor = Overlay(input.rgb, tintColor);						//Todo consider HSBC tint, but harder tweaking
+	return float4(resultColor.rgb, input.a);								
+}
+
+[numthreads(8,8,1)]
+void MixAndTint (uint2 pos : SV_DispatchThreadID)
+{
+	float dim;	
+    Result.GetDimensions(dim, dim);
+	float2 uv = float2(pos.x/(dim - 1), pos.y/(dim - 1));
+
+	float4 input = Texture.SampleLevel(_LinearClamp, uv, 0);
+	float4 mixed = Mix(input, uv);
+	Result[pos] = Tint(mixed, uv);
+}
+
+[numthreads(8,8,1)]
+void MixOnly (uint2 pos : SV_DispatchThreadID)
+{
+	float dim;	
+    Result.GetDimensions(dim, dim);
+	float2 uv = float2(pos.x/(dim - 1), pos.y/(dim - 1));
+
+	float4 input = Texture.SampleLevel(_LinearClamp, uv, 0);
+	Result[pos] = Mix(input, uv);
+}

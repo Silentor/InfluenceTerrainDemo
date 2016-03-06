@@ -10,11 +10,11 @@ namespace TerrainDemo.Meshing
     /// </summary>
     public class ColorMesher
     {
-        public ColorMesher(ILandSettings settings)
+        public ColorMesher(ILandSettings settings, MesherSettings mesherSettings)
         {
             _settings = settings;
-            _blocksColors = new Color[(int)settings.Blocks.Max(z => z.Block) + 1];
-            foreach (var blockColor in settings.Blocks)
+            _blocksColors = new Color[(int)mesherSettings.Blocks.Max(z => z.Block) + 1];
+            foreach (var blockColor in mesherSettings.Blocks)
                 _blocksColors[(int) blockColor.Block] = blockColor.Color;
         }
 
