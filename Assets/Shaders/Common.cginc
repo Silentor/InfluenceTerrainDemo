@@ -58,4 +58,39 @@ float Compress(float x, float from, float to)
 	return saturate(y);
 }
 
+//-------------------Normal wise functions
+
+struct ColorNrm
+{
+	float3 Color;
+	float4 Normals;
+};
+
+//Default delta = 0.2
+ColorNrm SoftDepthBlend2(ColorNrm texture1, ColorNrm texture2, float ratio, float delta)
+{
+	//Based on http://www.gamedev.net/page/resources/_/technical/graphics-programming-and-theory/advanced-terrain-texture-splatting-r3287
+
+	//To prevent bleeding texture if ratio is hard 0 or 1
+	if(ratio < 0.01) 		return texture1;
+	else if(ratio > 0.99) 	return texture2;
+
+	float a1 = 1 - ratio;
+	float a2 = ratio;
+    float ma = max(texture1.Normals.a + a1, texture2.Normals.a + a2) - delta;
+
+    float b1 = max(texture1.Normals.a + a1 - ma, 0);
+    float b2 = max(texture2.Normals.a + a2 - ma, 0);
+
+	ColorNrm result;
+	result.Color = (texture1.Color * b1 + texture2.Color * b2) / (b1 + b2);
+	result.Normals = (texture1.Normals * b1 + texture2.Normals * b2) / (b1 + b2);
+	return result;
+}
+
+ColorNrm SoftDepthBlend2(ColorNrm texture1, ColorNrm texture2, float ratio)
+{
+	return SoftDepthBlend2(texture1, texture2, ratio, 0.2);
+}
+
 

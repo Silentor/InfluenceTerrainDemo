@@ -12,7 +12,7 @@ namespace TerrainDemo.Tools
         /// <summary>
         /// Average time of operation (msec)
         /// </summary>
-        public float AvgTimeMs { get { return _elapsedTime / SamplesCount / (Stopwatch.Frequency / 1000f); } }
+        public float AvgTimeMs { get { return SamplesCount > 0 ? _elapsedTime / SamplesCount / (Stopwatch.Frequency / 1000f) : 0; } }
 
         /// <summary>
         /// Average time of operation (ticks)

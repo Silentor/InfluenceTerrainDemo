@@ -14,7 +14,6 @@ namespace TerrainDemo.Settings
         public BlockRenderSettings[] Blocks;
 
         public ComputeShader TextureBlendShader;
-        public ComputeShader TriplanarTextureShader;
-        public ComputeShader MixTintShader;
+        public ComputeShader BlockShader;
     }
 }

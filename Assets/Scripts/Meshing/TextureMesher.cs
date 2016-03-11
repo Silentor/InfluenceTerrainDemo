@@ -70,7 +70,8 @@ namespace TerrainDemo.Meshing
             _textureTimer.Stop();
 
             var material = new Material(_meshSettings.Material);
-            material.mainTexture = tex.Diffuse;
+            material.mainTexture = tex;
+            //material.SetTexture("_BumpMap", tex.Normal);
 
             return new ChunkModel {Mesh = mesh, Material = material };
         }
@@ -139,84 +140,63 @@ namespace TerrainDemo.Meshing
             _allocatedTextures.Clear();
         }
 
-        private Texture GetMixedTintedTexture(Texture input, TextureSettings settings, bool mixTint, Vector2i chunkPos)
-        {
-            var kernelId = mixTint
-                ? _meshSettings.MixTintShader.FindKernel("MixAndTint")
-                : _meshSettings.MixTintShader.FindKernel("MixOnly");
-
-            var result = GetRenderTexture();
-            var mixShader = _meshSettings.MixTintShader;
-
-            //Set mix only settings
-            mixShader.SetTexture(kernelId, "Texture", input);
-            mixShader.SetTexture(kernelId, "Noise", _meshSettings.NoiseTexture);
-            mixShader.SetTexture(kernelId, "MixTexture", settings.MixTexture);
-            mixShader.SetFloat("MixNoiseScale", settings.MixNoiseScale);
-            mixShader.SetFloat("MixTextureScale", settings.MixTextureScale);
-            mixShader.SetFloat("MixTextureAngle", settings.MixTextureAngle);
-            mixShader.SetInts("ChunkPos", chunkPos.X, chunkPos.Z);
-
-            if (mixTint)                    //Set tint settings
-            {
-                mixShader.SetFloat("TintNoiseScale", settings.TintNoiseScale);
-                mixShader.SetVector("FromColor", settings.TintFrom);
-                mixShader.SetVector("ToColor", settings.TintTo);
-            }
-
-            mixShader.SetTexture(kernelId, "Result", result);
-            mixShader.Dispatch(kernelId, result.width / 8, result.height / 8, 1);
-
-            return result;
-        }
-
-        private Texture GetTriplanarTexture(Texture flatInput, Texture steepInput, ComputeBuffer height, TerrainMap normals, BlockRenderSettings settings)
-        {
-            //Triplanar combine flat and steep texture
-            var result = GetRenderTexture();
-            var triShader = _meshSettings.TriplanarTextureShader;
-            triShader.SetTexture(0, "FlatTexture", flatInput);
-            triShader.SetTexture(0, "SteepTexture", steepInput);
-            triShader.SetBuffer(0, "HeightMap", height);
-            triShader.SetTexture(0, "Normals", normals.Map);
-            triShader.SetInt("Border", normals.Border);
-            triShader.SetFloat("SteepAngleFrom", settings.SteepAngles.x);
-            triShader.SetFloat("SteepAngleTo", settings.SteepAngles.y);
-            triShader.SetTexture(0, "Result", result);
-            triShader.Dispatch(0, result.width / 8, result.height / 8, 1);
-
-            return result;
-        }
-
         private Texture GetTextureFor(BlockType block, ComputeBuffer heightMap, TerrainMap normals, Vector2i chunkPos)
         {
             var settings = _blockSettings[block];
             Texture flat = settings.FlatTexture.Texture;
             Texture steep = settings.SteepTexture.Texture;
 
-            //Prepare flat texture
+            var shader = _meshSettings.BlockShader;
+            var kernelName = "Bare";
+
+            if (!settings.FlatTexture.BypassMix)
+                kernelName = "Mix";
+
+            if (!settings.BypassTriplanar)
+                kernelName += "Tri";
+
+            if (!settings.BypassTint)
+                kernelName += "Tint";
+
+            var kernelId = shader.FindKernel(kernelName);
+            shader.SetTexture(kernelId, "Texture", flat);
+
             if (!settings.FlatTexture.BypassMix)
             {
-                var mode = !settings.FlatTexture.BypassTint;
-                flat = GetMixedTintedTexture(flat, settings.FlatTexture, mode, chunkPos);
+                shader.SetTexture(kernelId, "Noise", _meshSettings.NoiseTexture);
+                //mixShader.SetTexture(kernelId, "MixTexture", settings.MixTexture);
+                shader.SetFloat("MixNoiseScale", settings.FlatTexture.MixNoiseScale);
+                shader.SetFloat("MixTextureScale", settings.FlatTexture.MixTextureScale);
+                shader.SetFloat("MixTextureAngle", settings.FlatTexture.MixTextureAngle);
+                shader.SetInts("ChunkPos", chunkPos.X, chunkPos.Z);
             }
 
             if (!settings.BypassTriplanar)
             {
-                //Prepare steep texture
-                if (!settings.SteepTexture.BypassMix)
-                {
-                    var mode = !settings.SteepTexture.BypassTint;
-                    steep = GetMixedTintedTexture(steep, settings.SteepTexture, mode, chunkPos);
-                }
-
-                flat = GetTriplanarTexture(flat, steep, heightMap, normals, settings);
+                shader.SetTexture(kernelId, "SteepTexture", steep);
+                shader.SetBuffer(kernelId, "HeightMap", heightMap);
+                shader.SetTexture(kernelId, "Normals", normals.Map);
+                shader.SetInt("Border", normals.Border);
+                shader.SetFloat("SteepAngleFrom", settings.SteepAngles.x);
+                shader.SetFloat("SteepAngleTo", settings.SteepAngles.y);
             }
 
-            return flat;
+            if (!settings.BypassTint)
+            {
+                shader.SetFloat("TintNoiseScale", settings.TintNoiseScale);
+                shader.SetVector("FromColor", settings.TintFrom);
+                shader.SetVector("ToColor", settings.TintTo);
+            }
+
+            var result = GetRenderTexture();
+            shader.SetTexture(kernelId, "Result", result);
+            //mixShader.SetTexture(kernelId, "ResultNormals", resultNrm);
+            shader.Dispatch(kernelId, result.width / 8, result.height / 8, 1);
+
+            return result;
         }
 
-        private Textures GenerateTextureShader(Chunk chunk, Dictionary<Vector2i, Chunk> map)
+        private Texture GenerateTextureShader(Chunk chunk, Dictionary<Vector2i, Chunk> map)
         {
             var border = _meshSettings.MaskBorder;
 
@@ -235,21 +215,37 @@ namespace TerrainDemo.Meshing
             var blockMask = PrepareBlockTypeMask(mask);
             var renderTex = GetRenderTexture();
             //var renderTexNrm = GetRenderTexture();
+            //var renderTexNrm = GetRenderTexture();
             var shader = _meshSettings.TextureBlendShader;
             shader.SetTexture(0, "mask", blockMask);
             shader.SetInt("border", border);
             shader.SetFloat("turbulence", _meshSettings.Turbulence);
             shader.SetTexture(0, "noise", _meshSettings.NoiseTexture);
-            if(_blockResult.ContainsKey(BlockType.Grass))
+            if (_blockResult.ContainsKey(BlockType.Grass))
+            {
                 shader.SetTexture(0, "grass", _blockResult[BlockType.Grass]);
+                //shader.SetTexture(0, "grassNrm", _blockResult[BlockType.Grass].Normal);
+            }
             if (_blockResult.ContainsKey(BlockType.Rock))
+            {
                 shader.SetTexture(0, "stone", _blockResult[BlockType.Rock]);
+                //shader.SetTexture(0, "stoneNrm", _blockResult[BlockType.Rock].Normal);
+            }
             if (_blockResult.ContainsKey(BlockType.Sand))
+            {
                 shader.SetTexture(0, "sand", _blockResult[BlockType.Sand]);
+                //shader.SetTexture(0, "sandNrm", _blockResult[BlockType.Sand].Normal);
+            }
             if (_blockResult.ContainsKey(BlockType.Water))
+            {
                 shader.SetTexture(0, "water", _blockResult[BlockType.Water]);
+                //shader.SetTexture(0, "waterNrm", _blockResult[BlockType.Water].Normal);
+            }
             if (_blockResult.ContainsKey(BlockType.Snow))
+            {
                 shader.SetTexture(0, "snow", _blockResult[BlockType.Snow]);
+                //shader.SetTexture(0, "snowNrm", _blockResult[BlockType.Snow].Normal);
+            }
             shader.SetTexture(0, "result", renderTex);
             //shader.SetTexture(0, "resultNrm", renderTexNrm);
             shader.Dispatch(0, renderTex.width / 8, renderTex.height / 8, 1);
@@ -262,7 +258,16 @@ namespace TerrainDemo.Meshing
             renderTex2.Create();
             Graphics.Blit(renderTex, renderTex2);
 
-            return new Textures() {Diffuse = renderTex2/*, Normal = renderTex2Nrm*/};
+            /*
+            var renderTexNrm2 = new RenderTexture(renderTexNrm.width, renderTexNrm.height, 0);
+            renderTexNrm2.useMipMap = true;
+            renderTexNrm2.generateMips = true;
+            renderTexNrm2.wrapMode = TextureWrapMode.Clamp;
+            renderTexNrm2.Create();
+            Graphics.Blit(renderTexNrm, renderTexNrm2);
+            */
+
+            return renderTex2;
         }
 
         private ComputeBuffer PrepareHeightMap(Chunk chunk)

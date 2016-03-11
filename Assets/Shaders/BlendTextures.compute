@@ -5,12 +5,16 @@ int border;
 float turbulence = 0.1;
 Texture2D<float4> noise;
 Texture2D<float4> grass;
+//Texture2D<float4> grassNrm;
 Texture2D<float4> stone;
-//Texture2D<float3> stoneNrm;
+//Texture2D<float4> stoneNrm;
 Texture2D<float4> water;
+//Texture2D<float4> waterNrm;
 Texture2D<float4> sand;
+//Texture2D<float4> sandNrm;
 Texture2D<float4> snow;
-RWTexture2D<float4> result;					//Result baked texture
+//Texture2D<float4> snowNrm;
+RWTexture2D<float3> result;					//Result baked texture
 //RWTexture2D<float4> resultNrm;				//Result baked texture
 
 SamplerState _LinearClamp;
@@ -71,11 +75,28 @@ float4 NoDepthBlend(float4 texture1, float4 texture2, float alpha, float compres
     return lerp(texture1, texture2, Compress01(alpha, compressAlpha));
 }
 
+ColorNrm NoDepthBlend2(ColorNrm texture1, ColorNrm texture2, float alpha, float compressAlpha)
+{
+	ColorNrm result;
+	result.Color = lerp(texture1.Color, texture2.Color, Compress01(alpha, compressAlpha));
+	result.Normals = lerp(texture1.Normals, texture2.Normals, Compress01(alpha, compressAlpha));
+	return result;
+}
+
+
 //Convert normal from RGB to AG
 float4 PackNormal(float3 rgbNormal)
 {
 	float4 result = (float4)0;
 	result.ag = rgbNormal.xy;
+	return result;
+}
+
+ColorNrm CreateColorNrm(Texture2D<float3> color, Texture2D<float4> nrm, float2 uv)
+{
+	ColorNrm result;
+	result.Color = color.SampleLevel(_LinearClamp, uv, 0);
+	result.Normals = nrm.SampleLevel(_LinearClamp, uv, 0);
 	return result;
 }
 
@@ -102,13 +123,14 @@ void CSMain (uint2 id : SV_DispatchThreadID)
 	float4 masked = BiCubic(mask, maskUV, maskw, maskw);
 
 	//Blend textures
-	float4 resultPixel = float4(stone.SampleLevel(_LinearClamp, uv, 0).rgb, 0);
-	resultPixel =  SoftDepthBlend(resultPixel, sand.SampleLevel(_LinearClamp, uv, 0), masked.r);
+	float4 resultPixel = stone.SampleLevel(_LinearClamp, uv, 0);
+	resultPixel.a = 0;							//To proper blending with upper layers
+	resultPixel = SoftDepthBlend(resultPixel, sand.SampleLevel(_LinearClamp, uv, 0), masked.r);
 	resultPixel = SoftDepthBlend(resultPixel, grass.SampleLevel(_LinearClamp, uv, 0), masked.g);
 	resultPixel = SoftDepthBlend(resultPixel, water.SampleLevel(_LinearClamp, uv, 0), masked.b);
 	resultPixel = NoDepthBlend(resultPixel, snow.SampleLevel(_LinearClamp, uv, 0), masked.a, 50);
 
 	//Result
-    result[id] = resultPixel; 
-	//resultNrm[id] = PackNormal(stoneNrm[id]);
+    result[id] = resultPixel.rgb; 
+	//resultNrm[id] = PackNormal(resultPixel.Normals.rgb);
 }

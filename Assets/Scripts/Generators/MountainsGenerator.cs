@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using TerrainDemo.Layout;
 using TerrainDemo.Settings;
 using UnityEngine;
@@ -22,11 +21,9 @@ namespace TerrainDemo.Generators
             //Slightly raise up heightmap of Mountain zone
             if (mountInfluence > 0.7f)
             {
-                var additional = Math.Pow(((mountInfluence - 0.7f)*2), 2) + 1;
-                height *= (float)additional;
+                var additional = mountInfluence + 0.3f;
+                height *= additional;
             }
-
-            
 
             return height;
         }
@@ -38,7 +35,7 @@ namespace TerrainDemo.Generators
             if (mountInfluence > 0.85f && Vector3.Angle(Vector3.up, normal) < 45)
                 return BlockType.Snow;
 
-            if (mountInfluence < 0.6f)
+            if (mountInfluence < 0.6f && Vector3.Angle(Vector3.up, normal) < 45)
                 return BlockType.Grass;
             
             return base.GenerateBlock(worldPosition, turbulence, normal, influence);

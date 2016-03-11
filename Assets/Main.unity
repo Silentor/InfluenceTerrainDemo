@@ -117,10 +117,11 @@ MonoBehaviour:
   LandSize: 12
   LandNoiseSettings: {fileID: 11400000, guid: d7826460041438940b2a318c07207ed6, type: 2}
   Zones:
-  - {fileID: 11400000, guid: 40fe222dcfb4cf6449177d88aca4855c, type: 2}
+  - {fileID: 11400000, guid: efe303b16c6dfa0419eaeabce0cc1f5a, type: 2}
+  - {fileID: 11400000, guid: 6d9e47604d34fe64686ce4c7b4247a74, type: 2}
   ZonesDensity: {x: 30, y: 40}
   GenerateSeed: 1
-  LandSeed: -1337262326
+  LandSeed: -1220517184
   IDWCoeff: 2
   IDWOffset: 0.001
   InterpolateInfluence: 0
@@ -163,136 +164,114 @@ MonoBehaviour:
     Color: {r: 0, g: 1, b: 0, a: 1}
     FlatTexture:
       Texture: {fileID: 2800000, guid: daf6a200dfc15564797eb8513a253a4b, type: 3}
+      Normals: {fileID: 0}
       BypassMix: 0
-      MixTexture: {fileID: 2800000, guid: daf6a200dfc15564797eb8513a253a4b, type: 3}
       MixNoiseScale: 0.3
       MixTextureScale: 1.133333
       MixTextureAngle: 33
-      BypassTint: 1
-      TintFrom: {r: 0.3364008, g: 0.47794116, b: 0.22139922, a: 0.347}
-      TintTo: {r: 0, g: 0, b: 0, a: 0}
-      TintNoiseScale: 0
     SteepTexture:
       Texture: {fileID: 2800000, guid: 19f19ae4b957dfc428a8d283e48a5916, type: 3}
+      Normals: {fileID: 0}
       BypassMix: 1
-      MixTexture: {fileID: 2800000, guid: 19f19ae4b957dfc428a8d283e48a5916, type: 3}
       MixNoiseScale: 0.3
       MixTextureScale: 1.133333
       MixTextureAngle: 45
-      BypassTint: 1
-      TintFrom: {r: 0, g: 0, b: 0, a: 0}
-      TintTo: {r: 0, g: 0, b: 0, a: 0}
-      TintNoiseScale: 0
     BypassTriplanar: 0
-    SteepAngles: {x: 45, y: 70}
+    SteepAngles: {x: 40, y: 60}
+    BypassTint: 1
+    TintFrom: {r: 0, g: 0, b: 0, a: 0}
+    TintTo: {r: 0, g: 0, b: 0, a: 0}
+    TintNoiseScale: 0
   - Block: 3
     Color: {r: 0.5514706, g: 0.5514706, b: 0.5514706, a: 1}
     FlatTexture:
       Texture: {fileID: 2800000, guid: d4f20d0ef78bbe24c943275939dd3df6, type: 3}
+      Normals: {fileID: 0}
       BypassMix: 0
-      MixTexture: {fileID: 2800000, guid: d4f20d0ef78bbe24c943275939dd3df6, type: 3}
       MixNoiseScale: 0.3
       MixTextureScale: 1.111111
       MixTextureAngle: 44
-      BypassTint: 0
-      TintFrom: {r: 0.2352941, g: 0.10899654, b: 0.10899654, a: 0.872}
-      TintTo: {r: 0, g: 0, b: 0, a: 0}
-      TintNoiseScale: 0.033333
     SteepTexture:
       Texture: {fileID: 2800000, guid: d4f20d0ef78bbe24c943275939dd3df6, type: 3}
+      Normals: {fileID: 0}
       BypassMix: 1
-      MixTexture: {fileID: 0}
       MixNoiseScale: 0
       MixTextureScale: 0
       MixTextureAngle: 0
-      BypassTint: 1
-      TintFrom: {r: 0, g: 0, b: 0, a: 0}
-      TintTo: {r: 0, g: 0, b: 0, a: 0}
-      TintNoiseScale: 0
     BypassTriplanar: 0
     SteepAngles: {x: 45, y: 55}
+    BypassTint: 0
+    TintFrom: {r: 0.88235295, g: 0.6293253, b: 0.6293253, a: 0.341}
+    TintTo: {r: 0.23945719, g: 0.29077974, b: 0.31617647, a: 0.241}
+    TintNoiseScale: 0.13
   - Block: 4
     Color: {r: 0.94482756, g: 1, b: 0, a: 1}
     FlatTexture:
       Texture: {fileID: 2800000, guid: 23afafc09f993fe4b971155856b20ecb, type: 3}
+      Normals: {fileID: 0}
       BypassMix: 0
-      MixTexture: {fileID: 2800000, guid: 23afafc09f993fe4b971155856b20ecb, type: 3}
       MixNoiseScale: 1.7777778
       MixTextureScale: 1.1333333
       MixTextureAngle: 33
-      BypassTint: 0
-      TintFrom: {r: 0.95740366, g: 1, b: 0.5588235, a: 0.516}
-      TintTo: {r: 0, g: 0, b: 0, a: 0}
-      TintNoiseScale: 0.07777778
     SteepTexture:
       Texture: {fileID: 2800000, guid: 4f0301d578f7f534a903ca772338b658, type: 3}
+      Normals: {fileID: 0}
       BypassMix: 1
-      MixTexture: {fileID: 0}
       MixNoiseScale: 0
       MixTextureScale: 0
       MixTextureAngle: 0
-      BypassTint: 1
-      TintFrom: {r: 0, g: 0, b: 0, a: 0}
-      TintTo: {r: 0, g: 0, b: 0, a: 0}
-      TintNoiseScale: 0
-    BypassTriplanar: 0
+    BypassTriplanar: 1
     SteepAngles: {x: 45, y: 70}
+    BypassTint: 1
+    TintFrom: {r: 0, g: 0, b: 0, a: 0}
+    TintTo: {r: 0, g: 0, b: 0, a: 0}
+    TintNoiseScale: 0
   - Block: 5
     Color: {r: 1, g: 1, b: 1, a: 1}
     FlatTexture:
       Texture: {fileID: 2800000, guid: f1910ca6b9545cc468d22ca9434a9f82, type: 3}
+      Normals: {fileID: 0}
       BypassMix: 0
-      MixTexture: {fileID: 2800000, guid: f1910ca6b9545cc468d22ca9434a9f82, type: 3}
       MixNoiseScale: 1.7777778
       MixTextureScale: 1.1333333
       MixTextureAngle: 33
-      BypassTint: 1
-      TintFrom: {r: 0.95740366, g: 1, b: 0.5588235, a: 0.516}
-      TintTo: {r: 0, g: 0, b: 0, a: 0}
-      TintNoiseScale: 0.07777778
     SteepTexture:
       Texture: {fileID: 2800000, guid: 09fbca0223a8ef6428d4af988a104d4f, type: 3}
+      Normals: {fileID: 0}
       BypassMix: 1
-      MixTexture: {fileID: 0}
       MixNoiseScale: 0
       MixTextureScale: 0
       MixTextureAngle: 0
-      BypassTint: 1
-      TintFrom: {r: 0, g: 0, b: 0, a: 0}
-      TintTo: {r: 0, g: 0, b: 0, a: 0}
-      TintNoiseScale: 0
-    BypassTriplanar: 0
+    BypassTriplanar: 1
     SteepAngles: {x: 45, y: 70}
+    BypassTint: 1
+    TintFrom: {r: 0, g: 0, b: 0, a: 0}
+    TintTo: {r: 0, g: 0, b: 0, a: 0}
+    TintNoiseScale: 0
   - Block: 6
     Color: {r: 0, g: 0.83448267, b: 1, a: 1}
     FlatTexture:
       Texture: {fileID: 2800000, guid: b766c4ffca7260e4d943ad5e9b6d700b, type: 3}
+      Normals: {fileID: 0}
       BypassMix: 0
-      MixTexture: {fileID: 2800000, guid: b766c4ffca7260e4d943ad5e9b6d700b, type: 3}
       MixNoiseScale: 1.7777778
       MixTextureScale: 1.1333333
       MixTextureAngle: 33
-      BypassTint: 1
-      TintFrom: {r: 0.95740366, g: 1, b: 0.5588235, a: 0.516}
-      TintTo: {r: 0, g: 0, b: 0, a: 0}
-      TintNoiseScale: 0.07777778
     SteepTexture:
       Texture: {fileID: 0}
+      Normals: {fileID: 0}
       BypassMix: 0
-      MixTexture: {fileID: 0}
       MixNoiseScale: 0
       MixTextureScale: 0
       MixTextureAngle: 0
-      BypassTint: 0
-      TintFrom: {r: 0, g: 0, b: 0, a: 0}
-      TintTo: {r: 0, g: 0, b: 0, a: 0}
-      TintNoiseScale: 0
     BypassTriplanar: 1
     SteepAngles: {x: 0, y: 0}
+    BypassTint: 1
+    TintFrom: {r: 0, g: 0, b: 0, a: 0}
+    TintTo: {r: 0, g: 0, b: 0, a: 0}
+    TintNoiseScale: 0
   TextureBlendShader: {fileID: 7200000, guid: d585ce2608b9451429edd609756aba4f, type: 3}
-  TriplanarTextureShader: {fileID: 7200000, guid: 57e860f02739ed64bb22fa8aedb19138,
-    type: 3}
-  MixTintShader: {fileID: 7200000, guid: 7e567fa3fa63251459fb7220a5eee395, type: 3}
+  BlockShader: {fileID: 7200000, guid: 7e567fa3fa63251459fb7220a5eee395, type: 3}
 --- !u!1 &1293065045
 GameObject:
   m_ObjectHideFlags: 0
@@ -373,8 +352,8 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1293065045}
-  m_LocalRotation: {x: 0.42261833, y: 0, z: 0, w: 0.9063078}
-  m_LocalPosition: {x: 0, y: 76, z: -90.1}
+  m_LocalRotation: {x: -0.02471642, y: 0.96784943, z: -0.24985987, w: -0.01505913}
+  m_LocalPosition: {x: 0, y: 98.6, z: 74.7}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using TerrainDemo.Layout;
 using TerrainDemo.Map;
@@ -7,6 +8,7 @@ using TerrainDemo.Meshing;
 using TerrainDemo.Settings;
 using TerrainDemo.Tools;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace TerrainDemo
 {
@@ -48,6 +50,8 @@ namespace TerrainDemo
 
         public void MeshAndVisualize(LandMap landMap)
         {
+            var timer = Stopwatch.StartNew();
+
             CreateZonesHandle(landMap.Layout.Zones);
 
             ChunkGO.Clear();
@@ -69,6 +73,9 @@ namespace TerrainDemo
 
             mesher.ReleaseRenderTextures();
 
+            timer.Stop();
+
+            Debug.LogFormat("Mesh generation {0} ms total", timer.ElapsedMilliseconds);
             Debug.LogFormat("Mesh generation timings: mesh {0} ms, texture {1} ms, {2} ops", mesher.MeshTimer.AvgTimeMs, mesher.TextureTimer.AvgTimeMs, mesher.TextureTimer.SamplesCount);
         }
 
