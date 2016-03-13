@@ -1,4 +1,4 @@
-# InfluenceTerrainDemo
+# InfluenceTerrainDemo v0.4 "Simple Texturing"
 Some experiments with zone-based terrain generation. Inspired by http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/ and http://www.shamusyoung.com/twentysidedtale/?p=141
 
 v0.2 reading:
@@ -15,20 +15,38 @@ https://software.intel.com/en-us/blogs/2014/07/15/an-investigation-of-fast-real-
 http://www.gamasutra.com/blogs/AndreyMishkinis/20130716/196339/Advanced_Terrain_Texture_Splatting.php
 http://gamedevelopment.tutsplus.com/articles/use-tri-planar-texture-mapping-for-better-terrain--gamedev-13821
 
-Simple heightmap terrain based on 3 octaves Unity native Perlin noise. Noise parameters are approximated between zones by simple IDW function. There are 6 geo zones at the map: grass hills, mountains, snow plains, desert, forests and lakes. Zones colored using plain colors, there are no textures yet.
+This milestone is about texture generation. I prefer pregenerate textures for all chunks at start. Some solved tasks of this milestone:
 
-Settings for world generator looks like:
+* Span textures across neighbour chunks border:
 
-![World inspector](/Screenshots/World settings.png?raw=true "World inspector")
+| Before  | After |
+| ------------- | ------------- |
+| <img src="/Screenshots/No cross-chunk filtering.jpg?raw=true" width="350">  | <img src="/Screenshots/Cross-chunk filtering.jpg?raw=true" width="350">  |
 
-So I generate some example terrain (~1 km^2, 60 zones). I have discovered that put zones randomly looks poor, so zones of some type are clustered together now. Lake zones blends together poorly, I will fix this later.
+* Noise-blend texture with rotated and scaled itself to hide repeating pattern:
 
-View of a terrain:
+| Before  | After |
+| ------------- | ------------- |
+| <img src="/Screenshots/NoMix.jpg?raw=true" width="350">  | <img src="/Screenshots/Mix.jpg?raw=true" width="350">  |
+ 
+* Noise-tint texture at large scale to achieve more organic look:
 
-![Terrain view](/Screenshots/terrain.jpg?raw=true "Terrain view")
+| Before  | After |
+| ------------- | ------------- |
+| <img src="/Screenshots/No tint.jpg?raw=true" width="350">  | <img src="/Screenshots/Tint.jpg?raw=true" width="350">  |
 
-View of a isometric map with zones mesh visualized:
+* Use of a well-known triplanar texturing to prevent stretching on steep sides:
 
-![Map view](/Screenshots/map.jpg?raw=true "Map view")
+| Before  | After |
+| ------------- | ------------- |
+| <img src="/Screenshots/No triplanar.jpg?raw=true" width="350">  | <img src="/Screenshots/Triplanar.jpg?raw=true" width="350">  |
 
-PS. Some chunks visualization are failed, I will address this sometime :)
+* It was a some challenge to calculate texel world position to implement triplanar texturing. Bilinear world height approximation was no good. See a height isolines:
+
+| Bilinear | Barycentric |
+| ------------- | ------------- |
+| <img src="/Screenshots/Bilinear height calculation.jpg?raw=true" width="350">  | <img src="/Screenshots/Barycentric height calculation.jpg?raw=true" width="350">  |
+
+And an example of result texturing (relief and biomes generation is still completely dumb, bump mapping/specular is left for future work also):
+
+<img src="/Screenshots/SimpleTextured.jpg?raw=true">
