@@ -21,7 +21,7 @@ namespace TerrainDemo.Generators
             //Slightly raise up heightmap of Mountain zone
             if (mountInfluence > 0.7f)
             {
-                var additional = mountInfluence + 0.3f;
+                var additional = (mountInfluence + 0.3f);
                 height *= additional;
             }
 
