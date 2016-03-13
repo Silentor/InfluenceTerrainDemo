@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using TerrainDemo.Meshing;
 using TerrainDemo.Settings;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -7,18 +8,29 @@ namespace TerrainDemo
 {
     public class ChunkGO : MonoBehaviour
     {
-        public static ChunkGO Create(Chunk chunk, Mesh mesh)
+        public static ChunkGO Create(Chunk chunk, TextureMesher.ChunkModel model)
         {
             var chunkGo = Get(chunk);
-            chunkGo._filter.sharedMesh = mesh;  
+            chunkGo.Init(model);
             return chunkGo;
         }
 
         public static void Clear()
         {
             foreach (var chunkGo in _allChunksGO)
+            {
+                Destroy(chunkGo._filter.sharedMesh);
+                Destroy(chunkGo._renderer.sharedMaterial.mainTexture);
+                Destroy(chunkGo._renderer.sharedMaterial);
                 Destroy(chunkGo.gameObject);
+            }
             _allChunksGO.Clear();
+        }
+
+        public void Init(TextureMesher.ChunkModel model)
+        {
+            _filter.sharedMesh = model.Mesh;
+            _renderer.sharedMaterial = model.Material;
         }
 
         public void CreateFlora(ILandSettings settings, IEnumerable<Vector3> positions)
@@ -56,7 +68,6 @@ namespace TerrainDemo
             var chunkGo = go.AddComponent<ChunkGO>();
             chunkGo._filter = go.AddComponent<MeshFilter>();
             chunkGo._renderer = go.AddComponent<MeshRenderer>();
-            chunkGo._renderer.sharedMaterial = Materials.Instance.Grass;
             chunkGo._renderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
             chunkGo._renderer.useLightProbes = false;
             go.name = chunk.Position.X + " : " + chunk.Position.Z;

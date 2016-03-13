@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using TerrainDemo.Generators.Debug;
 using TerrainDemo.Layout;
 using TerrainDemo.Map;
 using TerrainDemo.Settings;
@@ -31,10 +32,19 @@ namespace TerrainDemo.Generators
                     generator = new ForestGenerator(zoneMarkup, _land, _settings);
                 else if (zoneMarkup.Type == ZoneType.Mountains)
                     generator = new MountainsGenerator(zoneMarkup, _land, _settings);
+                else if (zoneMarkup.Type == ZoneType.Snow)
+                    generator = new SnowGenerator(zoneMarkup, _land, _settings);
                 else if (zoneMarkup.Type >= ZoneType.Hills && zoneMarkup.Type <= ZoneType.Lake)
                     generator = new DefaultGenerator(zoneMarkup, _land, _settings);
                 else if (zoneMarkup.Type >= ZoneType.Influence1 && zoneMarkup.Type <= ZoneType.Influence8)
                     generator = new FlatGenerator(zoneMarkup, _land, _settings);
+                else if(zoneMarkup.Type == ZoneType.Checkboard)
+                    generator = new CheckboardGenerator(zoneMarkup, _land, _settings);
+                else if (zoneMarkup.Type == ZoneType.Cone)
+                    generator = new ConeGenerator(zoneMarkup, _land, _settings);
+                else if (zoneMarkup.Type == ZoneType.Slope)
+                    generator = new SlopeGenerator(zoneMarkup, _land, _settings);
+
 
                 if (generator != null)
                 {

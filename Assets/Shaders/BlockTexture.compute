@@ -1,0 +1,219 @@
+﻿#pragma kernel Bare
+#pragma kernel Mix
+#pragma kernel MixTri
+#pragma kernel MixTint
+#pragma kernel MixTriTint
+
+//Common settings
+Texture2D<float4> Texture;			//Large source chunk texture
+Texture2D<float4> Noise;			//Perlin noise
+int2 ChunkPos;						//Chunk position
+
+//Mix settings
+float MixNoiseScale;
+//Texture2D<float4> MixTexture;			//Large mix chunk texture, commented out bcuz we used the same transformed texture
+float MixTextureScale;
+float MixTextureAngle;
+
+//Tint settings
+float TintNoiseScale;
+float4 FromColor;					//Color for noise 0
+float4 ToColor;						//Color for noise 1
+
+//Triplanar settings
+Texture2D<float4> SteepTexture;			//Large source chunk texture
+StructuredBuffer<float> HeightMap;		//Vertex height map
+Texture2D<float3> Normals;				//Small block normal map
+int Border;								//Normal map border (for proper cross-chunk blending)
+float SteepAngleFrom;					//From-To angles to blend between Flat and Steep textures
+float SteepAngleTo;
+
+//Result
+RWTexture2D<float4> Result;					//Large result chunk texture
+//RWTexture2D<float4> ResultNormals;			//Large result chunk texture
+
+SamplerState _LinearRepeat;
+SamplerState _LinearClamp;
+
+#include "Assets\Shaders\Common.cginc"
+#include "Assets\Shaders\Constants.cginc"
+
+float4 Mix(float2 uv)
+{
+	//Rotate and scale mix texture
+	float mixSin, mixCos;
+	sincos(radians(MixTextureAngle), mixSin, mixCos);
+	float2 mixPosition = (ChunkPos + uv) * MixTextureScale;
+	mixPosition = float2(mixPosition.x * mixCos - mixPosition.y * mixSin, mixPosition.y * mixCos + mixPosition.x * mixSin);
+	float4 mixTex;
+	mixTex = Texture.SampleLevel(_LinearRepeat, mixPosition, 0);
+
+	//Rotate and scale mix noise
+	sincos(radians(MixTextureAngle - 45), mixSin, mixCos);
+	mixPosition = (ChunkPos + uv) * MixNoiseScale;
+	mixPosition = float2(mixPosition.x * mixCos - mixPosition.y * mixSin, mixPosition.y * mixCos + mixPosition.x * mixSin);
+	float noise = Noise.SampleLevel(_LinearRepeat, mixPosition, 0).z * 2.0;						//Bad noise (from 0 to 0.5), rescale to 0..1
+	noise = Compress01(noise, 10);						//Make noise  a little more contrast
+
+	float4 source = Texture.SampleLevel(_LinearClamp, uv, 0);
+	return SoftDepthBlend(source, mixTex, noise);	
+}
+
+float4 Tint(float4 input, float2 uv)
+{
+	float noise = Noise.SampleLevel(_LinearRepeat, (ChunkPos + uv) * TintNoiseScale, 0).x * 2.0;						//Bad noise (from 0 to 0.5)
+	float4 tintColor = lerp(FromColor, ToColor, noise); 
+	float4 resultColor;
+	resultColor.rgb = Overlay(input.rgb, tintColor);						//Todo consider HSBC tint, but harder tweaking
+	resultColor.a = input.a;
+	return resultColor;								
+}
+
+float GetHeight(float2 uv)
+{
+	//Get heightmap corners
+	int2 c00;
+	float2 miniUV = modf(uv * BLOCKS_COUNT, c00);
+	int2 c11 = c00 + int2(1, 1);
+
+	//Todo rework bilinear stuff to barycentric
+	float height00 = HeightMap[c00.x + c00.y * GRID_SIZE];
+	float height10 = HeightMap[c11.x + c00.y * GRID_SIZE];
+	float height01 = HeightMap[c00.x + c11.y * GRID_SIZE];
+	float height11 = HeightMap[c11.x + c11.y * GRID_SIZE];
+	
+	//Bilinear
+	//float heightY0 = lerp(height00, height01, miniUV.y);
+	//float heightY1 = lerp(height10, height11, miniUV.y);
+	//return lerp(heightY0, heightY1, miniUV.x);
+
+	//Barycentric, based on http://answers.unity3d.com/questions/383804/calculate-uv-coordinates-of-3d-point-on-plane-of-m.html
+	float3 uv3 = float3(miniUV.x, 0, miniUV.y);
+	float3 p1, p2, p3;
+	float h1, h2, h3;
+
+	p1 = float3(0, 0, 0);
+	h1 = height00;
+	if(uv3.x > uv3.z)
+	{
+		p2 = float3(1, 0, 0);
+		p3 = float3(1, 0, 1);
+		h2 = height10;
+		h3 = height11;
+	}
+	else
+	{
+		p2 = float3(1, 0, 1);
+		p3 = float3(0, 0, 1);
+		h2 = height11;
+		h3 = height01;
+	}
+
+	float3 f1 = p1 - uv3;
+	float3 f2 = p2 - uv3;
+	float3 f3 = p3 - uv3;
+
+	float a = length(cross(p1 - p2, p2 - p3));
+	float a1 = length(cross(f2, f3)) / a;
+	float a2 = length(cross(f3, f1)) / a;
+	float a3 = length(cross(f1, f2)) / a;
+
+	return h1 * a1 + h2 * a2 + h3 * a3;
+}
+
+float4 Triplanar(float4 flatInput, float2 uv)
+{
+	//Get 'world' uv
+	float worldHeight = GetHeight(uv);
+	float3 worldUV = float3(uv.x, (worldHeight % CHUNK_SIZE_M) / CHUNK_SIZE_M, uv.y);
+
+	//Scale uv because of border
+	float normalsSize;
+	Normals.GetDimensions(normalsSize, normalsSize);
+	float2 normalUV = scaleUV(uv, Border, normalsSize);
+	
+	//Get blending weights
+	float3 wNorm = Normals.SampleLevel(_LinearClamp, normalUV, 0);
+	wNorm = wNorm * 2 - 1;							//Restore normal vector from color
+	float3 blending = abs( wNorm );
+	blending = normalize(max(blending, 0.00001)); 
+
+	//Get blending for slope textures
+	float2 slopeAxis = float2(blending.x, blending.z);
+	float slopeSum = blending.x + blending.z;
+	slopeAxis /= float2(slopeSum, slopeSum);
+	float4 xPixel = SteepTexture.SampleLevel(_LinearClamp, worldUV.zy, 0);
+	float4 zPixel = SteepTexture.SampleLevel(_LinearClamp, worldUV.xy, 0);
+	float4 steepPixel = SoftDepthBlend(xPixel, zPixel, Compress01(slopeAxis.y, 2));			
+
+	//Blend with flat texture
+	float angle = degrees(acos(wNorm.y));			//Get fragment world angle to vertical
+	return SoftDepthBlend(flatInput, steepPixel, Compress(angle, SteepAngleFrom, SteepAngleTo));
+}
+
+[numthreads(8,8,1)]
+void Bare (uint2 pos : SV_DispatchThreadID)
+{
+	float dim;	
+    Result.GetDimensions(dim, dim);
+	float2 uv = float2(pos.x/(dim - 1), pos.y/(dim - 1));
+
+	Result[pos] = Texture.SampleLevel(_LinearClamp, uv, 0);
+}
+
+[numthreads(8,8,1)]
+void Mix (uint2 pos : SV_DispatchThreadID)
+{
+	float dim;	
+    Result.GetDimensions(dim, dim);
+	float2 uv = float2(pos.x/(dim - 1), pos.y/(dim - 1));
+
+	float4 result = Mix(uv);
+	Result[pos] = result;
+	//ResultNormals[pos] = result.Normals;
+}
+
+[numthreads(8,8,1)]
+void MixTri (uint2 pos : SV_DispatchThreadID)
+{
+	float dim;	
+    Result.GetDimensions(dim, dim);
+	float2 uv = float2(pos.x/(dim - 1), pos.y/(dim - 1));
+
+	float4 result = Mix(uv);
+	result = Triplanar(result, uv);
+
+	Result[pos] = result;
+	//ResultNormals[pos] = mixed.Normals;
+}
+
+
+[numthreads(8,8,1)]
+void MixTint (uint2 pos : SV_DispatchThreadID)
+{
+	float dim;	
+    Result.GetDimensions(dim, dim);
+	float2 uv = float2(pos.x/(dim - 1), pos.y/(dim - 1));
+
+	float4 result = Mix(uv);
+	result = Tint(result, uv);
+
+	Result[pos] = result;
+	//ResultNormals[pos] = mixed.Normals;
+}
+
+[numthreads(8,8,1)]
+void MixTriTint (uint2 pos : SV_DispatchThreadID)
+{
+	float dim;	
+    Result.GetDimensions(dim, dim);
+	float2 uv = float2(pos.x/(dim - 1), pos.y/(dim - 1));
+
+	float4 result = Mix(uv);
+	result = Triplanar(result, uv);
+	result = Tint(result, uv);
+
+	Result[pos] = result;
+	//ResultNormals[pos] = mixed.Normals;
+}
+

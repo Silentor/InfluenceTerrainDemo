@@ -45,6 +45,10 @@ namespace TerrainDemo
             Z = tempValue.Z;
         }
 
+        public Vector2i(int xz) : this(xz, xz)
+        {
+        }
+
         public static int DistanceSquared(Vector2i a, Vector2i b)
         {
             int dx = b.X - a.X;

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using TerrainDemo.Layout;
@@ -79,6 +78,8 @@ namespace TerrainDemo.Generators
         private ZoneType _zoneMaxType;
         private ZoneRatio _influence;
         protected Vector2i[] Blocks;
+        private static readonly float NormalY = 2*Mathf.Sqrt(3/2f);
+        private static readonly Quaternion NormalCorrectRotation = Quaternion.Euler(0, -45, 0);
 
         protected ZoneGenerator(ZoneLayout zone, [NotNull] LandLayout land, [NotNull] ILandSettings landSettings)
         {
@@ -134,7 +135,9 @@ namespace TerrainDemo.Generators
             //Based on http://gamedev.stackexchange.com/questions/70546/problem-calculating-normals-for-heightmaps
             var dx = zoneHeightmap[localBlockPos.X, localBlockPos.Z] - zoneHeightmap[localBlockPos.X + 1, localBlockPos.Z + 1];
             var dz = zoneHeightmap[localBlockPos.X, localBlockPos.Z + 1] - zoneHeightmap[localBlockPos.X + 1, localBlockPos.Z];
-            return Vector3.Normalize(new Vector3(dx, 2 * Mathf.Sqrt(3/2f), -dz));
+            var normal = new Vector3(dx, NormalY, -dz);
+            normal = NormalCorrectRotation*normal;
+            return Vector3.Normalize(normal);
         }
 
         private void CalculateVertex(Vector2i vertPos, ZoneRatio[,] zoneInfluences, float[,] zoneHeightmap)

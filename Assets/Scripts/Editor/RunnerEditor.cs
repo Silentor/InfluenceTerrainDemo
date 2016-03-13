@@ -6,7 +6,6 @@ using TerrainDemo.Layout;
 using TerrainDemo.Tools;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.VR;
 
 namespace TerrainDemo.Editor
 {
@@ -106,6 +105,9 @@ namespace TerrainDemo.Editor
                         Gizmos.color = Color.red;
                         Gizmos.DrawSphere(mapInter.Value, 0.05f);
                         DrawChunkAndBlock(Convert(mapInter.Value));
+
+                        if(IsLayoutMode())
+                            DrawSelectedZone(Convert(mapInter.Value));
                     }
                 }
                 else if (IsLayoutMode())
@@ -313,6 +315,7 @@ namespace TerrainDemo.Editor
                     GUILayout.Label("Pos: " + blockPos);
                     GUILayout.Label("Type: " + block.Type);
                     GUILayout.Label(string.Format("Height height: {0:F1}", block.Height));
+                    GUILayout.Label(string.Format("Normal: {0}", block.Normal));
                     GUILayout.Label("Inclination: " + (int) Vector3.Angle(block.Normal, Vector3.up));
                 };
             }
@@ -326,7 +329,7 @@ namespace TerrainDemo.Editor
             }
 
             Handles.BeginGUI();
-            GUILayout.Window(1, new Rect(0, Screen.height - 200, 200, 110), windowFunc, "Block");
+            GUILayout.Window(1, new Rect(0, Screen.height - 220, 200, 110), windowFunc, "Block");
             Handles.EndGUI();
         }
 

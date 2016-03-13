@@ -1,7 +1,7 @@
 ﻿using TerrainDemo.Layout;
 using TerrainDemo.Settings;
 
-namespace TerrainDemo.Generators
+namespace TerrainDemo.Generators.Debug
 {
     public class FlatGenerator : ZoneGenerator
     {

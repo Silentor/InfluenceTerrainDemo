@@ -169,7 +169,7 @@ namespace TerrainDemo.Voronoi
         /// <returns>-1 = a -> b clockwise; 1 = b -> a clockwise; 0 = point a, b are same</returns>
         private static int ClockWiseComparer(Vector2 a, Vector2 b, Vector2 center)
         {
-            http://stackoverflow.com/questions/6989100/sort-points-in-clockwise-order
+            //Based on http://stackoverflow.com/questions/6989100/sort-points-in-clockwise-order
 
             //Some buggy optimization, consider perfomance usefulness
             //if (a.X - center.X >= 0 && b.X - center.X < 0)

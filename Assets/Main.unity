@@ -114,18 +114,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ZonesCount: 100
-  LandSize: 10
+  LandSize: 20
   LandNoiseSettings: {fileID: 11400000, guid: d7826460041438940b2a318c07207ed6, type: 2}
   Zones:
   - {fileID: 11400000, guid: efe303b16c6dfa0419eaeabce0cc1f5a, type: 2}
-  - {fileID: 11400000, guid: eb8acf702fba2d347b1e19cbd1886cab, type: 2}
-  - {fileID: 11400000, guid: b7ea798b05685aa4086f3ad12b3c60a1, type: 2}
   - {fileID: 11400000, guid: 6d9e47604d34fe64686ce4c7b4247a74, type: 2}
+  - {fileID: 11400000, guid: b7ea798b05685aa4086f3ad12b3c60a1, type: 2}
   - {fileID: 11400000, guid: 143a1e76d1de30f43aae86242fa6b09a, type: 2}
   - {fileID: 11400000, guid: 1d1884e8c53e2cf4585b8eb12b78019d, type: 2}
   ZonesDensity: {x: 30, y: 40}
   GenerateSeed: 1
-  LandSeed: 3
+  LandSeed: -1220517184
   IDWCoeff: 2
   IDWOffset: 0.001
   InterpolateInfluence: 0
@@ -133,17 +132,6 @@ MonoBehaviour:
   InfluenceLimit: 3
   BlocksCount: 16
   BlockSize: 1
-  Blocks:
-  - Block: 2
-    Color: {r: 0, g: 1, b: 0.048275948, a: 1}
-  - Block: 3
-    Color: {r: 0.6102941, g: 0.6102941, b: 0.6102941, a: 1}
-  - Block: 6
-    Color: {r: 0, g: 0.83448267, b: 1, a: 1}
-  - Block: 4
-    Color: {r: 0.71744424, g: 0.7941176, b: 0, a: 1}
-  - Block: 5
-    Color: {r: 0.9137111, g: 0.9558824, b: 0.9506473, a: 1}
   Tree: {fileID: 178060, guid: 69ee204600497b94797abb82b51602bd, type: 2}
   Stone: {fileID: 127540, guid: cdcdb6005d769124082a23208f27a7ce, type: 2}
 --- !u!4 &214652176
@@ -166,10 +154,127 @@ MonoBehaviour:
   m_GameObject: {fileID: 214652174}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a9c82ca8e517f53419e99173e239e67c, type: 3}
+  m_Script: {fileID: 11500000, guid: 2975cf88f56da0644bb546e5be64bbdb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Grass: {fileID: 2100000, guid: 5ae6f60a03e107e4d9e469815a34517d, type: 2}
+  TextureSize: 256
+  MaskBorder: 2
+  Turbulence: 0.2
+  NoiseTexture: {fileID: 2800000, guid: 53f6543b5c6260e47854d3e26253d1ff, type: 3}
+  Material: {fileID: 2100000, guid: cf4bbfe466f303742b1c4030ee57c04b, type: 2}
+  Blocks:
+  - Block: 2
+    Color: {r: 0, g: 1, b: 0, a: 1}
+    FlatTexture:
+      Texture: {fileID: 2800000, guid: daf6a200dfc15564797eb8513a253a4b, type: 3}
+      Normals: {fileID: 0}
+      BypassMix: 0
+      MixNoiseScale: 0.3
+      MixTextureScale: 1.133333
+      MixTextureAngle: 33
+    SteepTexture:
+      Texture: {fileID: 2800000, guid: 19f19ae4b957dfc428a8d283e48a5916, type: 3}
+      Normals: {fileID: 0}
+      BypassMix: 1
+      MixNoiseScale: 0.3
+      MixTextureScale: 1.133333
+      MixTextureAngle: 45
+    BypassTriplanar: 0
+    SteepAngles: {x: 40, y: 60}
+    BypassTint: 1
+    TintFrom: {r: 0, g: 0, b: 0, a: 0}
+    TintTo: {r: 0, g: 0, b: 0, a: 0}
+    TintNoiseScale: 0
+  - Block: 3
+    Color: {r: 0.5514706, g: 0.5514706, b: 0.5514706, a: 1}
+    FlatTexture:
+      Texture: {fileID: 2800000, guid: d4f20d0ef78bbe24c943275939dd3df6, type: 3}
+      Normals: {fileID: 0}
+      BypassMix: 0
+      MixNoiseScale: 0.3
+      MixTextureScale: 1.111111
+      MixTextureAngle: 44
+    SteepTexture:
+      Texture: {fileID: 2800000, guid: d4f20d0ef78bbe24c943275939dd3df6, type: 3}
+      Normals: {fileID: 0}
+      BypassMix: 1
+      MixNoiseScale: 0
+      MixTextureScale: 0
+      MixTextureAngle: 0
+    BypassTriplanar: 0
+    SteepAngles: {x: 45, y: 55}
+    BypassTint: 0
+    TintFrom: {r: 0.88235295, g: 0.6293253, b: 0.6293253, a: 0.341}
+    TintTo: {r: 0.23945719, g: 0.29077974, b: 0.31617647, a: 0.241}
+    TintNoiseScale: 0.13
+  - Block: 4
+    Color: {r: 0.94482756, g: 1, b: 0, a: 1}
+    FlatTexture:
+      Texture: {fileID: 2800000, guid: 23afafc09f993fe4b971155856b20ecb, type: 3}
+      Normals: {fileID: 0}
+      BypassMix: 0
+      MixNoiseScale: 1.7777778
+      MixTextureScale: 1.1333333
+      MixTextureAngle: 33
+    SteepTexture:
+      Texture: {fileID: 2800000, guid: 4f0301d578f7f534a903ca772338b658, type: 3}
+      Normals: {fileID: 0}
+      BypassMix: 1
+      MixNoiseScale: 0
+      MixTextureScale: 0
+      MixTextureAngle: 0
+    BypassTriplanar: 0
+    SteepAngles: {x: 45, y: 70}
+    BypassTint: 1
+    TintFrom: {r: 0, g: 0, b: 0, a: 0}
+    TintTo: {r: 0, g: 0, b: 0, a: 0}
+    TintNoiseScale: 0
+  - Block: 5
+    Color: {r: 1, g: 1, b: 1, a: 1}
+    FlatTexture:
+      Texture: {fileID: 2800000, guid: f1910ca6b9545cc468d22ca9434a9f82, type: 3}
+      Normals: {fileID: 0}
+      BypassMix: 0
+      MixNoiseScale: 1.7777778
+      MixTextureScale: 1.1333333
+      MixTextureAngle: 33
+    SteepTexture:
+      Texture: {fileID: 2800000, guid: 09fbca0223a8ef6428d4af988a104d4f, type: 3}
+      Normals: {fileID: 0}
+      BypassMix: 1
+      MixNoiseScale: 0
+      MixTextureScale: 0
+      MixTextureAngle: 0
+    BypassTriplanar: 0
+    SteepAngles: {x: 45, y: 70}
+    BypassTint: 1
+    TintFrom: {r: 0, g: 0, b: 0, a: 0}
+    TintTo: {r: 0, g: 0, b: 0, a: 0}
+    TintNoiseScale: 0
+  - Block: 6
+    Color: {r: 0, g: 0.83448267, b: 1, a: 1}
+    FlatTexture:
+      Texture: {fileID: 2800000, guid: b766c4ffca7260e4d943ad5e9b6d700b, type: 3}
+      Normals: {fileID: 0}
+      BypassMix: 0
+      MixNoiseScale: 1.7777778
+      MixTextureScale: 1.1333333
+      MixTextureAngle: 33
+    SteepTexture:
+      Texture: {fileID: 0}
+      Normals: {fileID: 0}
+      BypassMix: 0
+      MixNoiseScale: 0
+      MixTextureScale: 0
+      MixTextureAngle: 0
+    BypassTriplanar: 1
+    SteepAngles: {x: 0, y: 0}
+    BypassTint: 1
+    TintFrom: {r: 0, g: 0, b: 0, a: 0}
+    TintTo: {r: 0, g: 0, b: 0, a: 0}
+    TintNoiseScale: 0
+  TextureBlendShader: {fileID: 7200000, guid: d585ce2608b9451429edd609756aba4f, type: 3}
+  BlockShader: {fileID: 7200000, guid: 7e567fa3fa63251459fb7220a5eee395, type: 3}
 --- !u!1 &1293065045
 GameObject:
   m_ObjectHideFlags: 0
@@ -250,8 +355,8 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1293065045}
-  m_LocalRotation: {x: 0.30070582, y: 0, z: 0, w: 0.95371693}
-  m_LocalPosition: {x: 0, y: 132, z: -103.7}
+  m_LocalRotation: {x: -0.02471642, y: 0.96784943, z: -0.24985987, w: -0.01505913}
+  m_LocalPosition: {x: 0, y: 98.6, z: 74.7}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -389,7 +494,7 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1902875634}
-  m_LocalRotation: {x: 0.40821794, y: -0.23456973, z: 0.109381676, w: 0.87542605}
+  m_LocalRotation: {x: -0.33849975, y: -0.6612924, z: 0.46304208, w: -0.48342773}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []

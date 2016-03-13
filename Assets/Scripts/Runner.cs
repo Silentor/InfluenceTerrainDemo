@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using TerrainDemo.Layout;
 using TerrainDemo.Map;
 using TerrainDemo.Meshing;
 using TerrainDemo.Settings;
+using TerrainDemo.Tools;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace TerrainDemo
 {
@@ -37,8 +40,6 @@ namespace TerrainDemo
         [Range(1, 128)]
         public int BlockSize = 1;
 
-        public BlockColors[] Blocks;
-
         public GameObject Tree;
 
         public GameObject Stone;
@@ -49,19 +50,33 @@ namespace TerrainDemo
 
         public void MeshAndVisualize(LandMap landMap)
         {
+            var timer = Stopwatch.StartNew();
+
             CreateZonesHandle(landMap.Layout.Zones);
 
             ChunkGO.Clear();
 
             //var mesher = new InfluenceMesher(this);
-            var mesher = new ColorMesher(this);
+            //var mesher = new ColorMesher(this);
+            var mesherSettings = GetComponent<MesherSettings>();
+            var mesher = new TextureMesher(this, mesherSettings);
+            //var mesh = mesher.Generate(landMap.Map[Vector2i.Zero], landMap.Map);
+            //var go = ChunkGO.Create(landMap.Map[Vector2i.Zero], mesh);
+
             foreach (var chunk in landMap.Map)
             {
-                var mesh = mesher.Generate(chunk.Value);
+                var mesh = mesher.Generate(chunk.Value, landMap.Map);
                 var go = ChunkGO.Create(chunk.Value, mesh);
                 go.CreateFlora(this, chunk.Value.Flora);
                 go.CreateStones(this, chunk.Value.Stones);
             }
+
+            mesher.ReleaseRenderTextures();
+
+            timer.Stop();
+
+            Debug.LogFormat("Mesh generation {0} ms total", timer.ElapsedMilliseconds);
+            Debug.LogFormat("Mesh generation timings: mesh {0} ms, texture {1} ms, {2} ops", mesher.MeshTimer.AvgTimeMs, mesher.TextureTimer.AvgTimeMs, mesher.TextureTimer.SamplesCount);
         }
 
         public void BuildLayout()
@@ -73,8 +88,7 @@ namespace TerrainDemo
 
         public void BuildAll()
         {
-            SetSeed();
-            Main.GenerateLayout(new PoissonClusteredLayout(this));
+            BuildLayout();
             var map = Main.GenerateMap(this);
             MeshAndVisualize(map);
         }
@@ -100,8 +114,6 @@ namespace TerrainDemo
 
         float ILandSettings.InfluenceThreshold { get { return InfluenceThreshold; } }
         int ILandSettings.InfluenceLimit { get { return InfluenceLimit; } }
-
-        IEnumerable<BlockColors> ILandSettings.Blocks { get { return Blocks ?? new BlockColors[0]; } }
 
         GameObject ILandSettings.Tree { get { return Tree; } }
         GameObject ILandSettings.Stone { get { return Stone; } }

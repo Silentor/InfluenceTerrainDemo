@@ -5,7 +5,7 @@ using UnityEngine;
 namespace TerrainDemo.Meshing
 {
     /// <summary>
-    /// Simple mesher to draw zone influences by color (block type is ignored)
+    /// Simple mesher, generate zone influences by vertex color (needs appropriate shader )
     /// </summary>
     public class InfluenceMesher
     {
@@ -53,14 +53,7 @@ namespace TerrainDemo.Meshing
                 colors[i] = Lerp(influence);
             }
             mesh.colors = colors;
-
-            //Manual normals calculation
-            //No lighting normals
-            //var normals = new Vector3[mesh.vertexCount];
-            //for (int i = 0; i < normals.Length; i++)
-            //    normals[i] = Vector3.up;
-            //mesh.normals = normals;
-            //Traditional normals
+            
             mesh.RecalculateNormals();
 
             return mesh;

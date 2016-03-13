@@ -7,15 +7,19 @@ namespace TerrainDemo.Tools
     /// </summary>
     public class AverageTimer
     {
+        public int SamplesCount { get; private set; }
+
         /// <summary>
         /// Average time of operation (msec)
         /// </summary>
-        public float AverageTime { get { return (float)_elapsedTime / _samples; } }
+        public float AvgTimeMs { get { return SamplesCount > 0 ? _elapsedTime / SamplesCount / (Stopwatch.Frequency / 1000f) : 0; } }
 
         /// <summary>
         /// Average time of operation (ticks)
         /// </summary>
-        public float AverageTimeTicks { get { return (float)_elapsedTimeTicks / _samples; } }
+        public float AvgTimeTicks { get { return (float)_elapsedTime / SamplesCount; } }
+
+        public long MinTime { get; set; }
 
         /// <summary>
         /// Max time of operation (msec)
@@ -23,7 +27,7 @@ namespace TerrainDemo.Tools
         public long MaxTime { get; private set; }
 
         /// <summary>
-        /// Time of last operation (msec)
+        /// Time of last operation (ticks)
         /// </summary>
         public long LastTime { get; private set; }
 
@@ -41,19 +45,29 @@ namespace TerrainDemo.Tools
         {
             _watch.Stop();
 
-            LastTime = _watch.ElapsedMilliseconds - _elapsedTime;
+            LastTime = _watch.ElapsedTicks - _elapsedTime;
             if (MaxTime < LastTime) MaxTime = LastTime;
+            if (!_isMinTimeInit)
+            {
+                MinTime = LastTime;
+                _isMinTimeInit = true;
+            }
+            else 
+                if (LastTime < MinTime) MinTime = LastTime;
 
-            _elapsedTime = _watch.ElapsedMilliseconds;
-            _elapsedTimeTicks = _watch.ElapsedTicks;
-            _samples++;
+            _elapsedTime = _watch.ElapsedTicks;
+            SamplesCount++;
 
             return this;
         }
 
+        public string GetMinAvgMaxTime()
+        {
+            return string.Format("{0}/{1}/{2}", MinTime, AvgTimeMs, MaxTime);
+        }
+
         private readonly Stopwatch _watch;
-        private int _samples;
         private long _elapsedTime;
-        private long _elapsedTimeTicks;
+        private bool _isMinTimeInit;
     }
 }

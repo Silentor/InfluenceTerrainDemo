@@ -7,7 +7,7 @@ namespace TerrainDemo.Tools
     {
         public static bool LineSegmentIntersection(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4)
         {
-            http: //www.stefanbader.ch/faster-line-segment-intersection-for-unity3dc/
+            //Based on http://www.stefanbader.ch/faster-line-segment-intersection-for-unity3dc/
             Vector2 a = p2 - p1;
             Vector2 b = p3 - p4;
             Vector2 c = p1 - p3;

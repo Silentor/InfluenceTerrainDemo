@@ -26,7 +26,7 @@ namespace TerrainDemo.Settings
         int BlockSize { get; }
         int BlocksCount { get; }
 
-        IEnumerable<BlockColors> Blocks { get; }
+        
 
         GameObject Tree { get; }
 

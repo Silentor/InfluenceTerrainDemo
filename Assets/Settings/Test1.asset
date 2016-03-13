@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Name: Test1
   m_EditorClassIdentifier: 
   Name: Test1
-  LandColor_: {r: 0, g: 1, b: .255172491, a: 1}
-  Type: 1
+  LandColor_: {r: 0, g: 1, b: 0.2551725, a: 1}
+  Type: 4
   DefaultBlock: 2
-  Height_: 0
-  OutScale1_: 20
-  OutScale2_: .200000003
-  OutScale3_: 100
+  Height_: 5
+  OutScale1_: 0
+  OutScale2_: 0
+  OutScale3_: 0

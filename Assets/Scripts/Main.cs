@@ -42,7 +42,7 @@ namespace TerrainDemo
 
             time.Stop();
             //Debug.Log(Land.GetStaticstics());
-            Debug.Log(string.Format("Total {0} ms", time.ElapsedMilliseconds));
+            Debug.Log(string.Format("Generate map {0} ms", time.ElapsedMilliseconds));
 
             return Map;
         }

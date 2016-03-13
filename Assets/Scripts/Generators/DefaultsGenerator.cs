@@ -13,7 +13,7 @@ namespace TerrainDemo.Generators
 
         protected override BlockType GenerateBlock(Vector2i worldPosition, Vector2i turbulence, Vector3 normal, ZoneRatio influence)
         {
-            if (Vector3.Angle(Vector3.up, normal) > 35)
+            if (Vector3.Angle(Vector3.up, normal) > 50)
                 return BlockType.Rock;
 
             return base.GenerateBlock(worldPosition, turbulence, normal, influence);
