@@ -55,6 +55,8 @@ namespace TerrainDemo
         /// <returns></returns>
         public ZoneRatio Pack(float threshold)
         {
+            if (IsEmpty) return this;
+
             var result = new ZoneValue[_value.Length];
 
             int i;
@@ -74,6 +76,8 @@ namespace TerrainDemo
         /// <returns></returns>
         public ZoneRatio Pack(int remainValues)
         {
+            if (IsEmpty) return this;
+
             if (remainValues > _value.Length) remainValues = _value.Length;
 
             var result = new ZoneValue[remainValues];

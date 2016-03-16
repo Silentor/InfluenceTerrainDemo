@@ -85,7 +85,18 @@ namespace TerrainDemo
             return new Vector2i(chunkPosition.X << Shift | (localPosition.X & Mask), chunkPosition.Z << Shift | (localPosition.Z & Mask));
         }
 
+        /// <summary>
+        /// Get chunk position for belonging world position
+        /// </summary>
         public static Vector2i GetPosition(Vector2 worldPosition)
+        {
+            return GetPosition((Vector2i)worldPosition);
+        }
+
+        /// <summary>
+        /// Get chunk position for belonging world position
+        /// </summary>
+        public static Vector2i GetPosition(Vector3 worldPosition)
         {
             return GetPosition((Vector2i)worldPosition);
         }

@@ -49,6 +49,13 @@ namespace TerrainDemo
         {
         }
 
+        public static float Distance(Vector2i a, Vector2i b)
+        {
+            int dx = b.X - a.X;
+            int dz = b.Z - a.Z;
+            return Mathf.Sqrt(dx * dx + dz * dz);
+        }
+
         public static int DistanceSquared(Vector2i a, Vector2i b)
         {
             int dx = b.X - a.X;

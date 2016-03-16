@@ -56,9 +56,9 @@ namespace TerrainDemo
 
             ChunkGO.Clear();
 
-            //var mesher = new InfluenceMesher(this);
-            //var mesher = new ColorMesher(this);
             var mesherSettings = GetComponent<MesherSettings>();
+            //var mesher = new InfluenceMesher(this, mesherSettings);
+            //var mesher = new ColorMesher(this, mesherSettings);
             var mesher = new TextureMesher(this, mesherSettings);
             //var mesh = mesher.Generate(landMap.Map[Vector2i.Zero], landMap.Map);
             //var go = ChunkGO.Create(landMap.Map[Vector2i.Zero], mesh);
@@ -71,12 +71,11 @@ namespace TerrainDemo
                 go.CreateStones(this, chunk.Value.Stones);
             }
 
-            mesher.ReleaseRenderTextures();
-
+            mesher.Dispose();
             timer.Stop();
 
             Debug.LogFormat("Mesh generation {0} ms total", timer.ElapsedMilliseconds);
-            Debug.LogFormat("Mesh generation timings: mesh {0} ms, texture {1} ms, {2} ops", mesher.MeshTimer.AvgTimeMs, mesher.TextureTimer.AvgTimeMs, mesher.TextureTimer.SamplesCount);
+            mesher.DebugLogStatistic();
         }
 
         public void BuildLayout()
@@ -144,7 +143,7 @@ namespace TerrainDemo
 
             _parentObject = new GameObject("Zones");
 
-            Main = new Main(new PoissonClusteredLayout(this));
+            Main = new Main(new PoissonClusteredLayout(this), GetComponent<ObserverSettings>());
 
             BuildLayout();
         }

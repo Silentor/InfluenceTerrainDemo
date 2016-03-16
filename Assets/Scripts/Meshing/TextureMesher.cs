@@ -1,12 +1,14 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using TerrainDemo.Settings;
 using TerrainDemo.Tools;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace TerrainDemo.Meshing
 {
-    public class TextureMesher
+    public class TextureMesher : BaseMesher
     {
         public AverageTimer MeshTimer { get { return _meshTimer;} }
         public AverageTimer TextureTimer { get { return _textureTimer; } }
@@ -23,11 +25,10 @@ namespace TerrainDemo.Meshing
 
         ~TextureMesher()
         {
-            //if(_renderTexture != null)                    //todo Call from main thread
-            //    _renderTexture.Release();     
+            Dispose();
         }
 
-        public ChunkModel Generate(Chunk chunk, Dictionary<Vector2i, Chunk> map)
+        public override ChunkModel Generate(Chunk chunk, Dictionary<Vector2i, Chunk> map)
         {
             _meshTimer.Start();
 
@@ -69,11 +70,27 @@ namespace TerrainDemo.Meshing
             var tex = GenerateTextureShader(chunk, map);
             _textureTimer.Stop();
 
-            var material = new Material(_meshSettings.Material);
+            var material = new Material(_meshSettings.TexturedMaterial);
             material.mainTexture = tex;
             //material.SetTexture("_BumpMap", tex.Normal);
 
             return new ChunkModel {Mesh = mesh, Material = material };
+        }
+
+        public override void Dispose()
+        {
+            foreach (var allocatedTexture in _allocatedTextures)
+            {
+                allocatedTexture.Release();
+                _cachedTextures.Add(allocatedTexture);
+            }
+
+            _allocatedTextures.Clear();
+        }
+
+        public override void DebugLogStatistic()
+        {
+            Debug.LogFormat("Mesh generation timings: mesh {0} ms, texture {1} ms, {2} ops", MeshTimer.AvgTimeMs, TextureTimer.AvgTimeMs, TextureTimer.SamplesCount);
         }
 
         private readonly MesherSettings _meshSettings;
@@ -127,17 +144,6 @@ namespace TerrainDemo.Meshing
             _cachedTextures.RemoveAt(_cachedTextures.Count - 1);
             _allocatedTextures.Add(allocated);
             return allocated;
-        }
-
-        public void ReleaseRenderTextures()
-        {
-            foreach (var allocatedTexture in _allocatedTextures)
-            {
-                allocatedTexture.Release();
-                _cachedTextures.Add(allocatedTexture);
-            }
-
-            _allocatedTextures.Clear();
         }
 
         private Texture GetTextureFor(BlockType block, ComputeBuffer heightMap, TerrainMap normals, Vector2i chunkPos)
@@ -251,6 +257,7 @@ namespace TerrainDemo.Meshing
             shader.Dispatch(0, renderTex.width / 8, renderTex.height / 8, 1);
 
             //Render computed texture to another one to generate auto mipmaps
+            //Todo use new 5.4 Graphics.CopyTexture() to copy to compressed Texture2D
             var renderTex2 = new RenderTexture(renderTex.width, renderTex.height, 0);
             renderTex2.useMipMap = true;
             renderTex2.generateMips = true;
@@ -464,12 +471,6 @@ namespace TerrainDemo.Meshing
             return new Vector3(sx, 2, sy).normalized;
         }
 
-        public struct ChunkModel
-        {
-            public Mesh Mesh;
-            public Material Material;
-        }
-
         public struct ChunkMaskBlock
         {
             public BlockType Block;
@@ -481,16 +482,6 @@ namespace TerrainDemo.Meshing
         {
             public Texture Diffuse;
             public Texture Normal;
-        }
-
-        /// <summary>
-        /// 2d texture map of heigth
-        /// </summary>
-        public struct HeightMap
-        {
-            public Texture2D Map;
-            public float Lower;             //Lowest height value
-            public float Upper;             //Most upper height value
         }
 
         /// <summary>

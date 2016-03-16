@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using TerrainDemo.Settings;
 using UnityEngine;
 
@@ -7,18 +8,19 @@ namespace TerrainDemo.Meshing
     /// <summary>
     /// Simple mesher, generate zone influences by vertex color (needs appropriate shader )
     /// </summary>
-    public class InfluenceMesher
+    public class InfluenceMesher : BaseMesher
     {
-        public InfluenceMesher(ILandSettings settings)
+        public InfluenceMesher(ILandSettings settings, MesherSettings meshSettings)
         {
             _settings = settings;
+            _meshSettings = meshSettings;
             _zoneInfluenceColors = new Color[(int)settings.ZoneTypes.Max(z => z.Type) + 1];
             foreach (var zoneSettingse in settings.ZoneTypes)
                 _zoneInfluenceColors[(int) zoneSettingse.Type] = zoneSettingse.LandColor;
             _zoneTypes = _settings.ZoneTypes.Select(z => z.Type).ToArray();
         }
 
-        public Mesh Generate(Chunk chunk)
+        public override ChunkModel Generate(Chunk chunk, Dictionary<Vector2i, Chunk> map)
         {
             var mesh = new Mesh();
 
@@ -56,21 +58,24 @@ namespace TerrainDemo.Meshing
             
             mesh.RecalculateNormals();
 
-            return mesh;
+            return new ChunkModel() { Material = _meshSettings.VertexColoredMaterial, Mesh = mesh };
         }
 
         private readonly ILandSettings _settings;
+        private readonly MesherSettings _meshSettings;
         private readonly Color[] _zoneInfluenceColors;
         private readonly ZoneType[] _zoneTypes;
 
         private Color Lerp(ZoneRatio ratio)
         {
             var result = Color.black;
-            for (var i = 0; i < _zoneTypes.Length; i++)
-            {
-                var zoneType = _zoneTypes[i];
-                result += _zoneInfluenceColors[(int)zoneType] * ratio[zoneType];
-            }
+
+            if(!ratio.IsEmpty)
+                for (var i = 0; i < _zoneTypes.Length; i++)
+                {
+                    var zoneType = _zoneTypes[i];
+                    result += _zoneInfluenceColors[(int)zoneType] * ratio[zoneType];
+                }
 
             return result;
         }

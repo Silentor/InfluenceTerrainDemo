@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using JetBrains.Annotations;
 using TerrainDemo.Generators;
+using TerrainDemo.Hero;
 using TerrainDemo.Layout;
 using TerrainDemo.Map;
 using TerrainDemo.Settings;
@@ -13,9 +14,12 @@ namespace TerrainDemo
     public class Main
     {
         public LandLayout LandLayout { get; private set; }
+
         public LandMap Map { get; private set; }
 
-        public Main([NotNull] LandLayout landLayout)
+        //public Observer Observer { get; private set; }
+
+        public Main([NotNull] LandLayout landLayout, ObserverSettings observer)
         {
             if (landLayout == null) throw new ArgumentNullException("landLayout");
             LandLayout = landLayout;

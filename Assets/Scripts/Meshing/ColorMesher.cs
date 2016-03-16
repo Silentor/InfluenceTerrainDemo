@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Assets.Code.Tools;
 using TerrainDemo.Settings;
 using UnityEngine;
@@ -8,17 +9,18 @@ namespace TerrainDemo.Meshing
     /// <summary>
     /// Simple mesher, generate block hard colors as vertex color (needs appropriate shader )
     /// </summary>
-    public class ColorMesher
+    public class ColorMesher : BaseMesher
     {
         public ColorMesher(ILandSettings settings, MesherSettings mesherSettings)
         {
             _settings = settings;
+            _mesherSettings = mesherSettings;
             _blocksColors = new Color[(int)mesherSettings.Blocks.Max(z => z.Block) + 1];
             foreach (var blockColor in mesherSettings.Blocks)
                 _blocksColors[(int) blockColor.Block] = blockColor.Color;
         }
 
-        public Mesh Generate(Chunk chunk)
+        public override ChunkModel Generate(Chunk chunk, Dictionary<Vector2i, Chunk> map)
         {
             var mesh = new Mesh();
             var normalsCache = PrecalculateNormals(chunk);
@@ -71,10 +73,11 @@ namespace TerrainDemo.Meshing
             mesh.colors = colors;
             mesh.normals = normals;
 
-            return mesh;
+            return new ChunkModel() {Material = _mesherSettings.VertexColoredMaterial, Mesh = mesh};
         }
 
         private readonly ILandSettings _settings;
+        private readonly MesherSettings _mesherSettings;
         private readonly Color[] _blocksColors;
 
         private Vector3[,] PrecalculateNormals(Chunk chunk)

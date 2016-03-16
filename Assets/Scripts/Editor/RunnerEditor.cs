@@ -19,7 +19,7 @@ namespace TerrainDemo.Editor
 
         private Vector3? _cachedMapIntersection;
         private int _mapIntersectionCachedFrame = -1;
-        private Vector3? _cachedLayoutIntersection;
+        private Vector2? _cachedLayoutIntersection;
         private int _layoutIntersectionCachedFrame = -1;
         private Vector3 _cameraPosition;
 
@@ -67,7 +67,7 @@ namespace TerrainDemo.Editor
                 if (IsMapMode())
                     cursorPosition = GetMapIntersection();
                 else
-                    cursorPosition = GetLayoutIntersection();
+                    cursorPosition = Convert(GetLayoutIntersection());
 
                 if (cursorPosition.HasValue)
                 {
@@ -387,7 +387,7 @@ namespace TerrainDemo.Editor
         /// Get cursor-layout intersection point
         /// </summary>
         /// <returns>null if cursor is not on map of map is not generated</returns>
-        private Vector3? GetLayoutIntersection()
+        private Vector2? GetLayoutIntersection()
         {
             if (Time.frameCount != _layoutIntersectionCachedFrame)
             {
@@ -449,6 +449,14 @@ namespace TerrainDemo.Editor
         private static Vector3 Convert(Vector2 v)
         {
             return new Vector3(v.x, 0, v.y);
+        }
+
+        private static Vector3? Convert(Vector2? v)
+        {
+            if (v.HasValue)
+                return Convert(v.Value);
+            else
+                return null;
         }
 
         private static Vector3 Convert(Vector2i v)

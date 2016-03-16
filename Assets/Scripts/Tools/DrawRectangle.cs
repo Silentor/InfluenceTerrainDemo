@@ -9,7 +9,7 @@ namespace TerrainDemo.Tools
             ForGizmo(rectangle, Gizmos.color);
         }
 
-        public static void ForGizmo(Bounds2i rectangle, Color color)
+        public static void ForGizmo(Bounds2i rectangle, Color color, bool filled = false)
         {
             var corner1 = new Vector3(rectangle.Min.X, 0, rectangle.Min.Z);
             var corner2 = new Vector3(rectangle.Min.X, 0, rectangle.Max.Z + 1);
@@ -21,6 +21,12 @@ namespace TerrainDemo.Tools
             Gizmos.DrawLine(corner2, corner3);
             Gizmos.DrawLine(corner3, corner4);
             Gizmos.DrawLine(corner4, corner1);
+
+            if (filled)
+            {
+                Gizmos.DrawLine(corner1, corner3);
+                Gizmos.DrawLine(corner2, corner4);
+            }
         }
 
         public static void ForDebug(Bounds2i rectangle, Color color, float duration = 0)

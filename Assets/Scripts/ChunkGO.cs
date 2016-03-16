@@ -8,7 +8,7 @@ namespace TerrainDemo
 {
     public class ChunkGO : MonoBehaviour
     {
-        public static ChunkGO Create(Chunk chunk, TextureMesher.ChunkModel model)
+        public static ChunkGO Create(Chunk chunk, ChunkModel model)
         {
             var chunkGo = Get(chunk);
             chunkGo.Init(model);
@@ -27,7 +27,7 @@ namespace TerrainDemo
             _allChunksGO.Clear();
         }
 
-        public void Init(TextureMesher.ChunkModel model)
+        public void Init(ChunkModel model)
         {
             _filter.sharedMesh = model.Mesh;
             _renderer.sharedMaterial = model.Material;
