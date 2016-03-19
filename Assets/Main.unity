@@ -121,7 +121,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ZonesCount: 100
-  LandSize: 15
+  LandSize: 30
   LandNoiseSettings: {fileID: 11400000, guid: d7826460041438940b2a318c07207ed6, type: 2}
   Zones:
   - {fileID: 11400000, guid: efe303b16c6dfa0419eaeabce0cc1f5a, type: 2}
@@ -320,10 +320,10 @@ GameObject:
   - 4: {fileID: 1293065050}
   - 20: {fileID: 1293065049}
   - 92: {fileID: 1293065048}
-  - 124: {fileID: 1293065047}
   - 81: {fileID: 1293065046}
+  - 114: {fileID: 1293065047}
   m_Layer: 0
-  m_Name: Main Camera
+  m_Name: Observer
   m_TagString: MainCamera
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -336,13 +336,20 @@ AudioListener:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1293065045}
   m_Enabled: 1
---- !u!124 &1293065047
-Behaviour:
+--- !u!114 &1293065047
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1293065045}
   m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f61d8fc1639cb1b4fba24b227625cfb0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Camera: 1
+  AOIRange: 50
+  ShowChunksValue: 1
 --- !u!92 &1293065048
 Behaviour:
   m_ObjectHideFlags: 0
@@ -391,7 +398,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1293065045}
   m_LocalRotation: {x: 0.22282477, y: 0, z: 0, w: 0.9748585}
-  m_LocalPosition: {x: 0, y: 98.6, z: -140}
+  m_LocalPosition: {x: 0, y: 98.6, z: -15.4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
