@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Xml.XPath;
 using TerrainDemo.Generators.Debug;
 using TerrainDemo.Layout;
@@ -55,10 +56,52 @@ namespace TerrainDemo.Generators
             }
         }
 
+        /// <summary>
+        /// Generate given zones
+        /// </summary>
+        public void GenerateAsync(IEnumerable<ZoneLayout> zones)
+        {
+            foreach (var zoneMarkup in zones)
+            {
+                if(_generated.Contains(zoneMarkup))
+                    continue;
+
+                ZoneGenerator generator = null;
+                if (zoneMarkup.Type == ZoneType.Hills)
+                    generator = new HillsGenerator(zoneMarkup, _land, _settings);
+                else if (zoneMarkup.Type == ZoneType.Lake)
+                    generator = new LakeGenerator(zoneMarkup, _land, _settings);
+                else if (zoneMarkup.Type == ZoneType.Forest)
+                    generator = new ForestGenerator(zoneMarkup, _land, _settings);
+                else if (zoneMarkup.Type == ZoneType.Mountains)
+                    generator = new MountainsGenerator(zoneMarkup, _land, _settings);
+                else if (zoneMarkup.Type == ZoneType.Snow)
+                    generator = new SnowGenerator(zoneMarkup, _land, _settings);
+                else if (zoneMarkup.Type >= ZoneType.Hills && zoneMarkup.Type <= ZoneType.Lake)
+                    generator = new DefaultGenerator(zoneMarkup, _land, _settings);
+                else if (zoneMarkup.Type >= ZoneType.Influence1 && zoneMarkup.Type <= ZoneType.Influence8)
+                    generator = new FlatGenerator(zoneMarkup, _land, _settings);
+                else if (zoneMarkup.Type == ZoneType.Checkboard)
+                    generator = new CheckboardGenerator(zoneMarkup, _land, _settings);
+                else if (zoneMarkup.Type == ZoneType.Cone)
+                    generator = new ConeGenerator(zoneMarkup, _land, _settings);
+                else if (zoneMarkup.Type == ZoneType.Slope)
+                    generator = new SlopeGenerator(zoneMarkup, _land, _settings);
+
+                if (generator != null)
+                {
+                    _worker.AddWork(generator);
+                }
+
+                _generated.Add(zoneMarkup);
+            }
+        }
+
         private readonly LandLayout _land;
         private readonly ILandSettings _settings;
         private readonly LandMap _map;
         private readonly LandGeneratorWorker _worker;
+        private readonly List<ZoneLayout> _generated = new List<ZoneLayout>();          //List of already generated zones
 
         private void WorkerOnCompleted(ZoneGenerator.ZoneContent zoneContent)
         {

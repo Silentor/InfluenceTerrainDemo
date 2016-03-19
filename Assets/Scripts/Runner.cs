@@ -147,7 +147,8 @@ namespace TerrainDemo
 
             _parentObject = new GameObject("Zones");
 
-            Main = new Main(this, new PoissonClusteredLayout(this), GetComponent<ObserverSettings>(), GetComponent<MesherSettings>());
+            var observer = FindObjectOfType<ObserverSettings>();
+            Main = new Main(this, new PoissonClusteredLayout(this), observer, GetComponent<MesherSettings>());
 
             BuildLayout();
         }
