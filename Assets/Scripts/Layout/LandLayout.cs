@@ -35,7 +35,7 @@ namespace TerrainDemo.Layout
         {
             _influenceTime.Start();
 
-            Array.Clear(_influenceLookup, 0, _influenceLookup.Length);
+            var influenceLookup = new float[_zoneMaxType + 1];
 
             //Sum up zones influence
             foreach (var zone in Zones)
@@ -43,12 +43,12 @@ namespace TerrainDemo.Layout
                 if (zone.Type != ZoneType.Empty)
                 {
                     var idwSimplestWeighting = IDWSimplestWeighting(zone.Center, worldPosition);
-                    _influenceLookup[(int)zone.Type] += idwSimplestWeighting;
+                    influenceLookup[(int)zone.Type] += idwSimplestWeighting;
                 }
             }
 
             var result = new ZoneRatio(
-                _influenceLookup.Select((v, i) => new ZoneValue((ZoneType)i, v)).Where(v => v.Value > 0).ToArray(),
+                influenceLookup.Select((v, i) => new ZoneValue((ZoneType)i, v)).Where(v => v.Value > 0).ToArray(),
                 _zoneTypesCount);
 
             //foreach (var zone in _zones.OrderBy(z => Vector3.SqrMagnitude(z.Center - worldPosition)).Take(10))
@@ -69,10 +69,10 @@ namespace TerrainDemo.Layout
 
         protected ILandSettings Settings;
         private readonly AverageTimer _influenceTime = new AverageTimer();
-        private float[] _influenceLookup;
-        private float _idwCoeff;
-        private int _zoneTypesCount;
-        private ZoneSettings[] _zoneSettings;
+        private readonly float _idwCoeff;
+        private readonly int _zoneTypesCount;
+        private readonly ZoneSettings[] _zoneSettings;
+        private readonly int _zoneMaxType;
 
         protected LandLayout(ILandSettings settings)
         {
@@ -90,8 +90,8 @@ namespace TerrainDemo.Layout
             Zones = zones;
 
             _idwCoeff = settings.IDWCoeff;
-            var zoneMaxType = (int)settings.ZoneTypes.Max(z => z.Type);
-            _influenceLookup = new float[zoneMaxType + 1];
+            _zoneMaxType = (int)settings.ZoneTypes.Max(z => z.Type);
+            
             _zoneTypesCount = zones.Where(z => z.Type != ZoneType.Empty).Distinct(ZoneLayout.TypeComparer).Count();
             _zoneSettings = settings.ZoneTypes.ToArray();
         }

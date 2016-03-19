@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using JetBrains.Annotations;
 using TerrainDemo.Generators;
-using TerrainDemo.Hero;
 using TerrainDemo.Layout;
 using TerrainDemo.Map;
+using TerrainDemo.Meshing;
 using TerrainDemo.Settings;
 using Debug = UnityEngine.Debug;
 
@@ -19,10 +18,14 @@ namespace TerrainDemo
 
         //public Observer Observer { get; private set; }
 
-        public Main([NotNull] LandLayout landLayout, ObserverSettings observer)
+        public Main(ILandSettings settings, [NotNull] LandLayout landLayout, ObserverSettings observer, MesherSettings mesherSettings)
         {
             if (landLayout == null) throw new ArgumentNullException("landLayout");
             LandLayout = landLayout;
+
+            //var mesher = new InfluenceMesher(this, mesherSettings);
+            //var mesher = new ColorMesher(this, mesherSettings);
+            _mesher = new TextureMesher(settings, mesherSettings);
         }
 
         public void GenerateLayout([NotNull] LandLayout landLayout)
@@ -40,9 +43,10 @@ namespace TerrainDemo
             //Land = new Land(Layout, settings);
 
             //Generate land's chunks
-            var map = new LandMap(settings, LandLayout);
-            var landGenerator = new LandGenerator(LandLayout, settings);
-            Map = landGenerator.Generate(map);
+            Map = new LandMap(settings, LandLayout);
+            Map.Modified += MapOnModified;
+            var landGenerator = new LandGenerator(LandLayout, settings, Map);
+            landGenerator.GenerateAsync();
 
             time.Stop();
             //Debug.Log(Land.GetStaticstics());
@@ -51,6 +55,16 @@ namespace TerrainDemo
             return Map;
         }
 
+        private readonly BaseMesher _mesher;
 
+        /// <summary>
+        /// Mesh and visualize modified chunk
+        /// </summary>
+        /// <param name="chunk"></param>
+        private void MapOnModified(Chunk chunk)
+        {
+            var mesh = _mesher.Generate(chunk, Map.Map);
+            var go = ChunkGO.Create(chunk, mesh);
+        }
     }
 }

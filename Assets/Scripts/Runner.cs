@@ -6,6 +6,7 @@ using TerrainDemo.Layout;
 using TerrainDemo.Map;
 using TerrainDemo.Meshing;
 using TerrainDemo.Settings;
+using TerrainDemo.Threads;
 using TerrainDemo.Tools;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -48,8 +49,11 @@ namespace TerrainDemo
 
         public Main Main { get; private set; }
 
-        public void MeshAndVisualize(LandMap landMap)
+        public void RedrawMap(LandMap landMap)
         {
+            //Mesh and visualize async now
+            return;
+
             var timer = Stopwatch.StartNew();
 
             CreateZonesHandle(landMap.Layout.Zones);
@@ -89,7 +93,7 @@ namespace TerrainDemo
         {
             BuildLayout();
             var map = Main.GenerateMap(this);
-            MeshAndVisualize(map);
+            RedrawMap(map);
         }
 
         public ZoneSettings this[ZoneType index]
@@ -125,7 +129,7 @@ namespace TerrainDemo
         {
             if (GenerateSeed)
                 LandSeed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
-            UnityEngine.Random.seed = LandSeed;
+            UnityEngine.Random.InitState(LandSeed);
         }
 
         #region Unity
@@ -143,7 +147,7 @@ namespace TerrainDemo
 
             _parentObject = new GameObject("Zones");
 
-            Main = new Main(new PoissonClusteredLayout(this), GetComponent<ObserverSettings>());
+            Main = new Main(this, new PoissonClusteredLayout(this), GetComponent<ObserverSettings>(), GetComponent<MesherSettings>());
 
             BuildLayout();
         }

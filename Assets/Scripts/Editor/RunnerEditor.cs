@@ -51,7 +51,7 @@ namespace TerrainDemo.Editor
                 if (GUILayout.Button("Create map"))
                 {
                     var map = _main.GenerateMap(_target);
-                    _target.MeshAndVisualize(map);
+                    //_target.RedrawMap(map);
                 }
             }
         }

@@ -8,6 +8,8 @@ namespace TerrainDemo
 {
     public class ChunkGO : MonoBehaviour
     {
+        public Vector2i Position { get; private set; }
+
         public static ChunkGO Create(Chunk chunk, ChunkModel model)
         {
             var chunkGo = Get(chunk);
@@ -27,7 +29,7 @@ namespace TerrainDemo
             _allChunksGO.Clear();
         }
 
-        public void Init(ChunkModel model)
+        private void Init(ChunkModel model)
         {
             _filter.sharedMesh = model.Mesh;
             _renderer.sharedMaterial = model.Material;
@@ -64,19 +66,24 @@ namespace TerrainDemo
 
         private static ChunkGO Get(Chunk chunk)
         {
-            var go = new GameObject();
-            var chunkGo = go.AddComponent<ChunkGO>();
-            chunkGo._filter = go.AddComponent<MeshFilter>();
-            chunkGo._renderer = go.AddComponent<MeshRenderer>();
-            chunkGo._renderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
-            chunkGo._renderer.useLightProbes = false;
-            go.name = chunk.Position.X + " : " + chunk.Position.Z;
-            _allChunksGO.Add(chunkGo);
+            var existingGO = _allChunksGO.Find(cgo => cgo.Position == chunk.Position);
+            if (existingGO == null)
+            {
+                var go = new GameObject();
+                existingGO = go.AddComponent<ChunkGO>();
+                existingGO._filter = go.AddComponent<MeshFilter>();
+                existingGO._renderer = go.AddComponent<MeshRenderer>();
+                existingGO._renderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
+                existingGO._renderer.lightProbeUsage = LightProbeUsage.Off;
+                existingGO.Position = chunk.Position;
+                go.name = chunk.Position.X + " : " + chunk.Position.Z;
+                _allChunksGO.Add(existingGO);
 
-            var minCorner = Chunk.GetBounds(chunk.Position).Min;
-            chunkGo.transform.position = new Vector3(minCorner.X, 0, minCorner.Z);
+                var minCorner = Chunk.GetBounds(chunk.Position).Min;
+                existingGO.transform.position = new Vector3(minCorner.X, 0, minCorner.Z);
+            }
 
-            return chunkGo;
+            return existingGO;
         }
 
         private static Vector3 Convert(Vector2 v)

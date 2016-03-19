@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using TerrainDemo.Generators;
 using TerrainDemo.Layout;
@@ -72,6 +73,8 @@ namespace TerrainDemo.Map
                     var propsInBounds = content.Objects.Where(o => chunkBounds.Contains((Vector2i) o));
                     chunk.Flora.AddRange(propsInBounds);
                 }
+
+                Modified(chunk);
             }
         }
 
@@ -137,6 +140,8 @@ namespace TerrainDemo.Map
 
             return null;
         }
+
+        public event Action<Chunk> Modified = delegate {};
 
         private readonly ILandSettings _settings;
     }

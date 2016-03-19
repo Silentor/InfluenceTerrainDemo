@@ -53,7 +53,7 @@ namespace TerrainDemo.Layout
         }
 
         /// <summary>
-        /// Rasterize zone to blocks (polygon method)
+        /// Rasterize zone to blocks (scanline polygon method)
         /// </summary>
         /// <returns></returns>
         [Pure]
