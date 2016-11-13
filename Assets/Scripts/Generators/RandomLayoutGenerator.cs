@@ -1,17 +1,18 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using TerrainDemo.Layout;
 using TerrainDemo.Settings;
 using TerrainDemo.Voronoi;
 using UnityEngine;
 
-namespace TerrainDemo.Layout
+namespace TerrainDemo.Generators
 {
     /// <summary>
-    /// Makes simple pure random layout for land
+    /// Pure random points (but repsects density) and zones, not very useful
     /// </summary>
-    public class RandomLayout : LandLayout
+    public class RandomLayoutGenerator : LayoutGenerator
     {
-        public RandomLayout(ILandSettings settings) : base(settings)
+        public RandomLayoutGenerator(ILandSettings settings) : base(settings)
         {
         }
 
@@ -27,8 +28,8 @@ namespace TerrainDemo.Layout
                 var zoneCenterX = Random.Range((float)landBounds.Min.X, landBounds.Max.X);
                 var zoneCenterY = Random.Range((float)landBounds.Min.Z, landBounds.Max.Z);
                 var newCenter = new Vector2(zoneCenterX, zoneCenterY);
-                if (zonesCoords.All(zc => Vector2.SqrMagnitude(zc - newCenter) > density.x*density.x))
-                    zonesCoords.Add(new Vector2 {x = zoneCenterX, y = zoneCenterY});
+                if (zonesCoords.All(zc => Vector2.SqrMagnitude(zc - newCenter) > density.x * density.x))
+                    zonesCoords.Add(new Vector2 { x = zoneCenterX, y = zoneCenterY });
                 else
                 {
                     if (infiniteLoopChecker++ < 100)
@@ -56,7 +57,7 @@ namespace TerrainDemo.Layout
 
                 zones[i] = zoneType;
             }
-            
+
             return zones;
         }
     }

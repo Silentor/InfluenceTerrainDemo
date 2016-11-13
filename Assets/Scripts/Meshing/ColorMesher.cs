@@ -80,6 +80,11 @@ namespace TerrainDemo.Meshing
         private readonly MesherSettings _mesherSettings;
         private readonly Color[] _blocksColors;
 
+        /// <summary>
+        /// Generate smoother normals than mesh.RecalculateNormals()
+        /// </summary>
+        /// <param name="chunk"></param>
+        /// <returns></returns>
         private Vector3[,] PrecalculateNormals(Chunk chunk)
         {
             //Based on http://gamedev.stackexchange.com/questions/70546/problem-calculating-normals-for-heightmaps

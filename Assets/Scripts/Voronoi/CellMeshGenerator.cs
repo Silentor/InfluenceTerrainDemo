@@ -16,7 +16,7 @@ namespace TerrainDemo.Voronoi
         /// <param name="cellCenters">Result zones count can be less</param>
         /// <param name="bounds">Size of square grid of chunks</param>
         /// <returns></returns>
-        public static Cell[] Generate(IEnumerable<Vector2> cellCenters, Bounds bounds)
+        public static CellMesh Generate(IEnumerable<Vector2> cellCenters, Bounds bounds)
         {
             var points = cellCenters.ToArray();
             var voronoi = GenerateVoronoi(points, bounds.min.x, bounds.max.x, bounds.min.z, bounds.max.z);
@@ -44,11 +44,7 @@ namespace TerrainDemo.Voronoi
             }
 
             //Calc Voronoi
-            var timer = Stopwatch.StartNew();
             var result = voronoi.generateVoronoi(xValues, yValues, minX, maxX, minY, maxY);
-            timer.Stop();
-
-            Debug.Log(string.Format("Voronoi diagram for {0} zones calc time {1} msec", cellCenters.Length, timer.ElapsedMilliseconds));
 
             return result.ToArray();
         }
@@ -59,10 +55,8 @@ namespace TerrainDemo.Voronoi
         /// <param name="zonesCoords">Coords of center of every cell</param>
         /// <param name="edges">All edges of Voronoi diagram</param>
         /// <returns>Mesh of cells</returns>
-        private static Cell[] ProcessVoronoi(Vector2[] zonesCoords, GraphEdge[] edges, Bounds bounds)
+        private static CellMesh ProcessVoronoi(Vector2[] zonesCoords, GraphEdge[] edges, Bounds bounds)
         {
-            var timer = Stopwatch.StartNew();
-
             //Clear duplicate edges (some open cell cases)
             edges = edges.Distinct(GraphEdgeComparer.Default).ToArray();
 
@@ -154,10 +148,7 @@ namespace TerrainDemo.Voronoi
                 cell.Init(cellEdges.Select(e => e.site1 == cell.Id ? result[e.site2] : result[e.site1]).ToArray());
             }
 
-            timer.Stop();
-            Debug.Log(string.Format("Cellmesh calculated for {0} msec", timer.ElapsedMilliseconds));
-
-            return result;
+            return new CellMesh(result, bounds);
         }
 
         /// <summary>

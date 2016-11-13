@@ -27,7 +27,7 @@ namespace TerrainDemo.Meshing
             var verts = new Vector3[chunk.GridSize * chunk.GridSize];
             for (int x = 0; x < chunk.GridSize; x++)
                 for (int z = 0; z < chunk.GridSize; z++)
-                    verts[z + x*chunk.GridSize] = new Vector3(x * chunk.BlockSize, chunk.HeightMap[x, z], z * chunk.BlockSize);
+                    verts[z + x*chunk.GridSize] = new Vector3(x * chunk.BlockSize, _meshSettings.BypassHeightMap ? 0 : chunk.HeightMap[x, z], z * chunk.BlockSize);
 
             mesh.vertices = verts;
 

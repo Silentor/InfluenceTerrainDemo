@@ -1,10 +1,11 @@
-﻿using System;
+﻿#define MAIN_THREAD_WORK
+
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using JetBrains.Annotations;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Assertions;
 using Object = UnityEngine.Object;
 
 namespace TerrainDemo.Threads
@@ -45,8 +46,11 @@ namespace TerrainDemo.Threads
 
             data.ThreadId = threadId;
 
+#if MAIN_THREAD_WORK
+            workerLogic(data);                                                      //Debug work from Main thread
+#else
             ThreadPool.QueueUserWorkItem(workerLogic, data);
-            //WorkerThreadLogic(new ThreadData { Pool = pool, Input = workItem });          Debug work from Main thread
+#endif
         }
 
         private void FinishWork(WorkerBase.WorkerDataBase data)
@@ -202,7 +206,12 @@ namespace TerrainDemo.Threads
                         Completed(oUt);
             }
 
-            protected abstract TOUt WorkerLogic(TIn data);
+            /// <summary>
+            /// Transforms input to result
+            /// </summary>
+            /// <param name="input"></param>
+            /// <returns></returns>
+            protected abstract TOUt WorkerLogic(TIn input);
 
             private void WorkerThreadLogic(object data)
             {

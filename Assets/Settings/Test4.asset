@@ -12,8 +12,10 @@ MonoBehaviour:
   m_Name: Test4
   m_EditorClassIdentifier: 
   Name: Test2
-  LandColor_: {r: .944827557, g: 1, b: 0, a: 1}
-  Type: 9
+  LandColor_: {r: 0.94482756, g: 1, b: 0, a: 1}
+  IsInterval: 0
+  Type: 203
+  DefaultBlock: 0
   Height_: 0
   OutScale1_: 0
   OutScale2_: 0

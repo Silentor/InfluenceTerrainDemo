@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Name: Hills
   m_EditorClassIdentifier: 
   Name: Hills
-  LandColor_: {r: 0.23701832, g: 0.83823526, b: 0, a: 1}
+  LandColor_: {r: 1, g: 1, b: 1, a: 1}
+  IsInterval: 0
   Type: 1
   DefaultBlock: 2
   Height_: 0
   OutScale1_: 10
   OutScale2_: 0.2
-  OutScale3_: 100
+  OutScale3_: 50

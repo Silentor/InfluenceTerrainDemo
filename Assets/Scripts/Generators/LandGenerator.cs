@@ -6,6 +6,7 @@ using TerrainDemo.Layout;
 using TerrainDemo.Map;
 using TerrainDemo.Settings;
 using TerrainDemo.Threads;
+using UnityEngine;
 
 namespace TerrainDemo.Generators
 {
@@ -17,83 +18,36 @@ namespace TerrainDemo.Generators
             _settings = settings;
             _map = map;
             _worker = new LandGeneratorWorker();
-            _worker.Completed +=  WorkerOnCompleted;
+            _worker.Completed += WorkerOnCompleted;
         }
 
         /// <summary>
         /// Generate land
         /// </summary>
-        public void GenerateAsync()
+        public void Generate(bool isAsync)
         {
-            foreach (var zoneMarkup in _land.Zones.Where(z => z.Cell.IsClosed))
-            {
-                ZoneGenerator generator = null;
-                if (zoneMarkup.Type == ZoneType.Hills)
-                    generator = new HillsGenerator(zoneMarkup, _land, _settings);
-                else if (zoneMarkup.Type == ZoneType.Lake)
-                    generator = new LakeGenerator(zoneMarkup, _land, _settings);
-                else if (zoneMarkup.Type == ZoneType.Forest)
-                    generator = new ForestGenerator(zoneMarkup, _land, _settings);
-                else if (zoneMarkup.Type == ZoneType.Mountains)
-                    generator = new MountainsGenerator(zoneMarkup, _land, _settings);
-                else if (zoneMarkup.Type == ZoneType.Snow)
-                    generator = new SnowGenerator(zoneMarkup, _land, _settings);
-                else if (zoneMarkup.Type >= ZoneType.Hills && zoneMarkup.Type <= ZoneType.Lake)
-                    generator = new DefaultGenerator(zoneMarkup, _land, _settings);
-                else if (zoneMarkup.Type >= ZoneType.Influence1 && zoneMarkup.Type <= ZoneType.Influence8)
-                    generator = new FlatGenerator(zoneMarkup, _land, _settings);
-                else if(zoneMarkup.Type == ZoneType.Checkboard)
-                    generator = new CheckboardGenerator(zoneMarkup, _land, _settings);
-                else if (zoneMarkup.Type == ZoneType.Cone)
-                    generator = new ConeGenerator(zoneMarkup, _land, _settings);
-                else if (zoneMarkup.Type == ZoneType.Slope)
-                    generator = new SlopeGenerator(zoneMarkup, _land, _settings);
-
-                if (generator != null)
-                {
-                    _worker.AddWork(generator);
-                }
-            }
+            Generate(_land.Zones.Where(z => z.Cell.IsClosed), isAsync);
         }
 
         /// <summary>
         /// Generate given zones
         /// </summary>
-        public void GenerateAsync(IEnumerable<ZoneLayout> zones)
+        public void Generate(IEnumerable<ZoneLayout> zones, bool isAsync)
         {
-            foreach (var zoneMarkup in zones)
+            foreach (var zoneLayout in zones)
             {
-                if(_generated.Contains(zoneMarkup))
-                    continue;
-
-                ZoneGenerator generator = null;
-                if (zoneMarkup.Type == ZoneType.Hills)
-                    generator = new HillsGenerator(zoneMarkup, _land, _settings);
-                else if (zoneMarkup.Type == ZoneType.Lake)
-                    generator = new LakeGenerator(zoneMarkup, _land, _settings);
-                else if (zoneMarkup.Type == ZoneType.Forest)
-                    generator = new ForestGenerator(zoneMarkup, _land, _settings);
-                else if (zoneMarkup.Type == ZoneType.Mountains)
-                    generator = new MountainsGenerator(zoneMarkup, _land, _settings);
-                else if (zoneMarkup.Type == ZoneType.Snow)
-                    generator = new SnowGenerator(zoneMarkup, _land, _settings);
-                else if (zoneMarkup.Type >= ZoneType.Hills && zoneMarkup.Type <= ZoneType.Lake)
-                    generator = new DefaultGenerator(zoneMarkup, _land, _settings);
-                else if (zoneMarkup.Type >= ZoneType.Influence1 && zoneMarkup.Type <= ZoneType.Influence8)
-                    generator = new FlatGenerator(zoneMarkup, _land, _settings);
-                else if (zoneMarkup.Type == ZoneType.Checkboard)
-                    generator = new CheckboardGenerator(zoneMarkup, _land, _settings);
-                else if (zoneMarkup.Type == ZoneType.Cone)
-                    generator = new ConeGenerator(zoneMarkup, _land, _settings);
-                else if (zoneMarkup.Type == ZoneType.Slope)
-                    generator = new SlopeGenerator(zoneMarkup, _land, _settings);
+                ZoneGenerator generator = ZoneGenerator.Create(zoneLayout, _land, _settings);
 
                 if (generator != null)
                 {
-                    _worker.AddWork(generator);
+                    if(isAsync)
+                        _worker.AddWork(generator);
+                    else
+                    {
+                        var result = generator.Generate();
+                        _map.Add(result);
+                    }
                 }
-
-                _generated.Add(zoneMarkup);
             }
         }
 
@@ -101,7 +55,7 @@ namespace TerrainDemo.Generators
         private readonly ILandSettings _settings;
         private readonly LandMap _map;
         private readonly LandGeneratorWorker _worker;
-        private readonly List<ZoneLayout> _generated = new List<ZoneLayout>();          //List of already generated zones
+        private readonly Dictionary<ZoneType, ZoneGenerator> _generators = new Dictionary<ZoneType, ZoneGenerator>();
 
         private void WorkerOnCompleted(ZoneGenerator.ZoneContent zoneContent)
         {
@@ -111,11 +65,11 @@ namespace TerrainDemo.Generators
 
     public class LandGeneratorWorker : WorkerPool.WorkerBase<ZoneGenerator, ZoneGenerator.ZoneContent>
     {
-        protected override ZoneGenerator.ZoneContent WorkerLogic(ZoneGenerator data)
+        protected override ZoneGenerator.ZoneContent WorkerLogic(ZoneGenerator input)
         {
-            var result = data.Generate();
+            var result = input.Generate();
 
-            UnityEngine.Debug.LogFormat("Processed zone {0}", result.Zone.Cell.Id);
+            UnityEngine.Debug.LogFormat("Generated zone {0}", result.Zone.Cell.Id);
 
             return result;
         }

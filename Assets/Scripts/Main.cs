@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using TerrainDemo.Generators;
@@ -7,6 +8,7 @@ using TerrainDemo.Layout;
 using TerrainDemo.Map;
 using TerrainDemo.Meshing;
 using TerrainDemo.Settings;
+using UnityEngine;
 
 namespace TerrainDemo
 {
@@ -18,56 +20,95 @@ namespace TerrainDemo
 
         //public Observer Observer { get; private set; }
 
-        public Main(ILandSettings settings, [NotNull] LandLayout landLayout, IObserver observer, MesherSettings mesherSettings)
+        public Main(ILandSettings settings, IObserver observer, MesherSettings mesherSettings)
         {
-            if (landLayout == null) throw new ArgumentNullException("landLayout");
-            LandLayout = landLayout;
+            _settings = settings;
 
-            //var mesher = new InfluenceMesher(this, mesherSettings);
-            //var mesher = new ColorMesher(this, mesherSettings);
-            _mesher = new TextureMesher(settings, mesherSettings);
+            _generator = settings.CreateLayoutGenerator();
+            _mesher = mesherSettings.CreateMesher(settings);
 
+            //First time land layout generation
+            LandLayout = _generator.Generate(null);
+
+            //Generate and visualize map on Observer move
             _observer = observer;
-            _observer.Changed += ObserverOnChanged;
+            _observer.Changed += ObserverOnChangedGenerator;
+            _observer.Changed += ObserverOnChangedVisualizer;
 
-            Map = new LandMap(settings, LandLayout);
-            Map.Modified += MapOnModified;
+            Map = new LandMap(_settings, LandLayout);
+            //Map.Modified += MapOnModified;
 
-            _landGenerator = new LandGenerator(LandLayout, settings, Map);
+            _landGenerator = new LandGenerator(LandLayout, _settings, Map);
         }
 
-        private void ObserverOnChanged()
+        /// <summary>
+        /// Regenerate layout, invalidate map and view
+        /// </summary>
+        public void GenerateLayout()
         {
-            //Get zones in Observer range
-            var zones = LandLayout.Zones.Where(zl => zl.Cell.IsClosed && _observer.IsZoneVisible(zl));
-            _landGenerator.GenerateAsync(zones);
+            //Map.Clear();
+            //_mesher.Clear();
+            _generator.Generate(LandLayout);
+            //ObserverOnChanged();
         }
 
-        public void GenerateLayout([NotNull] LandLayout landLayout)
+        /// <summary>
+        /// Regenerate map over existing layout
+        /// </summary>
+        public void GenerateMap()
         {
-            if (landLayout == null) throw new ArgumentNullException("landLayout");
+            Map.Clear();
+            //_mesher.Clear();
+            GenerateAllMap();
 
-            //Empty for now
-            LandLayout = landLayout;
+            //ObserverOnChanged();
         }
 
-        public LandMap GenerateMap(ILandSettings settings)
+        /// <summary>
+        /// Regenerate land mesh over existing map
+        /// </summary>
+        public void GenerateMesh()
         {
-            //Land = new Land(Layout, settings);
+            foreach (var farAwayChunk in _visualizedChunks.ToArray())
+                farAwayChunk.Value.Dispose();
+            _visualizedChunks.Clear();
 
-            //Generate land's chunks
-            //Get zones in Observer range
-            var zones = LandLayout.Zones.Where(zl => zl.Cell.IsClosed && _observer.IsZoneVisible(zl));
-            _landGenerator.GenerateAsync(zones);
+            _mesher.Clear();
 
-            //Debug.Log(Land.GetStaticstics());
+            foreach (var chunk in Map.Map.Values)
+            {
+                var mesh = _mesher.Generate(chunk, Map.Map);
+                var go = ChunkGO.Create(chunk, mesh);
+                Debug.LogFormat(go, "Generated mesh for chunk {0}", chunk.Position);
 
-            return Map;
+                if (_visualizedChunks.ContainsKey(chunk.Position))
+                    Debug.LogFormat("Chunk {0} already visualized", chunk.Position);
+
+                _visualizedChunks[chunk.Position] = go;
+            }
+            //ObserverOnChanged();
         }
 
         private readonly BaseMesher _mesher;
+        private readonly ILandSettings _settings;
         private readonly IObserver _observer;
         private readonly LandGenerator _landGenerator;
+        private readonly List<ZoneLayout> _alreadyGeneratedZones = new List<ZoneLayout>();
+        private readonly Dictionary<Vector2i, ChunkGO> _visualizedChunks = new Dictionary<Vector2i, ChunkGO>();         //Move to appropriate Visualizer class
+        private LayoutGenerator _generator;
+
+        private void GenerateAllMap()
+        {
+            if (LandLayout != null)
+            {
+                //Get zones in Observer range
+                var zones =
+                    LandLayout.Zones.Where(zl => zl.Cell.IsClosed)
+                        .ToArray();
+                _landGenerator.Generate(zones, false);
+                _alreadyGeneratedZones.AddRange(zones);
+            }
+        }
 
         /// <summary>
         /// Mesh and visualize modified chunk
@@ -75,8 +116,62 @@ namespace TerrainDemo
         /// <param name="chunk"></param>
         private void MapOnModified(Chunk chunk)
         {
-            var mesh = _mesher.Generate(chunk, Map.Map);
-            var go = ChunkGO.Create(chunk, mesh);
+            if (_observer.IsBoundVisible(Chunk.GetBounds(chunk.Position)))
+            {
+                var mesh = _mesher.Generate(chunk, Map.Map);
+                Debug.LogFormat("Generated mesh for chunk {0}", chunk.Position);
+
+                var go = ChunkGO.Create(chunk, mesh);
+
+                if (_visualizedChunks.ContainsKey(chunk.Position))
+                    Debug.LogFormat("Chunk {0} already visualized", chunk.Position);
+                
+                _visualizedChunks[chunk.Position] = go;
+            }
+        }
+
+        private void ObserverOnChangedGenerator()
+        {
+            if (LandLayout != null)
+            {
+                //Get zones in Observer range
+                var zones =
+                    LandLayout.Zones.Where(
+                            zl => zl.Cell.IsClosed && !_alreadyGeneratedZones.Contains(zl) && _observer.IsZoneVisible(zl))
+                        .ToArray();
+                _landGenerator.Generate(zones, true);
+                _alreadyGeneratedZones.AddRange(zones);
+            }
+        }
+
+        private void ObserverOnChangedVisualizer()
+        {
+            //Destroy chunk meshes far away from Observer
+            var farAwayChunks = _visualizedChunks.Where(vc => !_observer.IsBoundVisible(Chunk.GetBounds(vc.Key))).ToArray();
+            foreach (var farAwayChunk in farAwayChunks)
+            {
+                farAwayChunk.Value.Dispose();
+                _visualizedChunks.Remove(farAwayChunk.Key);
+            }
+
+            //Draw chunks in Observer range
+            foreach (var chunkToDraw in _observer.ValuableChunkPos(_observer.Range))
+            {
+                if (!_visualizedChunks.ContainsKey(chunkToDraw.Position))
+                {
+                    Chunk chunk;
+                    if (Map.Map.TryGetValue(chunkToDraw.Position, out chunk))
+                    {
+                        var mesh = _mesher.Generate(chunk, Map.Map);
+                        var go = ChunkGO.Create(chunk, mesh);
+
+                        if (_visualizedChunks.ContainsKey(chunk.Position))
+                            Debug.LogFormat("Chunk {0} already visualized", chunk.Position);
+
+                        _visualizedChunks[chunk.Position] = go;
+                    }
+                }
+            }
         }
     }
 }

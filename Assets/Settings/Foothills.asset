@@ -9,14 +9,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b9f54af2ef4c4664db92ab6d197caef3, type: 3}
-  m_Name: Checkboard
+  m_Name: Foothills
   m_EditorClassIdentifier: 
-  Name: Checkboard
-  LandColor_: {r: 0.44827604, g: 0, b: 1, a: 1}
-  IsInterval: 0
-  Type: 300
-  DefaultBlock: 0
-  Height_: 0
-  OutScale1_: 0
-  OutScale2_: 0
-  OutScale3_: 0
+  Name: Foothills
+  LandColor_: {r: 1, g: 0, b: 0, a: 1}
+  IsInterval: 1
+  Type: 101
+  DefaultBlock: 2
+  Height_: 10
+  OutScale1_: 50
+  OutScale2_: 0.2
+  OutScale3_: 50

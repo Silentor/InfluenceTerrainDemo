@@ -3,6 +3,8 @@
     public enum ZoneType
     {
         Empty,
+
+        //Ordinary zones
         Hills,
         Mountains,
         Forest,
@@ -10,9 +12,12 @@
         Snow,
         Lake,
 
+        //Special zone types, interval between ordinary zones
+        IntervalZones = 100,
+        Foothills,
 
-
-        Influence1,
+        //Debug zone types
+        Influence1 = 200,
         Influence2,
         Influence3,
         Influence4,
@@ -21,9 +26,16 @@
         Influence7,
         Influence8,
 
-        Checkboard,
+        Checkboard = 300,
         Cone,
         Slope
+    }
 
+    public static class ZoneTypeExtensions
+    {
+        public static bool IsInterval(ZoneType type)
+        {
+            return type >= ZoneType.IntervalZones;
+        }
     }
 }

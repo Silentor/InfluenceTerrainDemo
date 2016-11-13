@@ -6,13 +6,14 @@ namespace TerrainDemo.Generators.Debug
 {
     public class SlopeGenerator : ZoneGenerator
     {
-        public SlopeGenerator(ZoneLayout zone, [NotNull] LandLayout land, [NotNull] ILandSettings landSettings) : base(zone, land, landSettings)
+        public SlopeGenerator(ZoneLayout zone, [NotNull] LandLayout land, [NotNull] ILandSettings landSettings) : base(ZoneType.Slope, zone, land, landSettings)
         {
         }
 
-        protected override float GenerateBaseHeight(float worldX, float worldZ, IZoneNoiseSettings settings)
+        public override float GenerateBaseHeight(float worldX, float worldZ, ZoneRatio influence)
         {
-            return settings.Height + worldX;
+            //var settings = Land.GetZoneNoiseSettings(influence);
+            return _zoneSettings.Height + worldX;
         }
     }
 }

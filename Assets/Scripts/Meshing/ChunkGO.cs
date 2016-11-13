@@ -1,39 +1,13 @@
 ﻿using System.Collections.Generic;
-using TerrainDemo.Meshing;
 using TerrainDemo.Settings;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace TerrainDemo
+namespace TerrainDemo.Meshing
 {
     public class ChunkGO : MonoBehaviour
     {
         public Vector2i Position { get; private set; }
-
-        public static ChunkGO Create(Chunk chunk, ChunkModel model)
-        {
-            var chunkGo = Get(chunk);
-            chunkGo.Init(model);
-            return chunkGo;
-        }
-
-        public static void Clear()
-        {
-            foreach (var chunkGo in _allChunksGO)
-            {
-                Destroy(chunkGo._filter.sharedMesh);
-                Destroy(chunkGo._renderer.sharedMaterial.mainTexture);
-                Destroy(chunkGo._renderer.sharedMaterial);
-                Destroy(chunkGo.gameObject);
-            }
-            _allChunksGO.Clear();
-        }
-
-        private void Init(ChunkModel model)
-        {
-            _filter.sharedMesh = model.Mesh;
-            _renderer.sharedMaterial = model.Material;
-        }
 
         public void CreateFlora(ILandSettings settings, IEnumerable<Vector3> positions)
         {
@@ -60,6 +34,42 @@ namespace TerrainDemo
                 }
         }
 
+        public static ChunkGO Create(Chunk chunk, ChunkModel model)
+        {
+            var chunkGo = Get(chunk);
+            chunkGo.Init(model);
+            return chunkGo;
+        }
+
+        public static void Clear()
+        {
+            foreach (var chunkGo in _allChunksGO)
+            {
+                chunkGo.Dispose();
+                Destroy(chunkGo.gameObject);
+            }
+            _allChunksGO.Clear();
+        }
+
+        public void Dispose()
+        {
+            Destroy(_filter.sharedMesh);
+            var rt = (RenderTexture)_renderer.sharedMaterial.mainTexture;
+            if (rt)
+            {
+                rt.Release();
+                Destroy(_renderer.sharedMaterial.mainTexture);
+                Destroy(_renderer.sharedMaterial);
+            }
+            name += " disposed";
+        }
+
+        private void Init(ChunkModel model)
+        {
+            _filter.sharedMesh = model.Mesh;
+            _renderer.sharedMaterial = model.Material;
+        }
+
         private MeshFilter _filter;
         private MeshRenderer _renderer;
         private static readonly List<ChunkGO> _allChunksGO = new List<ChunkGO>();
@@ -76,13 +86,15 @@ namespace TerrainDemo
                 existingGO._renderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
                 existingGO._renderer.lightProbeUsage = LightProbeUsage.Off;
                 existingGO.Position = chunk.Position;
-                go.name = chunk.Position.X + " : " + chunk.Position.Z;
-                _allChunksGO.Add(existingGO);
-
                 var minCorner = Chunk.GetBounds(chunk.Position).Min;
                 existingGO.transform.position = new Vector3(minCorner.X, 0, minCorner.Z);
-            }
 
+                _allChunksGO.Add(existingGO);
+            }
+            else
+                existingGO.Dispose();
+
+            existingGO.name = chunk.Position.X + " : " + chunk.Position.Z;
             return existingGO;
         }
 
@@ -94,6 +106,11 @@ namespace TerrainDemo
         private static Vector2 Convert(Vector3 v)
         {
             return new Vector2(v.x, v.z);
+        }
+
+        void OnDestroy()
+        {
+            _allChunksGO.Clear();
         }
     }
 }

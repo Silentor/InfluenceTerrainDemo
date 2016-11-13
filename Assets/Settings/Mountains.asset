@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Name: Mountains
   m_EditorClassIdentifier: 
   Name: Mountains
-  LandColor_: {r: 0.58823526, g: 0.58823526, b: 0.58823526, a: 1}
+  LandColor_: {r: 0, g: 0, b: 0, a: 1}
+  IsInterval: 0
   Type: 2
   DefaultBlock: 3
-  Height_: 20
-  OutScale1_: 20
+  Height_: 75
+  OutScale1_: 50
   OutScale2_: 5
   OutScale3_: 100

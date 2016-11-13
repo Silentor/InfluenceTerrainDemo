@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace TerrainDemo.Hero
 {
@@ -19,6 +20,11 @@ namespace TerrainDemo.Hero
                 Rotate(-1);
             else if (UnityEngine.Input.GetKey(KeyCode.E))
                 Rotate(1);
+
+            //Debug keys
+            //Soft restart
+            if(UnityEngine.Input.GetKey(KeyCode.R) && UnityEngine.Input.GetKey(KeyCode.LeftShift))
+                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace TerrainDemo
 {
@@ -7,6 +8,7 @@ namespace TerrainDemo
     {
         public string Name;
         public Color LandColor_ = Color.magenta;
+        public bool IsInterval;
         public ZoneType Type;
         public BlockType DefaultBlock;
 
@@ -31,6 +33,8 @@ namespace TerrainDemo
 
         public float OutScale3 { get { return OutScale3_; } }
 
+        public static readonly ZoneTypeEqualityComparer TypeComparer = new ZoneTypeEqualityComparer();
+
         public static IZoneNoiseSettings Lerp(ZoneSettings[] zones, ZoneRatio ratio)
         {
             var outScale1 = 0f;
@@ -51,6 +55,20 @@ namespace TerrainDemo
             var result = new ZoneSettings2(Color.black, height, outScale1, outScale2, outScale3);
 
             return result;
+        }
+
+        public class ZoneTypeEqualityComparer : IEqualityComparer<ZoneSettings>
+        {
+            public bool Equals(ZoneSettings x, ZoneSettings y)
+            {
+                if (x == null || y == null) return false;
+                return x.Type == y.Type;
+            }
+
+            public int GetHashCode(ZoneSettings obj)
+            {
+                return obj.Type.GetHashCode();
+            }
         }
     }
 }

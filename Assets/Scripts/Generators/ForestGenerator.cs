@@ -8,13 +8,13 @@ namespace TerrainDemo.Generators
 {
     public class ForestGenerator : ZoneGenerator
     {
-        public ForestGenerator(ZoneLayout zone, LandLayout land, ILandSettings landSettings) : base(zone, land, landSettings)
+        public ForestGenerator(ZoneLayout zone, LandLayout land, ILandSettings landSettings) : base(ZoneType.Forest, zone, land, landSettings)
         {
         }
 
         protected override Vector3[] DecorateZone(ZoneRatio[,] zoneInfluences, float[,] zoneHeightmap, Vector3[,] zoneNormalmap, BlockType[,] zoneBlocks)
         {
-            var trees = new List<Vector3>();
+           /* var trees = new List<Vector3>();
             var bounds = _zone.Bounds;
             for (int i = 0; i < 100; i++)
             {
@@ -33,6 +33,8 @@ namespace TerrainDemo.Generators
             }
 
             return trees.ToArray();
+            */
+            return new Vector3[0];
         }
 
         protected override BlockType GenerateBlock(Vector2i worldPosition, Vector2i turbulence, Vector3 normal, ZoneRatio influence)

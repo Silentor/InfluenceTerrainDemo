@@ -16,11 +16,8 @@ namespace TerrainDemo.Tools
             if (line == null) throw new ArgumentNullException("line");
 
             Gizmos.color = color;
-            if(line.Length > 1)
-                for (int i = 0; i < line.Length - 1; i++)
-                {
-                    Gizmos.DrawLine(line[i], line[i + 1]);
-                }
+            for (int i = 0; i < line.Length - 1; i++)
+                Gizmos.DrawLine(line[i], line[i + 1]);
         }
 
         public static void ForDebug([NotNull] Vector3[] line)
@@ -32,11 +29,8 @@ namespace TerrainDemo.Tools
         {
             if (line == null) throw new ArgumentNullException("line");
 
-            if (line.Length > 1)
-                for (int i = 0; i < line.Length - 1; i++)
-                {
-                    Debug.DrawLine(line[i], line[i + 1], color, 0);
-                }
+            for (int i = 0; i < line.Length - 1; i++)
+                Debug.DrawLine(line[i], line[i + 1], color, 0);
         }
     }
 }

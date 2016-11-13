@@ -6,6 +6,7 @@ using TerrainDemo.Layout;
 using TerrainDemo.Tools;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace TerrainDemo.Editor
 {
@@ -13,7 +14,7 @@ namespace TerrainDemo.Editor
     public class RunnerEditor : UnityEditor.Editor
     {
         private Runner _target;
-        private LandLayout _layout;
+        //private LandLayout _layout;
         private Main _main;
         private static RunnerEditor _self;
 
@@ -23,18 +24,17 @@ namespace TerrainDemo.Editor
         private int _layoutIntersectionCachedFrame = -1;
         private Vector3 _cameraPosition;
 
+        #region Unity
+
         void OnEnable()
         {
             if (Application.isPlaying)
             {
                 _target = (Runner)target;
                 _main = _target.Main;
-                _layout = _main.LandLayout;
                 _self = this;
             }
         }
-
-        #region Unity
 
         public override void OnInspectorGUI()
         {
@@ -42,17 +42,14 @@ namespace TerrainDemo.Editor
 
             if (Application.isPlaying && _target != null)
             {
-                if (GUILayout.Button("Rebuild land"))
-                {
-                    _target.BuildAll();
-                    _layout = _main.LandLayout;
-                }
+                if (GUILayout.Button("Rebuild layout"))
+                    _target.GenerateLayout();
 
-                if (GUILayout.Button("Create map"))
-                {
-                    var map = _main.GenerateMap(_target);
-                    //_target.RedrawMap(map);
-                }
+                if (GUILayout.Button("Rebuild map"))
+                    _target.GenerateMap();
+
+                if (GUILayout.Button("Rebuild mesh"))
+                    _target.GenerateMesh(); 
             }
         }
 
@@ -78,6 +75,18 @@ namespace TerrainDemo.Editor
                     ShowChunkInfo(cursorPosition.Value);
                     ShowZoneInfo(cursorPosition.Value);
                 }
+
+                //Dirty debug
+                /*
+                if (_main.LandLayout != null && Event.current.type == EventType.KeyDown && Event.current.character == 'l')
+                {
+                    var intersection = GetLayoutIntersection();
+                    if (intersection != null)
+                    {
+                        _main.LandLayout.PrintInfluences(intersection.Value);
+                    }
+                }
+                */
             }
         }
 
@@ -108,9 +117,12 @@ namespace TerrainDemo.Editor
 
                         if(IsLayoutMode())
                             DrawSelectedZone(Convert(mapInter.Value));
+
+                        return;
                     }
                 }
-                else if (IsLayoutMode())
+
+                if (IsLayoutMode())
                 {
                     var layoutHit = GetLayoutIntersection();
                     if (layoutHit.HasValue)
@@ -120,6 +132,12 @@ namespace TerrainDemo.Editor
                     }
                 }
             }
+        }
+
+        void OnGUI()
+        {
+            
+
         }
 
         #endregion
@@ -178,7 +196,7 @@ namespace TerrainDemo.Editor
             //Calc zone under cursor
             if (_main.LandLayout != null && _main.LandLayout.Zones.Any() && _main.LandLayout.Bounds.Contains((Vector2i)worldPosition))
             {
-                var selectedZone = _main.LandLayout.Zones.OrderBy(z => Vector2.SqrMagnitude(z.Center - worldPosition)).First();
+                var selectedZone = _main.LandLayout.GetZoneFor(worldPosition, false);
                 var zoneColor = _target[selectedZone.Type].LandColor;
 
                 Gizmos.color = zoneColor;
@@ -203,7 +221,8 @@ namespace TerrainDemo.Editor
             if (!IsLayoutMode())
                 return;
 
-            var zones = _layout.Zones.ToArray();
+            var layout = _main.LandLayout;
+            var zones = layout.Zones.ToArray();
             Handles.matrix = Matrix4x4.identity;
 
             var newCenters = zones.Select(c => Convert(c.Center)).ToArray();
@@ -211,7 +230,7 @@ namespace TerrainDemo.Editor
             for (int i = 0; i < zones.Count(); i++)
             {
                 var zone = zones[i];
-                Handles.color = _layout.Zones.ElementAt(i).Type != ZoneType.Empty
+                Handles.color = layout.Zones.ElementAt(i).Type != ZoneType.Empty
                     ? _target[zone.Type].LandColor
                     : Color.black;
 
@@ -234,13 +253,20 @@ namespace TerrainDemo.Editor
             //    for (int i = 0; i < newCenters.Length; i++)
             //        _layout[i] = new Zone(_voronoi[i], _layout[i].Type);
             //}
+
+            //Draw visible zones
+            var observerPos = Convert(_target.Observer.Position);
+            var visibleCells = layout.CellMesh.GetCellsFor(observerPos, _target.Observer.Range);
+            foreach (var visibleCell in visibleCells)
+                DrawCell.ForDebug(visibleCell, Color.white);
         }
 
         #region Info blocks
 
         private void ShowInfluenceInfo(Vector3 layoutPosition)
         {
-            var influence = _layout.GetInfluence(Convert(layoutPosition));
+            var layout = _main.LandLayout;
+            var influence = layout.GetInfluence(Convert(layoutPosition));
 
             GUI.WindowFunction windowFunc = id =>
             {
@@ -267,11 +293,12 @@ namespace TerrainDemo.Editor
 
         private void ShowZoneInfo(Vector3 position)
         {
+            var layout = _main.LandLayout;
             //Calc zone under cursor
-            if (_layout != null && _layout.Zones.Any())
+            if (layout != null && layout.Zones.Any())
             {
                 var selectedPosition = Convert(position);
-                var selectedZone = _layout.Zones.OrderBy(z => Vector2.SqrMagnitude(z.Center - selectedPosition)).First();
+                var selectedZone = layout.Zones.OrderBy(z => Vector2.SqrMagnitude(z.Center - selectedPosition)).First();
 
                 GUI.WindowFunction windowFunc = id =>
                 {
@@ -350,9 +377,10 @@ namespace TerrainDemo.Editor
 
         private bool IsLayoutMode()
         {
-            return _main.Map == null ||
-                   (SceneView.currentDrawingSceneView.camera.orthographic &&
-                    Vector3.Angle(SceneView.currentDrawingSceneView.camera.transform.forward, Vector3.down) < 1);
+            var topDownView = SceneView.currentDrawingSceneView.camera.orthographic &&
+                              Vector3.Angle(SceneView.currentDrawingSceneView.camera.transform.forward, Vector3.down) <
+                              1;
+            return _main.LandLayout != null && (_main.Map == null || topDownView);
         }
 
         private bool IsMapMode()

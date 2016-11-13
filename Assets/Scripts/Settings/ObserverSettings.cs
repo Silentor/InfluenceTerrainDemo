@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Assets.Code.Tools;
 using TerrainDemo.Hero;
 using TerrainDemo.Layout;
 using TerrainDemo.Tools;
@@ -18,6 +19,8 @@ namespace TerrainDemo.Settings
 
         public float Speed = 10;
         public float RotationSpeed = 180;
+
+        public bool DebugDraw;
 
         public float FOV { get { return _camera.fieldOfView; } }
         public Vector3 Position { get { return _camera.transform.position; } }
@@ -89,13 +92,32 @@ namespace TerrainDemo.Settings
             return GetPositionValue(chunkCenterPos, range);
         }
 
+        public void SetLand(LandLayout land)
+        {
+            _land = land;
+        }
+
         public bool IsZoneVisible(ZoneLayout zone)
         {
+            //todo check Zone with Observer position and neighbour zones
+
             var observerPos = new Vector2(Position.x, Position.z);
 
             foreach (var zoneVert in zone.Cell.Vertices)
                 if (Vector2.Distance(zoneVert, observerPos) < Range)
                     return true;
+
+            return false;
+        }
+
+        public bool IsBoundVisible(Bounds2i bounds)
+        {
+            var observerPos = new Vector2(Position.x, Position.z);
+
+            if (Vector2.Distance((Vector2)bounds.Corner1, observerPos) < Range) return true;
+            if (Vector2.Distance((Vector2)bounds.Corner2, observerPos) < Range) return true;
+            if (Vector2.Distance((Vector2)bounds.Corner3, observerPos) < Range) return true;
+            if (Vector2.Distance((Vector2)bounds.Corner4, observerPos) < Range) return true;
 
             return false;
         }
@@ -108,6 +130,7 @@ namespace TerrainDemo.Settings
         private Quaternion _oldRotation;
         private float _lastOldCheck;
         private float _currentRotation;
+        private LandLayout _land;
 
         private void InputOnRotate(float rotateDir)
         {
@@ -155,17 +178,22 @@ namespace TerrainDemo.Settings
                 else
                     _camera = UnityEngine.Camera.main;
             }
+            else
+                _camera = GetComponent<Camera>();
         }
 
         void OnDrawGizmos()
         {
-            if (Application.isPlaying && ShowChunksValue)
+            if (ShowChunksValue)
             {
                 foreach (var valuableChunk in ValuableChunkPos(Range))
                     DrawRectangle.ForGizmo(
                         Chunk.GetBounds(valuableChunk.Position), 
                         Color.Lerp(Color.black, Color.red, valuableChunk.Value), true);
             }
+
+            if (DebugDraw)
+                DrawArrow.ForGizmo(transform.position, transform.forward*10, Color.magenta, 3);
         }
 
         #endregion

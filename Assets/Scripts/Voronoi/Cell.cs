@@ -117,6 +117,27 @@ namespace TerrainDemo.Voronoi
             return true;
         }
 
+        public float GetArea()
+        {
+            //Cached value
+            if(_area > 0)
+                return _area;
+
+            //Convex polygon area
+            _area = 0f;
+            for (var i = 0; i < Vertices.Length; i++)
+            {
+                var v1 = Vertices[i];
+                var v2 = Vertices[(i + 1) % Vertices.Length];
+                _area += (v1.x + v2.x)*(v1.y - v2.y);
+            }
+
+            _area = Mathf.Abs(_area) /2;
+            return _area;
+        }
+
+        private float _area = -1;
+
         private bool CheckEdges(Vector2 boundsCorner)
         {
             foreach (var edge in Edges)

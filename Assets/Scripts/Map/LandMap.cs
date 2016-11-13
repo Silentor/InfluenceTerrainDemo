@@ -9,6 +9,9 @@ using UnityEngine;
 
 namespace TerrainDemo.Map
 {
+    /// <summary>
+    /// Terrain storage (chunks)
+    /// </summary>
     public class LandMap
     {
         public readonly Dictionary<Vector2i, Chunk> Map = new Dictionary<Vector2i, Chunk>();
@@ -22,19 +25,22 @@ namespace TerrainDemo.Map
         }
 
         /// <summary>
-        /// Append some zone content to existing map
+        /// Merge some zone content to existing map
         /// </summary>
         /// <param name="content"></param>
         public void Add(ZoneGenerator.ZoneContent content)
         {
             //Get zone content bounds
-            var zoneChunkBounds = content.Zone.ChunkBounds;
+            //var zoneChunkBounds = content.Zone.ChunkBounds;
+            var zoneChunkBounds = content.Zone.Chunks;
             var zoneBounds = content.Zone.Bounds;
 
             Chunk chunk;
             //Copy zone content data
             foreach (var zoneChunk in zoneChunkBounds)
             {
+                //Debug.LogFormat("Merge chunk {0} of zone {1}", zoneChunk, content.Zone.Cell.Id);
+
                 if (!Map.TryGetValue(zoneChunk, out chunk))
                 {
                     chunk = new Chunk(_settings.BlocksCount, _settings.BlockSize, zoneChunk);
@@ -141,7 +147,19 @@ namespace TerrainDemo.Map
             return null;
         }
 
+        public void Clear()
+        {
+            var chunksToRemove = Map.Values.ToArray();
+
+            foreach (var chunk in chunksToRemove)
+            {
+                Map.Remove(chunk.Position);
+                Removed(chunk.Position);
+            }
+        }
+
         public event Action<Chunk> Modified = delegate {};
+        public event Action<Vector2i> Removed = delegate { };
 
         private readonly ILandSettings _settings;
     }

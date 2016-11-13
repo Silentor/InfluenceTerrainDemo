@@ -7,16 +7,17 @@ namespace TerrainDemo.Generators.Debug
 {
     public class ConeGenerator : ZoneGenerator
     {
-        public ConeGenerator(ZoneLayout zone, [NotNull] LandLayout land, [NotNull] ILandSettings landSettings) : base(zone, land, landSettings)
+        public ConeGenerator(ZoneLayout zone, [NotNull] LandLayout land, [NotNull] ILandSettings landSettings) : base(ZoneType.Cone, zone, land, landSettings)
         {
         }
 
-        protected override float GenerateBaseHeight(float worldX, float worldZ, IZoneNoiseSettings settings)
+        public override float GenerateBaseHeight(float worldX, float worldZ, ZoneRatio influence)
         {
             var distanceFromCenter = Vector2.Distance(Vector2.zero, new Vector2(worldX, worldZ));
             distanceFromCenter = Mathf.Max(distanceFromCenter, 0.1f);
             var height = Mathf.Clamp((100/distanceFromCenter), 0, 50);
-            return settings.Height + height;
+            //var settings = Land.GetZoneNoiseSettings(influence);
+            return _zoneSettings.Height + height;
         }
     }
 }

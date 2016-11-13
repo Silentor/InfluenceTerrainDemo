@@ -8,9 +8,13 @@ using Debug = UnityEngine.Debug;
 
 namespace TerrainDemo.Meshing
 {
+    /// <summary>
+    /// Generate mesh with unique texture from chunk data
+    /// </summary>
     public class TextureMesher : BaseMesher
     {
         public AverageTimer MeshTimer { get { return _meshTimer;} }
+
         public AverageTimer TextureTimer { get { return _textureTimer; } }
 
         public TextureMesher(ILandSettings settings, MesherSettings meshSettings)
@@ -25,7 +29,7 @@ namespace TerrainDemo.Meshing
 
         ~TextureMesher()
         {
-            Dispose();
+            //Dispose();            Needs to be call from MT
         }
 
         public override ChunkModel Generate(Chunk chunk, Dictionary<Vector2i, Chunk> map)
@@ -34,12 +38,14 @@ namespace TerrainDemo.Meshing
 
             var mesh = new Mesh();
 
+            //Build vertices height map
             var verts = new Vector3[chunk.GridSize * chunk.GridSize];
             for (int z = 0; z < chunk.GridSize; z++)
                 for (int x = 0; x < chunk.GridSize; x++)
                     verts[x + z * chunk.GridSize] = new Vector3(x * chunk.BlockSize, chunk.HeightMap[x, z], z * chunk.BlockSize);
             mesh.vertices = verts;
 
+            //Calcualate indices
             var indx = new int[(chunk.GridSize - 1) * (chunk.GridSize - 1) * 4];
             for (int z = 0; z < chunk.GridSize - 1; z++)
                 for (int x = 0; x < chunk.GridSize - 1; x++)
@@ -52,11 +58,13 @@ namespace TerrainDemo.Meshing
                 }
             mesh.SetIndices(indx, MeshTopology.Quads, 0);
 
+            //Calculate UV
             var uv = new Vector2[mesh.vertexCount];
             for (int i = 0; i < uv.Length; i++)
                 uv[i] = new Vector2(verts[i].x/(chunk.GridSize - 1), verts[i].z/(chunk.GridSize - 1));
             mesh.uv = uv;
 
+            //Calculate normals
             //mesh.RecalculateNormals();
             mesh.normals = CalculateNormals(chunk, map);
 
@@ -146,6 +154,15 @@ namespace TerrainDemo.Meshing
             return allocated;
         }
 
+        private RenderTexture GetResultTexture()
+        {
+            var renderTex2 = new RenderTexture(_meshSettings.TextureSize, _meshSettings.TextureSize, 0);
+            renderTex2.useMipMap = true;
+            renderTex2.generateMips = true;
+            renderTex2.wrapMode = TextureWrapMode.Clamp;
+            return renderTex2;
+        }
+
         private Texture GetTextureFor(BlockType block, ComputeBuffer heightMap, TerrainMap normals, Vector2i chunkPos)
         {
             var settings = _blockSettings[block];
@@ -206,7 +223,7 @@ namespace TerrainDemo.Meshing
         {
             var border = _meshSettings.MaskBorder;
 
-            var mask = CalculateBlockMap(chunk, border, map);
+            var mask = GetChunkBlocks(chunk, border, map);
             var geoMap = PrepareGeometryMap(mask, border);
             var heightMap = PrepareHeightMap(chunk);
             
@@ -258,11 +275,8 @@ namespace TerrainDemo.Meshing
 
             //Render computed texture to another one to generate auto mipmaps
             //Todo use new 5.4 Graphics.CopyTexture() to copy to compressed Texture2D
-            var renderTex2 = new RenderTexture(renderTex.width, renderTex.height, 0);
-            renderTex2.useMipMap = true;
-            renderTex2.generateMips = true;
-            renderTex2.wrapMode = TextureWrapMode.Clamp;
-            renderTex2.Create();
+
+            var renderTex2 = GetResultTexture();
             Graphics.Blit(renderTex, renderTex2);
 
             /*
@@ -335,7 +349,14 @@ namespace TerrainDemo.Meshing
             return new TerrainMap() {Map = resultTexture, Border = border};
         }
 
-        private ChunkMaskBlock[,] CalculateBlockMap(Chunk chunk, int border, Dictionary<Vector2i, Chunk> map)
+        /// <summary>
+        /// Get block map of Chunk with borders (borders used for texture blending)
+        /// </summary>
+        /// <param name="chunk"></param>
+        /// <param name="border"></param>
+        /// <param name="map"></param>
+        /// <returns></returns>
+        private ChunkMaskBlock[,] GetChunkBlocks(Chunk chunk, int border, Dictionary<Vector2i, Chunk> map)
         {
             Chunk top, bottom, left, right, topleft, bottomleft, topright, bottomright;
             map.TryGetValue(chunk.Position + Vector2i.Forward, out top);

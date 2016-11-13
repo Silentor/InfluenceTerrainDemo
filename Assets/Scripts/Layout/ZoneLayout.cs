@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using JetBrains.Annotations;
 using TerrainDemo.Tools;
@@ -9,8 +10,9 @@ using UnityEngine;
 namespace TerrainDemo.Layout
 {
     /// <summary>
-    /// Desciption of Zone layout
+    /// Description of Zone layout
     /// </summary>
+    [DebuggerDisplay("Id = {Cell.Id}, type = {Type}")]
     public struct ZoneLayout
     {
         public readonly Vector2 Center;
@@ -18,29 +20,47 @@ namespace TerrainDemo.Layout
         public readonly Cell Cell;
 
         /// <summary>
-        /// World bounds
+        /// World bounds in blocks
         /// </summary>
         public readonly Bounds2i Bounds;
 
+        public Vector2i[] Chunks { get { return _chunks; } }
+
+        /// <summary>
+        /// World bounds in chunks
+        /// </summary>
         public readonly Bounds2i ChunkBounds;
 
-        public IEnumerable<ZoneLayout> Neighbors { get { return _neighbors; } }
+        public bool IsInterval { get { return _settings.IsInterval ; } }
+
+        public ZoneSettings Settings { get { return _settings; } }
+
+        //public IEnumerable<ZoneLayout> Neighbors { get { return _neighbors; } }
 
         public static readonly IEqualityComparer<ZoneLayout> TypeComparer = new ZoneTypeComparer();
 
-        public ZoneLayout(ZoneType type, Cell cell)
+        public ZoneLayout(ZoneType type, Cell cell, ZoneSettings settings)
         {
             Cell = cell;
+            _settings = settings;
             Center = cell.Center;
             Type = type;
             Bounds = (Bounds2i)cell.Bounds;
             ChunkBounds = new Bounds2i(Chunk.GetPosition(Bounds.Min), Chunk.GetPosition(Bounds.Max));
-            _neighbors = new ZoneLayout[0];
+            _chunks = null;
+            //_neighbors = new ZoneLayout[0];
         }
 
+        /// <summary>
+        /// Should be called by LandLayout after creating all ZoneLayouts
+        /// </summary>
+        public void Init(LandLayout landLayout)
+        {
+            _chunks = landLayout.GetChunks(this).ToArray();
+        }
 
         /// <summary>
-        /// Rasterize zone to blocks (triangles method)
+        /// Rasterize zone to blocks (triangles method). Not the best
         /// </summary>
         /// <returns></returns>
         [Pure]
@@ -92,7 +112,11 @@ namespace TerrainDemo.Layout
             //}
         }
 
-        private readonly ZoneLayout[] _neighbors;
+
+
+        //private readonly ZoneLayout[] _neighbors;
+        private readonly ZoneSettings _settings;
+        private Vector2i[] _chunks;
 
         public static bool operator ==(ZoneLayout z1, ZoneLayout z2)
         {

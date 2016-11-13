@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
@@ -12,7 +13,7 @@ namespace TerrainDemo
     /// </summary>
     public struct ZoneRatio : IEnumerable<ZoneValue>
     {
-        public bool IsEmpty { get { return _value == null; } }
+        public bool IsEmpty { get { return _value == null || _value.Length == 0; } }
 
         public ZoneRatio([NotNull] ZoneValue[] values, int zonesCount)
         {
@@ -156,6 +157,7 @@ namespace TerrainDemo
         }
     }
 
+    [DebuggerDisplay("{Zone} = {Value}")]
     public struct ZoneValue : IComparable<ZoneValue>
     {
         public readonly ZoneType Zone;

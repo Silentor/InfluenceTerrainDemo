@@ -54,35 +54,7 @@ namespace TerrainDemo.Layout
             return result;
         }
 
-        public ZoneRatio GetInfluence(Vector2 worldPosition)
-        {
-            _influenceTime.Start();
-
-            var lookupResult = new float[(int) _zoneMaxType + 1];
-            foreach (var zone in _zones)
-            {
-                if (zone.Type != ZoneType.Empty)
-                {
-                    var idwSimplestWeighting = IDWSimplestWeighting(zone.Center, worldPosition);
-                    lookupResult[(int) zone.Type] += idwSimplestWeighting;
-                }
-            }
-
-            var result = new ZoneRatio(
-                lookupResult.Select((v, i) => new ZoneValue((ZoneType)i, v)).Where(v => v.Value > 0).ToArray(), 
-                _zoneTypesCount);
-
-            //foreach (var zone in _zones.OrderBy(z => Vector3.SqrMagnitude(z.Center - worldPosition)).Take(10))
-            //result[zone.Type] += IDWSimplestWeighting(zone.Center, worldPosition);
-
-            //var result = new ZoneRatio(_zoneMaxType);
-            //result.Normalize();
-
-            _influenceTime.Stop();
-            _influenceCounter++;
-
-            return result;
-        }
+       
 
 
 
@@ -107,10 +79,12 @@ namespace TerrainDemo.Layout
             return result;
         }
 
+        /*
         public IZoneNoiseSettings GetZoneNoiseSettings(ZoneRatio influence)
         {
             return ZoneSettings.Lerp(_zoneSettings, influence);
         }
+        */
 
         public string GetStaticstics()
         {
@@ -144,20 +118,6 @@ namespace TerrainDemo.Layout
 
         private const float r = 100;
 
-        private float IDWSimplestWeighting(Vector2 interpolatePoint, Vector2 point)
-        {
-            var d = Vector2.SqrMagnitude(interpolatePoint - point);
-            var result = (float) (1/Math.Pow(d + 0.001f, _idwCoeff));
-            //var result = 100 - Vector2.Distance(interpolatePoint,  point);
-            return (float)result;
-        }
-
-        
-
-        
-
-        
-
-        
+      
     }
 }

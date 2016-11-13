@@ -7,24 +7,25 @@ namespace TerrainDemo.Generators
 {
     public class MountainsGenerator : ZoneGenerator
     {
-        public MountainsGenerator(ZoneLayout zone, LandLayout land, ILandSettings landSettings) : base(zone, land, landSettings)
+        public MountainsGenerator(ZoneLayout zone, LandLayout land, ILandSettings landSettings) : base(ZoneType.Mountains, zone, land, landSettings)
         {
         }
 
         public override BlockType DefaultBlock { get {return BlockType.Grass;} }
 
-        protected override float GenerateBaseHeight(float worldX, float worldZ, IZoneNoiseSettings settings)
+        public override float GenerateBaseHeight(float worldX, float worldZ, ZoneRatio influence)
         {
-            var height = base.GenerateBaseHeight(worldX, worldZ, settings);
-            var mountInfluence = Land.GetInfluence(new Vector2(worldX, worldZ))[ZoneType.Mountains];
+            var height = base.GenerateBaseHeight(worldX, worldZ, influence);
+            
+            var mountInfluence = influence[ZoneType.Mountains];
 
             //Slightly raise up heightmap of Mountain zone
-            if (mountInfluence > 0.7f)
+            //if (mountInfluence > 0.7f)
             {
-                var additional = (mountInfluence + 0.3f);
+                var additional = /*(mountInfluence + 0.3f)*/1.5f;
                 height *= additional;
             }
-
+            
             return height;
         }
 

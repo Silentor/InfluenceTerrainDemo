@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using TerrainDemo.Generators;
+using TerrainDemo.Hero;
 using TerrainDemo.Layout;
 using TerrainDemo.Map;
 using TerrainDemo.Meshing;
@@ -18,17 +20,20 @@ namespace TerrainDemo
         [Header("Land settings")]
         [Range(1, 100)]
         public int ZonesCount = 16;
-        [Range(1, 100)]
+        [Range(1, 100), Tooltip("Chunks")]
         public int LandSize = 30;                           //Chunks
         public LandNoiseSettings LandNoiseSettings;
         public ZoneSettings[] Zones;
         public Vector2 ZonesDensity = new Vector2(30, 40);
         public bool GenerateSeed = true;
         public int LandSeed = 0;
+        public LayoutGenerator.Type LayoutGenerator = Generators.LayoutGenerator.Type.PoissonClustered;
 
         [Header("Influence settings")]
         public float IDWCoeff = 2;
         public float IDWOffset = 0;
+        public float IDWRadius = 30;
+        public int IDWNearestPoints = 7;
         public bool InterpolateInfluence = true;
         [Range(0, 1)]
         public float InfluenceThreshold = 0.01f;
@@ -49,57 +54,39 @@ namespace TerrainDemo
 
         public Main Main { get; private set; }
 
-        public void RedrawMap(LandMap landMap)
-        {
-            //Mesh and visualize async now
-            return;
+        public IObserver Observer { get; private set; }
 
-            var timer = Stopwatch.StartNew();
-
-            CreateZonesHandle(landMap.Layout.Zones);
-
-            ChunkGO.Clear();
-
-            var mesherSettings = GetComponent<MesherSettings>();
-            //var mesher = new InfluenceMesher(this, mesherSettings);
-            //var mesher = new ColorMesher(this, mesherSettings);
-            var mesher = new TextureMesher(this, mesherSettings);
-            //var mesh = mesher.Generate(landMap.Map[Vector2i.Zero], landMap.Map);
-            //var go = ChunkGO.Create(landMap.Map[Vector2i.Zero], mesh);
-
-            foreach (var chunk in landMap.Map)
-            {
-                var mesh = mesher.Generate(chunk.Value, landMap.Map);
-                var go = ChunkGO.Create(chunk.Value, mesh);
-                go.CreateFlora(this, chunk.Value.Flora);
-                go.CreateStones(this, chunk.Value.Stones);
-            }
-
-            mesher.Dispose();
-            timer.Stop();
-
-            Debug.LogFormat("Mesh generation {0} ms total", timer.ElapsedMilliseconds);
-            mesher.DebugLogStatistic();
-        }
-
-        public void BuildLayout()
+        /// <summary>
+        /// Generate layout, map and mesh
+        /// </summary>
+        public void GenerateLayout()
         {
             SetSeed();
-            Main.GenerateLayout(new PoissonClusteredLayout(this));
+            Main.GenerateLayout();
         }
 
-
-        public void BuildAll()
+        /// <summary>
+        /// Regenerate map and mesh
+        /// </summary>
+        public void GenerateMap()
         {
-            BuildLayout();
-            var map = Main.GenerateMap(this);
-            RedrawMap(map);
+            Main.GenerateMap();
+        }
+
+        /// <summary>
+        /// Regenerate mesh
+        /// </summary>
+        public void GenerateMesh()
+        {
+            Main.GenerateMesh();   
         }
 
         public ZoneSettings this[ZoneType index]
         {
             get { return _zoneSettingsLookup[(int)index]; }
         }
+
+        #region Settings
 
         int ILandSettings.ChunkSize { get { return BlocksCount * BlockSize; } }
         int ILandSettings.BlockSize { get { return BlockSize; } }
@@ -112,6 +99,8 @@ namespace TerrainDemo
         Bounds2i ILandSettings.LandBounds { get { return LayoutBounds; } }
         float ILandSettings.IDWCoeff { get { return IDWCoeff; } }
         float ILandSettings.IDWOffset { get { return IDWOffset; } }
+        float ILandSettings.IDWRadius { get { return IDWRadius; } }
+        int ILandSettings.IDWNearestPoints { get { return IDWNearestPoints; } }
 
         bool ILandSettings.InterpolateInfluence { get { return InterpolateInfluence; } }
 
@@ -121,9 +110,29 @@ namespace TerrainDemo
         GameObject ILandSettings.Tree { get { return Tree; } }
         GameObject ILandSettings.Stone { get { return Stone; } }
 
+        public LayoutGenerator CreateLayoutGenerator()
+        {
+            switch (LayoutGenerator)
+            {
+                case Generators.LayoutGenerator.Type.Random:
+                    return new RandomLayoutGenerator(this);
+
+                case Generators.LayoutGenerator.Type.PoissonTwoSide:
+                    return new PoissonTwoSideLayoutGenerator(this);
+
+                case Generators.LayoutGenerator.Type.PoissonClustered:
+                    return new PoissonClusteredLayoutGenerator(this);
+
+                default:
+                    throw new NotImplementedException(string.Format("Layout generator type {0} is not defined", LayoutGenerator));
+            }
+        }
+
+        #endregion
+
         //private Bounds2i _landSizeChunks;
         private ZoneSettings[] _zoneSettingsLookup;
-        private GameObject _parentObject;
+        private GameObject _zonesParent;
 
         private void SetSeed()
         {
@@ -136,21 +145,24 @@ namespace TerrainDemo
 
         void Awake()
         {
-            SetSeed();
-
-            if (BlockSize*BlocksCount != Chunk.Size)
+            if(!Zones.Any()) throw new InvalidOperationException("There are no zones configured");
+            if (Zones.Distinct(ZoneSettings.TypeComparer).Count() != Zones.Length)
+                throw new InvalidOperationException("There is duplicate Zone Settings");
+            if(LandNoiseSettings == null) throw new InvalidOperationException("There is no LandNoiseSettings defined");
+            if (BlockSize * BlocksCount != Chunk.Size)
                 throw new ArgumentException("Block size and blocks count invalid");
+
+            SetSeed();
 
             _zoneSettingsLookup = new ZoneSettings[(int)Zones.Max(z => z.Type) + 1];
             foreach (var zoneSettings in Zones)
                 _zoneSettingsLookup[(int)zoneSettings.Type] = zoneSettings;
 
-            _parentObject = new GameObject("Zones");
+            _zonesParent = new GameObject("Zones");
 
-            var observer = FindObjectOfType<ObserverSettings>();
-            Main = new Main(this, new PoissonClusteredLayout(this), observer, GetComponent<MesherSettings>());
+            Observer = FindObjectOfType<ObserverSettings>();
 
-            BuildLayout();
+            Main = new Main(this, Observer, GetComponent<MesherSettings>());
         }
 
         void OnValidate()
@@ -166,13 +178,15 @@ namespace TerrainDemo
             LayoutBounds = new Bounds2i(minChunkBounds.Min, maxChunkBounds.Max);
         }
 
+        
+
         #endregion
 
         #region Develop
 
         private void CreateZonesHandle(IEnumerable<ZoneLayout> result)
         {
-            var oldZones = _parentObject.transform.GetComponentsInChildren<Transform>().Where(t => t != _parentObject.transform).ToArray();
+            var oldZones = _zonesParent.transform.GetComponentsInChildren<Transform>().Where(t => t != _zonesParent.transform).ToArray();
             foreach (var zone in oldZones)
                 Destroy(zone.gameObject);
 
@@ -180,7 +194,7 @@ namespace TerrainDemo
             {
                 var zoneHandleGO = new GameObject(zone.Type.ToString());
                 zoneHandleGO.transform.position = new Vector3(zone.Center.x, 0, zone.Center.y);
-                zoneHandleGO.transform.parent = _parentObject.transform;
+                zoneHandleGO.transform.parent = _zonesParent.transform;
             }
         }
 

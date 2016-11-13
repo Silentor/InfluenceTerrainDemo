@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using JetBrains.Annotations;
+using TerrainDemo.Generators;
 using UnityEngine;
 
 namespace TerrainDemo.Settings
@@ -19,6 +21,8 @@ namespace TerrainDemo.Settings
         ZoneSettings this[ZoneType index] { get; }
         float IDWCoeff { get; }
         float IDWOffset { get; }
+        float IDWRadius { get; }
+        int IDWNearestPoints { get; }
         float InfluenceThreshold { get; }
         bool InterpolateInfluence { get; }
         int InfluenceLimit { get; }
@@ -26,10 +30,10 @@ namespace TerrainDemo.Settings
         int BlockSize { get; }
         int BlocksCount { get; }
 
-        
-
         GameObject Tree { get; }
 
         GameObject Stone { get; }
+
+        LayoutGenerator CreateLayoutGenerator();
     }
 }

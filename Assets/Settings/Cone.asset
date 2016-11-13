@@ -13,7 +13,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: Checkboard
   LandColor_: {r: 0.44827604, g: 0, b: 1, a: 1}
-  Type: 16
+  IsInterval: 0
+  Type: 301
   DefaultBlock: 2
   Height_: 0
   OutScale1_: 0
