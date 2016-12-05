@@ -18,7 +18,7 @@ namespace TerrainDemo.Map
 
         public LandLayout Layout { get; private set; }
 
-        public LandMap(ILandSettings settings, LandLayout layout)
+        public LandMap(LandSettings settings, LandLayout layout)
         {
             _settings = settings;
             Layout = layout;
@@ -161,7 +161,7 @@ namespace TerrainDemo.Map
         public event Action<Chunk> Modified = delegate {};
         public event Action<Vector2i> Removed = delegate { };
 
-        private readonly ILandSettings _settings;
+        private readonly LandSettings _settings;
     }
 
     public struct BlockInfo

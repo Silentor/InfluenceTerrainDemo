@@ -12,7 +12,7 @@ namespace TerrainDemo.Generators
 {
     public class LandGenerator
     {
-        public LandGenerator(LandLayout land, ILandSettings settings, LandMap map)
+        public LandGenerator(LandLayout land, LandSettings settings, LandMap map)
         {
             _land = land;
             _settings = settings;
@@ -52,7 +52,7 @@ namespace TerrainDemo.Generators
         }
 
         private readonly LandLayout _land;
-        private readonly ILandSettings _settings;
+        private readonly LandSettings _settings;
         private readonly LandMap _map;
         private readonly LandGeneratorWorker _worker;
         private readonly Dictionary<ZoneType, ZoneGenerator> _generators = new Dictionary<ZoneType, ZoneGenerator>();

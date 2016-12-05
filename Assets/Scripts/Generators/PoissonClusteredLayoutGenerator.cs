@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using TerrainDemo.Layout;
-using TerrainDemo.Map;
 using TerrainDemo.Settings;
 using TerrainDemo.Voronoi;
 using UnityEngine;
@@ -14,13 +12,13 @@ namespace TerrainDemo.Generators
     /// </summary>
     public class PoissonClusteredLayoutGenerator : PoissonLayoutGenerator
     {
-        public PoissonClusteredLayoutGenerator(ILandSettings settings) : base(settings)
+        public PoissonClusteredLayoutGenerator(LandSettings settings) : base(settings)
         {
         }
 
-        protected override ZoneType[] SetZoneTypes(Cell[] cells, ILandSettings settings)
+        protected override ZoneType[] SetZoneTypes(Cell[] cells, LandSettings settings)
         {
-            var ordinaryZones = settings.ZoneTypes.Where(zt => !zt.IsInterval).Select(z => z.Type).ToArray();
+            var ordinaryZones = settings.Zones.Where(zt => !zt.IsInterval).Select(z => z.Type).ToArray();
             var zones = new ZoneType[cells.Length];
 
             //Calculate zone types
@@ -31,7 +29,7 @@ namespace TerrainDemo.Generators
                     //Start cluster
                     var zoneType = ordinaryZones[Random.Range(0, ordinaryZones.Length)];
                     //var clusterSize = Random.Range(2, 5);
-                    var clusterSize = cells.Length/3;
+                    var clusterSize = Mathf.Max(cells.Length/3, 1);
                     var zoneIndexes = GetFreeNeighborsDepthFirst(cells, zones, i, clusterSize);
                     foreach (var zoneIndex in zoneIndexes)
                         zones[zoneIndex] = zoneType;
@@ -39,7 +37,7 @@ namespace TerrainDemo.Generators
             }
 
             //Generate some interval zones
-            var intervalZone = settings.ZoneTypes.FirstOrDefault(zt => zt.IsInterval);
+            var intervalZone = settings.Zones.FirstOrDefault(zt => zt.IsInterval);
             if (intervalZone != null)
             {
                 for (int i = 0; i < 5; i++)

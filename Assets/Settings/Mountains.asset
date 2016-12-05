@@ -16,7 +16,10 @@ MonoBehaviour:
   IsInterval: 0
   Type: 2
   DefaultBlock: 3
-  Height_: 75
-  OutScale1_: 50
-  OutScale2_: 5
-  OutScale3_: 100
+  Height_: 20
+  NoiseFreq: 0.01
+  NoiseAmp: 10
+  NoiseLacunarity: 2
+  NoiseGain: 1
+  NoiseOctaves: 4
+  NoiseFractal: 0

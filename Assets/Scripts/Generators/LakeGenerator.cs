@@ -6,7 +6,7 @@ namespace TerrainDemo.Generators
 {
     public class LakeGenerator : ZoneGenerator
     {
-        public LakeGenerator(ZoneLayout zone, LandLayout land, ILandSettings landSettings) : base(ZoneType.Lake, zone, land, landSettings)
+        public LakeGenerator(ZoneLayout zone, LandLayout land, LandSettings landSettings) : base(ZoneType.Lake, zone, land, landSettings)
         {
         }
 

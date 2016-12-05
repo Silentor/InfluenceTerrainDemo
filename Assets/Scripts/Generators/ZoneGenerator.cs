@@ -35,7 +35,7 @@ namespace TerrainDemo.Generators
                 zoneNormalmap[localPos.X, localPos.Z] = CalculateNormal(localPos, zoneHeightmap);
 
                 //Build block
-                ZoneRatio blockInfluence = Land.GetInfluence((Vector2)blockPos);
+                var blockInfluence = zoneInfluences[localPos.X, localPos.Z];
                 var turbulenceX = 0;
                 var turbulenceZ = 0;
 
@@ -76,7 +76,7 @@ namespace TerrainDemo.Generators
         }
 
         public static ZoneGenerator Create(ZoneLayout zone, [NotNull] LandLayout land,
-            [NotNull] ILandSettings landSettings)
+            [NotNull] LandSettings landSettings)
         {
             return Create(zone.Type, zone, land, landSettings);
         }
@@ -89,7 +89,7 @@ namespace TerrainDemo.Generators
         /// <param name="land"></param>
         /// <param name="landSettings"></param>
         /// <returns></returns>
-        public static ZoneGenerator Create(ZoneType type, ZoneLayout zone, [NotNull] LandLayout land, [NotNull] ILandSettings landSettings)
+        public static ZoneGenerator Create(ZoneType type, ZoneLayout zone, [NotNull] LandLayout land, [NotNull] LandSettings landSettings)
         {
             switch (type)
             {
@@ -124,16 +124,17 @@ namespace TerrainDemo.Generators
         }
 
         private readonly ZoneType _type;
-        private readonly ZoneLayout _zone;
+        protected readonly ZoneLayout _zone;
         protected readonly LandLayout Land;
-        protected readonly ILandSettings _landSettings;
+        protected readonly LandSettings _landSettings;
         private ZoneRatio _influence;
         private static readonly float NormalY = 2*Mathf.Sqrt(3/2f);
         private static readonly Quaternion NormalCorrectRotation = Quaternion.Euler(0, -45, 0);
         private readonly Dictionary<ZoneType, ZoneGenerator> _generators = new Dictionary<ZoneType, ZoneGenerator>();
         protected ZoneSettings _zoneSettings;
+        protected readonly FastNoise _noise;
 
-        protected ZoneGenerator(ZoneType type, ZoneLayout zone, [NotNull] LandLayout land, [NotNull] ILandSettings landSettings)
+        protected ZoneGenerator(ZoneType type, ZoneLayout zone, [NotNull] LandLayout land, [NotNull] LandSettings landSettings)
         {
             if (land == null) throw new ArgumentNullException("land");
             if (landSettings == null) throw new ArgumentNullException("landSettings");
@@ -144,6 +145,13 @@ namespace TerrainDemo.Generators
             _landSettings = landSettings;
             _zoneSettings = landSettings[type];
             DefaultBlock = _zoneSettings.DefaultBlock;
+
+            _noise = new FastNoise(landSettings.Seed);
+            _noise.SetFrequency(_zoneSettings.NoiseFreq);
+            _noise.SetFractalGain(_zoneSettings.NoiseGain);
+            _noise.SetFractalLacunarity(_zoneSettings.NoiseLacunarity);
+            _noise.SetFractalOctaves(_zoneSettings.NoiseOctaves);
+            _noise.SetFractalType(_zoneSettings.NoiseFractal);
         }
 
         /// <summary>
@@ -165,30 +173,19 @@ namespace TerrainDemo.Generators
             }
         }
 
-        public virtual float GenerateBaseHeight(float worldX, float worldZ, ZoneRatio influence)
+        public virtual double GenerateBaseHeight(float worldX, float worldZ)
         {
-            //Workaround of stupid Unity PerlinNoise symmetry
-            
-            worldX += 1000;
-            worldZ += 1000;
+            if (_landSettings.BypassHeight)
+                return 0;
 
-            var yValue = 0f;
+            var yValue = 0d;
 
-            /*
-            yValue +=
-                (Mathf.PerlinNoise(worldX*_landSettings.LandNoiseSettings.InScale1, worldZ*_landSettings.LandNoiseSettings.InScale1)) *
-                _zoneSettings.OutScale1;
-                
-            yValue +=
-                (Mathf.PerlinNoise(worldX*_landSettings.LandNoiseSettings.InScale2, worldZ*_landSettings.LandNoiseSettings.InScale2)) *
-                _zoneSettings.OutScale2;
-                
-            yValue +=
-                (Mathf.PerlinNoise(worldX*_landSettings.LandNoiseSettings.InScale3, worldZ*_landSettings.LandNoiseSettings.InScale3)) * 
-                _zoneSettings.OutScale3;
-                */
+            if (_zoneSettings.NoiseAmp != 0)
+                yValue = _noise.GetSimplexFractal(worldX, worldZ)*_zoneSettings.NoiseAmp;
 
+            yValue += Land.GetGlobalHeight(worldX, worldZ);
             yValue += _zoneSettings.Height;
+
             return yValue;
         }
 
@@ -206,7 +203,7 @@ namespace TerrainDemo.Generators
         {
             var localPos = vertPos - zone.Bounds.Min;
 
-            var height = 0f;
+            var height = 0.0;
             if (zoneInfluences[localPos.X, localPos.Z].IsEmpty)
             {
                 zoneInfluences[localPos.X, localPos.Z] = Land.GetInfluence((Vector2) vertPos);
@@ -230,13 +227,12 @@ namespace TerrainDemo.Generators
                     }
                 }
 
-                var generateBaseHeight = generator.GenerateBaseHeight(vertPos.X, vertPos.Z,
-                    zoneInfluences[localPos.X, localPos.Z]);
+                var generateBaseHeight = generator.GenerateBaseHeight(vertPos.X, vertPos.Z);
 
                 height += generateBaseHeight * inf.Value;
             }
 
-            zoneHeightmap[localPos.X, localPos.Z] = height;
+            zoneHeightmap[localPos.X, localPos.Z] = (float)height;
         }
 
         protected virtual Vector3[] DecorateZone(ZoneRatio[,] zoneInfluences, float[,] zoneHeightmap, Vector3[,] zoneNormalmap, BlockType[,] zoneBlocks)

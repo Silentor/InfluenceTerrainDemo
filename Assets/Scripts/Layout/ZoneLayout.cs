@@ -13,7 +13,7 @@ namespace TerrainDemo.Layout
     /// Description of Zone layout
     /// </summary>
     [DebuggerDisplay("Id = {Cell.Id}, type = {Type}")]
-    public struct ZoneLayout
+    public class ZoneLayout
     {
         public readonly Vector2 Center;
         public readonly ZoneType Type;
@@ -35,6 +35,13 @@ namespace TerrainDemo.Layout
 
         public ZoneSettings Settings { get { return _settings; } }
 
+        public IEnumerable<ZoneLayout> Neighbors { get { return _neighbors; } }
+
+        /// <summary>
+        /// Base global height of this zone in layout
+        /// </summary>
+        public float Height { get; private set; }
+
         //public IEnumerable<ZoneLayout> Neighbors { get { return _neighbors; } }
 
         public static readonly IEqualityComparer<ZoneLayout> TypeComparer = new ZoneTypeComparer();
@@ -48,7 +55,7 @@ namespace TerrainDemo.Layout
             Bounds = (Bounds2i)cell.Bounds;
             ChunkBounds = new Bounds2i(Chunk.GetPosition(Bounds.Min), Chunk.GetPosition(Bounds.Max));
             _chunks = null;
-            //_neighbors = new ZoneLayout[0];
+            _neighbors = null;
         }
 
         /// <summary>
@@ -57,6 +64,8 @@ namespace TerrainDemo.Layout
         public void Init(LandLayout landLayout)
         {
             _chunks = landLayout.GetChunks(this).ToArray();
+            _neighbors = Cell.Neighbors.Select(c => landLayout.Zones.First(z => z.Cell == c)).ToList();
+            Height = (float)landLayout.GetGlobalHeight(Center.x, Center.y);
         }
 
         /// <summary>
@@ -117,14 +126,19 @@ namespace TerrainDemo.Layout
         //private readonly ZoneLayout[] _neighbors;
         private readonly ZoneSettings _settings;
         private Vector2i[] _chunks;
+        private List<ZoneLayout> _neighbors;
 
         public static bool operator ==(ZoneLayout z1, ZoneLayout z2)
         {
+            if (ReferenceEquals(z1, null) || ReferenceEquals(z2, null))
+                return false;
             return z1.Cell == z2.Cell;
         }
 
         public static bool operator !=(ZoneLayout z1, ZoneLayout z2)
         {
+            if (ReferenceEquals(z1, null) || ReferenceEquals(z2, null))
+                return true;
             return z1.Cell != z2.Cell;
         }
 

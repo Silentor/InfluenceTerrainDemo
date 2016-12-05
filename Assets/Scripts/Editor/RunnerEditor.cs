@@ -100,7 +100,7 @@ namespace TerrainDemo.Editor
         private void DrawGizmos2()
         {
             //Draw land bounds
-            DrawRectangle.ForGizmo(_target.LayoutBounds, Color.gray);
+            DrawRectangle.ForGizmo(_target.LandSettings.LandBounds, Color.gray);
 
             //Get intersection points
             if (Application.isPlaying)
@@ -197,7 +197,7 @@ namespace TerrainDemo.Editor
             if (_main.LandLayout != null && _main.LandLayout.Zones.Any() && _main.LandLayout.Bounds.Contains((Vector2i)worldPosition))
             {
                 var selectedZone = _main.LandLayout.GetZoneFor(worldPosition, false);
-                var zoneColor = _target[selectedZone.Type].LandColor;
+                var zoneColor = _target.LandSettings[selectedZone.Type].LandColor;
 
                 Gizmos.color = zoneColor;
 
@@ -231,7 +231,7 @@ namespace TerrainDemo.Editor
             {
                 var zone = zones[i];
                 Handles.color = layout.Zones.ElementAt(i).Type != ZoneType.Empty
-                    ? _target[zone.Type].LandColor
+                    ? _target.LandSettings[zone.Type].LandColor
                     : Color.black;
 
                 //Draw edges
@@ -275,10 +275,10 @@ namespace TerrainDemo.Editor
                     influence.Select(z => String.Format("[{0}] - {1}", z.Zone, z.Value)).ToArray());
                 GUILayout.TextArea(labelText);
 
-                if (_target.InfluenceLimit == 0)
-                    influence = influence.Pack(_target.InfluenceThreshold);
+                if (_target.LandSettings.InfluenceLimit == 0)
+                    influence = influence.Pack(_target.LandSettings.InfluenceThreshold);
                 else
-                    influence = influence.Pack(_target.InfluenceLimit);
+                    influence = influence.Pack(_target.LandSettings.InfluenceLimit);
 
                 GUILayout.Label("Packed");
                 labelText = String.Join("\n",

@@ -4,7 +4,7 @@ using UnityEngine;
 namespace TerrainDemo
 {
     [CreateAssetMenu]
-    public class ZoneSettings : ScriptableObject, IZoneNoiseSettings
+    public class ZoneSettings : ScriptableObject
     {
         public string Name;
         public Color LandColor_ = Color.magenta;
@@ -12,50 +12,25 @@ namespace TerrainDemo
         public ZoneType Type;
         public BlockType DefaultBlock;
 
-        public float Height_ = 0;
+        /// <summary>
+        /// Base height
+        /// </summary>
+        public double Height_ = 0;
 
-        [Header("Coarse octave")]
-        public float OutScale1_ = 30f;
-
-        [Header("Fine octave")]
-        public float OutScale2_ = 5f;
-
-        [Header("Global octave")]
-        public float OutScale3_ = 30f;
-
+        [Header("Simplex Fractal noise")]
+        public double NoiseFreq = 1 / 10.0;
+        public double NoiseAmp = 5;
+        public double NoiseLacunarity = 2;
+        public double NoiseGain = 0.5;
+        [Range(1, 5)]
+        public int NoiseOctaves = 2;
+        public FastNoise.FractalType NoiseFractal = FastNoise.FractalType.FBM;
 
         public Color LandColor { get { return LandColor_; } }
-        public float Height { get { return Height_; } }
 
-        public float OutScale1 { get { return OutScale1_; } }
-
-        public float OutScale2 { get { return OutScale2_; } }
-
-        public float OutScale3 { get { return OutScale3_; } }
+        public double Height { get { return Height_; } }
 
         public static readonly ZoneTypeEqualityComparer TypeComparer = new ZoneTypeEqualityComparer();
-
-        public static IZoneNoiseSettings Lerp(ZoneSettings[] zones, ZoneRatio ratio)
-        {
-            var outScale1 = 0f;
-            var outScale2 = 0f;
-            var outScale3 = 0f;
-            var height = 0f;
-
-            for (int i = 0; i < zones.Length; i++)
-            {
-                var zoneNoiseSettings = zones[i];
-                var zoneRatio = ratio[zoneNoiseSettings.Type];
-                height += zoneNoiseSettings.Height*zoneRatio;
-                outScale1 += zoneNoiseSettings.OutScale1*zoneRatio;
-                outScale2 += zoneNoiseSettings.OutScale2*zoneRatio;
-                outScale3 += zoneNoiseSettings.OutScale3*zoneRatio;
-            }
-
-            var result = new ZoneSettings2(Color.black, height, outScale1, outScale2, outScale3);
-
-            return result;
-        }
 
         public class ZoneTypeEqualityComparer : IEqualityComparer<ZoneSettings>
         {

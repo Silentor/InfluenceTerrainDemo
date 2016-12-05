@@ -5,7 +5,7 @@ namespace TerrainDemo.Generators.Debug
 {
     public class FlatGenerator : ZoneGenerator
     {
-        public FlatGenerator(ZoneLayout zone, LandLayout land, ILandSettings landSettings) : base(ZoneType.Hills, zone, land, landSettings)
+        public FlatGenerator(ZoneLayout zone, LandLayout land, LandSettings landSettings) : base(ZoneType.Hills, zone, land, landSettings)
         {
         }
 
@@ -14,7 +14,7 @@ namespace TerrainDemo.Generators.Debug
             get { return BlockType.Influence; }
         }
 
-        public override float GenerateBaseHeight(float worldX, float worldZ, ZoneRatio influence)
+        public override double GenerateBaseHeight(float worldX, float worldZ)
         {
             return 0;
         }

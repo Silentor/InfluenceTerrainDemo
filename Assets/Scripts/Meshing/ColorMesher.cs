@@ -11,7 +11,7 @@ namespace TerrainDemo.Meshing
     /// </summary>
     public class ColorMesher : BaseMesher
     {
-        public ColorMesher(ILandSettings settings, MesherSettings mesherSettings)
+        public ColorMesher(LandSettings settings, MesherSettings mesherSettings)
         {
             _settings = settings;
             _mesherSettings = mesherSettings;
@@ -76,7 +76,7 @@ namespace TerrainDemo.Meshing
             return new ChunkModel() {Material = _mesherSettings.VertexColoredMaterial, Mesh = mesh};
         }
 
-        private readonly ILandSettings _settings;
+        private readonly LandSettings _settings;
         private readonly MesherSettings _mesherSettings;
         private readonly Color[] _blocksColors;
 

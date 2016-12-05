@@ -10,14 +10,14 @@ namespace TerrainDemo.Meshing
     /// </summary>
     public class InfluenceMesher : BaseMesher
     {
-        public InfluenceMesher(ILandSettings settings, MesherSettings meshSettings)
+        public InfluenceMesher(LandSettings settings, MesherSettings meshSettings)
         {
             _settings = settings;
             _meshSettings = meshSettings;
-            _zoneInfluenceColors = new Color[(int)settings.ZoneTypes.Max(z => z.Type) + 1];
-            foreach (var zoneSettingse in settings.ZoneTypes)
+            _zoneInfluenceColors = new Color[(int)settings.Zones.Max(z => z.Type) + 1];
+            foreach (var zoneSettingse in settings.Zones)
                 _zoneInfluenceColors[(int) zoneSettingse.Type] = zoneSettingse.LandColor;
-            _zoneTypes = _settings.ZoneTypes.Select(z => z.Type).ToArray();
+            _zoneTypes = _settings.Zones.Select(z => z.Type).ToArray();
         }
 
         public override ChunkModel Generate(Chunk chunk, Dictionary<Vector2i, Chunk> map)
@@ -61,7 +61,7 @@ namespace TerrainDemo.Meshing
             return new ChunkModel() { Material = _meshSettings.VertexColoredMaterial, Mesh = mesh };
         }
 
-        private readonly ILandSettings _settings;
+        private readonly LandSettings _settings;
         private readonly MesherSettings _meshSettings;
         private readonly Color[] _zoneInfluenceColors;
         private readonly ZoneType[] _zoneTypes;
@@ -71,7 +71,7 @@ namespace TerrainDemo.Meshing
             var result = Color.black;
 
             if(!ratio.IsEmpty)
-                for (var i = 0; i < _zoneTypes.Length; i++)
+                for (var i = 0; i < _zoneTypes.Length; i++)         //todo iterate for ratio
                 {
                     var zoneType = _zoneTypes[i];
                     result += _zoneInfluenceColors[(int)zoneType] * ratio[zoneType];

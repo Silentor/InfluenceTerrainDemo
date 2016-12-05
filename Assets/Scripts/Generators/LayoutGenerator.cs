@@ -1,4 +1,5 @@
-﻿using TerrainDemo.Layout;
+﻿using System.Diagnostics;
+using TerrainDemo.Layout;
 using TerrainDemo.Settings;
 using TerrainDemo.Voronoi;
 using UnityEditor;
@@ -11,9 +12,9 @@ namespace TerrainDemo.Generators
     /// </summary>
     public abstract class LayoutGenerator
     {
-        private readonly ILandSettings _settings;
+        private readonly LandSettings _settings;
 
-        protected LayoutGenerator(ILandSettings settings)
+        protected LayoutGenerator(LandSettings settings)
         {
             _settings = settings;
         }
@@ -25,9 +26,11 @@ namespace TerrainDemo.Generators
         /// <returns></returns>
         public virtual LandLayout Generate(LandLayout oldLandLayout)
         {
+            var timer = Stopwatch.StartNew();
+
             var bounds = _settings.LandBounds;
 
-            var points = GeneratePoints(_settings.ZonesCount, bounds, _settings.ZonesDensity);
+            var points = GeneratePoints(bounds, _settings.ZonesDensity);
             var cellMesh = CellMeshGenerator.Generate(points, (Bounds)bounds);
             var zoneTypes = SetZoneTypes(cellMesh.Cells, _settings);
 
@@ -42,23 +45,23 @@ namespace TerrainDemo.Generators
                 result = oldLandLayout;
             }
 
+            UnityEngine.Debug.LogFormat("Generated layout: {0} zones, {1} msec", points.Length, timer.ElapsedMilliseconds);
+
             return result;
         }
 
         /// <summary>
         /// Generate zone points using Poisson sampling
         /// </summary>
-        /// <param name="count"></param>
         /// <param name="landBounds"></param>
         /// <param name="density"></param>
         /// <returns></returns>
-        protected abstract Vector2[] GeneratePoints(int count, Bounds2i landBounds, Vector2 density);
+        protected abstract Vector2[] GeneratePoints(Bounds2i landBounds, Vector2 density);
 
-        protected abstract ZoneType[] SetZoneTypes(Cell[] cells, ILandSettings settings);
+        protected abstract ZoneType[] SetZoneTypes(Cell[] cells, LandSettings settings);
 
         public enum Type
         {
-            Random,
             PoissonTwoSide,
             PoissonClustered
         }

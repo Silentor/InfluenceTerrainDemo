@@ -9,7 +9,7 @@ namespace TerrainDemo.Meshing
     {
         public Vector2i Position { get; private set; }
 
-        public void CreateFlora(ILandSettings settings, IEnumerable<Vector3> positions)
+        public void CreateFlora(LandSettings settings, IEnumerable<Vector3> positions)
         {
             if(positions != null)
                 foreach (var position in positions)
@@ -21,7 +21,7 @@ namespace TerrainDemo.Meshing
                 }
         }
 
-        public void CreateStones(ILandSettings settings, IEnumerable<Vector3> positions)
+        public void CreateStones(LandSettings settings, IEnumerable<Vector3> positions)
         {
             if (positions != null)
                 foreach (var position in positions)

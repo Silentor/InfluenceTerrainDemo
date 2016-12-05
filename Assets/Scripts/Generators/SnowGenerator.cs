@@ -6,7 +6,7 @@ namespace TerrainDemo.Generators
 {
     public class SnowGenerator : ZoneGenerator
     {
-        public SnowGenerator(ZoneLayout zone, LandLayout land, ILandSettings landSettings) : base(ZoneType.Snow, zone, land, landSettings)
+        public SnowGenerator(ZoneLayout zone, LandLayout land, LandSettings landSettings) : base(ZoneType.Snow, zone, land, landSettings)
         {
         }
 

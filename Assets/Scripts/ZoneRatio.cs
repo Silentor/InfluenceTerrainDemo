@@ -39,7 +39,12 @@ namespace TerrainDemo
             //Normalize
             var sum = 0f;
             for (var i = 0; i < _value.Length; i++)
-                sum += _value[i].Value;
+            {
+                if (_value[i].Value > 0)
+                    sum += _value[i].Value;
+                else
+                    _value[i].Value = 0f;
+            }
 
             if (sum != 0)
                 for (var i = 0; i < _value.Length; i++)

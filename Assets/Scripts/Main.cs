@@ -20,9 +20,10 @@ namespace TerrainDemo
 
         //public Observer Observer { get; private set; }
 
-        public Main(ILandSettings settings, IObserver observer, MesherSettings mesherSettings)
+        public Main(LandSettings settings, IObserver observer, MesherSettings mesherSettings)
         {
             _settings = settings;
+            _settings.SetSeed();
 
             _generator = settings.CreateLayoutGenerator();
             _mesher = mesherSettings.CreateMesher(settings);
@@ -48,6 +49,7 @@ namespace TerrainDemo
         {
             //Map.Clear();
             //_mesher.Clear();
+            _settings.SetSeed();
             _generator.Generate(LandLayout);
             //ObserverOnChanged();
         }
@@ -79,7 +81,7 @@ namespace TerrainDemo
             {
                 var mesh = _mesher.Generate(chunk, Map.Map);
                 var go = ChunkGO.Create(chunk, mesh);
-                Debug.LogFormat(go, "Generated mesh for chunk {0}", chunk.Position);
+                //Debug.LogFormat(go, "Generated mesh for chunk {0}", chunk.Position);
 
                 if (_visualizedChunks.ContainsKey(chunk.Position))
                     Debug.LogFormat("Chunk {0} already visualized", chunk.Position);
@@ -90,12 +92,12 @@ namespace TerrainDemo
         }
 
         private readonly BaseMesher _mesher;
-        private readonly ILandSettings _settings;
+        private readonly LandSettings _settings;
         private readonly IObserver _observer;
         private readonly LandGenerator _landGenerator;
         private readonly List<ZoneLayout> _alreadyGeneratedZones = new List<ZoneLayout>();
         private readonly Dictionary<Vector2i, ChunkGO> _visualizedChunks = new Dictionary<Vector2i, ChunkGO>();         //Move to appropriate Visualizer class
-        private LayoutGenerator _generator;
+        private readonly LayoutGenerator _generator;
 
         private void GenerateAllMap()
         {
@@ -107,6 +109,8 @@ namespace TerrainDemo
                         .ToArray();
                 _landGenerator.Generate(zones, false);
                 _alreadyGeneratedZones.AddRange(zones);
+
+                Debug.LogFormat("Average calc influence time {0} msec", LandLayout._influenceTime.AvgTimeMs);
             }
         }
 

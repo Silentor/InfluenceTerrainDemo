@@ -11,7 +11,7 @@ namespace TerrainDemo.Generators
     /// </summary>
     public class FoothillsGenerator : ZoneGenerator
     {
-        public FoothillsGenerator(ZoneLayout zone, LandLayout land, ILandSettings landSettings) : base(ZoneType.Foothills, zone, land, landSettings)
+        public FoothillsGenerator(ZoneLayout zone, LandLayout land, LandSettings landSettings) : base(ZoneType.Foothills, zone, land, landSettings)
         {
             var plains = Land.Zones.Where(z => z.Type == ZoneType.Hills).ToArray();
             var mountains = Land.Zones.Where(z => z.Type == ZoneType.Mountains).ToArray();
@@ -21,9 +21,9 @@ namespace TerrainDemo.Generators
             var plainsGenerator = new HillsGenerator(zone, land, landSettings);
 
             var mountHeights = mountains.Select(
-                m => mountainGenerator.GenerateBaseHeight(m.Center.x, m.Center.y, land.GetInfluence(m.Center))).ToArray();
+                m => mountainGenerator.GenerateBaseHeight(m.Center.x, m.Center.y)).ToArray();
             var plainsHeight = plains.Select(
-                p => plainsGenerator.GenerateBaseHeight(p.Center.x, p.Center.y, land.GetInfluence(p.Center))).ToArray();
+                p => plainsGenerator.GenerateBaseHeight(p.Center.x, p.Center.y)).ToArray();
 
             var heights = plainsHeight.Concat(mountHeights).ToArray();
             _heights = zones.Select((z, i) => new ZoneHeight {Zone = z, Height = heights[i]}).ToArray();
@@ -31,11 +31,14 @@ namespace TerrainDemo.Generators
 
         public override BlockType DefaultBlock { get {return BlockType.Grass;} }
 
-        public override float GenerateBaseHeight(float worldX, float worldZ, ZoneRatio influence)
+        public override double GenerateBaseHeight(float worldX, float worldZ)
         {
+            if (_landSettings.BypassHeight)
+                return 0;
+
             var vertex = new Vector2(worldX, worldZ);
-            var a = 0f;
-            var b = 0f;
+            var a = 0d;
+            var b = 0d;
 
             //Calculate simple IDW for all plains+mountains zones
             for (int i = 0; i < _heights.Length; i++)
@@ -43,7 +46,7 @@ namespace TerrainDemo.Generators
                 var zone = _heights[i];
                 var d = Vector2.SqrMagnitude(zone.Zone.Center - vertex);
 
-                var m = 1/(d);
+                var m = 1d/(d);
                 a += m * zone.Height;
                 b += m;
             }
@@ -54,13 +57,13 @@ namespace TerrainDemo.Generators
             worldX += 1000;
             worldZ += 1000;
 
-            foothillHeight +=
-                (Mathf.PerlinNoise(worldX * _landSettings.LandNoiseSettings.InScale3, worldZ * _landSettings.LandNoiseSettings.InScale3) - 0.5f) *
-                _zoneSettings.OutScale3;
+            //foothillHeight +=
+            //    (Mathf.PerlinNoise(worldX * _landSettings.LandNoiseSettings.InScale3, worldZ * _landSettings.LandNoiseSettings.InScale3) - 0.5f) *
+            //    _zoneSettings.OutScale3;
 
-            foothillHeight +=
-                (Mathf.PerlinNoise(worldX * _landSettings.LandNoiseSettings.InScale1, worldZ * _landSettings.LandNoiseSettings.InScale1) - 0.5f) *
-                _zoneSettings.OutScale1;
+            //foothillHeight +=
+            //    (Mathf.PerlinNoise(worldX * _landSettings.LandNoiseSettings.InScale1, worldZ * _landSettings.LandNoiseSettings.InScale1) - 0.5f) *
+            //    _zoneSettings.OutScale1;
 
             var result = foothillHeight + _zoneSettings.Height;
             return result;
@@ -71,7 +74,7 @@ namespace TerrainDemo.Generators
         private struct ZoneHeight
         {
             public ZoneLayout Zone;
-            public float Height;
+            public double Height;
         }
     }
 }

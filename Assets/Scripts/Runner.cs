@@ -1,56 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using TerrainDemo.Generators;
 using TerrainDemo.Hero;
 using TerrainDemo.Layout;
-using TerrainDemo.Map;
-using TerrainDemo.Meshing;
 using TerrainDemo.Settings;
-using TerrainDemo.Threads;
-using TerrainDemo.Tools;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
 namespace TerrainDemo
 {
-    public class Runner : MonoBehaviour, ILandSettings
+    [RequireComponent(typeof(LandSettings))]
+    public class Runner : MonoBehaviour
     {
-        [Header("Land settings")]
-        [Range(1, 100)]
-        public int ZonesCount = 16;
-        [Range(1, 100), Tooltip("Chunks")]
-        public int LandSize = 30;                           //Chunks
-        public LandNoiseSettings LandNoiseSettings;
-        public ZoneSettings[] Zones;
-        public Vector2 ZonesDensity = new Vector2(30, 40);
-        public bool GenerateSeed = true;
-        public int LandSeed = 0;
-        public LayoutGenerator.Type LayoutGenerator = Generators.LayoutGenerator.Type.PoissonClustered;
-
-        [Header("Influence settings")]
-        public float IDWCoeff = 2;
-        public float IDWOffset = 0;
-        public float IDWRadius = 30;
-        public int IDWNearestPoints = 7;
-        public bool InterpolateInfluence = true;
-        [Range(0, 1)]
-        public float InfluenceThreshold = 0.01f;
-        [Range(0, 20)]
-        public int InfluenceLimit = 5;
-
-        [Header("Chunk settings")]
-        [Range(1, 128)]
-        public int BlocksCount = 16;
-        [Range(1, 128)]
-        public int BlockSize = 1;
-
-        public GameObject Tree;
-
-        public GameObject Stone;
-
-        public Bounds2i LayoutBounds { get; private set; }
+        public LandSettings LandSettings { get; private set; }
 
         public Main Main { get; private set; }
 
@@ -61,7 +23,6 @@ namespace TerrainDemo
         /// </summary>
         public void GenerateLayout()
         {
-            SetSeed();
             Main.GenerateLayout();
         }
 
@@ -81,104 +42,30 @@ namespace TerrainDemo
             Main.GenerateMesh();   
         }
 
-        public ZoneSettings this[ZoneType index]
-        {
-            get { return _zoneSettingsLookup[(int)index]; }
-        }
-
-        #region Settings
-
-        int ILandSettings.ChunkSize { get { return BlocksCount * BlockSize; } }
-        int ILandSettings.BlockSize { get { return BlockSize; } }
-        int ILandSettings.BlocksCount { get { return BlocksCount; } }
-        int ILandSettings.ZonesCount { get { return ZonesCount; } }
-        IEnumerable<ZoneSettings> ILandSettings.ZoneTypes { get { return Zones; } }
-        Vector2 ILandSettings.ZonesDensity { get { return ZonesDensity; } }
-
-        LandNoiseSettings ILandSettings.LandNoiseSettings { get { return LandNoiseSettings; } }
-        Bounds2i ILandSettings.LandBounds { get { return LayoutBounds; } }
-        float ILandSettings.IDWCoeff { get { return IDWCoeff; } }
-        float ILandSettings.IDWOffset { get { return IDWOffset; } }
-        float ILandSettings.IDWRadius { get { return IDWRadius; } }
-        int ILandSettings.IDWNearestPoints { get { return IDWNearestPoints; } }
-
-        bool ILandSettings.InterpolateInfluence { get { return InterpolateInfluence; } }
-
-        float ILandSettings.InfluenceThreshold { get { return InfluenceThreshold; } }
-        int ILandSettings.InfluenceLimit { get { return InfluenceLimit; } }
-
-        GameObject ILandSettings.Tree { get { return Tree; } }
-        GameObject ILandSettings.Stone { get { return Stone; } }
-
-        public LayoutGenerator CreateLayoutGenerator()
-        {
-            switch (LayoutGenerator)
-            {
-                case Generators.LayoutGenerator.Type.Random:
-                    return new RandomLayoutGenerator(this);
-
-                case Generators.LayoutGenerator.Type.PoissonTwoSide:
-                    return new PoissonTwoSideLayoutGenerator(this);
-
-                case Generators.LayoutGenerator.Type.PoissonClustered:
-                    return new PoissonClusteredLayoutGenerator(this);
-
-                default:
-                    throw new NotImplementedException(string.Format("Layout generator type {0} is not defined", LayoutGenerator));
-            }
-        }
-
-        #endregion
-
         //private Bounds2i _landSizeChunks;
-        private ZoneSettings[] _zoneSettingsLookup;
         private GameObject _zonesParent;
 
-        private void SetSeed()
-        {
-            if (GenerateSeed)
-                LandSeed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
-            UnityEngine.Random.InitState(LandSeed);
-        }
 
         #region Unity
 
         void Awake()
         {
-            if(!Zones.Any()) throw new InvalidOperationException("There are no zones configured");
-            if (Zones.Distinct(ZoneSettings.TypeComparer).Count() != Zones.Length)
-                throw new InvalidOperationException("There is duplicate Zone Settings");
-            if(LandNoiseSettings == null) throw new InvalidOperationException("There is no LandNoiseSettings defined");
-            if (BlockSize * BlocksCount != Chunk.Size)
-                throw new ArgumentException("Block size and blocks count invalid");
+            //SeedTest();
+            //NoiseBenchmark();
 
-            SetSeed();
-
-            _zoneSettingsLookup = new ZoneSettings[(int)Zones.Max(z => z.Type) + 1];
-            foreach (var zoneSettings in Zones)
-                _zoneSettingsLookup[(int)zoneSettings.Type] = zoneSettings;
+            //_zoneSettingsLookup = new ZoneSettings[(int)Zones.Max(z => z.Type) + 1];
+            //foreach (var zoneSettings in Zones)
+            //    _zoneSettingsLookup[(int)zoneSettings.Type] = zoneSettings;
 
             _zonesParent = new GameObject("Zones");
 
             Observer = FindObjectOfType<ObserverSettings>();
 
-            Main = new Main(this, Observer, GetComponent<MesherSettings>());
+            LandSettings = GetComponent<LandSettings>();
+            var mesherSettings = GetComponent<MesherSettings>();
+
+            Main = new Main(LandSettings, Observer, mesherSettings);
         }
-
-        void OnValidate()
-        {
-            if (LandSize < 1) LandSize = 1;
-
-            //Update Land bounds
-            var landMin = -LandSize / 2;
-            var landMax = landMin + LandSize - 1;
-            var minChunkBounds = Chunk.GetBounds(new Vector2i(landMin, landMin));
-            var maxChunkBounds = Chunk.GetBounds(new Vector2i(landMax, landMax));
-
-            LayoutBounds = new Bounds2i(minChunkBounds.Min, maxChunkBounds.Max);
-        }
-
-        
 
         #endregion
 
@@ -199,5 +86,101 @@ namespace TerrainDemo
         }
 
         #endregion
+
+        private void SeedTest()
+        {
+            var fast = new FastNoise(0);
+            for (int i = 0; i < 10; i++)
+            {
+                fast.SetSeed(i);
+                Debug.LogFormat("Seed {0}, value {1}", i, fast.GetSimplex(1000.3, 1000.3));
+            }
+        }
+
+        private void NoiseBenchmark()
+        {
+            //var open = new OpenSimplexNoise();
+            var fast = new FastNoise();
+            const int iter = 1000000;
+
+            //Warm up
+            var timer = Stopwatch.StartNew();
+            for (int i = 0; i < iter; i++)
+            {
+                //open.Evaluate(i, i);
+                //open.Evaluate(i, i, i);
+                Mathf.PerlinNoise(i, i);
+                fast.GetSimplex(i, i);
+                fast.GetSimplex(i, i, i);
+            }
+
+            float resultFloat = 0f;
+            timer.Stop();
+            timer.Reset();
+            timer.Start();
+
+            for (int i = 0; i < iter; i++)
+                resultFloat += Mathf.PerlinNoise(i, i);
+
+            timer.Stop();
+
+            Debug.Log("Unity 2D Perlin " + timer.ElapsedMilliseconds); //Unity 2D Perlin 41
+
+            double resultDouble = 0d;
+            timer.Reset();
+            timer.Start();
+
+            for (int i = 0; i < iter; i++)
+                resultDouble += fast.GetPerlin(i, i);
+
+            timer.Stop();
+
+            Debug.Log("Fast 2D Perlin " + timer.ElapsedMilliseconds);  //Fast 2D Perlin 204
+
+            resultDouble = 0f;
+            timer.Reset();
+            timer.Start();
+
+            for (int i = 0; i < iter; i++)
+                resultDouble += fast.GetSimplex(i, i);
+
+            timer.Stop();
+
+            Debug.Log("Fast 2D simplex " + timer.ElapsedMilliseconds);  //Fast 2D simplex 139
+
+            resultDouble = 0f;
+            timer.Reset();
+            timer.Start();
+
+            for (int i = 0; i < iter; i++)
+                resultDouble += fast.GetSimplex(i, i, i);
+
+            timer.Stop();
+
+            Debug.Log("Fast 3D simplex " + timer.ElapsedMilliseconds); //Fast 3D simplex 195
+
+            resultDouble = 0f;
+            timer.Reset();
+            timer.Start();
+
+            //for (int i = 0; i < iter; i++)
+                //resultDouble += open.Evaluate(i, i);
+
+            timer.Stop();
+
+            Debug.Log("Open 2D simplex " + timer.ElapsedMilliseconds);  //Open 2D simplex 157
+
+            resultDouble = 0f;
+            timer.Reset();
+            timer.Start();
+
+            //for (int i = 0; i < iter; i++)
+                //resultDouble += open.Evaluate(i, i, i);
+
+            timer.Stop();
+
+            Debug.Log("Open 3D simplex " + timer.ElapsedMilliseconds);  //Open 3D simplex 263
+        }
+
     }
 }

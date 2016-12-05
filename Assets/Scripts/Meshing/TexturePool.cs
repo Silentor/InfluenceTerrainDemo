@@ -22,7 +22,7 @@ namespace TerrainDemo.Meshing
             {
                 renderTex2 = new RenderTexture(size, size, 0);
                 renderTex2.useMipMap = true;
-                renderTex2.generateMips = true;
+                renderTex2.autoGenerateMips = true;
                 renderTex2.wrapMode = TextureWrapMode.Clamp;
             }
 

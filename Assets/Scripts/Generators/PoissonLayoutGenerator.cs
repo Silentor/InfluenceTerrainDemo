@@ -10,19 +10,19 @@ namespace TerrainDemo.Generators
     /// </summary>
     public abstract class PoissonLayoutGenerator : LayoutGenerator
     {
-        protected PoissonLayoutGenerator(ILandSettings settings) : base(settings)
+        protected PoissonLayoutGenerator(LandSettings settings) : base(settings)
         {
         }
 
         /// <summary>
         /// Generate zone points using Poisson sampling
         /// </summary>
-        /// <param name="count"></param>
         /// <param name="landBounds"></param>
         /// <param name="density"></param>
         /// <returns></returns>
-        protected override Vector2[] GeneratePoints(int count, Bounds2i landBounds, Vector2 density)
+        protected override Vector2[] GeneratePoints(Bounds2i landBounds, Vector2 density)
         {
+            const int maxPointsCount = 1000;
             var checkedPoints = new List<Vector2>();
             var uncheckedPoints = new List<Vector2>();
 
@@ -54,7 +54,7 @@ namespace TerrainDemo.Generators
                 }
 
                 checkedPoints.Add(processedPoint);
-                if (checkedPoints.Count >= count)
+                if (checkedPoints.Count >= maxPointsCount)
                     break;
             }
 

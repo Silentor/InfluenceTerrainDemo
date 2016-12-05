@@ -18,16 +18,16 @@ namespace TerrainDemo.Layout
 
         public readonly LandLayout Layout;
 
-        public Land(LandLayout layout, ILandSettings settings)
+        public Land(LandLayout layout, LandSettings settings)
         {
             _settings = settings;
             _zones = layout.Zones.Select(z => new Zone(z)).ToArray();
             Layout = layout;
             _idwCoeff = settings.IDWCoeff;
             _idwOffset = settings.IDWOffset;
-            _zoneMaxType = settings.ZoneTypes.Max(z => z.Type);
+            _zoneMaxType = settings.Zones.Max(z => z.Type);
             _zoneTypesCount = _zones.Where(z => z.Type != ZoneType.Empty).Distinct(Zone.TypeComparer).Count();
-            _zoneSettings = settings.ZoneTypes.ToArray();
+            _zoneSettings = settings.Zones.ToArray();
             _chunksBounds = new Bounds2i(settings.LandBounds.Min/(settings.BlocksCount*settings.BlockSize),
                 settings.LandBounds.Max/(settings.BlocksCount*settings.BlockSize));
         }
@@ -98,7 +98,7 @@ namespace TerrainDemo.Layout
                 _influenceTime.ElapsedTicks / _influenceCounter, _bilinearTime.ElapsedTicks / _bilinearCounter, _zones.Length);
         }
 
-        private readonly ILandSettings _settings;
+        private readonly LandSettings _settings;
         //public static int ZonesCount;
         //public static int WorldSize;
         //public static int ChunkSize;

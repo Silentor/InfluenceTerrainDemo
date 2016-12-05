@@ -31,7 +31,7 @@ namespace TerrainDemo.Settings
         public ComputeShader TextureBlendShader;
         public ComputeShader BlockShader;
 
-        public BaseMesher CreateMesher(ILandSettings settings)
+        public BaseMesher CreateMesher(LandSettings settings)
         {
             switch (Type)
             {

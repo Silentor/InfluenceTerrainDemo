@@ -17,7 +17,7 @@ namespace TerrainDemo.Meshing
 
         public AverageTimer TextureTimer { get { return _textureTimer; } }
 
-        public TextureMesher(ILandSettings settings, MesherSettings meshSettings)
+        public TextureMesher(LandSettings settings, MesherSettings meshSettings)
         {
             _meshSettings = meshSettings;
 
@@ -142,7 +142,7 @@ namespace TerrainDemo.Meshing
                 renderTexture.wrapMode = TextureWrapMode.Clamp;
                 renderTexture.enableRandomWrite = true;
                 renderTexture.useMipMap = false;
-                renderTexture.generateMips = false;
+                renderTexture.autoGenerateMips = false;
                 renderTexture.Create();
                 
                 _cachedTextures.Add(renderTexture);
@@ -158,7 +158,7 @@ namespace TerrainDemo.Meshing
         {
             var renderTex2 = new RenderTexture(_meshSettings.TextureSize, _meshSettings.TextureSize, 0);
             renderTex2.useMipMap = true;
-            renderTex2.generateMips = true;
+            renderTex2.autoGenerateMips = true;
             renderTex2.wrapMode = TextureWrapMode.Clamp;
             return renderTex2;
         }

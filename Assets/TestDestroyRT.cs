@@ -25,7 +25,7 @@ public class TestDestroyRT : MonoBehaviour
             renderTexture.wrapMode = TextureWrapMode.Clamp;
             renderTexture.enableRandomWrite = true;
             renderTexture.useMipMap = false;
-            renderTexture.generateMips = false;
+            renderTexture.autoGenerateMips = false;
             renderTexture.Create();
             list.Add(renderTexture);
 

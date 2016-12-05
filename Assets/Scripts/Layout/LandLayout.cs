@@ -25,19 +25,24 @@ namespace TerrainDemo.Layout
         /// </summary>
         public IEnumerable<ZoneLayout> Zones { get; private set; }
 
-        public LandLayout(ILandSettings settings, CellMesh cellMesh, ZoneType[] zoneTypes)
+        public LandLayout(LandSettings settings, CellMesh cellMesh, ZoneType[] zoneTypes)
         {
             _settings = settings;
+            _globalHeight = new FastNoise(settings.Seed);
+            _globalHeight.SetFrequency(settings.GlobalHeightFreq);
             Update(cellMesh, zoneTypes);
         }
 
         public void Update(CellMesh cellMesh, ZoneType[] zoneTypes)
         {
+            _globalHeight.SetSeed(_settings.Seed);
+            _globalHeight.SetFrequency(_settings.GlobalHeightFreq);
+
             Bounds = _settings.LandBounds;
             CellMesh = cellMesh;
-            _zoneSettings = _settings.ZoneTypes.ToArray();
+            _zoneSettings = _settings.Zones.ToArray();
             _zoneTypesCount = zoneTypes.Where(z => z != ZoneType.Empty).Distinct().Count();
-            _zoneMaxType = (int)_settings.ZoneTypes.Max(z => z.Type);
+            _zoneMaxType = (int)_settings.Zones.Max(z => z.Type);
 
             var zones = new ZoneLayout[zoneTypes.Length];
             for (int i = 0; i < zones.Length; i++)
@@ -68,7 +73,11 @@ namespace TerrainDemo.Layout
 
         public ZoneRatio GetInfluence(Vector2 worldPosition)
         {
-            return GetInfluence4(worldPosition);
+            _influenceTime.Start();
+            var result = GetInfluence4(worldPosition);
+            _influenceTime.Stop();
+
+            return result;
         }
 
         /// <summary>
@@ -78,8 +87,6 @@ namespace TerrainDemo.Layout
         /// <returns></returns>
         public ZoneRatio GetInfluence1(Vector2 worldPosition)
         {
-            _influenceTime.Start();
-
             var influenceLookup = new float[_zoneMaxType + 1];
 
             //Sum up zones influence
@@ -96,8 +103,6 @@ namespace TerrainDemo.Layout
                 influenceLookup.Select((v, i) => new ZoneValue((ZoneType)i, v)).Where(v => v.Value > 0).ToArray();
             var result = new ZoneRatio(values, values.Length);
 
-            _influenceTime.Stop();
-
             return result;
         }
 
@@ -108,8 +113,6 @@ namespace TerrainDemo.Layout
         /// <returns></returns>
         public ZoneRatio GetInfluence2(Vector2 worldPosition)
         {
-            _influenceTime.Start();
-
             //Prepare bitmap
 
             if (_sourceBitmap == null)
@@ -148,8 +151,6 @@ namespace TerrainDemo.Layout
             var values =
                 influenceLookup.Select((v, i) => new ZoneValue((ZoneType) i, v)).Where(v => v.Value > 0).ToArray();
             var result = new ZoneRatio(values, values.Length);
-
-            _influenceTime.Stop();
 
             return result;
         }
@@ -212,8 +213,6 @@ namespace TerrainDemo.Layout
         /// <returns></returns>
         public ZoneRatio GetInfluence4(Vector2 worldPosition)
         {
-            _influenceTime.Start();
-
             //Get local space
             var nearestZones = Zones.OrderBy(z => Vector2.SqrMagnitude(z.Center - worldPosition)).Take(_settings.IDWNearestPoints).ToArray();
             var searchRadius = Vector2.Distance(nearestZones.Last().Center, worldPosition) + 0.00001f;
@@ -236,11 +235,50 @@ namespace TerrainDemo.Layout
                 influenceLookup.Select((v, i) => new ZoneValue((ZoneType)i, v)).Where(v => v.Value > 0).ToArray();
             var result = new ZoneRatio(values, values.Length);
 
-            _influenceTime.Stop();
-
             return result;
         }
 
+        /// <summary>
+        /// Get zones influence for given layout point (function from Shepard IDW)
+        /// </summary>
+        /// <param name="worldPosition"></param>
+        /// <returns></returns>
+        public ZoneRatio GetInfluence5(Vector2 worldPosition)
+        {
+            //Init interpolators
+            if (_interpolants == null)
+            {
+                var zones = Zones.ToArray();
+                _interpolants = new alglib.idwinterpolant[_zoneSettings.Length];
+                for (int i = 0; i < _interpolants.Length; i++)
+                {
+                    var xy = new double[zones.Length, 3];
+                    for (int j = 0; j < zones.Length; j++)
+                    {
+                        xy[j, 0] = zones[j].Center.x;
+                        xy[j, 1] = zones[j].Center.y;
+                        xy[j, 2] = zones[j].Type == _zoneSettings[i].Type ? 1 : 0;
+                    }
+                    alglib.idwinterpolant zoneInterpolant;
+                    alglib.idwbuildmodifiedshepard(xy, zones.Length, 2, -1, 10, 10, out zoneInterpolant);
+                    _interpolants[i] = zoneInterpolant;
+                }
+            }
+
+            var ratio = new List<ZoneValue>();
+            for (int i = 0; i < _interpolants.Length; i++)
+            {
+                var interpolant = _interpolants[i];
+                var zoneValue = alglib.idwcalc(interpolant, new double[] {worldPosition.x, worldPosition.y});
+
+                if(zoneValue > 0)
+                ratio.Add(new ZoneValue(_zoneSettings[i].Type, (float)zoneValue));
+            }
+            
+            var result = new ZoneRatio(ratio.ToArray(), ratio.Count);
+
+            return result;
+        }
 
         private float[] CubicPolate(float[] v0, float[] v1, float[] v2, float[] v3, float fracy)
         {
@@ -281,6 +319,11 @@ namespace TerrainDemo.Layout
                 return Zones.ElementAt(CellMesh.GetCellFor(position).Id);
         }
 
+        public double GetGlobalHeight(float worldX, float worldZ)
+        {
+            return _globalHeight.GetSimplex(worldX, worldZ) * _settings.GlobalHeightAmp;     //todo workaround Fast Noise Simplex 2D bug
+        }
+
         public void PrintInfluences(Vector2 worldPosition)
         {
             /*
@@ -297,13 +340,15 @@ namespace TerrainDemo.Layout
             */
         }
 
-        private ILandSettings _settings;
-        private readonly AverageTimer _influenceTime = new AverageTimer();
+        private LandSettings _settings;
+        public readonly AverageTimer _influenceTime = new AverageTimer();
         private int _zoneTypesCount;
         private ZoneSettings[] _zoneSettings;
         private int _zoneMaxType;
         private float[,][] _sourceBitmap;
         private float[,][] _targetBitmap;
+        private alglib.idwinterpolant[] _interpolants;
+        private FastNoise _globalHeight;
 
         private void GetChunksFloodFill(ZoneLayout zone, Vector2i from, List<Vector2i> processed, List<Vector2i> result)
         {

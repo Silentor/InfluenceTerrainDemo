@@ -1,32 +1,60 @@
 ﻿using System;
+using System.Linq;
 using TerrainDemo.Layout;
 using TerrainDemo.Settings;
+using TerrainDemo.Tools;
 using UnityEngine;
 
 namespace TerrainDemo.Generators
 {
     public class MountainsGenerator : ZoneGenerator
     {
-        public MountainsGenerator(ZoneLayout zone, LandLayout land, ILandSettings landSettings) : base(ZoneType.Mountains, zone, land, landSettings)
+        public MountainsGenerator(ZoneLayout zone, LandLayout land, LandSettings landSettings) : base(ZoneType.Mountains, zone, land, landSettings)
         {
+            
         }
 
         public override BlockType DefaultBlock { get {return BlockType.Grass;} }
 
-        public override float GenerateBaseHeight(float worldX, float worldZ, ZoneRatio influence)
+        public override double GenerateBaseHeight(float worldX, float worldZ)
         {
-            var height = base.GenerateBaseHeight(worldX, worldZ, influence);
+            if (_landSettings.BypassHeight)
+                return 0;
+
+            var yValue = 0d;
+
+            yValue = _noise.GetSimplexFractal(worldX, worldZ) * _zoneSettings.NoiseAmp;
+            yValue = Math.Pow(yValue + 1, 2);
+
+            yValue += Land.GetGlobalHeight(worldX, worldZ);
+            yValue += _zoneSettings.Height;
+
+            return yValue;
+
+            var vertex = new Vector2(worldX, worldZ);
             
-            var mountInfluence = influence[ZoneType.Mountains];
+            //Find nearest ridge
+            var distance = float.MaxValue;
+            foreach (var zoneNeighbor in _zone.Neighbors)
+            {
+                var proj = Math3d.ProjectPointOnLineSegment(_zone.Center, zoneNeighbor.Center, vertex);
+                var d = Vector3.Distance(vertex, proj);
+                if (d < distance)
+                    distance = d;
+            }
+
+            var ridgeHeight = Mathf.Clamp(20 - distance, 0, 20) / 20 + 1;
+            
+            //var mountInfluence = influence[ZoneType.Mountains];
 
             //Slightly raise up heightmap of Mountain zone
             //if (mountInfluence > 0.7f)
             {
-                var additional = /*(mountInfluence + 0.3f)*/1.5f;
-                height *= additional;
+                //var additional = 1.5f;
+                yValue *= ridgeHeight;
             }
             
-            return height;
+            return yValue;
         }
 
         protected override BlockType GenerateBlock(Vector2i worldPosition, Vector2i turbulence, Vector3 normal, ZoneRatio influence)
@@ -58,6 +86,7 @@ namespace TerrainDemo.Generators
 
         //    chunk.Stones = stones.ToArray();
         //}
+
 
     }
 
