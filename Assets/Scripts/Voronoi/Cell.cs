@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using JetBrains.Annotations;
 using TerrainDemo.Tools;
+using TerrainDemo.Tools.SimpleJSON;
 using UnityEngine;
 
 namespace TerrainDemo.Voronoi
@@ -134,6 +135,38 @@ namespace TerrainDemo.Voronoi
 
             _area = Mathf.Abs(_area) /2;
             return _area;
+        }
+
+        public JSONNode ToJSON()
+        {
+            var json = new JSONClass();
+            json["id"].AsInt = Id;
+            json["center"].SetVector2(Center);
+            json["vertices"].SetArray(Vertices, vert => new JSONClass().SetVector2(vert));
+            json["edges"].SetArray(Edges, e =>
+            {
+                var j = new JSONClass();
+                j["vert1"].SetVector2(e.Vertex1);
+                j["vert2"].SetVector2(e.Vertex2);
+                return j;
+            });
+            //json["neighbors"].SetArray(Neighbors, n => new JSONData(n.Id));
+            json["bounds"].SetBounds(Bounds);
+            json["isClosed"].AsBool = IsClosed;
+
+            return json;
+        }
+
+        public static Cell FromJSON(JSONNode data)
+        {
+            var id = data["id"].AsInt;
+            var center = data["center"].GetVector2();
+            var vertices = data["vertices"].GetArray(json => json.GetVector2());
+            var edges = data["edges"].GetArray(json => new Edge(json["vert1"].GetVector2(), json["vert2"].GetVector2()));
+            var bounds = data["bounds"].GetBounds();
+            var isClosed = data["isClosed"].AsBool;
+
+            return new Cell(id, center, isClosed, vertices, edges, bounds);
         }
 
         private float _area = -1;
