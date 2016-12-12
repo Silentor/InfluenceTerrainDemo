@@ -12,6 +12,8 @@ namespace TerrainDemo.Generators
 {
     public class LandGenerator
     {
+        public readonly Dictionary<int, MountainsGenerator.MountainClusterContext> Clusters = new Dictionary<int, MountainsGenerator.MountainClusterContext>();
+
         public LandGenerator(LandLayout land, LandSettings settings, LandMap map)
         {
             _land = land;
@@ -36,7 +38,7 @@ namespace TerrainDemo.Generators
         {
             foreach (var zoneLayout in zones)
             {
-                ZoneGenerator generator = ZoneGenerator.Create(zoneLayout, _land, _settings);
+                ZoneGenerator generator = ZoneGenerator.Create(zoneLayout, _land, this, _settings);
 
                 if (generator != null)
                 {

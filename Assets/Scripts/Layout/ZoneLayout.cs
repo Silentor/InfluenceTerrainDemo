@@ -17,6 +17,7 @@ namespace TerrainDemo.Layout
     {
         public readonly Vector2 Center;
         public readonly ZoneType Type;
+        public readonly int ClusterId;
         public readonly Cell Cell;
 
         /// <summary>
@@ -46,12 +47,13 @@ namespace TerrainDemo.Layout
 
         public static readonly IEqualityComparer<ZoneLayout> TypeComparer = new ZoneTypeComparer();
 
-        public ZoneLayout(ZoneType type, Cell cell, ZoneSettings settings)
+        public ZoneLayout(ZoneInfo info, Cell cell, ZoneSettings settings)
         {
             Cell = cell;
             _settings = settings;
             Center = cell.Center;
-            Type = type;
+            Type = info.Type;
+            ClusterId = info.ClusterId;
             Bounds = (Bounds2i)cell.Bounds;
             ChunkBounds = new Bounds2i(Chunk.GetPosition(Bounds.Min), Chunk.GetPosition(Bounds.Max));
             _chunks = null;

@@ -25,7 +25,7 @@ namespace TerrainDemo.Layout
         /// </summary>
         public IEnumerable<ZoneLayout> Zones { get; private set; }
 
-        public LandLayout(LandSettings settings, CellMesh cellMesh, ZoneType[] zoneTypes)
+        public LandLayout(LandSettings settings, CellMesh cellMesh, ZoneInfo[] zoneTypes)
         {
             _settings = settings;
             _globalHeight = new FastNoise(settings.Seed);
@@ -33,7 +33,7 @@ namespace TerrainDemo.Layout
             Update(cellMesh, zoneTypes);
         }
 
-        public void Update(CellMesh cellMesh, ZoneType[] zoneTypes)
+        public void Update(CellMesh cellMesh, ZoneInfo[] zoneInfos)
         {
             _globalHeight.SetSeed(_settings.Seed);
             _globalHeight.SetFrequency(_settings.GlobalHeightFreq);
@@ -41,12 +41,12 @@ namespace TerrainDemo.Layout
             Bounds = _settings.LandBounds;
             CellMesh = cellMesh;
             _zoneSettings = _settings.Zones.ToArray();
-            _zoneTypesCount = zoneTypes.Where(z => z != ZoneType.Empty).Distinct().Count();
+            _zoneTypesCount = zoneInfos.Where(z => z.Type != ZoneType.Empty).Distinct().Count();
             _zoneMaxType = (int)_settings.Zones.Max(z => z.Type);
 
-            var zones = new ZoneLayout[zoneTypes.Length];
+            var zones = new ZoneLayout[zoneInfos.Length];
             for (int i = 0; i < zones.Length; i++)
-                zones[i] = new ZoneLayout(zoneTypes[i], cellMesh.Cells[i], _zoneSettings.First(z => z.Type == zoneTypes[i]));
+                zones[i] = new ZoneLayout(zoneInfos[i], cellMesh.Cells[i], _zoneSettings.First(z => z.Type == zoneInfos[i].Type));
 
             Zones = zones;
             for (int i = 0; i < zones.Length; i++)
@@ -69,6 +69,16 @@ namespace TerrainDemo.Layout
 
             GetChunksFloodFill(zone, centerChunk, processed, result);
             return result;
+        }
+
+        public IEnumerable<ZoneLayout> GetCluster(ZoneLayout zone)
+        {
+            return Zones.Where(z => z.ClusterId == zone.ClusterId);
+        }
+
+        public IEnumerable<ZoneLayout> GetNeighbors(ZoneLayout zone)
+        {
+            return CellMesh.FloodFill(zone.Cell).Select(c => Zones.ElementAt(c.Id));
         }
 
         public ZoneRatio GetInfluence(Vector2 worldPosition)
@@ -214,6 +224,7 @@ namespace TerrainDemo.Layout
         public ZoneRatio GetInfluence4(Vector2 worldPosition)
         {
             //Get local space
+            //todo need spatial optimization
             var nearestZones = Zones.OrderBy(z => Vector2.SqrMagnitude(z.Center - worldPosition)).Take(_settings.IDWNearestPoints).ToArray();
             var searchRadius = Vector2.Distance(nearestZones.Last().Center, worldPosition) + 0.00001f;
 

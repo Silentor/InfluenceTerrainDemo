@@ -5,7 +5,8 @@ namespace TerrainDemo.Generators.Debug
 {
     public class FlatGenerator : ZoneGenerator
     {
-        public FlatGenerator(ZoneLayout zone, LandLayout land, LandSettings landSettings) : base(ZoneType.Hills, zone, land, landSettings)
+        public FlatGenerator(ZoneLayout zone, LandLayout land, LandGenerator generator, LandSettings landSettings) 
+            : base(ZoneType.Hills, zone, land, generator, landSettings)
         {
         }
 

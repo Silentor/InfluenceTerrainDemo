@@ -6,7 +6,8 @@ namespace TerrainDemo.Generators
 {
     public class DefaultGenerator : ZoneGenerator
     {
-        public DefaultGenerator(ZoneLayout zone, LandLayout land, LandSettings landSettings) : base(ZoneType.Hills, zone, land, landSettings)
+        public DefaultGenerator(ZoneLayout zone, LandLayout land, LandGenerator generator, LandSettings landSettings) 
+            : base(ZoneType.Hills, zone, land, generator, landSettings)
         {
             
         }

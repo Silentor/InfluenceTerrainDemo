@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Linq;
 using TerrainDemo.Layout;
 using TerrainDemo.Settings;
 using TerrainDemo.Voronoi;
@@ -32,20 +33,21 @@ namespace TerrainDemo.Generators
 
             var points = GeneratePoints(bounds, _settings.ZonesDensity);
             var cellMesh = CellMeshGenerator.Generate(points, (Bounds)bounds);
-            var zoneTypes = SetZoneTypes(cellMesh.Cells, _settings);
+            var zonesInfo = SetZoneInfo(cellMesh, _settings);
 
             LandLayout result;
             if (oldLandLayout == null)
             {
-                result = new LandLayout(_settings, cellMesh, zoneTypes);
+                result = new LandLayout(_settings, cellMesh, zonesInfo);
             }
             else
             {
-                oldLandLayout.Update(cellMesh, zoneTypes);
+                oldLandLayout.Update(cellMesh, zonesInfo);
                 result = oldLandLayout;
             }
 
-            UnityEngine.Debug.LogFormat("Generated layout: {0} zones, {1} msec", points.Length, timer.ElapsedMilliseconds);
+            var clustersCount = zonesInfo.Select(zi => zi.ClusterId).Distinct().Count();
+            UnityEngine.Debug.LogFormat("Generated layout: {0} zones, {1} clusters, {2} msec", points.Length, clustersCount, timer.ElapsedMilliseconds);
 
             return result;
         }
@@ -58,7 +60,7 @@ namespace TerrainDemo.Generators
         /// <returns></returns>
         protected abstract Vector2[] GeneratePoints(Bounds2i landBounds, Vector2 density);
 
-        protected abstract ZoneType[] SetZoneTypes(Cell[] cells, LandSettings settings);
+        protected abstract ZoneInfo[] SetZoneInfo(CellMesh mesh, LandSettings settings);
 
         public enum Type
         {

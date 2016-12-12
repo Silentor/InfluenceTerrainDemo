@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
 using TerrainDemo.Generators;
@@ -8,7 +10,7 @@ using TerrainDemo.Layout;
 using TerrainDemo.Map;
 using TerrainDemo.Meshing;
 using TerrainDemo.Settings;
-using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace TerrainDemo
 {
@@ -30,6 +32,16 @@ namespace TerrainDemo
 
             //First time land layout generation
             LandLayout = _generator.Generate(null);
+
+            //DEBUG
+            //var path = Application.dataPath + "/cellmesh.json";
+            //var json = LandLayout.CellMesh.ToJSON();
+            //var file = File.CreateText(path);
+            //file.Write(json.ToString());
+            //file.Close();
+
+            //Debug.Log("Write cell mesh to " + path);
+            //DEBUG
 
             //Generate and visualize map on Observer move
             _observer = observer;
@@ -103,6 +115,8 @@ namespace TerrainDemo
         {
             if (LandLayout != null)
             {
+                var timer = Stopwatch.StartNew();
+
                 //Get zones in Observer range
                 var zones =
                     LandLayout.Zones.Where(zl => zl.Cell.IsClosed)
@@ -110,7 +124,9 @@ namespace TerrainDemo
                 _landGenerator.Generate(zones, false);
                 _alreadyGeneratedZones.AddRange(zones);
 
-                Debug.LogFormat("Average calc influence time {0} msec", LandLayout._influenceTime.AvgTimeMs);
+                timer.Stop();
+
+                Debug.LogFormat("Average calc influence time {0} msec, total generation time {1}", LandLayout._influenceTime.AvgTimeMs, timer.ElapsedMilliseconds);
             }
         }
 

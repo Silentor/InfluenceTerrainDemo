@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using TerrainDemo.Layout;
 using TerrainDemo.Settings;
 using TerrainDemo.Voronoi;
 
@@ -12,20 +13,20 @@ namespace TerrainDemo.Generators
         {
         }
 
-        protected override ZoneType[] SetZoneTypes(Cell[] cells, LandSettings settings)
+        protected override ZoneInfo[] SetZoneInfo(CellMesh mesh, LandSettings settings)
         {
             //Divide cells to two sides (vertically)
-            var center = cells.Select(c => c.Center.x).Average();
+            var center = mesh.Cells.Select(c => c.Center.x).Average();
             var leftSideZone = settings.Zones.ElementAt(0);
             var rightSideZone = settings.Zones.ElementAt(1);
 
-            var result = new ZoneType[cells.Length];
-            for (int i = 0; i < cells.Length; i++)
+            var result = new ZoneInfo[mesh.Cells.Length];
+            for (int i = 0; i < mesh.Cells.Length; i++)
             {
-                if (cells[i].Center.x < center)
-                    result[i] = leftSideZone.Type;
+                if (mesh[i].Center.x < center)
+                    result[i] = new ZoneInfo {Type = leftSideZone.Type, ClusterId = 1};
                 else
-                    result[i] = rightSideZone.Type;
+                    result[i] = new ZoneInfo { Type = rightSideZone.Type, ClusterId = 2 };
             }
 
             //Generate some interval zones
@@ -33,14 +34,14 @@ namespace TerrainDemo.Generators
             var intervalZone = settings.Zones.FirstOrDefault(zt => zt.IsInterval);
             if (intervalZone != null)
             {
-                for (int i = 0; i < cells.Length; i++)
+                for (int i = 0; i < mesh.Cells.Length; i++)
                 {
-                    var cell = cells[i];
+                    var cell = mesh[i];
 
                     //Place interval zone type between all ordinary zones
                     if (GetNeighborsOf(cell, result).Where(zt => ordinaryZones.Contains(zt)).Distinct().Count() > 1)
                     {
-                        result[i] = intervalZone.Type;
+                        result[i] = new ZoneInfo() {Type = intervalZone.Type, ClusterId = 3};
                     }
                 }
             }
@@ -48,9 +49,9 @@ namespace TerrainDemo.Generators
             return result;
         }
 
-        private IEnumerable<ZoneType> GetNeighborsOf(Cell cell, ZoneType[] zones)
+        private IEnumerable<ZoneType> GetNeighborsOf(Cell cell, ZoneInfo[] zones)
         {
-            return cell.Neighbors.Select(c => zones[c.Id]);
+            return cell.Neighbors.Select(c => zones[c.Id].Type);
         }
     }
 }

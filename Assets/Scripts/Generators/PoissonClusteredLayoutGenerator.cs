@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using TerrainDemo.Layout;
 using TerrainDemo.Settings;
 using TerrainDemo.Voronoi;
 using UnityEngine;
@@ -16,23 +17,30 @@ namespace TerrainDemo.Generators
         {
         }
 
-        protected override ZoneType[] SetZoneTypes(Cell[] cells, LandSettings settings)
+        protected override ZoneInfo[] SetZoneInfo(CellMesh mesh, LandSettings settings)
         {
             var ordinaryZones = settings.Zones.Where(zt => !zt.IsInterval).Select(z => z.Type).ToArray();
-            var zones = new ZoneType[cells.Length];
+            var zones = new ZoneInfo[mesh.Cells.Length];
+            var clusterId = 0;
 
             //Calculate zone types
             for (var i = 0; i < zones.Length; i++)
             {
-                if (zones[i] == ZoneType.Empty)
+                if (zones[i].Type == ZoneType.Empty)
                 {
-                    //Start cluster
-                    var zoneType = ordinaryZones[Random.Range(0, ordinaryZones.Length)];
-                    //var clusterSize = Random.Range(2, 5);
-                    var clusterSize = Mathf.Max(cells.Length/3, 1);
-                    var zoneIndexes = GetFreeNeighborsDepthFirst(cells, zones, i, clusterSize);
-                    foreach (var zoneIndex in zoneIndexes)
-                        zones[zoneIndex] = zoneType;
+                    //Fill cluster
+                    clusterId++;
+                    var zoneInfo = new ZoneInfo()
+                    {
+                        Type = ordinaryZones[Random.Range(0, ordinaryZones.Length)],
+                        ClusterId = clusterId
+                    };
+                    var clusterSize = Mathf.Max(mesh.Cells.Length/4, 1);
+                    var cluster = mesh.FloodFill(mesh[i], c => zones[c.Id].Type == ZoneType.Empty).Take(clusterSize);
+
+                    zones[i] = zoneInfo;
+                    foreach (var cell in cluster)
+                        zones[cell.Id] = zoneInfo; 
                 }
             }
 
@@ -42,12 +50,12 @@ namespace TerrainDemo.Generators
             {
                 for (int i = 0; i < 5; i++)
                 {
-                    var cell = cells[i];
+                    var cell = mesh[i];
 
                     //Place interval zone type between all ordinary zones
                     if (GetNeighborsOf(cell, zones).Where(zt => ordinaryZones.Contains(zt)).Distinct().Count() > 1)
                     {
-                        zones[i] = intervalZone.Type;
+                        zones[i] = new ZoneInfo {Type = intervalZone.Type, ClusterId = 0};
                     }
                 }
             }
@@ -94,9 +102,9 @@ namespace TerrainDemo.Generators
             }
         }
 
-        private IEnumerable<ZoneType> GetNeighborsOf(Cell cell, ZoneType[] zones)
+        private IEnumerable<ZoneType> GetNeighborsOf(Cell cell, ZoneInfo[] zones)
         {
-            return cell.Neighbors.Select(c => zones[c.Id]);
+            return cell.Neighbors.Select(c => zones[c.Id].Type);
         }
     }
 }

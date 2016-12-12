@@ -21,6 +21,11 @@ namespace TerrainDemo.Generators
             var zoneNormalmap = new Vector3[zoneBounds.Size.X, zoneBounds.Size.Z];
             var zoneBlocks = new BlockType[zoneBounds.Size.X, zoneBounds.Size.Z];
 
+            //Set no height defined state
+            for (int x = 0; x < zoneHeightmap.GetLength(0); x++)
+                for (int z = 0; z < zoneHeightmap.GetLength(1); z++)
+                    zoneHeightmap[x, z] = float.MinValue;
+
             var blocks = _zone.GetBlocks2().ToArray();
             foreach (var blockPos in blocks)
             {
@@ -75,10 +80,9 @@ namespace TerrainDemo.Generators
             return new ZoneContent(_zone, zoneInfluences, zoneHeightmap, zoneNormalmap, zoneBlocks, props);
         }
 
-        public static ZoneGenerator Create(ZoneLayout zone, [NotNull] LandLayout land,
-            [NotNull] LandSettings landSettings)
+        public static ZoneGenerator Create(ZoneLayout zone, [NotNull] LandLayout land, LandGenerator generator, [NotNull] LandSettings landSettings)
         {
-            return Create(zone.Type, zone, land, landSettings);
+            return Create(zone.Type, zone, land, generator, landSettings);
         }
 
         /// <summary>
@@ -89,34 +93,34 @@ namespace TerrainDemo.Generators
         /// <param name="land"></param>
         /// <param name="landSettings"></param>
         /// <returns></returns>
-        public static ZoneGenerator Create(ZoneType type, ZoneLayout zone, [NotNull] LandLayout land, [NotNull] LandSettings landSettings)
+        public static ZoneGenerator Create(ZoneType type, ZoneLayout zone, [NotNull] LandLayout land, LandGenerator generator, [NotNull] LandSettings landSettings)
         {
             switch (type)
             {
                 case ZoneType.Hills:
-                    return new HillsGenerator(zone, land, landSettings);
+                    return new HillsGenerator(zone, land, generator, landSettings);
                 case ZoneType.Lake:
-                        return new LakeGenerator(zone, land, landSettings);
+                        return new LakeGenerator(zone, land, generator, landSettings);
                 case ZoneType.Forest:
-                        return new ForestGenerator(zone, land, landSettings);
+                        return new ForestGenerator(zone, land, generator, landSettings);
                 case ZoneType.Mountains:
-                        return new MountainsGenerator(zone, land, landSettings);
+                        return new MountainsGenerator(zone, land, generator, landSettings);
                 case ZoneType.Foothills:
-                        return new FoothillsGenerator(zone, land, landSettings);
+                        return new FoothillsGenerator(zone, land, generator, landSettings);
                 case ZoneType.Snow:
-                        return new SnowGenerator(zone, land, landSettings);
+                        return new SnowGenerator(zone, land, generator, landSettings);
                 case ZoneType.Desert:
-                    return new DefaultGenerator(zone, land, landSettings);
+                    return new DefaultGenerator(zone, land, generator, landSettings);
                 case ZoneType.Checkboard:
-                        return new CheckboardGenerator(zone, land, landSettings);
+                        return new CheckboardGenerator(zone, land, generator, landSettings);
                 case ZoneType.Cone:
-                        return new ConeGenerator(zone, land, landSettings);
+                        return new ConeGenerator(zone, land, generator, landSettings);
                 case ZoneType.Slope:
-                        return new SlopeGenerator(zone, land, landSettings);
+                        return new SlopeGenerator(zone, land, generator, landSettings);
                 default:
                     {
                         if (type >= ZoneType.Influence1 && type <= ZoneType.Influence8)
-                            return new FlatGenerator(zone, land, landSettings);
+                            return new FlatGenerator(zone, land, generator, landSettings);
 
                         throw new NotImplementedException(string.Format("Generator for zone type {0} is not implemented", type));
                     }
@@ -126,6 +130,7 @@ namespace TerrainDemo.Generators
         private readonly ZoneType _type;
         protected readonly ZoneLayout _zone;
         protected readonly LandLayout Land;
+        private readonly LandGenerator _generator;
         protected readonly LandSettings _landSettings;
         private ZoneRatio _influence;
         private static readonly float NormalY = 2*Mathf.Sqrt(3/2f);
@@ -134,7 +139,7 @@ namespace TerrainDemo.Generators
         protected ZoneSettings _zoneSettings;
         protected readonly FastNoise _noise;
 
-        protected ZoneGenerator(ZoneType type, ZoneLayout zone, [NotNull] LandLayout land, [NotNull] LandSettings landSettings)
+        protected ZoneGenerator(ZoneType type, ZoneLayout zone, [NotNull] LandLayout land, LandGenerator generator, [NotNull] LandSettings landSettings)
         {
             if (land == null) throw new ArgumentNullException("land");
             if (landSettings == null) throw new ArgumentNullException("landSettings");
@@ -142,6 +147,7 @@ namespace TerrainDemo.Generators
             _type = type;
             _zone = zone;
             Land = land;
+            _generator = generator;
             _landSettings = landSettings;
             _zoneSettings = landSettings[type];
             DefaultBlock = _zoneSettings.DefaultBlock;
@@ -203,6 +209,10 @@ namespace TerrainDemo.Generators
         {
             var localPos = vertPos - zone.Bounds.Min;
 
+            //Already calculated
+            if (zoneHeightmap[localPos.X, localPos.Z] > float.MinValue)
+                return;
+
             var height = 0.0;
             if (zoneInfluences[localPos.X, localPos.Z].IsEmpty)
             {
@@ -222,7 +232,7 @@ namespace TerrainDemo.Generators
                     }
                     else
                     {
-                        generator = Create(inf.Zone, _zone, Land, _landSettings);
+                        generator = Create(inf.Zone, _zone, Land, _generator, _landSettings);
                         _generators.Add(inf.Zone, generator);
                     }
                 }

@@ -101,22 +101,22 @@ namespace TerrainDemo.Voronoi
         /// <summary>
         /// Get direct neighbors, neighbors of neighbors, etc
         /// </summary>
-        /// <param name="centerCell"></param>
+        /// <param name="start"></param>
         /// <returns></returns>
-        public Neighbors GetOuterRings([NotNull] Cell centerCell)
+        public FloodFillResult GetNeighbors([NotNull] Cell start, Predicate<Cell> searchFor = null)
         {
-            if (centerCell == null) throw new ArgumentNullException("centerCell");
-            Assert.IsTrue(Cells.Contains(centerCell));
+            if (start == null) throw new ArgumentNullException("start");
+            Assert.IsTrue(Cells.Contains(start));
 
-            return new Neighbors(this, centerCell);
+            return new FloodFillResult(this, start, searchFor);
         }
 
-        public Neighbors GetInnerRings([NotNull] Cell[] cluster)
+        public FloodFillResult GetNeighbors([NotNull] Cell[] start, Predicate<Cell> searchFor = null)
         {
-            if (cluster == null) throw new ArgumentNullException("cluster");
-            Assert.IsTrue(cluster.All(c => Cells.Contains(c)));
+            if (start == null) throw new ArgumentNullException("start");
+            Assert.IsTrue(start.All(c => Cells.Contains(c)));
 
-            return new Neighbors(this, cluster);
+            return new FloodFillResult(this, start, searchFor);
         }
 
         /// <summary>
@@ -124,22 +124,22 @@ namespace TerrainDemo.Voronoi
         /// </summary>
         /// <param name="center"></param>
         /// <returns></returns>
-        public IEnumerable<Cell> GetNeighbors([NotNull] Cell center)
+        public IEnumerable<Cell> FloodFill([NotNull] Cell center, Predicate<Cell> searchFor = null)
         {
             if (center == null) throw new ArgumentNullException("center");
 
-            var outer = GetOuterRings(center);
-            for (int i = 1; i < 10; i++)
+            var fill = GetNeighbors(center, searchFor);
+            for (int i = 1; i < 100; i++)                //100 steps - sanity number, probably very large map can contains more
             {
-                var neighbors = outer.GetNeighbors(i);
+                var neighbors = fill.GetNeighbors(i);
                 if(neighbors.Any())
                     foreach (var neighbor in neighbors)
-                    {
                         yield return neighbor;
-                    }
                 else yield break;
             }
         }
+
+        //todo Implement floodfill search with predicate
 
         public JSONNode ToJSON()
         {
@@ -156,6 +156,25 @@ namespace TerrainDemo.Voronoi
 
             return json;
         }
+
+        /// <summary>
+        /// Mostly develop function. Is given a correct cluster?
+        /// </summary>
+        /// <param name="cluster"></param>
+        /// <returns></returns>
+        //public bool CheckCluster(IEnumerable<Cell> cluster)
+        //{
+        //    if (!cluster.All(c => Cells.Contains(c)))
+        //        throw new InvalidOperationException("Cells not in CellMesh");
+
+        //    //Check duplicates
+        //    if (cluster.Distinct().Count() != cluster.Count())
+        //        return false;
+
+        //    //Check links
+        //    var fillCluster = 
+
+        //}
 
         public static CellMesh FromJSON(JSONNode node)
         {
@@ -203,61 +222,65 @@ namespace TerrainDemo.Voronoi
         /// <summary>
         /// For searching inner or outer neighbors
         /// </summary>
-        public class Neighbors
+        public class FloodFillResult
         {
             private readonly CellMesh _mesh;
+            private readonly Predicate<Cell> _searchFor;
             private readonly List<List<Cell>> _neighbors = new List<List<Cell>>();
 
             /// <summary>
             /// For calculate outer rings of cemter cell
             /// </summary>
             /// <param name="mesh"></param>
-            /// <param name="center"></param>
-            public Neighbors(CellMesh mesh, Cell center)
+            /// <param name="start"></param>
+            public FloodFillResult(CellMesh mesh, Cell start, Predicate<Cell> searchFor = null)
             {
-                _mesh = mesh;
-                _neighbors.Add(new List<Cell> {center});
+                Assert.IsTrue(mesh.Cells.Contains(start));
 
-                Assert.IsTrue(_mesh.Cells.Contains(center));
+                _mesh = mesh;
+                _searchFor = searchFor;
+                _neighbors.Add(new List<Cell> {start});
             }
 
             /// <summary>
             /// For calculate inner rings of cluster
             /// </summary>
             /// <param name="mesh"></param>
-            /// <param name="cluster"></param>
-            public Neighbors(CellMesh mesh, Cell[] cluster)
+            /// <param name="start"></param>
+            public FloodFillResult(CellMesh mesh, Cell[] start, Predicate<Cell> searchFor = null)
             {
-                _mesh = mesh;
+                Assert.IsTrue(start.All(c => mesh.Cells.Contains(c)));
 
-                //Cells thats has neighbors outside cluster
-                var outerRing = new List<Cell>();
-                foreach (var cell in cluster)
-                {
-                    if(cell.Neighbors.Any(c => !cluster.Contains(c)))
-                        outerRing.Add(cell);
-                }
-                _neighbors.Add(outerRing);
+                _mesh = mesh;
+                _searchFor = searchFor;
+                var startStep = new List<Cell>();
+                startStep.AddRange(start);
+                _neighbors.Add(startStep);
             }
 
-            public IEnumerable<Cell> GetNeighbors(int rank)
+            public IEnumerable<Cell> GetNeighbors(int step)
             {
-                if(rank == 0)
+                if(step == 0)
                     return _neighbors[0];
 
-                if (rank < _neighbors.Count)
-                    return _neighbors[rank];
+                if (step < _neighbors.Count)
+                    return _neighbors[step];
 
                 //Calculate neighbors
-                if (rank - 1 < _neighbors.Count)
+                if (step - 1 < _neighbors.Count)
                 {
-                    var processedCellsIndex = Math.Max(0, rank - 2);
-                    var result = GetNeighbors(_neighbors[rank - 1], _neighbors[processedCellsIndex]);
+                    var processedCellsIndex = Math.Max(0, step - 2);
+                    var result = GetNeighbors(_neighbors[step - 1], _neighbors[processedCellsIndex]);
                     _neighbors.Add(result);
                     return result;
                 }
                 else
-                    return GetNeighbors(rank - 1);
+                {
+                    //Calculate previous steps (because result of step=n used for step=n+1)
+                    for (int i = _neighbors.Count; i < step; i++)
+                        GetNeighbors(i);
+                    return GetNeighbors(step);
+                }
             }
 
             /// <summary>
@@ -273,12 +296,58 @@ namespace TerrainDemo.Voronoi
                 {
                     foreach (var neigh2 in neigh1.Neighbors)
                     {
-                        if (!result.Contains(neigh2) && !prevNeighbors.Contains(neigh2) && !alreadyProcessed.Contains(neigh2))
+                        if ((_searchFor == null || _searchFor(neigh2))          //check search for condition
+                            && !result.Contains(neigh2) && !prevNeighbors.Contains(neigh2) && !alreadyProcessed.Contains(neigh2))
                             result.Add(neigh2);
                     }
                 }
 
                 return result;
+            }
+        }
+
+        /// <summary>
+        /// Part of CellMesh
+        /// </summary>
+        public class Submesh
+        {
+            private readonly CellMesh _mesh;
+            public readonly Cell[] Cells;
+
+            public Cell this[int index] { get { return Cells[index]; } }
+
+            public Submesh(CellMesh mesh, Cell[] cells)
+            {
+                if(cells.All(c => mesh.Cells.Contains(c)) == false)
+                    throw new InvalidOperationException("Submesh is not part of mesh");
+
+                _mesh = mesh;
+                Cells = cells;
+            }
+
+            /// <summary>
+            /// Get cells that has neighbors outside submesh
+            /// </summary>
+            /// <returns></returns>
+            public IEnumerable<Cell> GetBorderCells()
+            {
+                return Cells.Where(c => !c.Neighbors.All(c2 => Cells.Contains(c2)));
+            }
+
+            public IEnumerable<Cell> GetInnerCells()
+            {
+                return Cells.Where(c => c.Neighbors.All(c2 => Cells.Contains(c2)));
+            }
+
+            public FloodFillResult GetFloodFill([NotNull] Cell[] start, Predicate<Cell> searchFor = null)
+            {
+                if (start == null) throw new ArgumentNullException("start");
+                Assert.IsTrue(start.All(c => Cells.Contains(c)));
+
+                if(searchFor != null)
+                    return _mesh.GetNeighbors(start, cell => Cells.Contains(cell) && searchFor(cell));
+                else
+                    return _mesh.GetNeighbors(start, cell => Cells.Contains(cell));
             }
         }
     }

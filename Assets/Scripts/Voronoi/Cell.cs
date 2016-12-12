@@ -169,6 +169,11 @@ namespace TerrainDemo.Voronoi
             return new Cell(id, center, isClosed, vertices, edges, bounds);
         }
 
+        public override string ToString()
+        {
+            return string.Format("Cell[{0}]", Id);
+        }
+
         private float _area = -1;
 
         private bool CheckEdges(Vector2 boundsCorner)

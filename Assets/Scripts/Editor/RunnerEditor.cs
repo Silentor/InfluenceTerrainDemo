@@ -302,7 +302,7 @@ namespace TerrainDemo.Editor
 
                 GUI.WindowFunction windowFunc = id =>
                 {
-                    GUILayout.Label(string.Format("Id, type: {0} - {1}", selectedZone.Cell.Id, selectedZone.Type));
+                    GUILayout.Label(string.Format("Id, cluster, type: {0} - {1} - {2}", selectedZone.Cell.Id, selectedZone.ClusterId, selectedZone.Type));
                     GUILayout.Label(string.Format("Is closed: {0}", selectedZone.Cell.IsClosed));
                 };
 

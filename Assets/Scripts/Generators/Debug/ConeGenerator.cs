@@ -8,7 +8,8 @@ namespace TerrainDemo.Generators.Debug
 {
     public class ConeGenerator : ZoneGenerator
     {
-        public ConeGenerator(ZoneLayout zone, [NotNull] LandLayout land, [NotNull] LandSettings landSettings) : base(ZoneType.Cone, zone, land, landSettings)
+        public ConeGenerator(ZoneLayout zone, [NotNull] LandLayout land, LandGenerator generator, [NotNull] LandSettings landSettings) 
+            : base(ZoneType.Cone, zone, land, generator, landSettings)
         {
         }
 

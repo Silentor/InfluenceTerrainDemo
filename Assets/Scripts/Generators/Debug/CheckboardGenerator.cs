@@ -7,7 +7,8 @@ namespace TerrainDemo.Generators.Debug
 {
     public class CheckboardGenerator : ZoneGenerator
     {
-        public CheckboardGenerator(ZoneLayout zone, [NotNull] LandLayout land, [NotNull] LandSettings landSettings) : base(ZoneType.Checkboard, zone, land, landSettings)
+        public CheckboardGenerator(ZoneLayout zone, [NotNull] LandLayout land, LandGenerator generator, [NotNull] LandSettings landSettings) 
+            : base(ZoneType.Checkboard, zone, land, generator, landSettings)
         {
         }
 

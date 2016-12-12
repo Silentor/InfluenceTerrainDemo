@@ -1,17 +1,49 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using TerrainDemo.Layout;
 using TerrainDemo.Settings;
 using TerrainDemo.Tools;
+using TerrainDemo.Voronoi;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace TerrainDemo.Generators
 {
     public class MountainsGenerator : ZoneGenerator
     {
-        public MountainsGenerator(ZoneLayout zone, LandLayout land, LandSettings landSettings) : base(ZoneType.Mountains, zone, land, landSettings)
+        private FastNoise _scaleNoise;
+        private FastNoise _rotateNoise;
+        MountainClusterContext _cluster;
+
+        public MountainsGenerator(ZoneLayout zone, LandLayout land, LandGenerator generator, LandSettings landSettings) 
+            : base(ZoneType.Mountains, zone, land, generator, landSettings)
         {
-            
+            _scaleNoise = new FastNoise(landSettings.Seed + 1);   
+            _rotateNoise = new FastNoise(landSettings.Seed - 1);
+
+            if (zone.Type == ZoneType.Mountains)
+            {
+                //Prepare shared cluster context
+                if (!generator.Clusters.TryGetValue(zone.ClusterId, out _cluster))
+                {
+                    //DEBUG
+                    _cluster = new MountainClusterContext(land, landSettings);
+                    generator.Clusters[zone.ClusterId] = _cluster;
+                }
+            }
+            else
+            {
+                //Supporting zone generator (for transient blocks), use nearest mountains cluster context
+                var nearestMount = land.GetNeighbors(zone).First(z => z.Type == ZoneType.Mountains);
+                if (!generator.Clusters.TryGetValue(nearestMount.ClusterId, out _cluster))
+                {
+                    //DEBUG
+                    _cluster = new MountainClusterContext(land, landSettings);
+                    generator.Clusters[nearestMount.ClusterId] = _cluster;
+                }
+            }
         }
 
         public override BlockType DefaultBlock { get {return BlockType.Grass;} }
@@ -23,37 +55,14 @@ namespace TerrainDemo.Generators
 
             var yValue = 0d;
 
-            yValue = _noise.GetSimplexFractal(worldX, worldZ) * _zoneSettings.NoiseAmp;
-            yValue = Math.Pow(yValue + 1, 2);
+            var scaleRatio = (_scaleNoise.GetSimplex(worldX, worldZ) / 2) + 1;      //0.5 .. 1.5
+            yValue = _noise.GetSimplexFractal(scaleRatio * worldX, (2 - scaleRatio) * worldZ) * _zoneSettings.NoiseAmp;
+            //yValue = Math.Pow(yValue + 1, 2);
 
             yValue += Land.GetGlobalHeight(worldX, worldZ);
             yValue += _zoneSettings.Height;
+            yValue += _cluster != null ? _cluster.HeightInterpolator.GetValue(new Vector2(worldX, worldZ)) : 0;
 
-            return yValue;
-
-            var vertex = new Vector2(worldX, worldZ);
-            
-            //Find nearest ridge
-            var distance = float.MaxValue;
-            foreach (var zoneNeighbor in _zone.Neighbors)
-            {
-                var proj = Math3d.ProjectPointOnLineSegment(_zone.Center, zoneNeighbor.Center, vertex);
-                var d = Vector3.Distance(vertex, proj);
-                if (d < distance)
-                    distance = d;
-            }
-
-            var ridgeHeight = Mathf.Clamp(20 - distance, 0, 20) / 20 + 1;
-            
-            //var mountInfluence = influence[ZoneType.Mountains];
-
-            //Slightly raise up heightmap of Mountain zone
-            //if (mountInfluence > 0.7f)
-            {
-                //var additional = 1.5f;
-                yValue *= ridgeHeight;
-            }
-            
             return yValue;
         }
 
@@ -87,7 +96,54 @@ namespace TerrainDemo.Generators
         //    chunk.Stones = stones.ToArray();
         //}
 
+        /// <summary>
+        /// Shared mountain generator's logic
+        /// </summary>
+        public class MountainClusterContext
+        {
+            public readonly IDWMeshInterpolator HeightInterpolator;
 
+            public MountainClusterContext(LandLayout land, LandSettings settings)
+            {
+                var allMountZones = land.Zones.Where(z => z.Type == ZoneType.Mountains).ToArray();
+                var allMountClusters = allMountZones.GroupBy(z => z.ClusterId);
+
+                var allMountCells = new List<Cell>();
+                var allMountHeights = new List<double>();
+
+                var rnd = new System.Random(settings.Seed);
+
+                foreach (var mountCluster in allMountClusters)
+                {
+                    var mountSubmesh = new CellMesh.Submesh(land.CellMesh, mountCluster.Select(z => z.Cell).ToArray());
+                    //Get mountain zone height coeff
+                    var border = mountSubmesh.GetBorderCells().ToArray();
+                    var floodFiller = mountSubmesh.GetFloodFill(border);
+                    var neigh1 = floodFiller.GetNeighbors(1);
+                    var neigh2 = floodFiller.GetNeighbors(2);
+                    var neigh3 = floodFiller.GetNeighbors(3);
+
+                    for (int i = 0; i < mountSubmesh.Cells.Length; i++)
+                    {
+                        var cell = mountSubmesh[i];
+                        var heightVariance = (rnd.NextDouble() - 0.5f) * 20;
+                        if (border.Contains(cell))
+                            allMountHeights.Add(20 + heightVariance);
+                        else if (neigh1.Contains(cell))
+                            allMountHeights.Add(40 + heightVariance);
+                        else if (neigh2.Contains(cell))
+                            allMountHeights.Add(55 + heightVariance);
+                        else if (neigh3.Contains(cell))
+                            allMountHeights.Add(65 + heightVariance);
+                        else
+                            allMountHeights.Add(75 + heightVariance);
+
+                        allMountCells.Add(cell);
+                    }
+                }
+
+                HeightInterpolator = new IDWMeshInterpolator(new CellMesh.Submesh(land.CellMesh, allMountCells.ToArray()), allMountHeights.ToArray());
+            }
+        }
     }
-
 }
