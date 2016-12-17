@@ -46,8 +46,7 @@ namespace TerrainDemo.Generators
                 result = oldLandLayout;
             }
 
-            var clustersCount = zonesInfo.Select(zi => zi.ClusterId).Distinct().Count();
-            UnityEngine.Debug.LogFormat("Generated layout: {0} zones, {1} clusters, {2} msec", points.Length, clustersCount, timer.ElapsedMilliseconds);
+            UnityEngine.Debug.LogFormat("Generated layout: {0} msec", timer.ElapsedMilliseconds);
 
             return result;
         }

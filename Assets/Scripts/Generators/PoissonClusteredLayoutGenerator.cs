@@ -36,7 +36,7 @@ namespace TerrainDemo.Generators
                         ClusterId = clusterId
                     };
                     var clusterSize = Mathf.Max(mesh.Cells.Length/4, 1);
-                    var cluster = mesh.FloodFill(mesh[i], c => zones[c.Id].Type == ZoneType.Empty).Take(clusterSize);
+                    var cluster = mesh.GetNeighbors(mesh[i], c => zones[c.Id].Type == ZoneType.Empty).Take(clusterSize);
 
                     zones[i] = zoneInfo;
                     foreach (var cell in cluster)

@@ -99,24 +99,60 @@ namespace TerrainDemo.Voronoi
         }
 
         /// <summary>
-        /// Get direct neighbors, neighbors of neighbors, etc
+        /// Get direct neighbors, neighbors of neighbors, etc step by step
         /// </summary>
         /// <param name="start"></param>
         /// <returns></returns>
-        public FloodFillResult GetNeighbors([NotNull] Cell start, Predicate<Cell> searchFor = null)
+        public FloodFillResult FloodFill([NotNull] Cell start, Predicate<Cell> allowFill = null)
         {
             if (start == null) throw new ArgumentNullException("start");
             Assert.IsTrue(Cells.Contains(start));
 
-            return new FloodFillResult(this, start, searchFor);
+            return new FloodFillResult(this, start, allowFill);
         }
 
-        public FloodFillResult GetNeighbors([NotNull] Cell[] start, Predicate<Cell> searchFor = null)
+        /// <summary>
+        /// Get direct neighbors, neighbors of neighbors, etc step by step
+        /// </summary>
+        /// <param name="start"></param>
+        /// <returns></returns>
+        public FloodFillResult FloodFill([NotNull] Cell[] start, Predicate<Cell> allowFill = null)
         {
             if (start == null) throw new ArgumentNullException("start");
             Assert.IsTrue(start.All(c => Cells.Contains(c)));
 
-            return new FloodFillResult(this, start, searchFor);
+            return new FloodFillResult(this, start, allowFill);
+        }
+
+        /// <summary>
+        /// Enumerate cell neighbors in breath-first manner (optimized)
+        /// </summary>
+        /// <param name="center"></param>
+        /// <returns></returns>
+        public IEnumerable<Cell> GetNeighbors([NotNull] Cell center)
+        {
+            if (center == null) throw new ArgumentNullException("center");
+
+            foreach (var neighbor in center.Neighbors)
+                yield return neighbor;
+
+            foreach (var neighbor in center.Neighbors2)
+                yield return neighbor;
+
+            var processed = new Cell[center.Neighbors.Length + center.Neighbors2.Length + 1];
+            Array.Copy(center.Neighbors, processed, center.Neighbors.Length);
+            Array.Copy(center.Neighbors2, 0, processed, center.Neighbors.Length, center.Neighbors2.Length);
+            processed[center.Neighbors.Length + center.Neighbors2.Length] = center;
+
+            var fill = FloodFill(processed);
+            for (int i = 1; i < 100; i++)                //100 + 2 steps - sanity number, probably very large map can contains more
+            {
+                var neighbors = fill.GetNeighbors(i);
+                if (neighbors.Any())
+                    foreach (var neighbor in neighbors)
+                        yield return neighbor;
+                else yield break;
+            }
         }
 
         /// <summary>
@@ -124,11 +160,11 @@ namespace TerrainDemo.Voronoi
         /// </summary>
         /// <param name="center"></param>
         /// <returns></returns>
-        public IEnumerable<Cell> FloodFill([NotNull] Cell center, Predicate<Cell> searchFor = null)
+        public IEnumerable<Cell> GetNeighbors([NotNull] Cell center, Predicate<Cell> allowFill = null)
         {
             if (center == null) throw new ArgumentNullException("center");
 
-            var fill = GetNeighbors(center, searchFor);
+            var fill = FloodFill(center, allowFill);
             for (int i = 1; i < 100; i++)                //100 steps - sanity number, probably very large map can contains more
             {
                 var neighbors = fill.GetNeighbors(i);
@@ -138,8 +174,6 @@ namespace TerrainDemo.Voronoi
                 else yield break;
             }
         }
-
-        //todo Implement floodfill search with predicate
 
         public JSONNode ToJSON()
         {
@@ -193,7 +227,7 @@ namespace TerrainDemo.Voronoi
 
             var result = new CellMesh(cells, bounds);
             for (int i = 0; i < cells.Length; i++)
-                cells[i].Init(neighbors[i]);
+                cells[i].Init(neighbors[i], result);
 
             return result;
         }
@@ -345,9 +379,9 @@ namespace TerrainDemo.Voronoi
                 Assert.IsTrue(start.All(c => Cells.Contains(c)));
 
                 if(searchFor != null)
-                    return _mesh.GetNeighbors(start, cell => Cells.Contains(cell) && searchFor(cell));
+                    return _mesh.FloodFill(start, cell => Cells.Contains(cell) && searchFor(cell));
                 else
-                    return _mesh.GetNeighbors(start, cell => Cells.Contains(cell));
+                    return _mesh.FloodFill(start, cell => Cells.Contains(cell));
             }
         }
     }

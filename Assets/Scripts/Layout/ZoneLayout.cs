@@ -66,7 +66,7 @@ namespace TerrainDemo.Layout
         public void Init(LandLayout landLayout)
         {
             _chunks = landLayout.GetChunks(this).ToArray();
-            _neighbors = Cell.Neighbors.Select(c => landLayout.Zones.First(z => z.Cell == c)).ToList();
+            _neighbors = Cell.Neighbors.Select(c => landLayout.Zones.ElementAt(c.Id)).ToArray();
             Height = (float)landLayout.GetGlobalHeight(Center.x, Center.y);
         }
 
@@ -128,7 +128,7 @@ namespace TerrainDemo.Layout
         //private readonly ZoneLayout[] _neighbors;
         private readonly ZoneSettings _settings;
         private Vector2i[] _chunks;
-        private List<ZoneLayout> _neighbors;
+        private ZoneLayout[] _neighbors;
 
         public static bool operator ==(ZoneLayout z1, ZoneLayout z2)
         {

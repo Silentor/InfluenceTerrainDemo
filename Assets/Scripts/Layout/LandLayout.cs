@@ -78,7 +78,7 @@ namespace TerrainDemo.Layout
 
         public IEnumerable<ZoneLayout> GetNeighbors(ZoneLayout zone)
         {
-            return CellMesh.FloodFill(zone.Cell).Select(c => Zones.ElementAt(c.Id));
+            return CellMesh.GetNeighbors(zone.Cell).Select(c => Zones.ElementAt(c.Id));
         }
 
         public ZoneRatio GetInfluence(Vector2 worldPosition)
@@ -225,14 +225,26 @@ namespace TerrainDemo.Layout
         {
             //Get local space
             //todo need spatial optimization
-            var nearestZones = Zones.OrderBy(z => Vector2.SqrMagnitude(z.Center - worldPosition)).Take(_settings.IDWNearestPoints).ToArray();
-            var searchRadius = Vector2.Distance(nearestZones.Last().Center, worldPosition) + 0.00001f;
+            //var nearestZones = Zones.OrderBy(z => Vector2.SqrMagnitude(z.Center - worldPosition)).Take(_settings.IDWNearestPoints).ToArray();
+            //var searchRadius = Vector2.Distance(nearestZones.Last().Center, worldPosition) + 0.00001f;
+
+            var center = CellMesh.GetCellFor(worldPosition);
+            var nearestCells = new List<Cell>(center.Neighbors.Length + center.Neighbors2.Length + 1);
+            nearestCells.Add(center);
+            nearestCells.AddRange(center.Neighbors);
+            nearestCells.AddRange(center.Neighbors2);
+            nearestCells.Sort(new Cell.DistanceComparer(worldPosition));
+
+            Assert.IsTrue(nearestCells.Count >= _settings.IDWNearestPoints);
+
+            var searchRadius = Vector2.Distance(nearestCells[_settings.IDWNearestPoints - 1].Center, worldPosition);
 
             var influenceLookup = new float[_zoneMaxType + 1];
 
             //Sum up zones influence
-            foreach (var zone in nearestZones)
+            foreach (var cell in nearestCells.Take(_settings.IDWNearestPoints))
             {
+                var zone = Zones.ElementAt(cell.Id);
                 if (zone.Type != ZoneType.Empty )
                 {
                     //var zoneWeight = IDWShepardWeighting(zone.Center, worldPosition, searchRadius);
@@ -335,6 +347,15 @@ namespace TerrainDemo.Layout
             return _globalHeight.GetSimplex(worldX, worldZ) * _settings.GlobalHeightAmp;     //todo workaround Fast Noise Simplex 2D bug
         }
 
+        /// <summary>
+        /// Print some internal info
+        /// </summary>
+        public void PrintDebug()
+        {
+            var clustersCount = Zones.Select(z => z.ClusterId).Distinct().Count();
+            Debug.LogFormat("Zones {0}, clusters {1}, get influence avg time {2}", Zones.Count(), clustersCount, _influenceTime.AvgTimeMs);
+        }
+
         public void PrintInfluences(Vector2 worldPosition)
         {
             /*
@@ -352,7 +373,7 @@ namespace TerrainDemo.Layout
         }
 
         private LandSettings _settings;
-        public readonly AverageTimer _influenceTime = new AverageTimer();
+        private readonly AverageTimer _influenceTime = new AverageTimer();
         private int _zoneTypesCount;
         private ZoneSettings[] _zoneSettings;
         private int _zoneMaxType;

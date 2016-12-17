@@ -30,8 +30,7 @@ namespace TerrainDemo
             _generator = settings.CreateLayoutGenerator();
             _mesher = mesherSettings.CreateMesher(settings);
 
-            //First time land layout generation
-            LandLayout = _generator.Generate(null);
+            GenerateLayout();
 
             //DEBUG
             //var path = Application.dataPath + "/cellmesh.json";
@@ -59,11 +58,20 @@ namespace TerrainDemo
         /// </summary>
         public void GenerateLayout()
         {
+            Debug.Log("Generating land layout...");
+
             //Map.Clear();
             //_mesher.Clear();
             _settings.SetSeed();
-            _generator.Generate(LandLayout);
+
+            if (LandLayout != null)
+                _generator.Generate(LandLayout);
+            else
+                LandLayout = _generator.Generate(null);
             //ObserverOnChanged();
+
+            LandLayout.PrintDebug();
+            Debug.Log("...Generated land layout");
         }
 
         /// <summary>
@@ -115,6 +123,8 @@ namespace TerrainDemo
         {
             if (LandLayout != null)
             {
+                Debug.Log("Generating entire land...");
+
                 var timer = Stopwatch.StartNew();
 
                 //Get zones in Observer range
@@ -126,7 +136,11 @@ namespace TerrainDemo
 
                 timer.Stop();
 
-                Debug.LogFormat("Average calc influence time {0} msec, total generation time {1}", LandLayout._influenceTime.AvgTimeMs, timer.ElapsedMilliseconds);
+                Debug.LogFormat("Total generation time {0} ms", timer.ElapsedMilliseconds);
+                LandLayout.PrintDebug();
+                _landGenerator.PrintDebug();
+
+                Debug.Log("...Entire land generated");
             }
         }
 

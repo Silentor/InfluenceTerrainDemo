@@ -34,9 +34,9 @@ namespace TerrainDemo.Tests.Editor
             };
             var bounds = new Bounds(Vector3.up, Vector3.one);
 
-            cells[0].Init(new[] {cells[1]});
-            cells[1].Init(new[] {cells[0]});
             var mesh = new CellMesh(cells, bounds);
+            cells[0].Init(new[] {cells[1]}, mesh);
+            cells[1].Init(new[] {cells[0]}, mesh);
 
             //Act
             var data = mesh.ToJSON().ToString();
@@ -57,7 +57,7 @@ namespace TerrainDemo.Tests.Editor
             var mesh = CellMesh.FromJSON(JSONNode.Parse(data.text));
 
             var center = mesh[0];
-            var outers = mesh.GetNeighbors(center);
+            var outers = mesh.FloodFill(center);
 
             //Test center cell
             var neighbors0 = outers.GetNeighbors(0).ToArray();
@@ -97,7 +97,7 @@ namespace TerrainDemo.Tests.Editor
             var mesh = CellMesh.FromJSON(JSONNode.Parse(data.text));
 
             var center = mesh[0];
-            var neighbors = mesh.FloodFill(center).ToArray(); //Get all neighbors
+            var neighbors = mesh.GetNeighbors(center).ToArray(); //Get all neighbors
 
             Assert.That(neighbors, Has.Length.EqualTo(49)); //Because mesh has 50 cells
             Assert.That(neighbors, Is.Unique);
@@ -111,12 +111,12 @@ namespace TerrainDemo.Tests.Editor
             var mesh = CellMesh.FromJSON(JSONNode.Parse(data.text));
 
             var center = mesh[0];
-            var noNeighbors = mesh.FloodFill(center, c => c.Id > 10 && c.Id < 20).ToArray();
+            var noNeighbors = mesh.GetNeighbors(center, c => c.Id > 10 && c.Id < 20).ToArray();
 
             //id 0 cell doesnt has neighbors with 10 < id < 20
             Assert.That(noNeighbors, Has.Length.EqualTo(0));
 
-            var hasNeighbors = mesh.FloodFill(center, c => c.Id == 1 || c.Id == 6 || c.Id == 13).ToArray();
+            var hasNeighbors = mesh.GetNeighbors(center, c => c.Id == 1 || c.Id == 6 || c.Id == 13).ToArray();
             Assert.That(hasNeighbors, Has.Length.EqualTo(3));
             Assert.That(hasNeighbors, Is.Unique);
         }
@@ -128,7 +128,7 @@ namespace TerrainDemo.Tests.Editor
             var mesh = CellMesh.FromJSON(JSONNode.Parse(data.text));
 
             var center = mesh[0];
-            var floodfillResult = mesh.GetNeighbors(center);
+            var floodfillResult = mesh.FloodFill(center);
 
             //Get step 2 result over step 1
             var result = floodfillResult.GetNeighbors(2).ToArray();

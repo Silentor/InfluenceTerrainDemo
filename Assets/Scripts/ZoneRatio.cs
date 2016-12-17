@@ -18,7 +18,10 @@ namespace TerrainDemo
         public ZoneRatio([NotNull] ZoneValue[] values, int zonesCount)
         {
             if (values == null) throw new ArgumentNullException("values");
-            if(values.Any(v => v.Zone == ZoneType.Empty)) throw new ArgumentException("values");
+            //Fast debug precondition
+            for(var i = 0; i < values.Length; i++)
+                if(values[i].Zone == ZoneType.Empty)
+                    throw new ArgumentException("values");
 
             Array.Sort(values);
             _value = new ZoneValue[zonesCount];

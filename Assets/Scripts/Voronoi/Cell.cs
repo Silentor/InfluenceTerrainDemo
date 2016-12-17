@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using JetBrains.Annotations;
 using TerrainDemo.Tools;
 using TerrainDemo.Tools.SimpleJSON;
@@ -31,9 +33,31 @@ namespace TerrainDemo.Voronoi
         public readonly Edge[] Edges;
 
         /// <summary>
-        /// Clockwise oriented neighbor cells
+        /// Distance sorted directs neighbors
         /// </summary>
         public Cell[] Neighbors { get; private set; }
+
+        /// <summary>
+        /// Distance sorted neighbors of rank 2 (boost up many queries)
+        /// </summary>
+        public Cell[] Neighbors2
+        {
+            get
+            {
+                //Lazy calculation todo investigate is laziness neccessary?  Probably all cells will be queried for neighbors rank 2
+                if (_neighbors2 == null)
+                {
+                    var alreadyProcessed = new Cell[Neighbors.Length + 1];
+                    Array.Copy(Neighbors, alreadyProcessed, Neighbors.Length);
+                    alreadyProcessed[Neighbors.Length] = this;
+                    var neighborFinder = _mesh.FloodFill(alreadyProcessed);
+                    _neighbors2 = neighborFinder.GetNeighbors(1).ToArray();
+                    Array.Sort(_neighbors2, new DistanceComparer(Center));
+                }
+
+                return _neighbors2;
+            }
+        }
 
         public readonly Bounds Bounds;
 
@@ -96,9 +120,12 @@ namespace TerrainDemo.Voronoi
             Bounds = new Bounds(boundsCenter, boundsSize);
         }
 
-        public void Init(Cell[] neighbors)
+        public void Init(Cell[] neighbors, [NotNull] CellMesh mesh)
         {
+            if (mesh == null) throw new ArgumentNullException("mesh");
+            Array.Sort(neighbors, new DistanceComparer(Center));
             Neighbors = neighbors;
+            _mesh = mesh;
         }
 
         /// <summary>
@@ -175,6 +202,8 @@ namespace TerrainDemo.Voronoi
         }
 
         private float _area = -1;
+        private CellMesh _mesh;
+        private Cell[] _neighbors2;
 
         private bool CheckEdges(Vector2 boundsCorner)
         {
@@ -199,6 +228,31 @@ namespace TerrainDemo.Voronoi
             public Edge Reverse()
             {
                 return new Edge(Vertex2, Vertex1);
+            }
+        }
+
+        /// <summary>
+        /// Compare cells center distance relatively given position
+        /// </summary>
+        public struct DistanceComparer : IComparer<Cell>
+        {
+            private readonly Vector2 _position;
+
+            public DistanceComparer(Vector2 position)
+            {
+                _position = position;
+            }
+
+            public int Compare(Cell x, Cell y)
+            {
+                var dist1 = Vector2.SqrMagnitude(x.Center - _position);
+                var dist2 = Vector2.SqrMagnitude(y.Center - _position);
+
+                if (dist1 < dist2)
+                    return -1;
+                else if (dist1 > dist2)
+                    return 1;
+                else return 0;
             }
         }
     }

@@ -121,10 +121,10 @@ namespace TerrainDemo.Voronoi
             }
 
             //Fill result cellmesh
-            var result = new Cell[zonesCoords.Length];
+            var resultCells = new Cell[zonesCoords.Length];
 
             //Create cells
-            for (int i = 0; i < result.Length; i++)
+            for (int i = 0; i < resultCells.Length; i++)
             {
                 var vertices = isCellsClosed[i]
                     ? cellsEdges[i].Select(e => new Vector2((float) e.x1, (float) e.y1)).ToArray()
@@ -137,18 +137,20 @@ namespace TerrainDemo.Voronoi
                 var cellEdges = (cellsEdges[i].Select(e => new Cell.Edge(
                     new Vector2((float) e.x1, (float) e.y1), new Vector2((float) e.x2, (float) e.y2)))).ToArray();
 
-                result[i] = new Cell(i, zonesCoords[i], isCellsClosed[i], vertices, cellEdges, bounds);
+                resultCells[i] = new Cell(i, zonesCoords[i], isCellsClosed[i], vertices, cellEdges, bounds);
             }
 
+            var result = new CellMesh(resultCells, bounds);
+
             //Fill cells references
-            for (int i = 0; i < result.Length; i++)
+            for (int i = 0; i < resultCells.Length; i++)
             {
                 var cell = result[i];
                 var cellEdges = cellsEdges[i];
-                cell.Init(cellEdges.Select(e => e.site1 == cell.Id ? result[e.site2] : result[e.site1]).ToArray());
+                cell.Init(cellEdges.Select(e => e.site1 == cell.Id ? result[e.site2] : result[e.site1]).ToArray(), result);
             }
 
-            return new CellMesh(result, bounds);
+            return result;
         }
 
         /// <summary>
