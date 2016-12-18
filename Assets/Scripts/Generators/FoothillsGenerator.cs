@@ -34,9 +34,6 @@ namespace TerrainDemo.Generators
 
         public override double GenerateBaseHeight(float worldX, float worldZ)
         {
-            if (_landSettings.BypassHeight)
-                return 0;
-
             var vertex = new Vector2(worldX, worldZ);
             var a = 0d;
             var b = 0d;

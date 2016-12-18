@@ -24,7 +24,7 @@ namespace TerrainDemo.Generators
             //Set no height defined state
             for (int x = 0; x < zoneHeightmap.GetLength(0); x++)
                 for (int z = 0; z < zoneHeightmap.GetLength(1); z++)
-                    zoneHeightmap[x, z] = float.MinValue;
+                    zoneHeightmap[x, z] = NoHeight;
 
             var blocks = _zone.GetBlocks2().ToArray();
             foreach (var blockPos in blocks)
@@ -138,6 +138,7 @@ namespace TerrainDemo.Generators
         private readonly Dictionary<ZoneType, ZoneGenerator> _generators = new Dictionary<ZoneType, ZoneGenerator>();
         protected ZoneSettings _zoneSettings;
         protected readonly FastNoise _noise;
+        private const float NoHeight = -10000;
 
         protected ZoneGenerator(ZoneType type, ZoneLayout zone, [NotNull] LandLayout land, LandGenerator generator, [NotNull] LandSettings landSettings)
         {
@@ -181,12 +182,9 @@ namespace TerrainDemo.Generators
 
         public virtual double GenerateBaseHeight(float worldX, float worldZ)
         {
-            if (_landSettings.BypassHeight)
-                return 0;
-
             var yValue = 0d;
 
-            if (_zoneSettings.NoiseAmp != 0)
+            if (_zoneSettings.NoiseAmp > 0.001)
                 yValue = _noise.GetSimplexFractal(worldX, worldZ)*_zoneSettings.NoiseAmp;
 
             yValue += Land.GetGlobalHeight(worldX, worldZ);
@@ -210,16 +208,17 @@ namespace TerrainDemo.Generators
             var localPos = vertPos - zone.Bounds.Min;
 
             //Already calculated
-            if (zoneHeightmap[localPos.X, localPos.Z] > float.MinValue)
+            if (zoneHeightmap[localPos.X, localPos.Z] > NoHeight)
                 return;
 
-            var height = 0.0;
             if (zoneInfluences[localPos.X, localPos.Z].IsEmpty)
             {
                 zoneInfluences[localPos.X, localPos.Z] = Land.GetInfluence((Vector2) vertPos);
                 //var settings = Land.GetZoneNoiseSettings(zoneInfluences[localPos.X, localPos.Z]);
             }
 
+            //var height = NoHeight;
+            var height = 0d;
             foreach (var inf in zoneInfluences[localPos.X, localPos.Z])
             {
                 ZoneGenerator generator;
@@ -237,9 +236,28 @@ namespace TerrainDemo.Generators
                     }
                 }
 
-                var generateBaseHeight = generator.GenerateBaseHeight(vertPos.X, vertPos.Z);
+                var generatedHeight = 0d;
+                switch (_landSettings.HeightGeneration)         //Some debug height calculation algorithms and full generation
+                {
+                    case LandSettings.HeightGenerationType.NoHeight:
+                        generatedHeight = 0;
+                        break;
 
-                height += generateBaseHeight * inf.Value;
+                    case LandSettings.HeightGenerationType.LandHeight:
+                    {
+                        var zoneSettings = _landSettings[inf.Zone];
+                        generatedHeight = Land.GetGlobalHeight(vertPos.X, vertPos.Z) + zoneSettings.Height;
+                        break;
+                    }
+
+                    case LandSettings.HeightGenerationType.FullHeight:
+                        generatedHeight = generator.GenerateBaseHeight(vertPos.X, vertPos.Z);
+                        break;
+                }
+
+                //if(generateBaseHeight > height)
+                //height = generateBaseHeight;
+                height += generatedHeight * inf.Value;
             }
 
             zoneHeightmap[localPos.X, localPos.Z] = (float)height;

@@ -33,7 +33,7 @@ namespace TerrainDemo.Settings
         public int InfluenceLimit = 5;
 
         [Header("Map settings")]
-        public bool BypassHeight;
+        public HeightGenerationType HeightGeneration = HeightGenerationType.FullHeight;
 
         [Header("Chunk settings")]
         [Range(1, 128)]
@@ -104,6 +104,22 @@ namespace TerrainDemo.Settings
             var maxChunkBounds = Chunk.GetBounds(new Vector2i(landMax, landMax));
 
             LandBounds = new Bounds2i(minChunkBounds.Min, maxChunkBounds.Max);
+        }
+
+        public enum HeightGenerationType
+        {
+            /// <summary>
+            /// Height equal zero
+            /// </summary>
+            NoHeight,
+            /// <summary>
+            /// Calculate only global land height
+            /// </summary>
+            LandHeight,
+            /// <summary>
+            /// Calculate all source of heights (global, zone noise, specific zone generator calculations)
+            /// </summary>
+            FullHeight
         }
 
     }

@@ -239,7 +239,7 @@ namespace TerrainDemo.Layout
 
             var searchRadius = Vector2.Distance(nearestCells[_settings.IDWNearestPoints - 1].Center, worldPosition);
 
-            var influenceLookup = new float[_zoneMaxType + 1];
+            var influenceLookup = new double[_zoneMaxType + 1];
 
             //Sum up zones influence
             foreach (var cell in nearestCells.Take(_settings.IDWNearestPoints))
@@ -483,9 +483,9 @@ namespace TerrainDemo.Layout
                 return float.MaxValue;
         }
 
-        private float IDWLocalShepard(Vector2 interpolatePoint, Vector2 point, float searchRadius)
+        private double IDWLocalShepard(Vector2 interpolatePoint, Vector2 point, double searchRadius)
         {
-            var d = Vector2.Distance(interpolatePoint, point);
+            double d = Vector2.Distance(interpolatePoint, point);
 
             var a = searchRadius - d;
             if (a < 0) a = 0;

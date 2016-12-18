@@ -50,11 +50,9 @@ namespace TerrainDemo.Generators
 
         public override double GenerateBaseHeight(float worldX, float worldZ)
         {
-            if (_landSettings.BypassHeight)
-                return 0;
-
             var yValue = 0d;
 
+            //Lava-like features
             var scaleRatio = (_scaleNoise.GetSimplex(worldX, worldZ) / 2) + 1;      //0.5 .. 1.5
             yValue = _noise.GetSimplexFractal(scaleRatio * worldX, (2 - scaleRatio) * worldZ) * _zoneSettings.NoiseAmp;
             //yValue = Math.Pow(yValue + 1, 2);
@@ -126,17 +124,32 @@ namespace TerrainDemo.Generators
                     for (int i = 0; i < mountSubmesh.Cells.Length; i++)
                     {
                         var cell = mountSubmesh[i];
-                        var heightVariance = (rnd.NextDouble() - 0.5f) * 20;
+                        
                         if (border.Contains(cell))
-                            allMountHeights.Add(20 + heightVariance);
+                        {
+                            var heightVariance = rnd.NextDouble() * 10;                     
+                            allMountHeights.Add(heightVariance);                            //0 .. 10 
+                        }
                         else if (neigh1.Contains(cell))
-                            allMountHeights.Add(40 + heightVariance);
+                        {
+                            var heightVariance = rnd.NextDouble() * 20;            
+                            allMountHeights.Add(10 + heightVariance);                       //10 .. 30 
+                        }
                         else if (neigh2.Contains(cell))
-                            allMountHeights.Add(55 + heightVariance);
+                        {
+                            var heightVariance = rnd.NextDouble() * 30;            
+                            allMountHeights.Add(25 + heightVariance);                       //25 .. 55 
+                        }
                         else if (neigh3.Contains(cell))
-                            allMountHeights.Add(65 + heightVariance);
+                        {
+                            var heightVariance = rnd.NextDouble() * 20;           
+                            allMountHeights.Add(50 + heightVariance);                       //50 .. 70
+                        }
                         else
-                            allMountHeights.Add(75 + heightVariance);
+                        {
+                            var heightVariance = rnd.NextDouble() * 20;                     //70 .. 90
+                            allMountHeights.Add(70 + heightVariance);
+                        }
 
                         allMountCells.Add(cell);
                     }

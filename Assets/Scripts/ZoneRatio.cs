@@ -40,7 +40,7 @@ namespace TerrainDemo
         public void Normalize()
         {
             //Normalize
-            var sum = 0f;
+            var sum = 0d;
             for (var i = 0; i < _value.Length; i++)
             {
                 if (_value[i].Value > 0)
@@ -97,7 +97,7 @@ namespace TerrainDemo
             return new ZoneRatio(result);
         }
 
-        public float this[ZoneType i]
+        public double this[ZoneType i]
         {
             get
             {
@@ -169,9 +169,9 @@ namespace TerrainDemo
     public struct ZoneValue : IComparable<ZoneValue>
     {
         public readonly ZoneType Zone;
-        public float Value;
+        public double Value;
 
-        public ZoneValue(ZoneType type, float value)
+        public ZoneValue(ZoneType type, double value)
         {
             Zone = type;
             Value = value;

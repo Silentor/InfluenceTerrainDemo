@@ -74,7 +74,7 @@ namespace TerrainDemo.Meshing
                 for (var i = 0; i < _zoneTypes.Length; i++)         //todo iterate for ratio
                 {
                     var zoneType = _zoneTypes[i];
-                    result += _zoneInfluenceColors[(int)zoneType] * ratio[zoneType];
+                    result += _zoneInfluenceColors[(int)zoneType] * (float)ratio[zoneType];
                 }
 
             return result;

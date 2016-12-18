@@ -18,8 +18,8 @@ MonoBehaviour:
   DefaultBlock: 2
   Height_: 0
   NoiseFreq: 0.02
-  NoiseAmp: 5
+  NoiseAmp: 2.5
   NoiseLacunarity: 2
   NoiseGain: 0.5
-  NoiseOctaves: 1
+  NoiseOctaves: 2
   NoiseFractal: 0

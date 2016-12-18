@@ -238,7 +238,7 @@ MonoBehaviour:
   RegenerateSeed: 0
   Seed: 0
   GlobalHeightFreq: 0.002
-  GlobalHeightAmp: 30
+  GlobalHeightAmp: 20
   ZonesDensity: {x: 30, y: 40}
   Zones:
   - {fileID: 11400000, guid: 6d9e47604d34fe64686ce4c7b4247a74, type: 2}
@@ -251,7 +251,7 @@ MonoBehaviour:
   InterpolateInfluence: 1
   InfluenceThreshold: 0.01
   InfluenceLimit: 5
-  BypassHeight: 0
+  HeightGeneration: 2
   BlocksCount: 16
   BlockSize: 1
   Tree: {fileID: 0}
