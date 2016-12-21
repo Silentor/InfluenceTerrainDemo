@@ -106,8 +106,8 @@ namespace TerrainDemo.Generators
                 var allMountZones = land.Zones.Where(z => z.Type == ZoneType.Mountains).ToArray();
                 var allMountClusters = allMountZones.GroupBy(z => z.ClusterId);
 
-                var allMountCells = new List<Cell>();
-                var allMountHeights = new List<double>();
+                var allMountCells = new List<Cell>(allMountZones.Length);
+                var allMountHeights = new List<double>(allMountZones.Length);
 
                 var rnd = new System.Random(settings.Seed);
 

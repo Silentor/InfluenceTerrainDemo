@@ -343,7 +343,7 @@ namespace TerrainDemo.Voronoi
         /// <summary>
         /// Part of CellMesh
         /// </summary>
-        public class Submesh
+        public class Submesh                                        //todo consider make CellMesh and Submesh a common parent
         {
             private readonly CellMesh _mesh;
             public readonly Cell[] Cells;
@@ -357,6 +357,29 @@ namespace TerrainDemo.Voronoi
 
                 _mesh = mesh;
                 Cells = cells;
+            }
+
+            /// <summary>
+            /// Get nearest (containing) cell for given position
+            /// </summary>
+            /// <param name="position"></param>
+            /// <returns></returns>
+            public Cell GetCellFor(Vector2 position)
+            {
+                var minDistance = float.MaxValue;
+                Cell result = null;
+
+                for (var i = 0; i < Cells.Length; i++)
+                {
+                    var cellDistance = Vector2.SqrMagnitude(position - Cells[i].Center);
+                    if (cellDistance < minDistance)
+                    {
+                        minDistance = cellDistance;
+                        result = Cells[i];
+                    }
+                }
+                
+                return result;
             }
 
             /// <summary>
@@ -379,6 +402,17 @@ namespace TerrainDemo.Voronoi
                 Assert.IsTrue(start.All(c => Cells.Contains(c)));
 
                 if(searchFor != null)
+                    return _mesh.FloodFill(start, cell => Cells.Contains(cell) && searchFor(cell));
+                else
+                    return _mesh.FloodFill(start, cell => Cells.Contains(cell));
+            }
+
+            public FloodFillResult GetFloodFill([NotNull] Cell start, Predicate<Cell> searchFor = null)
+            {
+                if (start == null) throw new ArgumentNullException("start");
+                Assert.IsTrue(Cells.Contains(start));
+
+                if (searchFor != null)
                     return _mesh.FloodFill(start, cell => Cells.Contains(cell) && searchFor(cell));
                 else
                     return _mesh.FloodFill(start, cell => Cells.Contains(cell));

@@ -223,11 +223,7 @@ namespace TerrainDemo.Layout
         /// <returns></returns>
         public ZoneRatio GetInfluence4(Vector2 worldPosition)
         {
-            //Get local space
-            //todo need spatial optimization
-            //var nearestZones = Zones.OrderBy(z => Vector2.SqrMagnitude(z.Center - worldPosition)).Take(_settings.IDWNearestPoints).ToArray();
-            //var searchRadius = Vector2.Distance(nearestZones.Last().Center, worldPosition) + 0.00001f;
-
+            //Spatial optimization
             var center = CellMesh.GetCellFor(worldPosition);
             var nearestCells = new List<Cell>(center.Neighbors.Length + center.Neighbors2.Length + 1);
             nearestCells.Add(center);
@@ -238,14 +234,14 @@ namespace TerrainDemo.Layout
             Assert.IsTrue(nearestCells.Count >= _settings.IDWNearestPoints);
 
             var searchRadius = Vector2.Distance(nearestCells[_settings.IDWNearestPoints - 1].Center, worldPosition);
-
             var influenceLookup = new double[_zoneMaxType + 1];
 
             //Sum up zones influence
-            foreach (var cell in nearestCells.Take(_settings.IDWNearestPoints))
+            for (int i = 0; i < _settings.IDWNearestPoints; i++)
             {
+                var cell = nearestCells[i];
                 var zone = Zones.ElementAt(cell.Id);
-                if (zone.Type != ZoneType.Empty )
+                if (zone.Type != ZoneType.Empty)
                 {
                     //var zoneWeight = IDWShepardWeighting(zone.Center, worldPosition, searchRadius);
                     var zoneWeight = IDWLocalShepard(zone.Center, worldPosition, searchRadius);
