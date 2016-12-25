@@ -49,7 +49,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace TerrainDemo.Tools.SimpleJSON
+namespace TerrainDemo.Libs.SimpleJSON
 {
     public enum JSONBinaryTag
     {

@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace TerrainDemo.Tools.SimpleJSON
+namespace TerrainDemo.Libs.SimpleJSON
 {
     /// <summary>
-    /// Useful Unity extensions to cool SimpleJSON lib (http://wiki.unity3d.com/index.php/SimpleJSON)
+    /// My own useful Unity types support extensions to cool SimpleJSON lib (http://wiki.unity3d.com/index.php/SimpleJSON)
+    /// Author: https://github.com/Silentor
     /// </summary>
     public static class SimpleJSONExtensions
     {
