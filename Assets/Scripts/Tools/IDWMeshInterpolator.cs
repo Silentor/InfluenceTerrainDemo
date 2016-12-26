@@ -13,10 +13,6 @@ namespace TerrainDemo.Tools
     /// </summary>
     public class IDWMeshInterpolator
     {
-        private readonly CellMesh.Submesh _mesh;
-        private readonly double[] _values;
-        private const int LocalPoints = 7;
-
         public IDWMeshInterpolator([NotNull] CellMesh.Submesh mesh, [NotNull] double[] values)
         {
             if (mesh == null) throw new ArgumentNullException("mesh");
@@ -34,39 +30,20 @@ namespace TerrainDemo.Tools
             var result = 0.0;
             var weigths = 0.0;
 
-            //Spatial optimization
+            //Get near cells for local interpolation field
             var center = _mesh.GetCellFor(position);
-            var nearestCells = new List<Cell>(center.Neighbors.Length + center.Neighbors2.Length + 1);
-            nearestCells.Add(center);
-            var floodFill = _mesh.GetFloodFill(center);
-            nearestCells.AddRange(floodFill.GetNeighbors(1));
-            var neighborsRank2 = floodFill.GetNeighbors(2);
-            nearestCells.AddRange(neighborsRank2);
 
-            //Try to flood fill more points if not enough
-            if (nearestCells.Count < LocalPoints && neighborsRank2.Any())
-            {
-                var step = 3;
-                while (nearestCells.Count < LocalPoints)
-                {
-                    var nextStepFloodFill = floodFill.GetNeighbors(step++);
-                    if (!nextStepFloodFill.Any())
-                        break;
-                    else
-                        nearestCells.AddRange(nextStepFloodFill);
-                }
-            }
+            var nearestCells = GetLocalsFor(center);
+            Array.Sort(nearestCells, new Cell.DistanceComparer(position));
 
-            nearestCells.Sort(new Cell.DistanceComparer(position));
-
-            var nearestCellsCount = Math.Min(nearestCells.Count, LocalPoints);
+            var nearestCellsCount = Math.Min(nearestCells.Length, LocalPoints);
             var searchRadius = Vector2.Distance(nearestCells[nearestCellsCount - 1].Center, position);
 
             //Sum up zones influence
             for (int i = 0; i < nearestCellsCount; i++)
             {
                 var cell = nearestCells[i];
-                var cellIndex = Array.FindIndex(_mesh.Cells, c => c == cell);
+                var cellIndex = Array.IndexOf(_mesh.Cells, cell);               //todo binary search
                 var weight = IDWLocalShepard(cell.Center, position, searchRadius);
                 result += _values[cellIndex] * weight;
                 weigths += weight;
@@ -74,6 +51,11 @@ namespace TerrainDemo.Tools
 
             return result/weigths;
         }
+
+        private readonly CellMesh.Submesh _mesh;
+        private readonly double[] _values;
+        private const int LocalPoints = 7;
+        private readonly Dictionary<Cell, Cell[]> _neighbors = new Dictionary<Cell, Cell[]>();
 
         private double IDWLocalShepard(Vector2 interpolatePoint, Vector2 point, double searchRadius)
         {
@@ -84,5 +66,25 @@ namespace TerrainDemo.Tools
             var b = a / (searchRadius * d);
             return b * b;
         }
+
+        private Cell[] GetLocalsFor(Cell cell)
+        {
+            Cell[] result;
+            if (!_neighbors.TryGetValue(cell, out result))
+            {
+                var nearestCells = new List<Cell>(cell.Neighbors.Length + cell.Neighbors2.Length + 1);
+                nearestCells.Add(cell);
+                var floodFill = _mesh.GetFloodFill(cell);                         
+                nearestCells.AddRange(floodFill.GetNeighbors(1));
+                var neighborsRank2 = floodFill.GetNeighbors(2);
+                nearestCells.AddRange(neighborsRank2);
+
+                result = nearestCells.ToArray();
+                _neighbors[cell] = result;
+            }
+
+            return result;
+        }
     }
+
 }

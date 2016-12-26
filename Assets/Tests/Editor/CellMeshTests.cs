@@ -1,8 +1,8 @@
 ﻿using System.Linq;
 using NUnit.Framework;
 using TerrainDemo.Generators;
+using TerrainDemo.Libs.SimpleJSON;
 using TerrainDemo.Settings;
-using TerrainDemo.Tools.SimpleJSON;
 using TerrainDemo.Voronoi;
 using UnityEditor;
 using UnityEngine;
@@ -19,24 +19,24 @@ namespace TerrainDemo.Tests.Editor
                 new Cell(0, new Vector2(1, 1), false, new[] {Vector2.zero, Vector2.up, Vector2.one},
                     new[]
                     {
-                        new Cell.Edge(Vector2.zero, Vector2.up), new Cell.Edge(Vector2.up, Vector2.one),
-                        new Cell.Edge(Vector2.one, Vector2.zero)
+                        new Cell.Edge(Vector2.zero, Vector2.up, 1), new Cell.Edge(Vector2.up, Vector2.one, 1),
+                        new Cell.Edge(Vector2.one, Vector2.zero, 1)
                     },
                     new Bounds(Vector3.zero, Vector3.one)),
 
                 new Cell(1, new Vector2(3, 3), true, new[] {Vector2.zero, Vector2.down, Vector2.left},
-                    new[]
+                new[]
                     {
-                        new Cell.Edge(Vector2.zero, Vector2.down), new Cell.Edge(Vector2.down, Vector2.left),
-                        new Cell.Edge(Vector2.left, Vector2.zero)
+                        new Cell.Edge(Vector2.zero, Vector2.down, 0), new Cell.Edge(Vector2.down, Vector2.left, 0),
+                        new Cell.Edge(Vector2.left, Vector2.zero, 0)
                     },
                     new Bounds(Vector3.zero, Vector3.one)),
             };
             var bounds = new Bounds(Vector3.up, Vector3.one);
 
             var mesh = new CellMesh(cells, bounds);
-            cells[0].Init(new[] {cells[1]}, mesh);
-            cells[1].Init(new[] {cells[0]}, mesh);
+            cells[0].Init(mesh);
+            cells[1].Init(mesh);
 
             //Act
             var data = mesh.ToJSON().ToString();
@@ -47,13 +47,14 @@ namespace TerrainDemo.Tests.Editor
             Assert.AreEqual(mesh.Cells[0].Id, mesh2.Cells[0].Id);
             Assert.AreEqual(mesh.Bounds, mesh2.Bounds);
             Assert.AreEqual(mesh.Cells[0].Neighbors[0].Id, mesh2.Cells[1].Id);
+            Assert.AreEqual(mesh.Cells[0].Edges[0].Neighbor.Id, mesh.Cells[1].Id);
         }
 
 
         [Test]
         public void TestGetNeighbors()
         {
-            var data = (TextAsset) EditorGUIUtility.Load("Tests/Cellmesh1.json");
+            var data = (TextAsset) EditorGUIUtility.Load("Tests/Cellmesh0.json");
             var mesh = CellMesh.FromJSON(JSONNode.Parse(data.text));
 
             var center = mesh[0];
@@ -93,7 +94,7 @@ namespace TerrainDemo.Tests.Editor
         [Test]
         public void TestFloodFill()
         {
-            var data = (TextAsset) EditorGUIUtility.Load("Tests/Cellmesh1.json");
+            var data = (TextAsset) EditorGUIUtility.Load("Tests/Cellmesh0.json");
             var mesh = CellMesh.FromJSON(JSONNode.Parse(data.text));
 
             var center = mesh[0];
@@ -107,7 +108,7 @@ namespace TerrainDemo.Tests.Editor
         [Test]
         public void TestConditionalFloodFill()
         {
-            var data = (TextAsset) EditorGUIUtility.Load("Tests/Cellmesh1.json");
+            var data = (TextAsset) EditorGUIUtility.Load("Tests/Cellmesh0.json");
             var mesh = CellMesh.FromJSON(JSONNode.Parse(data.text));
 
             var center = mesh[0];
@@ -124,7 +125,7 @@ namespace TerrainDemo.Tests.Editor
         [Test]
         public void TestGetNeighborsOverStep()
         {
-            var data = (TextAsset) EditorGUIUtility.Load("Tests/Cellmesh1.json");
+            var data = (TextAsset) EditorGUIUtility.Load("Tests/Cellmesh0.json");
             var mesh = CellMesh.FromJSON(JSONNode.Parse(data.text));
 
             var center = mesh[0];
@@ -140,7 +141,7 @@ namespace TerrainDemo.Tests.Editor
         [Test]
         public void TestSubMeshGetBorder()
         {
-            var data = (TextAsset)EditorGUIUtility.Load("Tests/Cellmesh1.json");
+            var data = (TextAsset)EditorGUIUtility.Load("Tests/Cellmesh0.json");
             var mesh = CellMesh.FromJSON(JSONNode.Parse(data.text));
 
             var submeshCells = new int[] {9, 8, 12, 23, 25, 5, 2, 4, 11, 3, 0, 1, 6}.Select(i => mesh[i]).ToArray();

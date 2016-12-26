@@ -1,5 +1,5 @@
 ﻿using NUnit.Framework;
-using TerrainDemo.Tools.SimpleJSON;
+using TerrainDemo.Libs.SimpleJSON;
 using TerrainDemo.Voronoi;
 using UnityEditor;
 using UnityEngine;
@@ -11,7 +11,7 @@ namespace TerrainDemo.Tests.Editor
         [Test]
         public void TestNeighbors2()
         {
-            var data = (TextAsset)EditorGUIUtility.Load("Tests/Cellmesh1.json");
+            var data = (TextAsset)EditorGUIUtility.Load("Tests/Cellmesh0.json");
             var mesh = CellMesh.FromJSON(JSONNode.Parse(data.text));
 
             var finder = mesh.FloodFill(mesh[0]);

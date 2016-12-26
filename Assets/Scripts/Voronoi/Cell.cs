@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using JetBrains.Annotations;
+using TerrainDemo.Libs.SimpleJSON;
 using TerrainDemo.Tools;
-using TerrainDemo.Tools.SimpleJSON;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace TerrainDemo.Voronoi
 {
@@ -35,7 +36,15 @@ namespace TerrainDemo.Voronoi
         /// <summary>
         /// Distance sorted directs neighbors
         /// </summary>
-        public Cell[] Neighbors { get; private set; }
+        public Cell[] Neighbors
+        {
+            get { return _neighbors; }
+            private set
+            {
+                Assert.IsNull(_neighbors, "Only one time init allowed");
+                _neighbors = value;
+            }
+        }
 
         /// <summary>
         /// Distance sorted neighbors of rank 2 (boost up many queries)
@@ -66,7 +75,6 @@ namespace TerrainDemo.Voronoi
         public Cell(int id, Vector2 center, bool isClosed, [NotNull] Vector2[] vertices, [NotNull] Edge[] edges, Bounds meshBounds)
         {
             if (vertices == null) throw new ArgumentNullException("vertices");
-            if (edges == null) throw new ArgumentNullException("edges");
 
             Id = id;
             Center = center;
@@ -120,11 +128,17 @@ namespace TerrainDemo.Voronoi
             Bounds = new Bounds(boundsCenter, boundsSize);
         }
 
-        public void Init(Cell[] neighbors, [NotNull] CellMesh mesh)
+        public void Init([NotNull] CellMesh mesh)
         {
             if (mesh == null) throw new ArgumentNullException("mesh");
+
+            foreach (var edge in Edges)
+                edge.Init(mesh[edge.NeighborId]);
+
+            var neighbors = Edges.Select(e => e.Neighbor).ToArray();
             Array.Sort(neighbors, new DistanceComparer(Center));
             Neighbors = neighbors;
+
             _mesh = mesh;
         }
 
@@ -175,9 +189,9 @@ namespace TerrainDemo.Voronoi
                 var j = new JSONClass();
                 j["vert1"].SetVector2(e.Vertex1);
                 j["vert2"].SetVector2(e.Vertex2);
+                j["neighbor"].AsInt = e.NeighborId;
                 return j;
             });
-            //json["neighbors"].SetArray(Neighbors, n => new JSONData(n.Id));
             json["bounds"].SetBounds(Bounds);
             json["isClosed"].AsBool = IsClosed;
 
@@ -189,7 +203,10 @@ namespace TerrainDemo.Voronoi
             var id = data["id"].AsInt;
             var center = data["center"].GetVector2();
             var vertices = data["vertices"].GetArray(json => json.GetVector2());
-            var edges = data["edges"].GetArray(json => new Edge(json["vert1"].GetVector2(), json["vert2"].GetVector2()));
+            var edges = data["edges"].GetArray(json => new Edge(
+                json["vert1"].GetVector2(), 
+                json["vert2"].GetVector2(),
+                json["neighbor"].AsInt));
             var bounds = data["bounds"].GetBounds();
             var isClosed = data["isClosed"].AsBool;
 
@@ -204,6 +221,7 @@ namespace TerrainDemo.Voronoi
         private float _area = -1;
         private CellMesh _mesh;
         private Cell[] _neighbors2;
+        private Cell[] _neighbors;
 
         private bool CheckEdges(Vector2 boundsCorner)
         {
@@ -214,27 +232,43 @@ namespace TerrainDemo.Voronoi
             return false;
         }
 
-        public struct Edge
+        public class Edge
         {
             public readonly Vector2 Vertex1;
             public readonly Vector2 Vertex2;
+            public readonly int NeighborId;
+            public Cell Neighbor { get { return _neighbor; }  }
 
-            public Edge(Vector2 vertex1, Vector2 vertex2)
+            public Edge(Vector2 vertex1, Vector2 vertex2, int neighborId)
             {
                 Vertex1 = vertex1;
                 Vertex2 = vertex2;
+                NeighborId = neighborId;
+                _neighbor = null;
+            }
+
+            public void Init([NotNull] Cell neighborCell)
+            {
+                if (neighborCell == null) throw new ArgumentNullException("neighborCell");
+                if (_neighbor == null)
+                    _neighbor = neighborCell;
+                else
+                    throw new InvalidOperationException("Double init");
             }
 
             public Edge Reverse()
             {
-                return new Edge(Vertex2, Vertex1);
+                var result = new Edge(Vertex2, Vertex1, NeighborId) {_neighbor = Neighbor};
+                return result;
             }
+
+            private Cell _neighbor;
         }
 
         /// <summary>
         /// Compare cells center distance relatively given position
         /// </summary>
-        public struct DistanceComparer : IComparer<Cell>
+        public class DistanceComparer : IComparer<Cell>
         {
             private readonly Vector2 _position;
 
@@ -251,6 +285,23 @@ namespace TerrainDemo.Voronoi
                 if (dist1 < dist2)
                     return -1;
                 else if (dist1 > dist2)
+                    return 1;
+                else return 0;
+            }
+        }
+
+        public static readonly IdComparer IdIncComparer = new IdComparer();
+
+        /// <summary>
+        /// Compare cells center distance relatively given position
+        /// </summary>
+        public class IdComparer : IComparer<Cell>
+        {
+            public int Compare(Cell x, Cell y)
+            {
+                if (x.Id < y.Id)
+                    return -1;
+                else if (x.Id > y.Id)
                     return 1;
                 else return 0;
             }

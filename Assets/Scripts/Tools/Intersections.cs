@@ -80,6 +80,28 @@ namespace TerrainDemo.Tools
         //    return new Vector3(point.x, height, point.z);
         //}
 
+        /// <summary>
+        /// Calculate 2D barycentric coord of point in triangle
+        /// </summary>
+        /// <param name="point"></param>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <param name="c"></param>
+        /// <returns>3 coords packed in vector in a, b, c order</returns>
+        public static Vector3 Barycentric2DCoords(Vector2 point, Vector2 a, Vector2 b, Vector2 c)
+        {
+            //Based on http://gamedev.stackexchange.com/a/63203
+            Vector2 v0 = b - a;
+            Vector2 v1 = c - a;
+            Vector2 v2 = point - a;
+            var den = v0.x * v1.y - v1.x * v0.y;
+            var v = (v2.x * v1.y - v1.x * v2.y) / den;
+            var w = (v0.x * v2.y - v2.x * v0.y) / den;
+            var u = 1.0f - v - w;
+
+            return new Vector3(u, v, w);
+        }
+
         private static float GetPseudoDotProduct(Vector3 p1, Vector3 p2)
         {
             return p1.x*p2.z - p2.x*p1.z;

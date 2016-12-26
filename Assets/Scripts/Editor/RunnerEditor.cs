@@ -49,7 +49,10 @@ namespace TerrainDemo.Editor
                     _target.GenerateMap();
 
                 if (GUILayout.Button("Rebuild mesh"))
-                    _target.GenerateMesh(); 
+                    _target.GenerateMesh();
+
+                if (GUILayout.Button("Save mesh"))
+                    _target.SaveMesh();
             }
         }
 
@@ -64,7 +67,7 @@ namespace TerrainDemo.Editor
                 if (IsMapMode())
                     cursorPosition = GetMapIntersection();
                 else
-                    cursorPosition = Convert(GetLayoutIntersection());
+                    cursorPosition = GetLayoutIntersection().ConvertTo3D();
 
                 if (cursorPosition.HasValue)
                 {
@@ -76,17 +79,21 @@ namespace TerrainDemo.Editor
                     ShowZoneInfo(cursorPosition.Value);
                 }
 
+                ShowLayoutHints();
+
                 //Dirty debug
-                /*
-                if (_main.LandLayout != null && Event.current.type == EventType.KeyDown && Event.current.character == 'l')
+                
+                //if (Event.current.character != '')
                 {
-                    var intersection = GetLayoutIntersection();
-                    if (intersection != null)
-                    {
-                        _main.LandLayout.PrintInfluences(intersection.Value);
-                    }
+                    //Debug.Log(Event.current.character);
+
+                    //var intersection = GetLayoutIntersection();
+                    //if (intersection != null)
+                    //{
+                    //    _main.LandLayout.PrintInfluences(intersection.Value);
+                    //}
                 }
-                */
+                
             }
         }
 
@@ -113,10 +120,10 @@ namespace TerrainDemo.Editor
                     {
                         Gizmos.color = Color.red;
                         Gizmos.DrawSphere(mapInter.Value, 0.05f);
-                        DrawChunkAndBlock(Convert(mapInter.Value));
+                        DrawChunkAndBlock(mapInter.Value.ConvertTo2D());
 
                         if(IsLayoutMode())
-                            DrawSelectedZone(Convert(mapInter.Value));
+                            DrawSelectedZone(mapInter.Value.ConvertTo2D());
 
                         return;
                     }
@@ -132,12 +139,6 @@ namespace TerrainDemo.Editor
                     }
                 }
             }
-        }
-
-        void OnGUI()
-        {
-            
-
         }
 
         #endregion
@@ -161,7 +162,7 @@ namespace TerrainDemo.Editor
                     var r4 = new Vector3(chunkBounds.max.x, chunk.HeightMap[chunk.GridSize - 1, chunk.GridSize - 1] + yOffset,
                         chunkBounds.max.z);
 
-                    DrawPolyline.ForGizmo(GetChunkPolyBound(chunk, yOffset), Color.red);
+                    DrawPolyline.ForGizmo(GetChunkPolyBound(chunk, yOffset), Color.red, false);
 
                     //Draw block bounds
                     var blockPos = (Vector2i) worldPosition;
@@ -213,7 +214,15 @@ namespace TerrainDemo.Editor
                     var blockBounds = new Bounds2i(block, 1, 1);
                     DrawRectangle.ForGizmo(blockBounds, zoneColor);
                 }
+
+                //Draw Delaunay triangle DEBUG
+                Gizmos.color = Color.red;
+                var triangle = BarycentricInterpolator.GetTriangle(worldPosition, _main.LandLayout.CellMesh);
+                if(triangle != null)
+                    DrawPolyline.ForGizmo(triangle.Select(v2 => new Vector3(v2.x, 0, v2.y)).ToArray(), true);
             }
+
+
         }
 
         private void DrawLandLayout()
@@ -225,7 +234,7 @@ namespace TerrainDemo.Editor
             var zones = layout.Zones.ToArray();
             Handles.matrix = Matrix4x4.identity;
 
-            var newCenters = zones.Select(c => Convert(c.Center)).ToArray();
+            var newCenters = zones.Select(c => c.Center.ConvertTo3D()).ToArray();
 
             for (int i = 0; i < zones.Count(); i++)
             {
@@ -236,15 +245,17 @@ namespace TerrainDemo.Editor
 
                 //Draw edges
                 foreach (var edge in zone.Cell.Edges)
-                    Handles.DrawAAPolyLine(Convert(edge.Vertex1), Convert(edge.Vertex2));
+                    Handles.DrawAAPolyLine(edge.Vertex1.ConvertTo3D(), edge.Vertex2.ConvertTo3D());
 
                 //Draw fill
                 Handles.color = new Color(Handles.color.r/2, Handles.color.g/2, Handles.color.b/2, Handles.color.a/2);
                 foreach (var vert in zone.Cell.Vertices)
-                    Handles.DrawLine(Convert(zone.Center), Convert(vert));
+                    Handles.DrawLine(zone.Center.ConvertTo3D(), vert.ConvertTo3D());
 
+                /*
                 newCenters[i] = Handles.Slider2D(newCenters[i], Vector3.forward, Vector3.forward, Vector3.right, 5,
                     Handles.SphereCap, 0);
+                    */
             }
 
             //if (GUI.changed)
@@ -255,7 +266,7 @@ namespace TerrainDemo.Editor
             //}
 
             //Draw visible zones
-            var observerPos = Convert(_target.Observer.Position);
+            var observerPos = _target.Observer.Position.ConvertTo2D();
             var visibleCells = layout.CellMesh.GetCellsFor(observerPos, _target.Observer.Range);
             foreach (var visibleCell in visibleCells)
                 DrawCell.ForDebug(visibleCell, Color.white);
@@ -266,7 +277,7 @@ namespace TerrainDemo.Editor
         private void ShowInfluenceInfo(Vector3 layoutPosition)
         {
             var layout = _main.LandLayout;
-            var influence = layout.GetInfluence(Convert(layoutPosition));
+            var influence = layout.GetInfluence(layoutPosition.ConvertTo2D());
 
             GUI.WindowFunction windowFunc = id =>
             {
@@ -297,7 +308,7 @@ namespace TerrainDemo.Editor
             //Calc zone under cursor
             if (layout != null && layout.Zones.Any())
             {
-                var selectedPosition = Convert(position);
+                var selectedPosition = position.ConvertTo2D();
                 var selectedZone = layout.Zones.OrderBy(z => Vector2.SqrMagnitude(z.Center - selectedPosition)).First();
 
                 GUI.WindowFunction windowFunc = id =>
@@ -314,7 +325,7 @@ namespace TerrainDemo.Editor
 
         private void ShowChunkInfo(Vector3 position)
         {
-            var selectPoint = Convert(position);
+            var selectPoint = position.ConvertTo2D();
             var chunkPos = Chunk.GetPosition(selectPoint);
             var chunkBounds = Chunk.GetBounds(chunkPos);
             var localPos = Chunk.GetLocalPosition(selectPoint);
@@ -374,6 +385,23 @@ namespace TerrainDemo.Editor
         }
 
         #endregion
+
+        #region HUD
+
+        private void ShowLayoutHints()
+        {
+            if (Application.isPlaying && IsLayoutMode())
+            {
+                GUIStyle style = new GUIStyle {normal = {textColor = Color.white}};
+
+                //Draw zone id's
+                foreach (var zone in _main.LandLayout.Zones)
+                    Handles.Label(zone.Center.ConvertTo3D(), zone.Cell.Id.ToString(), style);
+            }
+        }
+
+        #endregion
+
 
         private bool IsLayoutMode()
         {
@@ -472,29 +500,6 @@ namespace TerrainDemo.Editor
             }
 
             return result.ToArray();
-        }
-
-        private static Vector3 Convert(Vector2 v)
-        {
-            return new Vector3(v.x, 0, v.y);
-        }
-
-        private static Vector3? Convert(Vector2? v)
-        {
-            if (v.HasValue)
-                return Convert(v.Value);
-            else
-                return null;
-        }
-
-        private static Vector3 Convert(Vector2i v)
-        {
-            return Convert((Vector2) v);
-        }
-
-        private static Vector2 Convert(Vector3 v)
-        {
-            return new Vector2(v.x, v.z);
         }
     }
 }

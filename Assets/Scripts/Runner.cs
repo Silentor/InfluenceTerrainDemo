@@ -43,6 +43,11 @@ namespace TerrainDemo
         }
 
         //private Bounds2i _landSizeChunks;
+        public void SaveMesh()
+        {
+            Main.SaveCellMesh();
+        }
+
         private GameObject _zonesParent;
 
 
@@ -181,6 +186,5 @@ namespace TerrainDemo
 
             Debug.Log("Open 3D simplex " + timer.ElapsedMilliseconds);  //Open 3D simplex 263
         }
-
     }
 }

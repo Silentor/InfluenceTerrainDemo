@@ -10,6 +10,7 @@ using TerrainDemo.Layout;
 using TerrainDemo.Map;
 using TerrainDemo.Meshing;
 using TerrainDemo.Settings;
+using UnityEngine;
 using Debug = UnityEngine.Debug;
 
 namespace TerrainDemo
@@ -31,16 +32,6 @@ namespace TerrainDemo
             _mesher = mesherSettings.CreateMesher(settings);
 
             GenerateLayout();
-
-            //DEBUG
-            //var path = Application.dataPath + "/cellmesh.json";
-            //var json = LandLayout.CellMesh.ToJSON();
-            //var file = File.CreateText(path);
-            //file.Write(json.ToString());
-            //file.Close();
-
-            //Debug.Log("Write cell mesh to " + path);
-            //DEBUG
 
             //Generate and visualize map on Observer move
             _observer = observer;
@@ -109,6 +100,18 @@ namespace TerrainDemo
                 _visualizedChunks[chunk.Position] = go;
             }
             //ObserverOnChanged();
+        }
+
+        public void SaveCellMesh()
+        {
+            var fileName = string.Format("cellmesh{0}.json", _settings.Seed);
+            var path = string.Format("{0}/{1}", Application.dataPath, fileName);
+            var json = LandLayout.CellMesh.ToJSON();
+            var file = File.CreateText(path);
+            file.Write(json.ToString());
+            file.Close();
+
+            Debug.Log("Write cell mesh to " + path);
         }
 
         private readonly BaseMesher _mesher;

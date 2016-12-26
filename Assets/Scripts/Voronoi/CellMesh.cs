@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
-using TerrainDemo.Tools.SimpleJSON;
+using TerrainDemo.Libs.SimpleJSON;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -23,8 +23,6 @@ namespace TerrainDemo.Voronoi
             Cells = cells;
             Bounds = bounds;
         }
-
-
 
         /// <summary>
         /// Get nearest (containing) cell for given position
@@ -180,13 +178,6 @@ namespace TerrainDemo.Voronoi
             var json = new JSONClass();
             json["bounds"].SetBounds(Bounds);
             json["cells"].SetArray(Cells, c => c.ToJSON());
-            var cellsNeighbors = new JSONArray();
-            foreach (var cell in Cells)
-            {
-                var neighbors = new JSONData(string.Join(" ", cell.Neighbors.Select(c => c.Id.ToString()).ToArray()));
-                cellsNeighbors[cell.Id] = neighbors;
-            }
-            json["neighbors"] = cellsNeighbors;
 
             return json;
         }
@@ -215,19 +206,10 @@ namespace TerrainDemo.Voronoi
             var bounds = node["bounds"].GetBounds();
             var cells = node["cells"].GetArray(Cell.FromJSON);
 
-            //Parse cells neighbors
-            var neighborsJson = node["neighbors"];
-            var neighbors = new Cell[neighborsJson.Count][];
-            for (int i = 0; i < neighborsJson.Count; i++)
-            {
-                var cellNeighString = neighborsJson[i].Value;
-                var cellNeighs = cellNeighString.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries).Select(s => cells[int.Parse(s)]).ToArray();
-                neighbors[i] = cellNeighs;
-            }
-
             var result = new CellMesh(cells, bounds);
-            for (int i = 0; i < cells.Length; i++)
-                cells[i].Init(neighbors[i], result);
+
+            foreach (var cell in cells)
+                cell.Init(result);
 
             return result;
         }

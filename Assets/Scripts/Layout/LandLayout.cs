@@ -91,32 +91,6 @@ namespace TerrainDemo.Layout
         }
 
         /// <summary>
-        /// Get zones influence for given layout point (simple IDW)
-        /// </summary>
-        /// <param name="worldPosition"></param>
-        /// <returns></returns>
-        public ZoneRatio GetInfluence1(Vector2 worldPosition)
-        {
-            var influenceLookup = new float[_zoneMaxType + 1];
-
-            //Sum up zones influence
-            foreach (var zone in Zones)
-            {
-                if (zone.Type != ZoneType.Empty)
-                {
-                    var idwSimplestWeighting = IDWSimplestWeighting(zone.Center, worldPosition);
-                    influenceLookup[(int)zone.Type] += idwSimplestWeighting;
-                }
-            }
-
-            var values =
-                influenceLookup.Select((v, i) => new ZoneValue((ZoneType)i, v)).Where(v => v.Value > 0).ToArray();
-            var result = new ZoneRatio(values, values.Length);
-
-            return result;
-        }
-
-        /// <summary>
         /// Get zones influence (Gaussian blur method)
         /// </summary>
         /// <param name="worldPosition"></param>
@@ -160,57 +134,6 @@ namespace TerrainDemo.Layout
 
             var values =
                 influenceLookup.Select((v, i) => new ZoneValue((ZoneType) i, v)).Where(v => v.Value > 0).ToArray();
-            var result = new ZoneRatio(values, values.Length);
-
-            return result;
-        }
-
-        /// <summary>
-        /// Get zones influence (natural neighbour method). See https://3d.bk.tudelft.nl/hledoux/pdfs/04_sdh.pdf
-        /// </summary>
-        /// <param name="worldPosition"></param>
-        /// <returns></returns>
-        public ZoneRatio GetInfluence3(Vector2 worldPosition)
-        {
-            var centerZone = GetZoneFor(worldPosition, true);
-            var centerZones = centerZone.Cell.Neighbors.Select(c => Zones.First(z => z.Cell == c)).Concat(new[] {centerZone}).ToArray();
-            var centers = centerZones.Select(z => z.Center).ToList();
-
-            //Get original areas
-            var original = CellMeshGenerator.Generate(centers, CellMesh.Bounds);
-
-            //Insert new Voronoi cell
-            centers.Add(worldPosition);
-            var modified = CellMeshGenerator.Generate(centers, CellMesh.Bounds);
-            
-            //Get natural neighbors coordinates
-            float[] influenceLookup = new float[_zoneMaxType + 1];
-            var newCellArea = modified.Cells.First(c => c.Center == worldPosition).GetArea();
-            for (int i = 0; i < original.Cells.Length; i++)
-            {
-                var originalCell = original.Cells[i];
-                var modifiedCell = modified.Cells.First(c => c.Center == originalCell.Center);
-                var nnCoord = (originalCell.GetArea() - modifiedCell.GetArea()) / newCellArea;
-
-                /*
-                if (nnCoord > -0.1 && nnCoord < 0)
-                    nnCoord = 0;
-                else if (nnCoord > 1 && nnCoord < 1.1)
-                    nnCoord = 1;
-
-                if(nnCoord < 0 || nnCoord > 1)
-                    Debug.Log("Bug at zone " + centerZone.Cell.Id);
-                    */
-
-                nnCoord = Mathf.Clamp01(nnCoord);
-
-                var originalZone = centerZones.First(z => z.Center == originalCell.Center);
-
-                influenceLookup[(int) originalZone.Type] += nnCoord;
-            }
-
-            var values =
-                influenceLookup.Select((v, i) => new ZoneValue((ZoneType)i, v)).Where(v => v.Value > 0).ToArray();
             var result = new ZoneRatio(values, values.Length);
 
             return result;
@@ -299,22 +222,6 @@ namespace TerrainDemo.Layout
             return result;
         }
 
-        private float[] CubicPolate(float[] v0, float[] v1, float[] v2, float[] v3, float fracy)
-        {
-            //var A = (v3 - v2) - (v0 - v1);
-            //var B = (v0 - v1) - A;
-            //var C = v2 - v0;
-            //var D = v1;
-
-            var A = Substract(Substract(v3, v2), Substract(v0, v1));
-            var B = Substract(Substract(v0, v1), A);
-            var C = Substract(v2, v0);
-            var D = v1;
-
-            //return D + fracy * (C + fracy * (B + fracy * A));
-            return Add(D, Mult(fracy, Add(C, Mult(fracy, Add(B, Mult(fracy, A))))));
-        }
-
         private float[] GetNearestNeighborInfluence(Vector2 worldPosition)
         {
             var zone = GetZoneFor(worldPosition, true);
@@ -340,7 +247,7 @@ namespace TerrainDemo.Layout
 
         public double GetGlobalHeight(float worldX, float worldZ)
         {
-            return _globalHeight.GetSimplex(worldX, worldZ) * _settings.GlobalHeightAmp;     //todo workaround Fast Noise Simplex 2D bug
+            return _globalHeight.GetSimplex(worldX, worldZ) * _settings.GlobalHeightAmp;    
         }
 
         /// <summary>
@@ -454,16 +361,6 @@ namespace TerrainDemo.Layout
             return false;
         }
 
-        private float IDWSimplestWeighting(Vector2 interpolatePoint, Vector2 point)
-        {
-            var d = Vector2.Distance(interpolatePoint, point);
-            var result = (float)(1 / Math.Pow(d + _settings.IDWOffset, _settings.IDWCoeff));
-            //var result = 30 - d;
-            //var result = 1;
-            //var result = Math.Sqrt(1/(d + 0.0001));
-            if (result < 0) result = 0;
-            return (float)result;
-        }
 
         private float IDWShepardWeighting(Vector2 interpolatePoint, Vector2 point, float searchRadius)
         {
@@ -488,15 +385,6 @@ namespace TerrainDemo.Layout
             var b = a / (searchRadius * d);
             return b*b;
         }
-
-        private float IDWLocalLinear(Vector2 interpolatePoint, Vector2 point, float searchRadius)
-        {
-            var d = Vector2.Distance(interpolatePoint, point);
-            var a = (searchRadius - d)*(searchRadius - d)*(searchRadius - d);
-            a = Mathf.Clamp(a, 0, searchRadius*searchRadius*searchRadius);
-            return a;
-        }
-
 
         /// <summary>
         /// Get box blur sizes to simulate Gaussian blur

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using TerrainDemo.Tools;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Debug = UnityEngine.Debug;
@@ -84,7 +85,7 @@ namespace TerrainDemo.Voronoi
                 for (var edgeIndex = 0; edgeIndex < cellEdges.Count; edgeIndex++)
                 {
                     var edge = cellEdges[edgeIndex];
-                    if (ClockWiseComparer(new Vector2((float)edge.x1, (float)edge.y1),
+                    if (VectorExtensions.ClockWiseComparer(new Vector2((float)edge.x1, (float)edge.y1),
                             new Vector2((float)edge.x2, (float)edge.y2), zonesCoords[cellIndex]) > 0)
                     {
                         //Inverse direction of edge
@@ -94,8 +95,7 @@ namespace TerrainDemo.Voronoi
 
                 //Sort all edges clockwise
                 var zoneCenter = zonesCoords[cellIndex];
-                cellEdges.Sort((e1, e2) =>
-                    ClockWiseComparer(new Vector2((float)e1.x1, (float)e1.y1), new Vector2((float)e2.x1, (float)e2.y1), zoneCenter)
+                cellEdges.Sort((e1, e2) => VectorExtensions.ClockWiseComparer(new Vector2((float)e1.x1, (float)e1.y1), new Vector2((float)e2.x1, (float)e2.y1), zoneCenter)
                 );
 
                 var isCellClosed = false;
@@ -134,8 +134,9 @@ namespace TerrainDemo.Voronoi
                         new Vector2((float) e.x2, (float) e.y2)
                     }).Distinct().ToArray();
 
-                var cellEdges = (cellsEdges[i].Select(e => new Cell.Edge(
-                    new Vector2((float) e.x1, (float) e.y1), new Vector2((float) e.x2, (float) e.y2)))).ToArray();
+                var cellEdges = cellsEdges[i].Select(ce => new Cell.Edge(
+                    new Vector2((float)ce.x1, (float)ce.y1), new Vector2((float)ce.x2, (float)ce.y2),
+                    ce.site1 == i ? ce.site2 : ce.site1)).ToArray();
 
                 resultCells[i] = new Cell(i, zonesCoords[i], isCellsClosed[i], vertices, cellEdges, bounds);
             }
@@ -146,54 +147,10 @@ namespace TerrainDemo.Voronoi
             for (int i = 0; i < resultCells.Length; i++)
             {
                 var cell = result[i];
-                var cellEdges = cellsEdges[i];
-                cell.Init(cellEdges.Select(e => e.site1 == cell.Id ? result[e.site2] : result[e.site1]).ToArray(), result);
+                cell.Init(result);
             }
 
             return result;
-        }
-
-        /// <summary>
-        /// Compare points in clockwise order (relatively center)
-        /// </summary>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <param name="center"></param>
-        /// <returns>-1 = a -> b clockwise; 1 = b -> a clockwise; 0 = point a, b are same</returns>
-        private static int ClockWiseComparer(Vector2 a, Vector2 b, Vector2 center)
-        {
-            //Based on http://stackoverflow.com/questions/6989100/sort-points-in-clockwise-order
-
-            //Some buggy optimization, consider perfomance usefulness
-            //if (a.X - center.X >= 0 && b.X - center.X < 0)
-            //    return true;
-            //if (a.X - center.X < 0 && b.X - center.X >= 0)
-            //    return false;
-            //if (Math.Abs(a.X - center.X) < float.Epsilon && Math.Abs(b.X - center.X) < float.Epsilon)
-            //{
-            //    if (a.Y - center.Y >= 0 || b.Y - center.Y >= 0)
-            //        return a.Y > b.Y;
-            //    return b.Y > a.Y;
-            //}
-
-            if (a == center || b == center)
-                throw new InvalidOperationException("Some input points match the center point");
-
-            if (a == b)
-                return 0;
-
-            // compute the pseudoscalar product of vectors (center -> a) x (center -> b)
-            var ca = center - a;
-            var cb = center - b;
-            var det = ca.x * cb.y - cb.x * ca.y;
-            if (det > 0)
-                return 1;
-            if (det < 0)
-                return -1;
-
-            // points a and b are on the same line from the center
-            // check which point is closer to the center
-            return ca.sqrMagnitude.CompareTo(cb.sqrMagnitude);
         }
 
         private static bool IsZoneAllowed(bool[,] chunkGrid, Vector2i newZoneCoord, int minDistance)

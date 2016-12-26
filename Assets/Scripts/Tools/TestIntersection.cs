@@ -5,6 +5,7 @@ namespace TerrainDemo.Tools
 {
     public class TestIntersection : MonoBehaviour
     {
+        private GameObject _handle4;
         private GameObject _handle3;
         private GameObject _handle1;
         private GameObject _handle2;
@@ -22,8 +23,16 @@ namespace TerrainDemo.Tools
             _handle3 = new GameObject("Handle3");
             _handle3.transform.parent = transform;
             _handle3.transform.localPosition = new Vector3(-10, 5, 5);
+
+            _handle4 = new GameObject("Handle4");
+            _handle4.transform.parent = transform;
+            _handle4.transform.localPosition = new Vector3(0, 0, 0);
         }
 
+        /*
+        /// <summary>
+        /// Test line-triangle intersection
+        /// </summary>
         void OnDrawGizmos()
         {
             if(!Application.isPlaying)
@@ -45,6 +54,41 @@ namespace TerrainDemo.Tools
             }
             else 
                 Debug.Log(result);
+        }
+        */
+
+        /// <summary>
+        /// Test barycentric interpolation
+        /// </summary>
+        void OnDrawGizmos()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            _handle1.transform.position = (Vector2)_handle1.transform.position;
+            _handle2.transform.position = (Vector2)_handle2.transform.position;
+            _handle3.transform.position = (Vector2)_handle3.transform.position;
+            _handle4.transform.position = (Vector2)_handle4.transform.position;
+
+            DrawPolyline.ForGizmo(new[]
+            {
+                _handle1.transform.position, _handle2.transform.position, _handle3.transform.position
+            }, Color.white, true);
+
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(_handle1.transform.position, 0.5f);
+            Gizmos.color = Color.green;
+            Gizmos.DrawSphere(_handle2.transform.position, 0.5f);
+            Gizmos.color = Color.blue;
+            Gizmos.DrawSphere(_handle3.transform.position, 0.5f);
+
+            var result = Intersections.Barycentric2DCoords(_handle4.transform.position, _handle1.transform.position,
+                _handle2.transform.position, _handle3.transform.position);
+            Debug.Log(result);
+
+            var resultColor = new Color(result.x, result.y, result.z);
+            Gizmos.color = resultColor;
+            Gizmos.DrawSphere(_handle4.transform.position, 0.5f);
         }
     }
 }
