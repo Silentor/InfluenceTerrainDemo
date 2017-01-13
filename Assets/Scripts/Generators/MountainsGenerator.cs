@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using TerrainDemo.Layout;
 using TerrainDemo.Settings;
 using TerrainDemo.Tools;
@@ -59,10 +58,7 @@ namespace TerrainDemo.Generators
 
             yValue += Land.GetGlobalHeight(worldX, worldZ);
             yValue += _zoneSettings.Height;
-            //yValue += _cluster != null ? _cluster.HeightInterpolator.GetValue(new Vector2(worldX, worldZ)) : 0;
-
-            if (_cluster != null)
-                yValue += _cluster.HeightInterpolator2.GetValue(new Vector2(worldX, worldZ));
+            if (_cluster != null) yValue += _cluster.HeightInterpolator.GetValue(new Vector2(worldX, worldZ));
 
             return yValue;
         }
@@ -102,8 +98,7 @@ namespace TerrainDemo.Generators
         /// </summary>
         public class MountainClusterContext
         {
-            public readonly IDWMeshInterpolator HeightInterpolator;
-            public readonly BarycentricInterpolator HeightInterpolator2;
+            public readonly ShepardInterpolator HeightInterpolator;
 
             public MountainClusterContext(LandLayout land, LandSettings settings)
             {
@@ -165,8 +160,7 @@ namespace TerrainDemo.Generators
                     }
                 }
 
-                HeightInterpolator = new IDWMeshInterpolator(new CellMesh.Submesh(land.CellMesh, allMountCells.ToArray()), allMountHeights.ToArray());
-                HeightInterpolator2 = new BarycentricInterpolator(new CellMesh.Submesh(land.CellMesh, allMountCells.ToArray()), allMountHeights.ToArray());
+                HeightInterpolator = new ShepardInterpolator(new CellMesh.Submesh(land.CellMesh, allMountCells.ToArray()), allMountHeights.ToArray());
             }
         }
     }

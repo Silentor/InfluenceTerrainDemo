@@ -9,11 +9,11 @@ using UnityEngine.Assertions;
 namespace TerrainDemo.Tools
 {
     /// <summary>
-    /// Interpolate float value on cellmesh
+    /// Interpolate float value on cellmesh. Use constant neighbors count <see cref="LocalPoints"/> as a data points
     /// </summary>
-    public class IDWMeshInterpolator
+    public class LocalMeshInterpolator
     {
-        public IDWMeshInterpolator([NotNull] CellMesh.Submesh mesh, [NotNull] double[] values)
+        public LocalMeshInterpolator([NotNull] CellMesh.Submesh mesh, [NotNull] double[] values)
         {
             if (mesh == null) throw new ArgumentNullException("mesh");
             if (values == null) throw new ArgumentNullException("values");
@@ -43,7 +43,7 @@ namespace TerrainDemo.Tools
             for (int i = 0; i < nearestCellsCount; i++)
             {
                 var cell = nearestCells[i];
-                var cellIndex = Array.IndexOf(_mesh.Cells, cell);               //todo binary search
+                var cellIndex = Array.IndexOf(_mesh.Cells, cell);               //todo cache values with nearest cells in GetLocalcsFor()
                 var weight = IDWLocalShepard(cell.Center, position, searchRadius);
                 result += _values[cellIndex] * weight;
                 weigths += weight;

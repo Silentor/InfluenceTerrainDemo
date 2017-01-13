@@ -234,7 +234,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a282cbeb1025553469988496950cb3ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  LandSize: 15
+  LandSize: 30
   RegenerateSeed: 0
   Seed: 0
   GlobalHeightFreq: 0.002

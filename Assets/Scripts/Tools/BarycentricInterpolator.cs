@@ -67,6 +67,9 @@ namespace TerrainDemo.Tools
 
             return bestBary.x * valueA2 + bestBary.y * valueB2 + bestBary.z * valueC2;
 
+            //Instead of extrapolation support nearestCell drift
+
+
             //Something going wrong, point is not in nearestCell? or triangle is degenerated
             return 0;
         }

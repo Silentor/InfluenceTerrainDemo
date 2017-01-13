@@ -245,7 +245,7 @@ namespace TerrainDemo.Editor
 
                 //Draw edges
                 foreach (var edge in zone.Cell.Edges)
-                    Handles.DrawAAPolyLine(edge.Vertex1.ConvertTo3D(), edge.Vertex2.ConvertTo3D());
+                    Handles.DrawAAPolyLine(3, edge.Vertex1.ConvertTo3D(), edge.Vertex2.ConvertTo3D());
 
                 //Draw fill
                 Handles.color = new Color(Handles.color.r/2, Handles.color.g/2, Handles.color.b/2, Handles.color.a/2);
@@ -256,6 +256,11 @@ namespace TerrainDemo.Editor
                 newCenters[i] = Handles.Slider2D(newCenters[i], Vector3.forward, Vector3.forward, Vector3.right, 5,
                     Handles.SphereCap, 0);
                     */
+
+                //Draw Delaunay triangles
+                Handles.color = new Color(1, 0, 0, 0.5f);
+                foreach (var cellNeighbor in zone.Cell.Neighbors)
+                    Handles.DrawLine(zone.Center.ConvertTo3D(), cellNeighbor.Center.ConvertTo3D());
             }
 
             //if (GUI.changed)
