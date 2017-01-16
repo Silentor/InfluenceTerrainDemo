@@ -1,8 +1,8 @@
 ﻿using System.Linq;
-using TerrainDemo.Layout;
+using TerrainDemo.Tools;
 using UnityEngine;
 
-namespace TerrainDemo.Tools
+namespace TerrainDemo.Tests
 {
     public class TestRasterization : MonoBehaviour
     {

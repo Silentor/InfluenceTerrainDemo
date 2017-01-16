@@ -1,7 +1,7 @@
-﻿using UnityEditor;
+﻿using TerrainDemo.Tools;
 using UnityEngine;
 
-namespace TerrainDemo.Tools
+namespace TerrainDemo.Tests
 {
     public class TestIntersection : MonoBehaviour
     {

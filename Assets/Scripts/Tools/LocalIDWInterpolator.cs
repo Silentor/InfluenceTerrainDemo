@@ -11,9 +11,9 @@ namespace TerrainDemo.Tools
     /// <summary>
     /// Interpolate float value on cellmesh. Use constant neighbors count <see cref="LocalPoints"/> as a data points
     /// </summary>
-    public class LocalMeshInterpolator
+    public class LocalIDWInterpolator
     {
-        public LocalMeshInterpolator([NotNull] CellMesh.Submesh mesh, [NotNull] double[] values)
+        public LocalIDWInterpolator([NotNull] CellMesh.Submesh mesh, [NotNull] double[] values)
         {
             if (mesh == null) throw new ArgumentNullException("mesh");
             if (values == null) throw new ArgumentNullException("values");
