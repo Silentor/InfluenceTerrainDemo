@@ -13,9 +13,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: Lakes
   LandColor_: {r: 0, g: 0.42068958, b: 1, a: 1}
+  IsInterval: 0
   Type: 6
-  DefaultBlock: 2
+  DefaultBlock: 6
   Height_: -10
-  OutScale1_: 0
-  OutScale2_: 0
-  OutScale3_: 100
+  NoiseFreq: 0.1
+  NoiseAmp: 0
+  NoiseLacunarity: 2
+  NoiseGain: 0.5
+  NoiseOctaves: 1
+  NoiseFractal: 0

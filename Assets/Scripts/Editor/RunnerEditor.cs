@@ -4,6 +4,7 @@ using System.Linq;
 using Assets.Code.Tools;
 using TerrainDemo.Layout;
 using TerrainDemo.Tools;
+using TerrainDemo.Voronoi;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -62,6 +63,8 @@ namespace TerrainDemo.Editor
             if (Application.isPlaying)
             {
                 DrawLandLayout();
+                
+
                 Vector3? cursorPosition;
 
                 if (IsMapMode())
@@ -71,6 +74,8 @@ namespace TerrainDemo.Editor
 
                 if (cursorPosition.HasValue)
                 {
+                    DrawSelectedCluster(cursorPosition.Value.ConvertTo2D());
+
                     if (Event.current.shift)
                         ShowInfluenceInfo(cursorPosition.Value);
                     ShowCursorInfo(cursorPosition.Value);
@@ -248,9 +253,9 @@ namespace TerrainDemo.Editor
                     Handles.DrawAAPolyLine(3, edge.Vertex1.ConvertTo3D(), edge.Vertex2.ConvertTo3D());
 
                 //Draw fill
-                Handles.color = new Color(Handles.color.r/2, Handles.color.g/2, Handles.color.b/2, Handles.color.a/2);
-                foreach (var vert in zone.Cell.Vertices)
-                    Handles.DrawLine(zone.Center.ConvertTo3D(), vert.ConvertTo3D());
+                //Handles.color = new Color(Handles.color.r/2, Handles.color.g/2, Handles.color.b/2, Handles.color.a/2);
+                //foreach (var vert in zone.Cell.Vertices)
+                    //Handles.DrawLine(zone.Center.ConvertTo3D(), vert.ConvertTo3D());
 
                 /*
                 newCenters[i] = Handles.Slider2D(newCenters[i], Vector3.forward, Vector3.forward, Vector3.right, 5,
@@ -275,6 +280,31 @@ namespace TerrainDemo.Editor
             var visibleCells = layout.CellMesh.GetCellsFor(observerPos, _target.Observer.Range);
             foreach (var visibleCell in visibleCells)
                 DrawCell.ForDebug(visibleCell, Color.white);
+        }
+
+        private void DrawSelectedCluster(Vector2 worldPosition)
+        {
+            if (IsLayoutMode())
+            {
+                var selectedZone = _main.LandLayout.GetZoneFor(worldPosition, false);
+                var zoneColor = _target.LandSettings[selectedZone.Type].LandColor;
+
+                var clusterCells = _main.LandLayout.GetCluster(selectedZone).Select(zl => zl.Cell).ToArray();
+                var cluster = new CellMesh.Submesh(_main.LandLayout.CellMesh, clusterCells);
+
+                //Get cluster border
+                //Get unconnected edges
+                var outerEdges =
+                    cluster.GetBorderCells()
+                        .SelectMany(c => c.Edges)
+                        .Where(e => !cluster.Cells.Contains(e.Neighbor))
+                        .ToArray();
+
+                Handles.color = zoneColor;
+                foreach (var edge in outerEdges)
+                    //Not very efficient to call native method for every single edge todo prepare entire border polyline
+                    Handles.DrawAAPolyLine(6, edge.Vertex1.ConvertTo3D(), edge.Vertex2.ConvertTo3D());
+            }
         }
 
         #region Info blocks
@@ -418,7 +448,7 @@ namespace TerrainDemo.Editor
 
         private bool IsMapMode()
         {
-            return _main.Map != null;
+            return _main.Map.Map.Count > 0;
         }
 
         /// <summary>

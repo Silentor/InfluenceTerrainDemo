@@ -145,7 +145,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2975cf88f56da0644bb546e5be64bbdb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Type: 1
+  Type: 2
   BypassHeightMap: 0
   TextureSize: 1024
   MaskBorder: 2
@@ -209,6 +209,50 @@ MonoBehaviour:
       MixTextureScale: 0
       MixTextureAngle: 0
     SteepTexture:
+      Texture: {fileID: 2800000, guid: 09fbca0223a8ef6428d4af988a104d4f, type: 3}
+      Normals: {fileID: 0}
+      BypassMix: 1
+      MixNoiseScale: 0
+      MixTextureScale: 0
+      MixTextureAngle: 0
+    BypassTriplanar: 1
+    SteepAngles: {x: 35, y: 55}
+    BypassTint: 1
+    TintFrom: {r: 0, g: 0, b: 0, a: 0}
+    TintTo: {r: 0, g: 0, b: 0, a: 0}
+    TintNoiseScale: 0
+  - Block: 4
+    Color: {r: 1, g: 1, b: 1, a: 1}
+    FlatTexture:
+      Texture: {fileID: 2800000, guid: 23afafc09f993fe4b971155856b20ecb, type: 3}
+      Normals: {fileID: 0}
+      BypassMix: 0
+      MixNoiseScale: 1.33333
+      MixTextureScale: 1.33333
+      MixTextureAngle: 77
+    SteepTexture:
+      Texture: {fileID: 0}
+      Normals: {fileID: 0}
+      BypassMix: 0
+      MixNoiseScale: 0
+      MixTextureScale: 0
+      MixTextureAngle: 0
+    BypassTriplanar: 1
+    SteepAngles: {x: 0, y: 0}
+    BypassTint: 1
+    TintFrom: {r: 0, g: 0, b: 0, a: 0}
+    TintTo: {r: 0, g: 0, b: 0, a: 0}
+    TintNoiseScale: 0
+  - Block: 6
+    Color: {r: 1, g: 1, b: 1, a: 1}
+    FlatTexture:
+      Texture: {fileID: 2800000, guid: b766c4ffca7260e4d943ad5e9b6d700b, type: 3}
+      Normals: {fileID: 0}
+      BypassMix: 1
+      MixNoiseScale: 1.33333
+      MixTextureScale: 1.33333
+      MixTextureAngle: 77
+    SteepTexture:
       Texture: {fileID: 0}
       Normals: {fileID: 0}
       BypassMix: 0
@@ -234,15 +278,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a282cbeb1025553469988496950cb3ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  LandSize: 30
-  RegenerateSeed: 0
+  LandSize: 20
+  RegenerateSeed: 1
   Seed: 0
   GlobalHeightFreq: 0.002
   GlobalHeightAmp: 0
   ZonesDensity: {x: 30, y: 40}
   Zones:
   - {fileID: 11400000, guid: 6d9e47604d34fe64686ce4c7b4247a74, type: 2}
-  - {fileID: 11400000, guid: efe303b16c6dfa0419eaeabce0cc1f5a, type: 2}
+  - {fileID: 11400000, guid: b7ea798b05685aa4086f3ad12b3c60a1, type: 2}
   LayoutGenerator: 1
   IDWCoeff: 2
   IDWOffset: 0
@@ -466,6 +510,7 @@ GameObject:
   - component: {fileID: 1648136001}
   - component: {fileID: 1648136002}
   - component: {fileID: 1648136003}
+  - component: {fileID: 1648136004}
   m_Layer: 0
   m_Name: Benchmarks
   m_TagString: Untagged
@@ -503,9 +548,20 @@ MonoBehaviour:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1648136000}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5959b494c8baf5d4ebf751229b590c9d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1648136004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1648136000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0cdab7b7fb479246a221684ae2a83c3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &1897285096
