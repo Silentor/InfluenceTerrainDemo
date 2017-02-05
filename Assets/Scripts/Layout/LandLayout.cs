@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using TerrainDemo.Settings;
+using TerrainDemo.Threads;
 using TerrainDemo.Tools;
 using TerrainDemo.Voronoi;
 using UnityEngine;
@@ -55,6 +56,22 @@ namespace TerrainDemo.Layout
                 zone.Init(this);
                 zones[i] = zone;
             }
+
+            //Build KD-Tree
+            var x = new double[2, cellMesh.Cells.Length];
+            for (int i = 0; i < cellMesh.Cells.Length; i++)
+            {
+                x[0, i] = cellMesh[i].Center.x;
+                x[1, i] = cellMesh[i].Center.y;
+            }
+            var tags = cellMesh.Cells.Select(c => c.Id).ToArray();
+            var positions = new double[cellMesh.Cells.Length, 2];
+            for (int i = 0; i < cellMesh.Cells.Length; i++)
+            {
+                positions[i, 0] = cellMesh[i].Center.x;
+                positions[i, 1] = cellMesh[i].Center.y;
+            }
+            alglib.kdtreebuildtagged(positions, tags, 2, 0, 2, out _kdtree);
         }
 
         /// <summary>
@@ -83,59 +100,7 @@ namespace TerrainDemo.Layout
 
         public ZoneRatio GetInfluence(Vector2 worldPosition)
         {
-            _influenceTime.Start();
-            var result = GetInfluence4(worldPosition);
-            _influenceTime.Stop();
-
-            return result;
-        }
-
-        /// <summary>
-        /// Get zones influence (Gaussian blur method)
-        /// </summary>
-        /// <param name="worldPosition"></param>
-        /// <returns></returns>
-        public ZoneRatio GetInfluence2(Vector2 worldPosition)
-        {
-            //Prepare bitmap
-
-            if (_sourceBitmap == null)
-            {
-                _sourceBitmap = new float[Bounds.Size.X, Bounds.Size.Z][];
-                _targetBitmap = new float[Bounds.Size.X, Bounds.Size.Z][];
-
-                for (int x = 0; x < Bounds.Size.X; x++)
-                {
-                    for (int z = 0; z < Bounds.Size.Z; z++)
-                    {
-                        //Apply some turbulence
-                        var world = (Vector2)(Bounds.Min + new Vector2i(x, z));
-                        var turbulenceX = (Mathf.PerlinNoise(world.x * 0.1f, world.y * 0.1f) - 0.5f) * 10;
-                        var turbulenceZ = (Mathf.PerlinNoise(world.y * 0.1f, world.x * 0.1f) - 0.5f) * 10;
-                        var worldTurbulated = world + new Vector2(turbulenceX, turbulenceZ);
-
-                        _sourceBitmap[x, z] = GetNearestNeighborInfluence(worldTurbulated);
-                    }
-                }
-
-                
-                //var boxes = BoxesForGauss(5, 3);
-                //boxBlur_2(_sourceBitmap, _targetBitmap, Bounds.Size.X, Bounds.Size.Z, (boxes[0] - 1)/2);
-                //boxBlur_2(_targetBitmap, _sourceBitmap, Bounds.Size.X, Bounds.Size.Z, (boxes[1] - 1)/2);
-                //boxBlur_2(_sourceBitmap, _targetBitmap, Bounds.Size.X, Bounds.Size.Z, (boxes[2] - 1)/2);
-                boxBlur_2(_sourceBitmap, _targetBitmap, Bounds.Size.X, Bounds.Size.Z, 1);
-                boxBlur_2(_targetBitmap, _sourceBitmap, Bounds.Size.X, Bounds.Size.Z, 2);
-                boxBlur_2(_sourceBitmap, _targetBitmap, Bounds.Size.X, Bounds.Size.Z, 3);
-                //_targetBitmap = _sourceBitmap;
-            }
-
-            var localPos = (Vector2i) worldPosition - Bounds.Min;
-            var influenceLookup = _targetBitmap[localPos.X, localPos.Z];
-
-            var values =
-                influenceLookup.Select((v, i) => new ZoneValue((ZoneType) i, v)).Where(v => v.Value > 0).ToArray();
-            var result = new ZoneRatio(values, values.Length);
-
+            var result = GetInfluenceLocalIDW2(worldPosition);
             return result;
         }
 
@@ -144,7 +109,8 @@ namespace TerrainDemo.Layout
         /// </summary>
         /// <param name="worldPosition"></param>
         /// <returns></returns>
-        public ZoneRatio GetInfluence4(Vector2 worldPosition)
+        [Obsolete("Use more optimized GetInfluenceLocalIDW2()")]
+        public ZoneRatio GetInfluenceLocalIDW(Vector2 worldPosition)
         {
             //Spatial optimization
             var center = CellMesh.GetCellFor(worldPosition);
@@ -180,62 +146,38 @@ namespace TerrainDemo.Layout
             return result;
         }
 
-        /// <summary>
-        /// Get zones influence for given layout point (function from Shepard IDW)
-        /// </summary>
-        /// <param name="worldPosition"></param>
-        /// <returns></returns>
-        public ZoneRatio GetInfluence5(Vector2 worldPosition)
+        public ZoneRatio GetInfluenceLocalIDW2(Vector2 worldPosition)
         {
-            //Init interpolators
-            if (_interpolants == null)
+            var nearestCellsCount = alglib.kdtreequeryknn(_kdtree, new double[] {worldPosition.x, worldPosition.y},
+                _settings.IDWNearestPoints, true);
+
+            var cellsId = new int[nearestCellsCount];
+            alglib.kdtreequeryresultstags(_kdtree, ref cellsId);
+
+            //Calc search radius
+            var searchRadius = Vector2.Distance(CellMesh[cellsId[cellsId.Length - 1]].Center, worldPosition);
+            var influenceLookup = new double[_zoneMaxType + 1];
+
+            //Sum up zones influence
+            for (int i = 0; i < cellsId.Length; i++)
             {
-                var zones = Zones.ToArray();
-                _interpolants = new alglib.idwinterpolant[_zoneSettings.Length];
-                for (int i = 0; i < _interpolants.Length; i++)
+                var cell = CellMesh[cellsId[i]];
+                var zone = Zones.ElementAt(cell.Id);
+                if (zone.Type != ZoneType.Empty)
                 {
-                    var xy = new double[zones.Length, 3];
-                    for (int j = 0; j < zones.Length; j++)
-                    {
-                        xy[j, 0] = zones[j].Center.x;
-                        xy[j, 1] = zones[j].Center.y;
-                        xy[j, 2] = zones[j].Type == _zoneSettings[i].Type ? 1 : 0;
-                    }
-                    alglib.idwinterpolant zoneInterpolant;
-                    alglib.idwbuildmodifiedshepard(xy, zones.Length, 2, -1, 10, 10, out zoneInterpolant);
-                    _interpolants[i] = zoneInterpolant;
+                    //var zoneWeight = IDWShepardWeighting(zone.Center, worldPosition, searchRadius);
+                    var zoneWeight = IDWLocalShepard(zone.Center, worldPosition, searchRadius);
+                    //var zoneWeight = IDWLocalLinear(zone.Center, worldPosition, searchRadius);
+                    influenceLookup[(int)zone.Type] += zoneWeight;
                 }
             }
 
-            var ratio = new List<ZoneValue>();
-            for (int i = 0; i < _interpolants.Length; i++)
-            {
-                var interpolant = _interpolants[i];
-                var zoneValue = alglib.idwcalc(interpolant, new double[] {worldPosition.x, worldPosition.y});
-
-                if(zoneValue > 0)
-                ratio.Add(new ZoneValue(_zoneSettings[i].Type, (float)zoneValue));
-            }
-            
-            var result = new ZoneRatio(ratio.ToArray(), ratio.Count);
+            var values =
+                influenceLookup.Select((v, i) => new ZoneValue((ZoneType)i, v)).Where(v => v.Value > 0).ToArray();
+            var result = new ZoneRatio(values, values.Length);
 
             return result;
         }
-
-        private float[] GetNearestNeighborInfluence(Vector2 worldPosition)
-        {
-            var zone = GetZoneFor(worldPosition, true);
-            var ratios = new float[_zoneMaxType + 1];
-            ratios[(int) zone.Type] = 1;
-            return ratios;
-        }
-
-        /*
-        public IZoneNoiseSettings GetZoneNoiseSettings(ZoneRatio influence)
-        {
-            return ZoneSettings.Lerp(_zoneSettings, influence);
-        }
-        */
 
         public ZoneLayout GetZoneFor(Vector2 position, bool respectIntervals)
         {
@@ -256,7 +198,7 @@ namespace TerrainDemo.Layout
         public void PrintDebug()
         {
             var clustersCount = Zones.Select(z => z.ClusterId).Distinct().Count();
-            Debug.LogFormat("Zones {0}, clusters {1}, get influence avg time {2}", Zones.Count(), clustersCount, _influenceTime.AvgTimeMs);
+            Debug.LogFormat("Zones {0}, clusters {1}", Zones.Count(), clustersCount);
         }
 
         public void PrintInfluences(Vector2 worldPosition)
@@ -275,15 +217,14 @@ namespace TerrainDemo.Layout
             */
         }
 
-        private LandSettings _settings;
-        private readonly AverageTimer _influenceTime = new AverageTimer();
+        private readonly LandSettings _settings;
         private int _zoneTypesCount;
         private ZoneSettings[] _zoneSettings;
         private int _zoneMaxType;
         private float[,][] _sourceBitmap;
         private float[,][] _targetBitmap;
-        private alglib.idwinterpolant[] _interpolants;
-        private FastNoise _globalHeight;
+        private readonly FastNoise _globalHeight;
+        private alglib.kdtree _kdtree;
 
         private void GetChunksFloodFill(ZoneLayout zone, Vector2i from, List<Vector2i> processed, List<Vector2i> result)
         {
@@ -361,21 +302,6 @@ namespace TerrainDemo.Layout
             return false;
         }
 
-
-        private float IDWShepardWeighting(Vector2 interpolatePoint, Vector2 point, float searchRadius)
-        {
-            var d = Vector2.Distance(interpolatePoint, point);
-
-            if(d > searchRadius)
-                return 0;
-            else if(d > searchRadius / 3)
-                return (27f / (4 * searchRadius)) * (d / searchRadius - 1) * (d / searchRadius - 1);
-            else if (d > float.Epsilon)
-                return 1/d;
-            else
-                return float.MaxValue;
-        }
-
         private double IDWLocalShepard(Vector2 interpolatePoint, Vector2 point, double searchRadius)
         {
             double d = Vector2.Distance(interpolatePoint, point);
@@ -384,53 +310,6 @@ namespace TerrainDemo.Layout
             if (a < 0) a = 0;
             var b = a / (searchRadius * d);
             return b*b;
-        }
-
-        /// <summary>
-        /// Get box blur sizes to simulate Gaussian blur
-        /// </summary>
-        /// <param name="sigma"></param>
-        /// <param name="n"></param>
-        /// <returns></returns>
-        private int[] BoxesForGauss(float sigma, int n)  // standard deviation, number of boxes
-        {
-            var wIdeal = Math.Sqrt((12 * sigma * sigma / n) + 1);  // Ideal averaging filter width 
-            var wl = (int)Math.Floor(wIdeal); if (wl % 2 == 0) wl--;
-            var wu = wl + 2;
-
-            var mIdeal = (12 * sigma * sigma - n * wl * wl - 4 * n * wl - 3 * n) / (-4 * wl - 4);
-            var m = Math.Round(mIdeal);
-            // var sigmaActual = Math.sqrt( (m*wl*wl + (n-m)*wu*wu - n)/12 );
-
-            var result = new int[n];
-            for (var i = 0; i < n; i++)
-                result[i] = i < m ? wl : wu;
-            return result;
-        }
-
-        //see http://blog.ivank.net/fastest-gaussian-blur.html
-        private void boxBlur_2(float[,][] scl, float[,][] tcl, int w, int h, int r)
-        {
-            var div = r;
-            for (var i = 0; i < h; i++)
-                for (var j = 0; j < w; j++)
-                {
-                    //var blurRadius = Mathf.PerlinNoise(i * 0.05f + 100, j * 0.05f) * 10 + 1.5f;
-                    var blurRadius = 20;
-                    blurRadius /= div;
-                    r = (int) blurRadius;
-
-                    float[] val = new float[_zoneMaxType + 1];
-                    for (var iy = i - r; iy < i + r + 1; iy++)
-                        for (var ix = j - r; ix < j + r + 1; ix++)
-                        {
-                            var x = Math.Min(w - 1, Math.Max(0, ix));
-                            var y = Math.Min(h - 1, Math.Max(0, iy));
-                            val = Add(val, scl[x, y]);
-                        }
-
-                    tcl[j, i] = Mult(1f / ((r + r + 1) * (r + r + 1)), val);
-                }
         }
 
         private static Vector3 Convert(Vector2 v)
@@ -442,39 +321,5 @@ namespace TerrainDemo.Layout
         {
             return new Vector2(v.x, v.z);
         }
-
-        private static float[] Add(float[] a, float[] b)
-        {
-            Assert.AreEqual(a.Length, b.Length);
-
-            var result = new float[a.Length];
-            for (int i = 0; i < a.Length; i++)
-                result[i] = a[i] + b[i];
-
-            return result;
-        }
-
-        private static float[] Substract(float[] a, float[] b)
-        {
-            Assert.AreEqual(a.Length, b.Length);
-
-            var result = new float[a.Length];
-            for (int i = 0; i < a.Length; i++)
-                result[i] = a[i] - b[i];
-
-            return result;
-        }
-
-        private static float[] Mult(float a, float[] b)
-        {
-            var result = new float[b.Length];
-            for (int i = 0; i < b.Length; i++)
-                result[i] = a * b[i];
-
-            return result;
-        }
-
     }
-
-
 }
