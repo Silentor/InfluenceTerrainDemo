@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Assets.Code.Tools;
@@ -63,7 +64,6 @@ namespace TerrainDemo.Editor
             if (Application.isPlaying)
             {
                 DrawLandLayout();
-                
 
                 Vector3? cursorPosition;
 
@@ -219,15 +219,7 @@ namespace TerrainDemo.Editor
                     var blockBounds = new Bounds2i(block, 1, 1);
                     DrawRectangle.ForGizmo(blockBounds, zoneColor);
                 }
-
-                //Draw Delaunay triangle DEBUG
-                Gizmos.color = Color.red;
-                var triangle = BarycentricInterpolator.GetTriangle(worldPosition, _main.LandLayout.CellMesh);
-                if(triangle != null)
-                    DrawPolyline.ForGizmo(triangle.Select(v2 => new Vector3(v2.x, 0, v2.y)).ToArray(), true);
             }
-
-
         }
 
         private void DrawLandLayout()
@@ -244,18 +236,22 @@ namespace TerrainDemo.Editor
             for (int i = 0; i < zones.Count(); i++)
             {
                 var zone = zones[i];
-                Handles.color = layout.Zones.ElementAt(i).Type != ZoneType.Empty
+                Handles.color = zone.Type != ZoneType.Empty
                     ? _target.LandSettings[zone.Type].LandColor
                     : Color.black;
 
-                //Draw edges
+                //Draw zone edges
                 foreach (var edge in zone.Cell.Edges)
-                    Handles.DrawAAPolyLine(3, edge.Vertex1.ConvertTo3D(), edge.Vertex2.ConvertTo3D());
+                    Handles.DrawAAPolyLine(1, edge.Vertex1.ConvertTo3D(), edge.Vertex2.ConvertTo3D());
 
-                //Draw fill
-                //Handles.color = new Color(Handles.color.r/2, Handles.color.g/2, Handles.color.b/2, Handles.color.a/2);
-                //foreach (var vert in zone.Cell.Vertices)
-                    //Handles.DrawLine(zone.Center.ConvertTo3D(), vert.ConvertTo3D());
+                //Draw zone fill
+                if (_target.ShowFill)
+                {
+                    Handles.color = new Color(Handles.color.r / 2, Handles.color.g / 2, Handles.color.b / 2,
+                        Handles.color.a / 2);
+                    foreach (var vert in zone.Cell.Vertices)
+                        Handles.DrawLine(zone.Center.ConvertTo3D(), vert.ConvertTo3D());
+                }
 
                 /*
                 newCenters[i] = Handles.Slider2D(newCenters[i], Vector3.forward, Vector3.forward, Vector3.right, 5,
@@ -263,17 +259,13 @@ namespace TerrainDemo.Editor
                     */
 
                 //Draw Delaunay triangles
-                Handles.color = new Color(1, 0, 0, 0.5f);
-                foreach (var cellNeighbor in zone.Cell.Neighbors)
-                    Handles.DrawLine(zone.Center.ConvertTo3D(), cellNeighbor.Center.ConvertTo3D());
+                if (_target.ShowDelaunay)
+                {
+                    Handles.color = new Color(1, 0, 0, 0.5f);
+                    foreach (var cellNeighbor in zone.Cell.Neighbors)
+                        Handles.DrawLine(zone.Center.ConvertTo3D(), cellNeighbor.Center.ConvertTo3D());
+                }
             }
-
-            //if (GUI.changed)
-            //{
-            //    _voronoi = CellMeshGenerator.Generate(newCenters.Select(c => Convert(c)), (Bounds)_target.LayoutBounds);
-            //    for (int i = 0; i < newCenters.Length; i++)
-            //        _layout[i] = new Zone(_voronoi[i], _layout[i].Type);
-            //}
 
             //Draw visible zones
             var observerPos = _target.Observer.Position.ConvertTo2D();
