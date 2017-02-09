@@ -117,7 +117,7 @@ namespace TerrainDemo.Tests.Editor
             //id 0 cell doesnt has neighbors with 10 < id < 20
             Assert.That(noNeighbors, Has.Length.EqualTo(0));
 
-            var hasNeighbors = mesh.GetNeighbors(center, c => c.Id == 1 || c.Id == 6 || c.Id == 13).ToArray();
+            var hasNeighbors = mesh.GetNeighbors(center, c => c.Id == 2 || c.Id == 5 || c.Id == 4 || c.Id == 666).ToArray();
             Assert.That(hasNeighbors, Has.Length.EqualTo(3));
             Assert.That(hasNeighbors, Is.Unique);
         }

@@ -26,15 +26,17 @@ namespace TerrainDemo.Layout
         /// </summary>
         public IEnumerable<ZoneLayout> Zones { get; private set; }
 
-        public LandLayout(LandSettings settings, CellMesh cellMesh, ZoneInfo[] zoneTypes)
+        public IEnumerable<ClusterLayout> Clusters { get; private set; }
+
+        public LandLayout(LandSettings settings, CellMesh cellMesh, ClusterInfo[] clusters)
         {
             _settings = settings;
             _globalHeight = new FastNoise(settings.Seed);
             _globalHeight.SetFrequency(settings.GlobalHeightFreq);
-            Update(cellMesh, zoneTypes);
+            Update(cellMesh, clusters);
         }
 
-        public void Update(CellMesh cellMesh, ZoneInfo[] zoneInfos)
+        public void Update(CellMesh cellMesh, ClusterInfo[] clusters)
         {
             _globalHeight.SetSeed(_settings.Seed);
             _globalHeight.SetFrequency(_settings.GlobalHeightFreq);
@@ -42,28 +44,9 @@ namespace TerrainDemo.Layout
             Bounds = _settings.LandBounds;
             CellMesh = cellMesh;
             _zoneSettings = _settings.Zones.ToArray();
-            _zoneTypesCount = zoneInfos.Where(z => z.Type != ZoneType.Empty).Distinct().Count();
             _zoneMaxType = (int)_settings.Zones.Max(z => z.Type);
 
-            var zones = new ZoneLayout[zoneInfos.Length];
-            for (int i = 0; i < zones.Length; i++)
-                zones[i] = new ZoneLayout(zoneInfos[i], cellMesh.Cells[i], _zoneSettings.First(z => z.Type == zoneInfos[i].Type));
-
-            Zones = zones;
-            for (int i = 0; i < zones.Length; i++)
-            {
-                var zone = zones[i];
-                zone.Init(this);
-                zones[i] = zone;
-            }
-
-            //Build KD-Tree
-            var x = new double[2, cellMesh.Cells.Length];
-            for (int i = 0; i < cellMesh.Cells.Length; i++)
-            {
-                x[0, i] = cellMesh[i].Center.x;
-                x[1, i] = cellMesh[i].Center.y;
-            }
+            //Build zone influence KD-Tree
             var tags = cellMesh.Cells.Select(c => c.Id).ToArray();
             var positions = new double[cellMesh.Cells.Length, 2];
             for (int i = 0; i < cellMesh.Cells.Length; i++)
@@ -71,7 +54,49 @@ namespace TerrainDemo.Layout
                 positions[i, 0] = cellMesh[i].Center.x;
                 positions[i, 1] = cellMesh[i].Center.y;
             }
-            alglib.kdtreebuildtagged(positions, tags, 2, 0, 2, out _kdtree);
+            alglib.kdtreebuildtagged(positions, tags, 2, 0, 2, out _influence);
+
+            //Build base height interpolator
+            var baseHeights = clusters.SelectMany(c => c.Heights).ToArray();
+            var points = new double[baseHeights.Length, 3];
+            for (int i = 0; i < baseHeights.Length; i++)
+            {
+                points[i, 0] = baseHeights[i].x;
+                points[i, 1] = baseHeights[i].z;
+                points[i, 2] = baseHeights[i].y;
+            }
+
+            _baseHeight = new alglib.idwinterpolant();
+            alglib.idwbuildmodifiedshepard(points, baseHeights.Length, 2, 2, 5, 7, out _baseHeight);
+
+            //Set Clusters and Zones collections
+            var clusterLayouts = new ClusterLayout[clusters.Length];
+            var zones = new ZoneLayout[cellMesh.Cells.Length];
+
+            for (var i = 0; i < clusters.Length; i++)
+            {
+                var clusterInfo = clusters[i];
+                var zoneLayouts = new List<ZoneLayout>();
+
+                foreach (var zoneInfo in clusterInfo.Zones)
+                {
+                    var zoneLayout = new ZoneLayout(zoneInfo, cellMesh.Cells[zoneInfo.Id],
+                        _zoneSettings.First(z => z.Type == zoneInfo.Type));
+                    zones[zoneInfo.Id] = zoneLayout;
+                    zoneLayouts.Add(zoneLayout);
+                }
+
+                clusterLayouts[i] = new ClusterLayout(clusterInfo.Heights, zoneLayouts);
+            }
+            Clusters = clusterLayouts;
+            Zones = zones;
+
+            for (int i = 0; i < zones.Length; i++)
+            {
+                var zone = zones[i];
+                zone.Init(this);
+                zones[i] = zone;
+            }
         }
 
         /// <summary>
@@ -148,11 +173,11 @@ namespace TerrainDemo.Layout
 
         public ZoneRatio GetInfluenceLocalIDW2(Vector2 worldPosition)
         {
-            var nearestCellsCount = alglib.kdtreequeryknn(_kdtree, new double[] {worldPosition.x, worldPosition.y},
+            var nearestCellsCount = alglib.kdtreequeryknn(_influence, new double[] {worldPosition.x, worldPosition.y},
                 _settings.IDWNearestPoints, true);
 
             var cellsId = new int[nearestCellsCount];
-            alglib.kdtreequeryresultstags(_kdtree, ref cellsId);
+            alglib.kdtreequeryresultstags(_influence, ref cellsId);
 
             //Calc search radius
             var searchRadius = Vector2.Distance(CellMesh[cellsId[cellsId.Length - 1]].Center, worldPosition);
@@ -187,9 +212,10 @@ namespace TerrainDemo.Layout
                 return Zones.ElementAt(CellMesh.GetCellFor(position).Id);
         }
 
-        public double GetGlobalHeight(float worldX, float worldZ)
+        public double GetBaseHeight(float worldX, float worldZ)
         {
-            return _globalHeight.GetSimplex(worldX, worldZ) * _settings.GlobalHeightAmp;    
+            //return _globalHeight.GetSimplex(worldX, worldZ) * _settings.GlobalHeightAmp;    
+            return alglib.idwcalc(_baseHeight, new double[] { worldX, worldZ });
         }
 
         /// <summary>
@@ -218,13 +244,13 @@ namespace TerrainDemo.Layout
         }
 
         private readonly LandSettings _settings;
-        private int _zoneTypesCount;
         private ZoneSettings[] _zoneSettings;
         private int _zoneMaxType;
         private float[,][] _sourceBitmap;
         private float[,][] _targetBitmap;
         private readonly FastNoise _globalHeight;
-        private alglib.kdtree _kdtree;
+        private alglib.kdtree _influence;
+        private alglib.idwinterpolant _baseHeight;
 
         private void GetChunksFloodFill(ZoneLayout zone, Vector2i from, List<Vector2i> processed, List<Vector2i> result)
         {

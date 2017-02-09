@@ -56,7 +56,7 @@ namespace TerrainDemo.Generators
             yValue = _noise.GetSimplexFractal(scaleRatio * worldX, (2 - scaleRatio) * worldZ) * _zoneSettings.NoiseAmp;
             //yValue = Math.Pow(yValue + 1, 2);
 
-            yValue += Land.GetGlobalHeight(worldX, worldZ);
+            yValue += Land.GetBaseHeight(worldX, worldZ);
             yValue += _zoneSettings.Height;
             if (_cluster != null) yValue += _cluster.HeightInterpolator.GetValue(new Vector2(worldX, worldZ));
 

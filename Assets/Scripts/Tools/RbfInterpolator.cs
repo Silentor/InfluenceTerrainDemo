@@ -9,7 +9,7 @@ using UnityEngine;
 namespace TerrainDemo.Tools
 {
     /// <summary>
-    /// Barycentric interpolation between cell centers. Use 3 nearest cells
+    /// RBF interpolation between cell centers
     /// </summary>
     public class RbfInterpolator
     {

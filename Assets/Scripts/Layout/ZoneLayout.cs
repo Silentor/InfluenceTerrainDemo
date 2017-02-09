@@ -67,7 +67,7 @@ namespace TerrainDemo.Layout
         {
             _chunks = landLayout.GetChunks(this).ToArray();
             _neighbors = Cell.Neighbors.Select(c => landLayout.Zones.ElementAt(c.Id)).ToArray();
-            Height = (float)landLayout.GetGlobalHeight(Center.x, Center.y);
+            Height = (float)landLayout.GetBaseHeight(Center.x, Center.y);
         }
 
         /// <summary>

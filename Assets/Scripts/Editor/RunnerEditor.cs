@@ -222,6 +222,9 @@ namespace TerrainDemo.Editor
             }
         }
 
+        /// <summary>
+        /// Draw basic land layout (land border, zones, clusters)
+        /// </summary>
         private void DrawLandLayout()
         {
             if (!IsLayoutMode())

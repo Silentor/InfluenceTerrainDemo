@@ -187,7 +187,7 @@ namespace TerrainDemo.Generators
             if (_zoneSettings.NoiseAmp > 0.001)
                 yValue = _noise.GetSimplexFractal(worldX, worldZ)*_zoneSettings.NoiseAmp;
 
-            yValue += Land.GetGlobalHeight(worldX, worldZ);
+            yValue += Land.GetBaseHeight(worldX, worldZ);
             yValue += _zoneSettings.Height;
 
             return yValue;
@@ -246,7 +246,7 @@ namespace TerrainDemo.Generators
                     case LandSettings.HeightGenerationType.LandHeight:
                     {
                         var zoneSettings = _landSettings[inf.Zone];
-                        generatedHeight = Land.GetGlobalHeight(vertPos.X, vertPos.Z) + zoneSettings.Height;
+                        generatedHeight = Land.GetBaseHeight(vertPos.X, vertPos.Z) + zoneSettings.Height;
                         break;
                     }
 

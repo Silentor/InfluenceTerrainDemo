@@ -1,10 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 using TerrainDemo.Layout;
 using TerrainDemo.Settings;
+using TerrainDemo.Tools;
 using TerrainDemo.Voronoi;
 using UnityEngine;
 using UnityEngine.Assertions;
+using Random = UnityEngine.Random;
 
 namespace TerrainDemo.Generators
 {
@@ -17,9 +21,10 @@ namespace TerrainDemo.Generators
         {
         }
 
-        protected override ZoneInfo[] SetZoneInfo(CellMesh mesh, LandSettings settings)
+        protected override ClusterInfo[] SetClusters(CellMesh mesh, LandSettings settings)
         {
-            var ordinaryZones = settings.Zones.Where(zt => !zt.IsInterval).Select(z => z.Type).ToArray();
+            var zoneTypes = settings.Zones.Select(z => z.Type).ToArray();
+            var clusters = new List<ClusterInfo>();
             var zones = new ZoneInfo[mesh.Cells.Length];
             var clusterId = 0;
 
@@ -30,37 +35,31 @@ namespace TerrainDemo.Generators
                 {
                     //Fill cluster
                     clusterId++;
-                    var zoneInfo = new ZoneInfo()
+                    
+                    var zoneType = zoneTypes[Random.Range(0, zoneTypes.Length)];
+                    var clusterSize = Mathf.Max(mesh.Cells.Length/10, 1);
+                    var neighbors = mesh.GetNeighbors(mesh[i], c => zones[c.Id].Type == ZoneType.Empty).Take(clusterSize).ToArray();
+                    var clusterCells = new List<Cell>(neighbors.Length + 1);
+                    clusterCells.Add(mesh[i]);
+                    clusterCells.AddRange(neighbors);
+                    var heightPoints = GetHeightsForCluster(zoneType, clusterCells.ToArray(), mesh);
+
+                    var zonesInCluster = new List<ZoneInfo>();
+                    foreach (var cell in clusterCells)
                     {
-                        Type = ordinaryZones[Random.Range(0, ordinaryZones.Length)],
-                        ClusterId = clusterId
-                    };
-                    var clusterSize = Mathf.Max(mesh.Cells.Length/4, 1);
-                    var cluster = mesh.GetNeighbors(mesh[i], c => zones[c.Id].Type == ZoneType.Empty).Take(clusterSize);
-
-                    zones[i] = zoneInfo;
-                    foreach (var cell in cluster)
-                        zones[cell.Id] = zoneInfo; 
-                }
-            }
-
-            //Generate some interval zones
-            var intervalZone = settings.Zones.FirstOrDefault(zt => zt.IsInterval);
-            if (intervalZone != null)
-            {
-                for (int i = 0; i < 5; i++)
-                {
-                    var cell = mesh[i];
-
-                    //Place interval zone type between all ordinary zones
-                    if (GetNeighborsOf(cell, zones).Where(zt => ordinaryZones.Contains(zt)).Distinct().Count() > 1)
-                    {
-                        zones[i] = new ZoneInfo {Type = intervalZone.Type, ClusterId = 0};
+                        var zoneInfo = new ZoneInfo {Id = cell.Id, ClusterId = clusterId, Type = zoneType};
+                        zones[cell.Id] = zoneInfo;
+                        zonesInCluster.Add(zoneInfo);
                     }
+
+                    var newCluster = new ClusterInfo { Id = clusterId, Type = zoneType, Zones = zonesInCluster.ToArray() };
+                    
+                    newCluster.Heights = heightPoints;
+                    clusters.Add(newCluster);
                 }
             }
 
-            return zones;
+            return clusters.ToArray();
         }
 
         /// <summary>
@@ -105,6 +104,34 @@ namespace TerrainDemo.Generators
         private IEnumerable<ZoneType> GetNeighborsOf(Cell cell, ZoneInfo[] zones)
         {
             return cell.Neighbors.Select(c => zones[c.Id].Type);
+        }
+
+        private Vector3[] GetHeightsForCluster(ZoneType type, [NotNull] Cell[] clusterCells, CellMesh mesh)
+        {
+            if (clusterCells == null) throw new ArgumentNullException("clusterCells");
+            if (clusterCells.Length == 0)
+                throw new ArgumentException("Value cannot be an empty collection.", "clusterCells");
+
+            //Get cluster center
+            Vector2 center = Vector2.zero;
+            foreach (var clusterCell in clusterCells)
+            {
+                center += clusterCell.Center;
+            }
+            center /= clusterCells.Length;
+
+            if (type == ZoneType.Mountains)
+            {
+                var heights = new List<Vector3>();
+                var mountains = new CellMesh.Submesh(mesh, clusterCells);
+                heights.AddRange(mountains.GetBorderCells().Select(c => new Vector3(c.Center.x, 10, c.Center.y)));
+                heights.Add(new Vector3(center.x, 50, center.y));
+                return heights.ToArray();
+            }
+            else if(type == ZoneType.Lake)
+                return new[] { new Vector3(center.x, -20, center.y), };
+            else
+                return new[] { new Vector3(center.x, 0, center.y), };
         }
     }
 }

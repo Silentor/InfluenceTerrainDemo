@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TerrainDemo.Layout;
 using TerrainDemo.Settings;
+using TerrainDemo.Tools;
 using TerrainDemo.Voronoi;
 
 namespace TerrainDemo.Generators
@@ -13,40 +14,28 @@ namespace TerrainDemo.Generators
         {
         }
 
-        protected override ZoneInfo[] SetZoneInfo(CellMesh mesh, LandSettings settings)
+        protected override ClusterInfo[] SetClusters(CellMesh mesh, LandSettings settings)
         {
             //Divide cells to two sides (vertically)
             var center = mesh.Cells.Select(c => c.Center.x).Average();
             var leftSideZone = settings.Zones.ElementAt(0);
             var rightSideZone = settings.Zones.ElementAt(1);
 
-            var result = new ZoneInfo[mesh.Cells.Length];
+            var cluster1Zones = new List<ZoneInfo>();
+            var cluster2Zones = new List<ZoneInfo>();
             for (int i = 0; i < mesh.Cells.Length; i++)
             {
                 if (mesh[i].Center.x < center)
-                    result[i] = new ZoneInfo {Type = leftSideZone.Type, ClusterId = 1};
+                    cluster1Zones.Add(new ZoneInfo {Id = i, Type = leftSideZone.Type, ClusterId = 1});
                 else
-                    result[i] = new ZoneInfo { Type = rightSideZone.Type, ClusterId = 2 };
+                    cluster2Zones.Add(new ZoneInfo {Id = i, Type = rightSideZone.Type, ClusterId = 2 });
             }
 
-            //Generate some interval zones
-            var ordinaryZones = settings.Zones.Where(zt => !zt.IsInterval).Select(z => z.Type).ToArray();
-            var intervalZone = settings.Zones.FirstOrDefault(zt => zt.IsInterval);
-            if (intervalZone != null)
+            return new ClusterInfo[2]
             {
-                for (int i = 0; i < mesh.Cells.Length; i++)
-                {
-                    var cell = mesh[i];
-
-                    //Place interval zone type between all ordinary zones
-                    if (GetNeighborsOf(cell, result).Where(zt => ordinaryZones.Contains(zt)).Distinct().Count() > 1)
-                    {
-                        result[i] = new ZoneInfo() {Type = intervalZone.Type, ClusterId = 3};
-                    }
-                }
-            }
-
-            return result;
+                new ClusterInfo() {Id = 1, Zones = cluster1Zones.ToArray()},
+                new ClusterInfo() {Id = 2, Zones = cluster2Zones.ToArray()},
+            };
         }
 
         private IEnumerable<ZoneType> GetNeighborsOf(Cell cell, ZoneInfo[] zones)

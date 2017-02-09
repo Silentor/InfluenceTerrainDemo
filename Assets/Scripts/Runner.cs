@@ -12,6 +12,9 @@ namespace TerrainDemo
     [RequireComponent(typeof(LandSettings))]
     public class Runner : MonoBehaviour
     {
+        public bool ShowDelaunay { get; set; }
+        public bool ShowFill { get; set; }
+
         public LandSettings LandSettings { get; private set; }
 
         public Main Main { get; private set; }

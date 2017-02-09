@@ -9,7 +9,7 @@ using UnityEngine;
 namespace TerrainDemo.Tools
 {
     /// <summary>
-    /// Barycentric interpolation between cell centers. Use 3 nearest cells
+    /// Modified Shepard interpolation between cell centers
     /// </summary>
     public class ShepardInterpolator
     {

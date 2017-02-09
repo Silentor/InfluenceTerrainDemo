@@ -145,7 +145,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2975cf88f56da0644bb546e5be64bbdb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Type: 2
+  Type: 1
   BypassHeightMap: 0
   TextureSize: 1024
   MaskBorder: 2
@@ -278,7 +278,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a282cbeb1025553469988496950cb3ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  LandSize: 20
+  LandSize: 30
   RegenerateSeed: 1
   Seed: 0
   GlobalHeightFreq: 0.002
@@ -287,6 +287,7 @@ MonoBehaviour:
   Zones:
   - {fileID: 11400000, guid: 6d9e47604d34fe64686ce4c7b4247a74, type: 2}
   - {fileID: 11400000, guid: b7ea798b05685aa4086f3ad12b3c60a1, type: 2}
+  - {fileID: 11400000, guid: efe303b16c6dfa0419eaeabce0cc1f5a, type: 2}
   LayoutGenerator: 1
   IDWCoeff: 2
   IDWOffset: 0
@@ -295,7 +296,7 @@ MonoBehaviour:
   InterpolateInfluence: 1
   InfluenceThreshold: 0.01
   InfluenceLimit: 5
-  HeightGeneration: 2
+  HeightGeneration: 1
   BlocksCount: 16
   BlockSize: 1
   Tree: {fileID: 0}
