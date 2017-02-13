@@ -87,7 +87,7 @@ namespace TerrainDemo.Layout
                     zoneLayouts.Add(zoneLayout);
                 }
 
-                clusterLayouts[i] = new ClusterLayout(clusterInfo.Type, clusterInfo.Heights, zoneLayouts, cellMesh);
+                clusterLayouts[i] = new ClusterLayout(clusterInfo, zoneLayouts, cellMesh);
             }
             Clusters = clusterLayouts;
             Zones = zones;

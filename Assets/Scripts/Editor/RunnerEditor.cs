@@ -44,6 +44,9 @@ namespace TerrainDemo.Editor
         private Rect _blockInfoRect;
         private Rect _chunkInfoRect;
         private Rect _zoneInfoRect;
+        private Rect _clusterInfoRect;
+        private Rect _influenceInfoRect;
+        private GUIStyle _zonesIdLabelStyle;
 
         const float DecalOffset = 0.01f;
 
@@ -56,6 +59,8 @@ namespace TerrainDemo.Editor
             _blockInfoRect = new Rect(0, _cursorInfoRect.y - 120, 0, 0);
             _chunkInfoRect = new Rect(0, _blockInfoRect.y - 80, 0, 0);
             _zoneInfoRect = new Rect(0, _chunkInfoRect.y - 90, 0, 0);
+            _clusterInfoRect = new Rect(0, _zoneInfoRect.y - 90, 0, 0);
+            _influenceInfoRect = new Rect(0, _clusterInfoRect.y - 90, 0, 0);
         }
 
         void OnEnable()
@@ -117,7 +122,9 @@ namespace TerrainDemo.Editor
                 (LandState == LandState.Mesh && IsTopDown))
             {
                 DrawLandLayout();
-                DrawZonesId();
+
+                if(RunnerEditorMainMenu.IsShowId)
+                    DrawZonesId();
 
                 if (_selectedZone != null)
                 {
@@ -152,51 +159,21 @@ namespace TerrainDemo.Editor
             }
 
             if (_selectedZone != null)
-            {
                 ShowZoneInfo(_selectedZone);
-            }
 
-            //Get intersection points
-            if (Application.isPlaying)
+            if(_selectedCluster != null)
+                ShowClusterInfo(_selectedCluster);
+
+            if (LandState >= LandState.Layout && _layoutIntersection.HasValue)
             {
-                Vector3? cursorPosition = null;
-
-                if (cursorPosition.HasValue)
-                {
-                    if (Event.current.shift)
-                        ShowInfluenceInfo(cursorPosition.Value);
-                }
-
-                //Dirty debug
-                
-                //if (Event.current.character != '')
-                {
-                    //Debug.Log(Event.current.character);
-
-                    //var intersection = GetLayoutIntersection();
-                    //if (intersection != null)
-                    //{
-                    //    _main.LandLayout.PrintInfluences(intersection.Value);
-                    //}
-                }
-                
+                var influence = _main.LandLayout.GetInfluence(_layoutIntersection.Value);
+                ShowInfluenceInfo(influence);
             }
-
-            
         }
 
-        //[DrawGizmo(GizmoType.Selected)]
-        //static void DrawGizmos(Runner target, GizmoType gizmoType)
-        //{
-        //    if(_self != null)
-        //        _self.OnGizmos();
-        //}
-
-        //private void OnGizmos()
-        //{
-        //}
-
         #endregion
+
+        #region Debug graphics
 
         private void DrawSelectedChunk(Vector2i chunkPosition)
         {
@@ -297,7 +274,7 @@ namespace TerrainDemo.Editor
                         zonesSegments.Add(cellEdge.Vertex2.ConvertTo3D());
                     }
 
-                    if (_runner.ShowFill)
+                    if (RunnerEditorMainMenu.IsShowFill)
                     {
                         foreach (var cellVertex in zoneLayout.Cell.Vertices)
                         {
@@ -317,7 +294,7 @@ namespace TerrainDemo.Editor
             }
 
             //Draw Delaunay triangles
-            if (_runner.ShowDelaunay)
+            if (RunnerEditorMainMenu.IsShowDelaunay)
             {
                 var delaunaySegments = new List<Vector3>();
                 foreach (var zone in layout.Zones)
@@ -393,42 +370,18 @@ namespace TerrainDemo.Editor
             Handles.DrawLines(segments.ToArray());
         }
 
+        #endregion
+
         #region Info blocks
 
-        //private void AddInfoBlock(string blockTitle, params string[] data)
-        //{
-        //    _infoBlocks[blockTitle] = data;
-        //}
-
-        //private void ShowInfoBlocks()
-        //{
-        //    int longestString = 0;
-        //    var strings = new List<string>();
-
-        //    foreach (var infoBlock in _infoBlocks)
-        //    {
-        //        if (infoBlock.Key.Length > longestString)
-        //            longestString = infoBlock.Key.Length;
-        //        foreach (var dataString in infoBlock.Value)
-        //        {
-                    
-        //        }
-        //    }
-
-        //    Handles.BeginGUI();
-        //}
-
-        private void ShowInfluenceInfo(Vector3 layoutPosition)
+        private void ShowInfluenceInfo(ZoneRatio influence)
         {
-            var layout = _main.LandLayout;
-            var influence = layout.GetInfluence(layoutPosition.ConvertTo2D());
-
             GUI.WindowFunction windowFunc = id =>
             {
                 GUILayout.Label("Absolute");
                 var labelText = String.Join("\n",
-                    influence.Select(z => String.Format("[{0}] - {1}", z.Zone, z.Value)).ToArray());
-                GUILayout.TextArea(labelText);
+                    influence.Select(z => String.Format("[{0}] - {1:F3}", z.Zone, z.Value)).ToArray());
+                GUILayout.Label(labelText);
 
                 if (_runner.LandSettings.InfluenceLimit == 0)
                     influence = influence.Pack(_runner.LandSettings.InfluenceThreshold);
@@ -437,12 +390,15 @@ namespace TerrainDemo.Editor
 
                 GUILayout.Label("Packed");
                 labelText = String.Join("\n",
-                    influence.Select(z => String.Format("[{0}] - {1}", z.Zone, z.Value)).ToArray());
-                GUILayout.TextArea(labelText);
+                    influence.Select(z => String.Format("[{0}] - {1:F3}", z.Zone, z.Value)).ToArray());
+                GUILayout.Label(labelText);
+                GUI.DragWindow();
             };
 
             Handles.BeginGUI();
-            GUILayout.Window(5, new Rect(Vector2.zero, Vector2.one * 200), windowFunc, "Influence");
+            _influenceInfoRect.width = 0;
+            _influenceInfoRect.height = 0;
+            _influenceInfoRect = GUILayout.Window(6, _influenceInfoRect, windowFunc, "Influence");
             Handles.EndGUI();
         }
 
@@ -459,6 +415,21 @@ namespace TerrainDemo.Editor
             _zoneInfoRect.width = 0;
             _zoneInfoRect.height = 0;
             _zoneInfoRect = GUILayout.Window(4, _zoneInfoRect, windowFunc, "Zone");
+            Handles.EndGUI();
+        }
+
+        private void ShowClusterInfo(ClusterLayout cluster)
+        {
+            GUI.WindowFunction windowFunc = id =>
+            {
+                GUILayout.Label(string.Format("Id, type: {0} - {1}", cluster.Id, cluster.Type));
+                GUILayout.Label(string.Format("Zones: {0}", cluster.Zones.Count()));
+            };
+
+            Handles.BeginGUI();
+            _clusterInfoRect.width = 0;
+            _clusterInfoRect.height = 0;
+            _clusterInfoRect = GUILayout.Window(5, _clusterInfoRect, windowFunc, "Cluster");
             Handles.EndGUI();
         }
 
@@ -526,15 +497,16 @@ namespace TerrainDemo.Editor
 
         #endregion
 
-        #region HUD
+        #region Texts
 
         private void DrawZonesId()
         {
-            GUIStyle style = new GUIStyle {normal = {textColor = Color.white}};
+            if(_zonesIdLabelStyle == null)
+                _zonesIdLabelStyle = new GUIStyle {normal = {textColor = Color.white}};
 
             //Draw zone id's
             foreach (var zone in _main.LandLayout.Zones)
-                Handles.Label(zone.Center.ConvertTo3D(), zone.Cell.Id.ToString(), style);
+                Handles.Label(zone.Center.ConvertTo3D(), zone.Cell.Id.ToString(), _zonesIdLabelStyle);
         }
 
         #endregion

@@ -20,11 +20,7 @@ namespace TerrainDemo.Settings
         public ZoneSettings[] Zones = new ZoneSettings[0];
         public LayoutGenerator.Type LayoutGenerator = Generators.LayoutGenerator.Type.PoissonClustered;
 
-
         [Header("Influence settings")]
-        public float IDWCoeff = 2;
-        public float IDWOffset = 0;
-        public float IDWRadius = 30;
         public int IDWNearestPoints = 7;
         public bool InterpolateInfluence = true;
         [Range(0, 1)]

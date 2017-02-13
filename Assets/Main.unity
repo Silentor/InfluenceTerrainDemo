@@ -280,7 +280,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   LandSize: 30
   RegenerateSeed: 1
-  Seed: 0
+  Seed: 1796121869
   GlobalHeightFreq: 0.002
   GlobalHeightAmp: 0
   ZonesDensity: {x: 30, y: 40}
