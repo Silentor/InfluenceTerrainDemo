@@ -8,7 +8,6 @@ namespace TerrainDemo
     {
         public string Name;
         public Color LandColor_ = Color.magenta;
-        public bool IsInterval;
         public ZoneType Type;
         public BlockType DefaultBlock;
 

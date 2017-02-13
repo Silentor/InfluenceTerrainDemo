@@ -32,8 +32,6 @@ namespace TerrainDemo.Layout
         /// </summary>
         public readonly Bounds2i ChunkBounds;
 
-        public bool IsInterval { get { return _settings.IsInterval ; } }
-
         public ZoneSettings Settings { get { return _settings; } }
 
         public IEnumerable<ZoneLayout> Neighbors { get { return _neighbors; } }

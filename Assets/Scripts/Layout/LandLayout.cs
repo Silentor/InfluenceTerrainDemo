@@ -68,7 +68,7 @@ namespace TerrainDemo.Layout
             }
 
             _baseHeight = new alglib.idwinterpolant();
-            alglib.idwbuildmodifiedshepard(points, baseHeights.Length, 2, 2, 5, 7, out _baseHeight);
+            alglib.idwbuildmodifiedshepard(points, baseHeights.Length, 2, 1, 6, 10, out _baseHeight);
 
             //Set Clusters and Zones collections
             var clusterLayouts = new ClusterLayout[clusters.Length];
@@ -208,12 +208,9 @@ namespace TerrainDemo.Layout
         }
 
         [Pure]
-        public ZoneLayout GetZoneFor(Vector2 position, bool respectIntervals)
+        public ZoneLayout GetZoneFor(Vector2 position)
         {
-            if(respectIntervals)
-                return Zones.ElementAt(CellMesh.GetCellFor(position, c => !Zones.ElementAt(c.Id).IsInterval).Id);
-            else
-                return Zones.ElementAt(CellMesh.GetCellFor(position).Id);
+            return Zones.ElementAt(CellMesh.GetCellFor(position).Id);
         }
 
         public double GetBaseHeight(float worldX, float worldZ)

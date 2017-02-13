@@ -165,7 +165,6 @@ namespace TerrainDemo.Editor
                 {
                     if (Event.current.shift)
                         ShowInfluenceInfo(cursorPosition.Value);
-                    //ShowCursorInfo(cursorPosition.Value);
                 }
 
                 //Dirty debug
@@ -607,7 +606,7 @@ namespace TerrainDemo.Editor
 
                     if (LandState >= LandState.Layout)
                     {
-                        _selectedZone = _main.LandLayout.GetZoneFor(_layoutIntersection.Value, false);
+                        _selectedZone = _main.LandLayout.GetZoneFor(_layoutIntersection.Value);
                         _selectedCluster = _main.LandLayout.GetClusterFor(_selectedZone);
                     }
                 }
