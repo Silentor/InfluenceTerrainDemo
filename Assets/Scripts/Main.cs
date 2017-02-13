@@ -21,6 +21,8 @@ namespace TerrainDemo
 
         public LandMap Map { get; private set; }
 
+        public readonly Dictionary<Vector2i, ChunkGO> VisualizedChunks = new Dictionary<Vector2i, ChunkGO>();         //todo Move to appropriate Visualizer class
+
         //public Observer Observer { get; private set; }
 
         public Main(LandSettings settings, IObserver observer, MesherSettings mesherSettings)
@@ -82,22 +84,22 @@ namespace TerrainDemo
         /// </summary>
         public void GenerateMesh()
         {
-            foreach (var farAwayChunk in _visualizedChunks.ToArray())
+            foreach (var farAwayChunk in VisualizedChunks.ToArray())
                 farAwayChunk.Value.Dispose();
-            _visualizedChunks.Clear();
+            VisualizedChunks.Clear();
 
             _mesher.Clear();
 
-            foreach (var chunk in Map.Map.Values)
+            foreach (var chunk in Map.Chunks.Values)
             {
-                var mesh = _mesher.Generate(chunk, Map.Map);
+                var mesh = _mesher.Generate(chunk, Map.Chunks);
                 var go = ChunkGO.Create(chunk, mesh);
                 //Debug.LogFormat(go, "Generated mesh for chunk {0}", chunk.Position);
 
-                if (_visualizedChunks.ContainsKey(chunk.Position))
+                if (VisualizedChunks.ContainsKey(chunk.Position))
                     Debug.LogFormat("Chunk {0} already visualized", chunk.Position);
 
-                _visualizedChunks[chunk.Position] = go;
+                VisualizedChunks[chunk.Position] = go;
             }
             //ObserverOnChanged();
         }
@@ -119,7 +121,6 @@ namespace TerrainDemo
         private readonly IObserver _observer;
         private readonly LandGenerator _landGenerator;
         private readonly List<ZoneLayout> _alreadyGeneratedZones = new List<ZoneLayout>();
-        private readonly Dictionary<Vector2i, ChunkGO> _visualizedChunks = new Dictionary<Vector2i, ChunkGO>();         //Move to appropriate Visualizer class
         private readonly LayoutGenerator _generator;
 
         private void GenerateAllMap()
@@ -155,15 +156,15 @@ namespace TerrainDemo
         {
             if (_observer.IsBoundVisible(Chunk.GetBounds(chunk.Position)))
             {
-                var mesh = _mesher.Generate(chunk, Map.Map);
+                var mesh = _mesher.Generate(chunk, Map.Chunks);
                 Debug.LogFormat("Generated mesh for chunk {0}", chunk.Position);
 
                 var go = ChunkGO.Create(chunk, mesh);
 
-                if (_visualizedChunks.ContainsKey(chunk.Position))
+                if (VisualizedChunks.ContainsKey(chunk.Position))
                     Debug.LogFormat("Chunk {0} already visualized", chunk.Position);
                 
-                _visualizedChunks[chunk.Position] = go;
+                VisualizedChunks[chunk.Position] = go;
             }
         }
 
@@ -184,28 +185,28 @@ namespace TerrainDemo
         private void ObserverOnChangedVisualizer()
         {
             //Destroy chunk meshes far away from Observer
-            var farAwayChunks = _visualizedChunks.Where(vc => !_observer.IsBoundVisible(Chunk.GetBounds(vc.Key))).ToArray();
+            var farAwayChunks = VisualizedChunks.Where(vc => !_observer.IsBoundVisible(Chunk.GetBounds(vc.Key))).ToArray();
             foreach (var farAwayChunk in farAwayChunks)
             {
                 farAwayChunk.Value.Dispose();
-                _visualizedChunks.Remove(farAwayChunk.Key);
+                VisualizedChunks.Remove(farAwayChunk.Key);
             }
 
             //Draw chunks in Observer range
             foreach (var chunkToDraw in _observer.ValuableChunkPos(_observer.Range))
             {
-                if (!_visualizedChunks.ContainsKey(chunkToDraw.Position))
+                if (!VisualizedChunks.ContainsKey(chunkToDraw.Position))
                 {
                     Chunk chunk;
-                    if (Map.Map.TryGetValue(chunkToDraw.Position, out chunk))
+                    if (Map.Chunks.TryGetValue(chunkToDraw.Position, out chunk))
                     {
-                        var mesh = _mesher.Generate(chunk, Map.Map);
+                        var mesh = _mesher.Generate(chunk, Map.Chunks);
                         var go = ChunkGO.Create(chunk, mesh);
 
-                        if (_visualizedChunks.ContainsKey(chunk.Position))
+                        if (VisualizedChunks.ContainsKey(chunk.Position))
                             Debug.LogFormat("Chunk {0} already visualized", chunk.Position);
 
-                        _visualizedChunks[chunk.Position] = go;
+                        VisualizedChunks[chunk.Position] = go;
                     }
                 }
             }

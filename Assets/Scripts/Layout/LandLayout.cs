@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using JetBrains.Annotations;
 using TerrainDemo.Settings;
 using TerrainDemo.Threads;
 using TerrainDemo.Tools;
@@ -86,7 +87,7 @@ namespace TerrainDemo.Layout
                     zoneLayouts.Add(zoneLayout);
                 }
 
-                clusterLayouts[i] = new ClusterLayout(clusterInfo.Heights, zoneLayouts);
+                clusterLayouts[i] = new ClusterLayout(clusterInfo.Type, clusterInfo.Heights, zoneLayouts, cellMesh);
             }
             Clusters = clusterLayouts;
             Zones = zones;
@@ -105,7 +106,7 @@ namespace TerrainDemo.Layout
         /// <returns></returns>
         public IEnumerable<Vector2i> GetChunks(ZoneLayout zone)
         {
-            var centerChunk = Chunk.GetPosition(zone.Center);
+            var centerChunk = Chunk.GetPositionFromWorld(zone.Center);
             var result = new List<Vector2i>();
             var processed = new List<Vector2i>();
 
@@ -113,9 +114,11 @@ namespace TerrainDemo.Layout
             return result;
         }
 
-        public IEnumerable<ZoneLayout> GetCluster(ZoneLayout zone)
+        public ClusterLayout GetClusterFor([NotNull] ZoneLayout zone)
         {
-            return Zones.Where(z => z.ClusterId == zone.ClusterId);
+            if (zone == null) throw new ArgumentNullException("zone");
+
+            return Clusters.First(c => c.Zones.Contains(zone));
         }
 
         public IEnumerable<ZoneLayout> GetNeighbors(ZoneLayout zone)
@@ -204,6 +207,7 @@ namespace TerrainDemo.Layout
             return result;
         }
 
+        [Pure]
         public ZoneLayout GetZoneFor(Vector2 position, bool respectIntervals)
         {
             if(respectIntervals)

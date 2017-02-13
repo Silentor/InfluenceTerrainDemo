@@ -1,40 +1,76 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Linq;
+using System.Net.NetworkInformation;
 using Assets.Code.Tools;
+using JetBrains.Annotations;
 using TerrainDemo.Layout;
+using TerrainDemo.Map;
+using TerrainDemo.Settings;
 using TerrainDemo.Tools;
 using TerrainDemo.Voronoi;
 using UnityEditor;
+using UnityEditor.Graphs;
 using UnityEngine;
 using UnityEngine.EventSystems;
+
 
 namespace TerrainDemo.Editor
 {
     [CustomEditor(typeof(Runner))]
     public class RunnerEditor : UnityEditor.Editor
     {
-        private Runner _target;
+        private Runner _runner;
         //private LandLayout _layout;
         private Main _main;
         private static RunnerEditor _self;
 
-        private Vector3? _cachedMapIntersection;
-        private int _mapIntersectionCachedFrame = -1;
-        private Vector2? _cachedLayoutIntersection;
-        private int _layoutIntersectionCachedFrame = -1;
-        private Vector3 _cameraPosition;
+        private Vector3? _mapIntersection;
+        private Vector2? _layoutIntersection;
+        private float _mapIntersectionDistance;
+        private float _layoutIntersectionDistance;
+
+        private LandSettings _settings;
+        private Ray _userInputRay;
+        private Vector2i? _selectedBlock;
+        private Vector2i? _selectedChunk;
+        private ZoneLayout _selectedZone;
+        private ClusterLayout _selectedCluster;
+
+        //private Dictionary<string, string[]> _infoBlocks = new Dictionary<string, string[]>();
+        private Rect _cursorInfoRect;
+        private Rect _blockInfoRect;
+        private Rect _chunkInfoRect;
+        private Rect _zoneInfoRect;
+
+        const float DecalOffset = 0.01f;
 
         #region Unity
 
+        void Awake()
+        {
+            var sceneViewSize = EditorWindow.GetWindow<SceneView>().camera.pixelRect;
+            _cursorInfoRect = new Rect(0, sceneViewSize.height - 50, 0, 0);
+            _blockInfoRect = new Rect(0, _cursorInfoRect.y - 120, 0, 0);
+            _chunkInfoRect = new Rect(0, _blockInfoRect.y - 80, 0, 0);
+            _zoneInfoRect = new Rect(0, _chunkInfoRect.y - 90, 0, 0);
+        }
+
         void OnEnable()
         {
+            _runner = (Runner)target;
+            _self = this;
+
             if (Application.isPlaying)
             {
-                _target = (Runner)target;
-                _main = _target.Main;
-                _self = this;
+                _main = _runner.Main;
+                _settings = _runner.LandSettings;
+            }
+            else
+            {
+                _settings = _runner.GetComponent<LandSettings>();
             }
         }
 
@@ -42,49 +78,95 @@ namespace TerrainDemo.Editor
         {
             base.OnInspectorGUI();
 
-            if (Application.isPlaying && _target != null)
+            if (Application.isPlaying && _runner != null)
             {
                 if (GUILayout.Button("Rebuild layout"))
-                    _target.GenerateLayout();
+                    _runner.GenerateLayout();
 
                 if (GUILayout.Button("Rebuild map"))
-                    _target.GenerateMap();
+                    _runner.GenerateMap();
 
                 if (GUILayout.Button("Rebuild mesh"))
-                    _target.GenerateMesh();
+                    _runner.GenerateMesh();
 
                 if (GUILayout.Button("Save mesh"))
-                    _target.SaveMesh();
+                    _runner.SaveMesh();
             }
         }
 
         void OnSceneGUI()
         {
+            UpdateUserInput();
+
+            //Most basic land properties
+            DrawLandBound(_settings.LandBounds);
+
+            if (LandState < LandState.Mesh || IsTopDown)
+                DrawChunkGrid(_settings.LandBounds);
+
+            if (_selectedBlock.HasValue && _selectedChunk.HasValue)
+            {
+                DrawSelectedChunk(_selectedChunk.Value);
+                DrawSelectedBlock(_selectedBlock.Value);
+            }
+
+            if (LandState >= LandState.Layout)
+                DrawBaseHeightPoints(_main.LandLayout);
+
+            if (LandState == LandState.Layout || LandState == LandState.Map ||
+                (LandState == LandState.Mesh && IsTopDown))
+            {
+                DrawLandLayout();
+                DrawZonesId();
+
+                if (_selectedZone != null)
+                {
+                    DrawSelectedZone(_selectedZone);
+                }
+
+                if(_selectedCluster != null)
+                    DrawSelectedCluster(_selectedCluster);
+            }
+
+            if (LandState == LandState.Mesh && _mapIntersection.HasValue)
+            {
+                ShowCursorInfo(_mapIntersection.Value);
+                DrawCursor(_mapIntersection.Value);
+            }
+            else if (_layoutIntersection.HasValue)
+                ShowCursorInfo(_layoutIntersection.Value);
+
+            if (_selectedBlock.HasValue)
+            {
+                if (LandState >= LandState.Map)
+                {
+                    var block = _main.Map.GetBlock(_selectedBlock.Value);
+                    ShowBlockInfo(block);
+                }
+                else
+                {
+                    ShowBlockInfo(BlockInfo.Empty, _selectedBlock);
+                }
+
+                ShowChunkInfo(null, _selectedBlock.Value);
+            }
+
+            if (_selectedZone != null)
+            {
+                ShowZoneInfo(_selectedZone);
+            }
+
             //Get intersection points
             if (Application.isPlaying)
             {
-                DrawLandLayout();
-
-                Vector3? cursorPosition;
-
-                if (IsMapMode())
-                    cursorPosition = GetMapIntersection();
-                else
-                    cursorPosition = GetLayoutIntersection().ConvertTo3D();
+                Vector3? cursorPosition = null;
 
                 if (cursorPosition.HasValue)
                 {
-                    DrawSelectedCluster(cursorPosition.Value.ConvertTo2D());
-
                     if (Event.current.shift)
                         ShowInfluenceInfo(cursorPosition.Value);
-                    ShowCursorInfo(cursorPosition.Value);
-                    ShowBlockInfo(cursorPosition.Value);
-                    ShowChunkInfo(cursorPosition.Value);
-                    ShowZoneInfo(cursorPosition.Value);
+                    //ShowCursorInfo(cursorPosition.Value);
                 }
-
-                ShowLayoutHints();
 
                 //Dirty debug
                 
@@ -100,209 +182,242 @@ namespace TerrainDemo.Editor
                 }
                 
             }
+
+            
         }
 
-        [DrawGizmo(GizmoType.Selected)]
-        static void DrawGizmos(Runner target, GizmoType gizmoType)
-        {
-            if(Application.isPlaying && _self != null)
-                _self.DrawGizmos2();
-        }
+        //[DrawGizmo(GizmoType.Selected)]
+        //static void DrawGizmos(Runner target, GizmoType gizmoType)
+        //{
+        //    if(_self != null)
+        //        _self.OnGizmos();
+        //}
 
-        private void DrawGizmos2()
-        {
-            //Draw land bounds
-            DrawRectangle.ForGizmo(_target.LandSettings.LandBounds, Color.gray);
+        //private void OnGizmos()
+        //{
+        //}
 
-            //Get intersection points
-            if (Application.isPlaying)
+        #endregion
+
+        private void DrawSelectedChunk(Vector2i chunkPosition)
+        {
+            if(LandState <= LandState.Map)
+                DrawRectangle.ForHandle(Chunk.GetBounds(chunkPosition), Color.red);
+            else
             {
-                if (IsMapMode())
+                Chunk selectedChunk;
+                if (_main.Map.Chunks.TryGetValue(chunkPosition, out selectedChunk))
                 {
-                    //Draw cursor-map intersection
-                    var mapInter = GetMapIntersection();
-                    if (mapInter.HasValue)
-                    {
-                        Gizmos.color = Color.red;
-                        Gizmos.DrawSphere(mapInter.Value, 0.05f);
-                        DrawChunkAndBlock(mapInter.Value.ConvertTo2D());
-
-                        if(IsLayoutMode())
-                            DrawSelectedZone(mapInter.Value.ConvertTo2D());
-
-                        return;
-                    }
-                }
-
-                if (IsLayoutMode())
-                {
-                    var layoutHit = GetLayoutIntersection();
-                    if (layoutHit.HasValue)
-                    {
-                        DrawSelectedZone(layoutHit.Value);
-                        DrawChunkAndBlock(layoutHit.Value);
-                    }
+                    DrawPolyline.ForDebug(GetChunkDecalBound(selectedChunk, DecalOffset), Color.red, false);
                 }
             }
         }
 
-        #endregion
-
-        private void DrawChunkAndBlock(Vector2 worldPosition)
+        private void DrawSelectedBlock(Vector2i blockPosition)
         {
-            const float yOffset = 0.01f;
-
-            if (IsMapMode())
+            if (LandState <= LandState.Map)
+                DrawRectangle.ForHandle(BlockInfo.GetBounds(blockPosition), Color.red);
+            else
             {
-                var chunkPos = Chunk.GetPosition(worldPosition);
+                //Draw block bounds
+                var localPos = Chunk.GetLocalPosition(blockPosition);
+                var chunkPos = Chunk.GetPositionFromBlock(blockPosition);
+
                 Chunk chunk;
-                if (_main.Map.Map.TryGetValue(chunkPos, out chunk))
+                if (_main.Map.Chunks.TryGetValue(chunkPos, out chunk))
                 {
-                    //Draw chunk bounds
-                    var chunkBounds = (Bounds)Chunk.GetBounds(chunkPos);
-                    
-                    var r1 = new Vector3(chunkBounds.min.x, chunk.HeightMap[0, 0] + yOffset, chunkBounds.min.z);
-                    var r2 = new Vector3(chunkBounds.max.x, chunk.HeightMap[chunk.GridSize - 1, 0] + yOffset, chunkBounds.min.z);
-                    var r3 = new Vector3(chunkBounds.min.x, chunk.HeightMap[0, chunk.GridSize - 1] + yOffset, chunkBounds.max.z);
-                    var r4 = new Vector3(chunkBounds.max.x, chunk.HeightMap[chunk.GridSize - 1, chunk.GridSize - 1] + yOffset,
-                        chunkBounds.max.z);
-
-                    DrawPolyline.ForGizmo(GetChunkPolyBound(chunk, yOffset), Color.red, false);
-
-                    //Draw block bounds
-                    var blockPos = (Vector2i) worldPosition;
-                    var localPos = Chunk.GetLocalPosition(worldPosition);
-                    r1 = new Vector3(blockPos.X, chunk.HeightMap[localPos.X, localPos.Z] + yOffset, blockPos.Z);
-                    r2 = new Vector3(blockPos.X + 1, chunk.HeightMap[localPos.X + 1, localPos.Z] + yOffset, blockPos.Z);
-                    r3 = new Vector3(blockPos.X, chunk.HeightMap[localPos.X, localPos.Z + 1] + yOffset, blockPos.Z + 1);
-                    r4 = new Vector3(blockPos.X + 1, chunk.HeightMap[localPos.X + 1, localPos.Z + 1] + yOffset, blockPos.Z + 1);
+                    var r1 = new Vector3(blockPosition.X, chunk.HeightMap[localPos.X, localPos.Z] + DecalOffset, blockPosition.Z);
+                    var r2 = new Vector3(blockPosition.X + 1, chunk.HeightMap[localPos.X + 1, localPos.Z] + DecalOffset, blockPosition.Z);
+                    var r3 = new Vector3(blockPosition.X, chunk.HeightMap[localPos.X, localPos.Z + 1] + DecalOffset, blockPosition.Z + 1);
+                    var r4 = new Vector3(blockPosition.X + 1, chunk.HeightMap[localPos.X + 1, localPos.Z + 1] + DecalOffset, blockPosition.Z + 1);
 
                     DrawRectangle.ForDebug(r1, r2, r4, r3, Color.red);
 
                     //Draw block normal
                     var n1 = chunk.NormalMap[localPos.X, localPos.Z];
-                    var blockCenter = (r1 + r2 + r3 + r4)/4;
-                    DrawArrow.ForDebug(blockCenter, n1, Color.red);
+                    var blockCenter = (r1 + r2 + r3 + r4) / 4;
+                    Debug.DrawRay(blockCenter, n1, new Color(1f, 0f, 0f, 0.2f));
                 }
-            }
-            else                //Layout mode
-            {
-                //Draw chunk bounds
-                var chunkPos = Chunk.GetPosition(worldPosition);
-                var chunkBounds = Chunk.GetBounds(chunkPos);
-                DrawRectangle.ForGizmo(chunkBounds, Color.red);
-
-                //Draw block bounds
-                DrawRectangle.ForGizmo(new Bounds2i((Vector2i) worldPosition, 1, 1), Color.red);
             }
         }
 
-        private void DrawSelectedZone(Vector2 worldPosition)
+        void DrawCursor(Vector3 cursorPosition)
         {
+            DebugExtension.DebugPoint(cursorPosition, Color.red, 0.3f);
+        }
+
+        private void DrawSelectedZone([NotNull] ZoneLayout zone)        //todo pass zone
+        {
+            if (zone == null) throw new ArgumentNullException("zone");
+
             //Calc zone under cursor
-            if (_main.LandLayout != null && _main.LandLayout.Zones.Any() && _main.LandLayout.Bounds.Contains((Vector2i)worldPosition))
-            {
-                var selectedZone = _main.LandLayout.GetZoneFor(worldPosition, false);
-                var zoneColor = _target.LandSettings[selectedZone.Type].LandColor;
 
-                Gizmos.color = zoneColor;
+            //var zoneColor = _settings[zone.Type].LandColor;
 
-                //Draw zone bounds
-                //foreach (var chunk in selectedZone.ChunkBounds)
+            var zonePoints = new Vector3[zone.Cell.Vertices.Length + 1];
+            for (var i = 0; i < zone.Cell.Vertices.Length; i++)
+                zonePoints[i] = zone.Cell.Vertices[i].ConvertTo3D();
+            zonePoints[zonePoints.Length - 1] = zone.Cell.Vertices.First().ConvertTo3D();
+            Handles.color = Color.red;
+            Handles.DrawPolyLine(zonePoints);
+
+            //Draw zone bounds
+            //foreach (var chunk in selectedZone.ChunkBounds)
+            //DrawRectangle.ForGizmo(Chunk.GetBounds(chunk), zoneColor);
+
+            //foreach (var chunk in _main.LandLayout.GetChunks(selectedZone))
                 //DrawRectangle.ForGizmo(Chunk.GetBounds(chunk), zoneColor);
 
-                foreach (var chunk in _main.LandLayout.GetChunks(selectedZone))
-                    DrawRectangle.ForGizmo(Chunk.GetBounds(chunk), zoneColor);
-
-                foreach (var block in selectedZone.GetBlocks2())
-                {
-                    var blockBounds = new Bounds2i(block, 1, 1);
-                    DrawRectangle.ForGizmo(blockBounds, zoneColor);
-                }
-            }
+            //foreach (var block in selectedZone.GetBlocks2())
+            //{
+                //var blockBounds = new Bounds2i(block, 1, 1);
+                //DrawRectangle.ForGizmo(blockBounds, zoneColor);
+            //}
         }
 
         /// <summary>
-        /// Draw basic land layout (land border, zones, clusters)
+        /// Draw basic land layout: zones and clusters
         /// </summary>
         private void DrawLandLayout()
         {
-            if (!IsLayoutMode())
-                return;
-
             var layout = _main.LandLayout;
             var zones = layout.Zones.ToArray();
             Handles.matrix = Matrix4x4.identity;
 
-            var newCenters = zones.Select(c => c.Center.ConvertTo3D()).ToArray();
-
-            for (int i = 0; i < zones.Count(); i++)
+            foreach (var cluster in layout.Clusters)
             {
-                var zone = zones[i];
-                Handles.color = zone.Type != ZoneType.Empty
-                    ? _target.LandSettings[zone.Type].LandColor
-                    : Color.black;
+                Handles.color = _settings[cluster.Type].LandColor;
 
-                //Draw zone edges
-                foreach (var edge in zone.Cell.Edges)
-                    Handles.DrawAAPolyLine(1, edge.Vertex1.ConvertTo3D(), edge.Vertex2.ConvertTo3D());
-
-                //Draw zone fill
-                if (_target.ShowFill)
+                //Draw zones
+                var zonesSegments = new List<Vector3>();                //todo consider cache and remove duplicate segments
+                foreach (var zoneLayout in cluster.Zones)
                 {
-                    Handles.color = new Color(Handles.color.r / 2, Handles.color.g / 2, Handles.color.b / 2,
-                        Handles.color.a / 2);
-                    foreach (var vert in zone.Cell.Vertices)
-                        Handles.DrawLine(zone.Center.ConvertTo3D(), vert.ConvertTo3D());
+                    foreach (var cellEdge in zoneLayout.Cell.Edges)
+                    {
+                        zonesSegments.Add(cellEdge.Vertex1.ConvertTo3D());
+                        zonesSegments.Add(cellEdge.Vertex2.ConvertTo3D());
+                    }
+
+                    if (_runner.ShowFill)
+                    {
+                        foreach (var cellVertex in zoneLayout.Cell.Vertices)
+                        {
+                            zonesSegments.Add(zoneLayout.Center.ConvertTo3D());
+                            zonesSegments.Add(cellVertex.ConvertTo3D());
+                        }
+                    }
                 }
 
-                /*
-                newCenters[i] = Handles.Slider2D(newCenters[i], Vector3.forward, Vector3.forward, Vector3.right, 5,
-                    Handles.SphereCap, 0);
-                    */
+                Handles.DrawLines(zonesSegments.ToArray());
 
-                //Draw Delaunay triangles
-                if (_target.ShowDelaunay)
+                //Draw cluster, brute force implementation todo optimize
+                foreach (var clusterEdge in cluster.Edges)
                 {
-                    Handles.color = new Color(1, 0, 0, 0.5f);
+                    Handles.DrawAAPolyLine(6, clusterEdge.Vertex1.ConvertTo3D(), clusterEdge.Vertex2.ConvertTo3D());
+                }
+            }
+
+            //Draw Delaunay triangles
+            if (_runner.ShowDelaunay)
+            {
+                var delaunaySegments = new List<Vector3>();
+                foreach (var zone in layout.Zones)
+                {
                     foreach (var cellNeighbor in zone.Cell.Neighbors)
-                        Handles.DrawLine(zone.Center.ConvertTo3D(), cellNeighbor.Center.ConvertTo3D());
+                    {
+                        delaunaySegments.Add(zone.Center.ConvertTo3D());
+                        delaunaySegments.Add(cellNeighbor.Center.ConvertTo3D());
+                    }
                 }
+
+                Handles.color = Color.gray;
+                Handles.DrawLines(delaunaySegments.ToArray());                
             }
 
             //Draw visible zones
-            var observerPos = _target.Observer.Position.ConvertTo2D();
-            var visibleCells = layout.CellMesh.GetCellsFor(observerPos, _target.Observer.Range);
-            foreach (var visibleCell in visibleCells)
-                DrawCell.ForDebug(visibleCell, Color.white);
+
+//            var observerPos = _runner.Observer.Position.ConvertTo2D();
+  //          var visibleCells = layout.CellMesh.GetCellsFor(observerPos, _runner.Observer.Range);
+    //        foreach (var visibleCell in visibleCells)
+      //          DrawCell.ForDebug(visibleCell, Color.white);
         }
 
-        private void DrawSelectedCluster(Vector2 worldPosition)
+        private void DrawSelectedCluster(ClusterLayout cluster)
         {
-            if (IsLayoutMode())
+            Handles.color = Color.red;
+            foreach (var edge in cluster.Edges)
+                //Not very efficient to call native method for every single edge todo prepare entire border polyline
             {
-                var selectedZone = _main.LandLayout.GetZoneFor(worldPosition, false);
-                var zoneColor = _target.LandSettings[selectedZone.Type].LandColor;
-
-                var clusterCells = _main.LandLayout.GetCluster(selectedZone).Select(zl => zl.Cell).ToArray();
-                var cluster = new CellMesh.Submesh(_main.LandLayout.CellMesh, clusterCells);
-
-                //Get cluster border
-                //Get unconnected edges
-                var outerEdges =
-                    cluster.GetBorderCells()
-                        .SelectMany(c => c.Edges)
-                        .Where(e => !cluster.Cells.Contains(e.Neighbor))
-                        .ToArray();
-
-                Handles.color = zoneColor;
-                foreach (var edge in outerEdges)
-                    //Not very efficient to call native method for every single edge todo prepare entire border polyline
-                    Handles.DrawAAPolyLine(6, edge.Vertex1.ConvertTo3D(), edge.Vertex2.ConvertTo3D());
+                Handles.DrawAAPolyLine(3, edge.Vertex1.ConvertTo3D(), edge.Vertex2.ConvertTo3D());
             }
         }
 
+        private void DrawBaseHeightPoints(LandLayout layout)
+        {
+            foreach (var cluster in layout.Clusters)
+            foreach (var heightPoint in cluster.BaseHeightPoints)
+                DebugExtension.DebugPoint(heightPoint, Color.red);
+        }
+
+        private void DrawLandBound(Bounds2i bounds)
+        {
+            DrawRectangle.ForDebug(bounds, Color.gray);
+        }
+
+        /// <summary>
+        /// Draw chunks grid inside land bounds
+        /// </summary>
+        /// <param name="bounds"></param>
+        private void DrawChunkGrid(Bounds2i bounds)
+        {
+            Gizmos.color = Color.gray;
+            var corner1 = new Vector3(bounds.Min.X, 0, bounds.Min.Z);
+            var corner2 = new Vector3(bounds.Min.X, 0, bounds.Max.Z + 1);
+            var corner3 = new Vector3(bounds.Max.X + 1, 0, bounds.Max.Z + 1);
+            var corner4 = new Vector3(bounds.Max.X + 1, 0, bounds.Min.Z);
+
+            var segments = new List<Vector3>();
+
+            for (var x = corner1.x; x < corner4.x; x += Chunk.Size)
+            {
+                segments.Add(new Vector3(x, 0, corner1.z));
+                segments.Add(new Vector3(x, 0, corner2.z));
+            }
+
+            for (var z = corner1.z; z < corner2.z; z += Chunk.Size)
+            {
+                segments.Add(new Vector3(corner1.x, 0, z));
+                segments.Add(new Vector3(corner4.x, 0, z));
+            }
+
+            Handles.color = Color.gray;
+            Handles.DrawLines(segments.ToArray());
+        }
+
         #region Info blocks
+
+        //private void AddInfoBlock(string blockTitle, params string[] data)
+        //{
+        //    _infoBlocks[blockTitle] = data;
+        //}
+
+        //private void ShowInfoBlocks()
+        //{
+        //    int longestString = 0;
+        //    var strings = new List<string>();
+
+        //    foreach (var infoBlock in _infoBlocks)
+        //    {
+        //        if (infoBlock.Key.Length > longestString)
+        //            longestString = infoBlock.Key.Length;
+        //        foreach (var dataString in infoBlock.Value)
+        //        {
+                    
+        //        }
+        //    }
+
+        //    Handles.BeginGUI();
+        //}
 
         private void ShowInfluenceInfo(Vector3 layoutPosition)
         {
@@ -316,10 +431,10 @@ namespace TerrainDemo.Editor
                     influence.Select(z => String.Format("[{0}] - {1}", z.Zone, z.Value)).ToArray());
                 GUILayout.TextArea(labelText);
 
-                if (_target.LandSettings.InfluenceLimit == 0)
-                    influence = influence.Pack(_target.LandSettings.InfluenceThreshold);
+                if (_runner.LandSettings.InfluenceLimit == 0)
+                    influence = influence.Pack(_runner.LandSettings.InfluenceThreshold);
                 else
-                    influence = influence.Pack(_target.LandSettings.InfluenceLimit);
+                    influence = influence.Pack(_runner.LandSettings.InfluenceLimit);
 
                 GUILayout.Label("Packed");
                 labelText = String.Join("\n",
@@ -332,85 +447,81 @@ namespace TerrainDemo.Editor
             Handles.EndGUI();
         }
 
-        private void ShowZoneInfo(Vector3 position)
+        private void ShowZoneInfo(ZoneLayout zone)
         {
-            var layout = _main.LandLayout;
-            //Calc zone under cursor
-            if (layout != null && layout.Zones.Any())
+            GUI.WindowFunction windowFunc = id =>
             {
-                var selectedPosition = position.ConvertTo2D();
-                var selectedZone = layout.Zones.OrderBy(z => Vector2.SqrMagnitude(z.Center - selectedPosition)).First();
+                GUILayout.Label(string.Format("Id, type: {0} - {1}", zone.Cell.Id, zone.Type));
+                GUILayout.Label(string.Format("Cluster: {0}", zone.ClusterId));
+                GUILayout.Label(string.Format("Is closed: {0}", zone.Cell.IsClosed));
+            };
 
-                GUI.WindowFunction windowFunc = id =>
-                {
-                    GUILayout.Label(string.Format("Id, cluster, type: {0} - {1} - {2}", selectedZone.Cell.Id, selectedZone.ClusterId, selectedZone.Type));
-                    GUILayout.Label(string.Format("Is closed: {0}", selectedZone.Cell.IsClosed));
-                };
-
-                Handles.BeginGUI();
-                GUILayout.Window(4, new Rect(0, Screen.height - 400, 200, 110), windowFunc, "Zone");
-                Handles.EndGUI();
-            }
+            Handles.BeginGUI();
+            _zoneInfoRect.width = 0;
+            _zoneInfoRect.height = 0;
+            _zoneInfoRect = GUILayout.Window(4, _zoneInfoRect, windowFunc, "Zone");
+            Handles.EndGUI();
         }
 
-        private void ShowChunkInfo(Vector3 position)
+        private void ShowChunkInfo(Chunk chunk, Vector2i selectedBlockPosition)
         {
-            var selectPoint = position.ConvertTo2D();
-            var chunkPos = Chunk.GetPosition(selectPoint);
+            var chunkPos = chunk != null ? chunk.Position : Chunk.GetPositionFromBlock(selectedBlockPosition);
             var chunkBounds = Chunk.GetBounds(chunkPos);
-            var localPos = Chunk.GetLocalPosition(selectPoint);
+            var localPos = Chunk.GetLocalPosition(selectedBlockPosition);
 
             GUI.WindowFunction windowFunc = id =>
             {
                 GUILayout.Label("Pos: " + chunkPos + " : " + localPos);
                 GUILayout.Label("Bounds: " + chunkBounds.Min + "-" + chunkBounds.Max);
+                GUI.DragWindow();
             };
 
             Handles.BeginGUI();
-            GUILayout.Window(3, new Rect(0, Screen.height - 300, 200, 110), windowFunc, "Chunk");
+            _chunkInfoRect.width = 0;
+            _chunkInfoRect.height = 0;
+            _chunkInfoRect = GUILayout.Window(3, _chunkInfoRect, windowFunc, "Chunk");
             Handles.EndGUI();
         }
 
-        private void ShowBlockInfo(Vector3 position)
-        {
-            GUI.WindowFunction windowFunc;
-            if (IsMapMode())
-            {
-                var blockPos = (Vector2i)position;
-                var block = _main.Map.GetBlock(blockPos);
-                windowFunc = id =>
-                {
-                    GUILayout.Label("Pos: " + blockPos);
-                    GUILayout.Label("Type: " + block.Type);
-                    GUILayout.Label(string.Format("Height height: {0:F1}", block.Height));
-                    GUILayout.Label(string.Format("Normal: {0}", block.Normal));
-                    GUILayout.Label("Inclination: " + (int) Vector3.Angle(block.Normal, Vector3.up));
-                };
-            }
-            else //Layout mode
-            {
-                var blockPos = (Vector2i)position;
-                windowFunc = id =>
-                {
-                    GUILayout.Label("Pos: " + blockPos);
-                };
-            }
-
-            Handles.BeginGUI();
-            GUILayout.Window(1, new Rect(0, Screen.height - 220, 200, 110), windowFunc, "Block");
-            Handles.EndGUI();
-        }
-
-        private void ShowCursorInfo(Vector3 position)
+        private void ShowBlockInfo(BlockInfo block, Vector2i? blockPosition = null)
         {
             GUI.WindowFunction windowFunc = id =>
             {
-                GUILayout.Label("Cursor pos: " + position);
-                GUILayout.Label(string.Format("Distance: {0:F1}", Vector3.Distance(_cameraPosition, position)));
+                if (blockPosition == null)
+                {
+                    GUILayout.Label("Pos: " + block.Position);
+                    GUILayout.Label("Type: " + block.Type);
+                    GUILayout.Label(string.Format("Height: {0:F1}", block.Height));
+                    GUILayout.Label(string.Format("Normal: {0}", block.Normal));
+                    GUILayout.Label("Inclination: " + (int) Vector3.Angle(block.Normal, Vector3.up));
+                }
+                else
+                {
+                    GUILayout.Label("Pos: " + blockPosition.Value);
+                }
+                GUI.DragWindow();
             };
 
             Handles.BeginGUI();
-            GUILayout.Window(0, new Rect(0, Screen.height - 100, 200, 90), windowFunc, "Cursor");
+            _blockInfoRect.width = 0;
+            _blockInfoRect.height = 0;
+            _blockInfoRect = GUILayout.Window(1, _blockInfoRect, windowFunc, "Block");
+            Handles.EndGUI();
+        }
+
+        private void ShowCursorInfo(Vector3 cursorPosition)
+        {
+            GUI.WindowFunction windowFunc = id =>
+            {
+                GUILayout.Label("Pos: " + cursorPosition);
+                GUILayout.Label(string.Format("Distance: {0:F1}", Vector3.Distance(_userInputRay.origin, cursorPosition)));
+                GUI.DragWindow();
+            };
+
+            Handles.BeginGUI();
+            _cursorInfoRect.width = 0;
+            _cursorInfoRect.height = 0;
+            _cursorInfoRect = GUILayout.Window(0, _cursorInfoRect, windowFunc, "Cursor");
             Handles.EndGUI();
         }
 
@@ -418,89 +529,135 @@ namespace TerrainDemo.Editor
 
         #region HUD
 
-        private void ShowLayoutHints()
+        private void DrawZonesId()
         {
-            if (Application.isPlaying && IsLayoutMode())
-            {
-                GUIStyle style = new GUIStyle {normal = {textColor = Color.white}};
+            GUIStyle style = new GUIStyle {normal = {textColor = Color.white}};
 
-                //Draw zone id's
-                foreach (var zone in _main.LandLayout.Zones)
-                    Handles.Label(zone.Center.ConvertTo3D(), zone.Cell.Id.ToString(), style);
-            }
+            //Draw zone id's
+            foreach (var zone in _main.LandLayout.Zones)
+                Handles.Label(zone.Center.ConvertTo3D(), zone.Cell.Id.ToString(), style);
         }
 
         #endregion
 
 
-        private bool IsLayoutMode()
+
+
+        private LandState LandState
         {
-            var topDownView = SceneView.currentDrawingSceneView.camera.orthographic &&
-                              Vector3.Angle(SceneView.currentDrawingSceneView.camera.transform.forward, Vector3.down) <
-                              1;
-            return _main.LandLayout != null && (_main.Map == null || topDownView);
+            get
+            {
+                if(!Application.isPlaying)
+                    return LandState.None;
+
+                if(_main.VisualizedChunks.Count > 0)
+                    return LandState.Mesh;
+
+                if(_runner.Main.Map.Chunks.Count > 0)
+                    return LandState.Map;
+
+                return LandState.Layout;
+            }
         }
 
-        private bool IsMapMode()
+        private bool IsTopDown
         {
-            return _main.Map.Map.Count > 0;
+            get
+            {
+                return SceneView.currentDrawingSceneView.camera.orthographic &&
+                              Vector3.Angle(SceneView.currentDrawingSceneView.camera.transform.forward, Vector3.down) <
+                              1;
+            }
+        }
+
+        /// <summary>
+        /// Update actual user input: mouse ray, selected objects etc
+        /// </summary>
+        private void UpdateUserInput()
+        {
+            var pos = Event.current.mousePosition;
+            var userInputRay = HandleUtility.GUIPointToWorldRay(pos);
+
+            //Update only if mouse is used
+            if (userInputRay.origin != _userInputRay.origin || userInputRay.direction != _userInputRay.direction)
+            {
+                _userInputRay = userInputRay;
+
+                //Invalidate all
+                _mapIntersection = _layoutIntersection = null;
+                _mapIntersectionDistance = _layoutIntersectionDistance = float.PositiveInfinity;
+                _selectedBlock = _selectedChunk = null;
+                _selectedZone = null;
+
+                //Update user input intersection points and distances
+                if (LandState == LandState.Mesh)
+                {
+                    UpdateMapIntersection(userInputRay);
+                }
+                else
+                {
+                    UpdateLayoutIntersection(userInputRay);
+                }
+
+                //Calc selected block, chunk, zone and cluster
+                if (_layoutIntersection.HasValue)
+                {
+                    _selectedBlock = (Vector2i) _layoutIntersection.Value;
+                    _selectedChunk = Chunk.GetPositionFromBlock(_selectedBlock.Value);
+
+                    if (LandState >= LandState.Layout)
+                    {
+                        _selectedZone = _main.LandLayout.GetZoneFor(_layoutIntersection.Value, false);
+                        _selectedCluster = _main.LandLayout.GetClusterFor(_selectedZone);
+                    }
+                }
+            }
         }
 
         /// <summary>
         /// Get cursor-map intersection point
         /// </summary>
         /// <returns>null if cursor is not on map of map is not generated</returns>
-        private Vector3? GetMapIntersection()
+        private void UpdateMapIntersection(Ray worldRay)
         {
-            if (Time.frameCount != _mapIntersectionCachedFrame)
+            _mapIntersection = _main.Map.GetRayMapIntersection(worldRay);
+            if (_mapIntersection.HasValue)
             {
-                _mapIntersectionCachedFrame = Time.frameCount;
-                _cachedMapIntersection = null;
-
-                var pos = Event.current.mousePosition;
-                if (Application.isPlaying && _main.Map != null && pos.x >= 0 && pos.x <= Screen.width && pos.y >= 0 && pos.y <= Screen.height)
-                {
-                    var worldRay = HandleUtility.GUIPointToWorldRay(pos);
-                    _cachedMapIntersection = _main.Map.GetRayMapIntersection(worldRay);
-                    _cameraPosition = worldRay.origin;
-                }
+                _mapIntersectionDistance = Vector3.Distance(worldRay.origin, _mapIntersection.Value);
+                _layoutIntersection = new Vector2(_mapIntersection.Value.x, _mapIntersection.Value.z);
+                _layoutIntersectionDistance = Vector3.Distance(worldRay.origin, _layoutIntersection.Value.ConvertTo3D());
             }
-
-            return _cachedMapIntersection;
+            else
+                UpdateLayoutIntersection(worldRay);
         }
 
         /// <summary>
         /// Get cursor-layout intersection point
         /// </summary>
         /// <returns>null if cursor is not on map of map is not generated</returns>
-        private Vector2? GetLayoutIntersection()
+        private void UpdateLayoutIntersection(Ray worldRay)
         {
-            if (Time.frameCount != _layoutIntersectionCachedFrame)
+            var worldPlane = new Plane(Vector3.up, Vector3.zero);
+            float hitDistance;
+            if (worldPlane.Raycast(worldRay, out hitDistance))
             {
-                _layoutIntersectionCachedFrame = Time.frameCount;
-                _cachedLayoutIntersection = null;
-
-                var pos = Event.current.mousePosition;
-                if (Application.isPlaying && pos.x <= Screen.width && pos.y >= 0 && pos.y <= Screen.height)
+                var layoutHitPoint3d = worldRay.GetPoint(hitDistance);
+                var layoutHitPoint = new Vector2(layoutHitPoint3d.x, layoutHitPoint3d.z);
+                if (_settings.LandBounds.Contains((Vector2i) layoutHitPoint))
                 {
-                    var worldRay = HandleUtility.GUIPointToWorldRay(pos);
-                    var worldPlane = new Plane(Vector3.up, Vector3.zero);
-                    float hitDistance;
-                    if (worldPlane.Raycast(worldRay, out hitDistance))
-                    {
-                        var layoutHitPoint3d = worldRay.GetPoint(hitDistance);
-                        var layoutHitPoint = new Vector2(layoutHitPoint3d.x, layoutHitPoint3d.z);
-                        if (_main.LandLayout.Bounds.Contains((Vector2i) layoutHitPoint))
-                            _cachedLayoutIntersection = layoutHitPoint;
-                        _cameraPosition = worldRay.origin;
-                    }
+                    _layoutIntersection = layoutHitPoint;
+                    _layoutIntersectionDistance = hitDistance;
                 }
             }
-
-            return _cachedLayoutIntersection;
         }
 
-        private Vector3[] GetChunkPolyBound(Chunk chunk, float yOffset)
+        /// <summary>
+        /// Get chunk bound decal rectangle
+        /// </summary>
+        /// <param name="chunk"></param>
+        /// <param name="yOffset"></param>
+        /// <returns></returns>
+        private Vector3[] GetChunkDecalBound(Chunk chunk, float yOffset)
         {
             var result = new List<Vector3>();
             var chunkWorldPos = (Vector3)Chunk.GetBounds(chunk.Position).Min;
@@ -531,5 +688,28 @@ namespace TerrainDemo.Editor
 
             return result.ToArray();
         }
+    }
+
+    /// <summary>
+    /// Land generation stage
+    /// </summary>
+    public enum LandState
+    {
+        /// <summary>
+        /// None generated at all
+        /// </summary>
+        None,
+        /// <summary>
+        /// Layout generated
+        /// </summary>
+        Layout,
+        /// <summary>
+        /// Heightmap generated
+        /// </summary>
+        Map,
+        /// <summary>
+        /// Mesh generated and visualized
+        /// </summary>
+        Mesh
     }
 }

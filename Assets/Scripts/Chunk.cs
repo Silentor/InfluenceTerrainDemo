@@ -5,7 +5,10 @@ namespace TerrainDemo
 {
     public class Chunk
     {
-        public const int Size = 16;                 //Chunk linear size (meters) = BlockSize * BlockCount
+        /// <summary>
+        /// Chunk linear size (meters) = BlockSize * BlockCount
+        /// </summary>
+        public const int Size = 16;                 
         private const int Shift = 4;
         private const int Mask = 0x0F;
 
@@ -80,7 +83,7 @@ namespace TerrainDemo
         /// <param name="chunkPosition"></param>
         /// <param name="localPosition">Local block position in chunk</param>
         /// <returns></returns>
-        public static Vector2i GetWorldPosition(Vector2i chunkPosition, Vector2i localPosition)
+        public static Vector2i GetBlockPosition(Vector2i chunkPosition, Vector2i localPosition)
         {
             return new Vector2i(chunkPosition.X << Shift | (localPosition.X & Mask), chunkPosition.Z << Shift | (localPosition.Z & Mask));
         }
@@ -88,17 +91,17 @@ namespace TerrainDemo
         /// <summary>
         /// Get chunk position for belonging world position
         /// </summary>
-        public static Vector2i GetPosition(Vector2 worldPosition)
+        public static Vector2i GetPositionFromWorld(Vector2 worldPosition)
         {
-            return GetPosition((Vector2i)worldPosition);
+            return GetPositionFromBlock((Vector2i)worldPosition);
         }
 
         /// <summary>
         /// Get chunk position for belonging world position
         /// </summary>
-        public static Vector2i GetPosition(Vector3 worldPosition)
+        public static Vector2i GetPositionFromWorld(Vector3 worldPosition)
         {
-            return GetPosition((Vector2i)worldPosition);
+            return GetPositionFromBlock((Vector2i)worldPosition);
         }
 
         /// <summary>
@@ -106,16 +109,16 @@ namespace TerrainDemo
         /// </summary>
         /// <param name="blockPosition"></param>
         /// <returns></returns>
-        public static Vector2i GetPosition(Vector2i blockPosition)
+        public static Vector2i GetPositionFromBlock(Vector2i blockPosition)
         {
             return new Vector2i(blockPosition.X >> Shift, blockPosition.Z >> Shift);
         }
 
         /// <summary>
-        /// Get 2D world bounds of chunk
+        /// Get 2D world bounds in blocks
         /// </summary>
         /// <param name="position">Chunk position</param>
-        /// <returns>World bounds</returns>
+        /// <returns>World bounds in blocks</returns>
         public static Bounds2i GetBounds(Vector2i position)
         {
             var min = new Vector2i(position.X << Shift, position.Z << Shift);

@@ -14,7 +14,7 @@ namespace TerrainDemo.Map
     /// </summary>
     public class LandMap
     {
-        public readonly Dictionary<Vector2i, Chunk> Map = new Dictionary<Vector2i, Chunk>();
+        public readonly Dictionary<Vector2i, Chunk> Chunks = new Dictionary<Vector2i, Chunk>();
 
         public LandLayout Layout { get; private set; }
 
@@ -41,10 +41,10 @@ namespace TerrainDemo.Map
             {
                 //Debug.LogFormat("Merge chunk {0} of zone {1}", zoneChunk, content.Zone.Cell.Id);
 
-                if (!Map.TryGetValue(zoneChunk, out chunk))
+                if (!Chunks.TryGetValue(zoneChunk, out chunk))
                 {
                     chunk = new Chunk(_settings.BlocksCount, _settings.BlockSize, zoneChunk);
-                    Map.Add(zoneChunk, chunk);
+                    Chunks.Add(zoneChunk, chunk);
                 }
 
                 //Copy block data
@@ -85,7 +85,7 @@ namespace TerrainDemo.Map
         }
 
         /// <summary>
-        /// Get block from land map of empty block
+        /// Get block from land map
         /// </summary>
         /// <param name="position">World</param>
         /// <returns></returns>
@@ -93,9 +93,9 @@ namespace TerrainDemo.Map
         {
             if (_settings.LandBounds.Contains(position))
             {
-                var chunkPosition = Chunk.GetPosition(position);
+                var chunkPosition = Chunk.GetPositionFromBlock(position);
                 Chunk chunk;
-                if (Map.TryGetValue(chunkPosition, out chunk))
+                if (Chunks.TryGetValue(chunkPosition, out chunk))
                 {
                     var localPos = Chunk.GetLocalPosition(position);
                     var result = new BlockInfo(position, chunk.BlockType[localPos.X, localPos.Z], chunk.HeightMap[localPos.X, localPos.Z], chunk.NormalMap[localPos.X, localPos.Z]);
@@ -116,9 +116,9 @@ namespace TerrainDemo.Map
             {
                 if (_settings.LandBounds.Contains(blockPos))
                 {
-                    var chunkPosition = Chunk.GetPosition(blockPos);
+                    var chunkPosition = Chunk.GetPositionFromBlock(blockPos);
                     Chunk chunk;
-                    if (Map.TryGetValue(chunkPosition, out chunk))
+                    if (Chunks.TryGetValue(chunkPosition, out chunk))
                     {
                         var localPos = Chunk.GetLocalPosition(blockPos);
                         var tr1 = new Vector3(blockPos.X, chunk.HeightMap[localPos.X, localPos.Z], blockPos.Z);
@@ -149,11 +149,11 @@ namespace TerrainDemo.Map
 
         public void Clear()
         {
-            var chunksToRemove = Map.Values.ToArray();
+            var chunksToRemove = Chunks.Values.ToArray();
 
             foreach (var chunk in chunksToRemove)
             {
-                Map.Remove(chunk.Position);
+                Chunks.Remove(chunk.Position);
                 Removed(chunk.Position);
             }
         }
@@ -177,6 +177,13 @@ namespace TerrainDemo.Map
             Type = type;
             Height = height;
             Normal = normal;
+        }
+
+        public static readonly BlockInfo Empty = new BlockInfo(Vector2i.Zero, BlockType.Empty, 0, Vector3.zero);
+
+        public static Bounds2i GetBounds(Vector2i worldPosition)
+        {
+            return new Bounds2i(worldPosition, 1, 1);
         }
     }
 }

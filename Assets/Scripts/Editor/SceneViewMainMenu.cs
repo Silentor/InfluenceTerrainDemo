@@ -45,19 +45,28 @@ namespace TerrainDemo.Editor
 
         private static void ToggleDelaunay(bool state)
         {
-            Menu.SetChecked(ShowDelaunay, state);
-            EditorPrefs.SetBool(ShowDelaunay, state);
-            _delaunayState = state;
-            Object.FindObjectOfType<Runner>().ShowDelaunay = state;
+            var runner = Object.FindObjectOfType<Runner>();
+
+            if (runner)
+            {
+                Menu.SetChecked(ShowDelaunay, state);
+                EditorPrefs.SetBool(ShowDelaunay, state);
+                _delaunayState = state;
+                runner.ShowDelaunay = state;
+            }
         }
 
         private static void ToggleFill(bool state)
         {
-            Menu.SetChecked(ShowFill, state);
-            EditorPrefs.SetBool(ShowFill, state);
-            _fillState = state;
-            Object.FindObjectOfType<Runner>().ShowFill = state;
+            var runner = Object.FindObjectOfType<Runner>();
 
+            if (runner)
+            {
+                Menu.SetChecked(ShowFill, state);
+                EditorPrefs.SetBool(ShowFill, state);
+                _fillState = state;
+                runner.ShowFill = state;
+            }
         }
     }
 }

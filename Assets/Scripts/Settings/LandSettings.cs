@@ -46,7 +46,7 @@ namespace TerrainDemo.Settings
         public GameObject Stone;
 
         /// <summary>
-        /// Land bounds in chunks
+        /// Land bounds in blocks
         /// </summary>
         public Bounds2i LandBounds { get; private set; }
 
@@ -55,7 +55,7 @@ namespace TerrainDemo.Settings
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public ZoneSettings this[ZoneType index]
+        public ZoneSettings this[ZoneType index]            //todo change non-obvious indexer to function
         {
             get { return Zones.First(zt => zt.Type == index); }
         }

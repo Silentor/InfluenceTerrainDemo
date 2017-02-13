@@ -34,7 +34,7 @@ namespace TerrainDemo.Settings
         /// <returns></returns>
         public IEnumerable<ChunkPositionValue> ValuableChunkPos(float range)
         {
-            var chunkCenterPos = Chunk.GetPosition(new Vector2(Position.x, Position.z));
+            var chunkCenterPos = Chunk.GetPositionFromWorld(new Vector2(Position.x, Position.z));
             var chunkRange = (int)(range/Chunk.Size);
 
             var result = new List<ChunkPositionValue>();
@@ -85,7 +85,7 @@ namespace TerrainDemo.Settings
         public float GetChunkPositionValue(Vector2i chunkPos, float range)
         {
             //Fast pass
-            if (chunkPos == Chunk.GetPosition(Position))
+            if (chunkPos == Chunk.GetPositionFromWorld(Position))
                 return 1;
 
             var chunkCenterPos = Chunk.GetCenter(chunkPos);

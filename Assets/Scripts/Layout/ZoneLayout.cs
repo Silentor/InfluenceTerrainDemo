@@ -55,7 +55,7 @@ namespace TerrainDemo.Layout
             Type = info.Type;
             ClusterId = info.ClusterId;
             Bounds = (Bounds2i)cell.Bounds;
-            ChunkBounds = new Bounds2i(Chunk.GetPosition(Bounds.Min), Chunk.GetPosition(Bounds.Max));
+            ChunkBounds = new Bounds2i(Chunk.GetPositionFromBlock(Bounds.Min), Chunk.GetPositionFromBlock(Bounds.Max));
             _chunks = null;
             _neighbors = null;
         }
@@ -130,8 +130,11 @@ namespace TerrainDemo.Layout
         private Vector2i[] _chunks;
         private ZoneLayout[] _neighbors;
 
+        /*
         public static bool operator ==(ZoneLayout z1, ZoneLayout z2)
         {
+            if (ReferenceEquals(z1, null) && ReferenceEquals(z2, null))
+                return true;
             if (ReferenceEquals(z1, null) || ReferenceEquals(z2, null))
                 return false;
             return z1.Cell == z2.Cell;
@@ -139,10 +142,13 @@ namespace TerrainDemo.Layout
 
         public static bool operator !=(ZoneLayout z1, ZoneLayout z2)
         {
+            if (ReferenceEquals(z1, null) && ReferenceEquals(z2, null))
+                return false;
             if (ReferenceEquals(z1, null) || ReferenceEquals(z2, null))
                 return true;
             return z1.Cell != z2.Cell;
         }
+        */
 
         private class ZoneTypeComparer : IEqualityComparer<ZoneLayout>
         {

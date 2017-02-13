@@ -29,6 +29,7 @@ namespace TerrainDemo.Voronoi
         /// </summary>
         /// <param name="position"></param>
         /// <returns></returns>
+        [Pure]
         public Cell GetCellFor(Vector2 position)
         {
             var minDistance = float.MaxValue;

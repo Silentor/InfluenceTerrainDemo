@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
 
 namespace TerrainDemo.Tools
 {
@@ -48,6 +50,25 @@ namespace TerrainDemo.Tools
             Debug.DrawLine(r2, r3, color, duration);
             Debug.DrawLine(r3, r4, color, duration);
             Debug.DrawLine(r4, r1, color, duration);
+        }
+
+        public static void ForHandle(Bounds2i rectangle, Color color, bool filled = false)
+        {
+            var corner1 = new Vector3(rectangle.Min.X, 0, rectangle.Min.Z);
+            var corner2 = new Vector3(rectangle.Min.X, 0, rectangle.Max.Z + 1);
+            var corner3 = new Vector3(rectangle.Max.X + 1, 0, rectangle.Max.Z + 1);
+            var corner4 = new Vector3(rectangle.Max.X + 1, 0, rectangle.Min.Z);
+
+            var points = new[] {corner1, corner2, corner3, corner4, corner1};
+
+            Handles.color = color;
+            Handles.DrawPolyLine(points);
+
+            if (filled)
+            {
+                Handles.DrawLine(corner1, corner3);
+                Handles.DrawLine(corner2, corner4);
+            }
         }
     }
 }
