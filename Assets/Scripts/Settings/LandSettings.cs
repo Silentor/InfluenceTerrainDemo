@@ -85,8 +85,6 @@ namespace TerrainDemo.Settings
                 throw new InvalidOperationException("There is duplicate Zone Settings");
             if (BlockSize * BlocksCount != Chunk.Size)
                 throw new ArgumentException("Block size and blocks count invalid");
-
-            SetSeed();
         }
 
         void OnValidate()

@@ -279,8 +279,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   LandSize: 30
-  RegenerateSeed: 1
-  Seed: 1796121869
+  RegenerateSeed: 0
+  Seed: -983288434
   GlobalHeightFreq: 0.002
   GlobalHeightAmp: 0
   ZonesDensity: {x: 30, y: 40}
@@ -289,9 +289,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b7ea798b05685aa4086f3ad12b3c60a1, type: 2}
   - {fileID: 11400000, guid: efe303b16c6dfa0419eaeabce0cc1f5a, type: 2}
   LayoutGenerator: 1
-  IDWCoeff: 2
-  IDWOffset: 0
-  IDWRadius: 30
   IDWNearestPoints: 7
   InterpolateInfluence: 1
   InfluenceThreshold: 0.01

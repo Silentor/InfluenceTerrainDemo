@@ -28,7 +28,6 @@ namespace TerrainDemo
         public Main(LandSettings settings, IObserver observer, MesherSettings mesherSettings)
         {
             _settings = settings;
-            _settings.SetSeed();
 
             _generator = settings.CreateLayoutGenerator();
             _mesher = mesherSettings.CreateMesher(settings);
@@ -51,11 +50,13 @@ namespace TerrainDemo
         /// </summary>
         public void GenerateLayout()
         {
-            Debug.Log("Generating land layout...");
+            _settings.SetSeed();
+
+            Debug.LogFormat("Generating land layout, seed {0} ...", _settings.Seed);
 
             //Map.Clear();
             //_mesher.Clear();
-            _settings.SetSeed();
+            
 
             if (LandLayout != null)
                 _generator.Generate(LandLayout);
