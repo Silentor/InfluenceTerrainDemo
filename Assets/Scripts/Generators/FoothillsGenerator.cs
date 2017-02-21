@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Xml;
 using TerrainDemo.Layout;
 using TerrainDemo.Settings;
@@ -9,6 +10,7 @@ namespace TerrainDemo.Generators
     /// <summary>
     /// Interval zone, smoothly transfer from plains to mountains
     /// </summary>
+    [Obsolete("Base height generation need rework (zone layout generator support)")]
     public class FoothillsGenerator : ZoneGenerator
     {
         public FoothillsGenerator(ZoneLayout zone, LandLayout land, LandGenerator generator, LandSettings landSettings) 
@@ -63,7 +65,7 @@ namespace TerrainDemo.Generators
             //    (Mathf.PerlinNoise(worldX * _landSettings.LandNoiseSettings.InScale1, worldZ * _landSettings.LandNoiseSettings.InScale1) - 0.5f) *
             //    _zoneSettings.OutScale1;
 
-            var result = foothillHeight + _zoneSettings.Height;
+            var result = foothillHeight;
             return result;
         }
 

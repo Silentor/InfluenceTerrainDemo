@@ -27,7 +27,7 @@ namespace TerrainDemo.Tests
                 zones[i] = new ZoneInfo {ClusterId = 0, Type = zoneTypes[Random.Range(0, zoneTypes.Length)]};
             var layout = new LandLayout(settings, mesh, new[]
             {
-                new ClusterInfo {Id = 0, Heights = new Vector3[0], Zones = zones}
+                new ClusterInfo {Id = 0, ClusterHeights = new Vector3[0], Zones = zones}
             });
 
             //Warm up

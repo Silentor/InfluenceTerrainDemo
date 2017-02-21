@@ -10,6 +10,9 @@ using UnityEngine.Assertions;
 
 namespace TerrainDemo.Voronoi
 {
+    /// <summary>
+    /// Convex polygon on plane
+    /// </summary>
     [DebuggerDisplay("Cell(Id={Id}, Center={Center}, Neighs={Neighbors.Length}, IsClosed={IsClosed})")]
     public class Cell
     {
@@ -149,14 +152,20 @@ namespace TerrainDemo.Voronoi
         /// <returns></returns>
         public bool IsContains(Vector2 position)
         {
-            foreach (var edge in Edges)
+            if (Bounds.min.x <= position.x && Bounds.min.z <= position.y && position.x <= Bounds.max.x &&
+                position.y <= Bounds.max.z)                 //AABB check
             {
-                if ((position.y - edge.Vertex1.y)*(edge.Vertex2.x - edge.Vertex1.x) -
-                    (position.x - edge.Vertex1.x)*(edge.Vertex2.y - edge.Vertex1.y) > 0)
-                    return false;
+                foreach (var edge in Edges)
+                {
+                    if ((position.y - edge.Vertex1.y) * (edge.Vertex2.x - edge.Vertex1.x) -
+                        (position.x - edge.Vertex1.x) * (edge.Vertex2.y - edge.Vertex1.y) > 0)
+                        return false;
+                }
+
+                return true;
             }
 
-            return true;
+            return false;
         }
 
         public float GetArea()
@@ -293,7 +302,7 @@ namespace TerrainDemo.Voronoi
         public static readonly IdComparer IdIncComparer = new IdComparer();
 
         /// <summary>
-        /// Compare cells center distance relatively given position
+        /// Compare cells id
         /// </summary>
         public class IdComparer : IComparer<Cell>
         {

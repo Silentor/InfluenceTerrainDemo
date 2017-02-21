@@ -16,7 +16,8 @@ namespace TerrainDemo.Settings
         public int Seed;
         public double GlobalHeightFreq = 1/200.0;
         public double GlobalHeightAmp = 200.0/4;
-        public Vector2 ZonesDensity = new Vector2(30, 40);
+        public Vector2 ZonesRange = new Vector2(30, 40);
+        public Vector2 ClusterSize = new Vector2(20, 30);
         public ZoneSettings[] Zones = new ZoneSettings[0];
         public LayoutGenerator.Type LayoutGenerator = Generators.LayoutGenerator.Type.PoissonClustered;
 

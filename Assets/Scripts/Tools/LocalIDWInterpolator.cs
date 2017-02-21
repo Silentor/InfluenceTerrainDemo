@@ -74,7 +74,7 @@ namespace TerrainDemo.Tools
             {
                 var nearestCells = new List<Cell>(cell.Neighbors.Length + cell.Neighbors2.Length + 1);
                 nearestCells.Add(cell);
-                var floodFill = _mesh.GetFloodFill(cell);                         
+                var floodFill = _mesh.FloodFill(cell);                         
                 nearestCells.AddRange(floodFill.GetNeighbors(1));
                 var neighborsRank2 = floodFill.GetNeighbors(2);
                 nearestCells.AddRange(neighborsRank2);

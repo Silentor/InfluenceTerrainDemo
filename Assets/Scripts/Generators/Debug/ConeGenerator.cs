@@ -19,7 +19,7 @@ namespace TerrainDemo.Generators.Debug
             distanceFromCenter = Math.Max(distanceFromCenter, 0.1f);
             var height = Mathf.Clamp((100/distanceFromCenter), 0, 50);
             //var settings = Land.GetZoneNoiseSettings(influence);
-            return _zoneSettings.Height + height;
+            return height;
         }
     }
 }

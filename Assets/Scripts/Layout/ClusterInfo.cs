@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using TerrainDemo.Voronoi;
+using UnityEngine;
 
 namespace TerrainDemo.Layout
 {
@@ -7,6 +8,10 @@ namespace TerrainDemo.Layout
         public int Id;
         public ZoneType Type;
         public ZoneInfo[] Zones;
-        public Vector3[] Heights;
+        public Vector3[] ClusterHeights = new Vector3[0];
+        public Vector3[] ZoneHeights = new Vector3[0];
+        public ClusterInfo[] Neighbors = new ClusterInfo[0];
+        public CellMesh.Submesh Mesh;
+        public Cell Center;
     }
 }

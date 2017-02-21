@@ -19,5 +19,15 @@ namespace TerrainDemo.Tests.Editor
 
             Assert.That(mesh[0].Neighbors2, Is.EquivalentTo(neighbors2));
         }
+
+        [Test]
+        public void TestContains()
+        {
+            var data = (TextAsset)EditorGUIUtility.Load("Tests/Cellmesh0.json");
+            var mesh = CellMesh.FromJSON(JSONNode.Parse(data.text));
+
+            Assert.That(mesh[0].IsContains(new Vector2(-2, -30)), Is.False);
+            Assert.That(mesh[0].IsContains(Vector2.zero), Is.True);
+        }
     }
 }

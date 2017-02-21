@@ -13,10 +13,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Name: Mountains
   LandColor_: {r: 0, g: 0, b: 0, a: 1}
-  IsInterval: 0
   Type: 2
   DefaultBlock: 3
-  Height_: 10
+  Height_: 0
   NoiseFreq: 0.02
   NoiseAmp: 0
   NoiseLacunarity: 2

@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Policy;
 using JetBrains.Annotations;
 using TerrainDemo.Libs.SimpleJSON;
 using UnityEngine;
@@ -45,7 +47,9 @@ namespace TerrainDemo.Voronoi
                 }
             }
 
-            return result;
+            if (result != null && result.IsContains(position))
+                return result;
+            return null;
         }
 
         /// <summary>
@@ -70,7 +74,9 @@ namespace TerrainDemo.Voronoi
                 }
             }
 
-            return result;
+            if (result != null && result.IsContains(position))
+                return result;
+            return null;
         }
 
         /// <summary>
@@ -102,12 +108,12 @@ namespace TerrainDemo.Voronoi
         /// </summary>
         /// <param name="start"></param>
         /// <returns></returns>
-        public FloodFillResult FloodFill([NotNull] Cell start, Predicate<Cell> allowFill = null)
+        public FloodFiller FloodFill([NotNull] Cell start, Predicate<Cell> allowFill = null)
         {
             if (start == null) throw new ArgumentNullException("start");
             Assert.IsTrue(Cells.Contains(start));
 
-            return new FloodFillResult(this, start, allowFill);
+            return new FloodFiller(this, start, allowFill);
         }
 
         /// <summary>
@@ -115,12 +121,12 @@ namespace TerrainDemo.Voronoi
         /// </summary>
         /// <param name="start"></param>
         /// <returns></returns>
-        public FloodFillResult FloodFill([NotNull] Cell[] start, Predicate<Cell> allowFill = null)
+        public FloodFiller FloodFill([NotNull] Cell[] start, Predicate<Cell> allowFill = null)
         {
             if (start == null) throw new ArgumentNullException("start");
             Assert.IsTrue(start.All(c => Cells.Contains(c)));
 
-            return new FloodFillResult(this, start, allowFill);
+            return new FloodFiller(this, start, allowFill);
         }
 
         /// <summary>
@@ -237,20 +243,20 @@ namespace TerrainDemo.Voronoi
         }
 
         /// <summary>
-        /// For searching inner or outer neighbors
+        /// For searching cells using flood-fill algorithm
         /// </summary>
-        public class FloodFillResult
+        public class FloodFiller
         {
             private readonly CellMesh _mesh;
             private readonly Predicate<Cell> _searchFor;
             private readonly List<List<Cell>> _neighbors = new List<List<Cell>>();
 
             /// <summary>
-            /// For calculate outer rings of cemter cell
+            /// Create flood-fill around <see cref="start"> cell
             /// </summary>
             /// <param name="mesh"></param>
             /// <param name="start"></param>
-            public FloodFillResult(CellMesh mesh, Cell start, Predicate<Cell> searchFor = null)
+            public FloodFiller(CellMesh mesh, Cell start, Predicate<Cell> searchFor = null)
             {
                 Assert.IsTrue(mesh.Cells.Contains(start));
 
@@ -260,11 +266,11 @@ namespace TerrainDemo.Voronoi
             }
 
             /// <summary>
-            /// For calculate inner rings of cluster
+            /// Create flood-fill around <see cref="start"> cells
             /// </summary>
             /// <param name="mesh"></param>
             /// <param name="start"></param>
-            public FloodFillResult(CellMesh mesh, Cell[] start, Predicate<Cell> searchFor = null)
+            public FloodFiller(CellMesh mesh, Cell[] start, Predicate<Cell> searchFor = null)
             {
                 Assert.IsTrue(start.All(c => mesh.Cells.Contains(c)));
 
@@ -275,6 +281,12 @@ namespace TerrainDemo.Voronoi
                 _neighbors.Add(startStep);
             }
 
+
+            /// <summary>
+            /// Get neighbors of cell(s)
+            /// </summary>
+            /// <param name="step">0 - start cell(s), 1 - direct neighbors, 2 - neighbors of step 1 neighbors, etc</param>
+            /// <returns></returns>
             public IEnumerable<Cell> GetNeighbors(int step)
             {
                 if(step == 0)
@@ -326,10 +338,11 @@ namespace TerrainDemo.Voronoi
         /// <summary>
         /// Part of CellMesh
         /// </summary>
-        public class Submesh                                        //todo consider make CellMesh and Submesh a common parent
+        public class Submesh : IEnumerable<Cell>                        //todo consider make CellMesh and Submesh a common parent
         {
             private readonly CellMesh _mesh;
             public readonly Cell[] Cells;
+            private Cell[] _borderCells;
 
             public Cell this[int index] { get { return Cells[index]; } }
 
@@ -340,6 +353,13 @@ namespace TerrainDemo.Voronoi
 
                 _mesh = mesh;
                 Cells = cells;
+                Array.Sort(Cells, Cell.IdIncComparer);
+            }
+
+            public bool Contains(Cell cell)
+            {
+                var result = Array.BinarySearch(Cells, cell, Cell.IdIncComparer);
+                return result >= 0;
             }
 
             /// <summary>
@@ -361,8 +381,10 @@ namespace TerrainDemo.Voronoi
                         result = Cells[i];
                     }
                 }
-                
-                return result;
+
+                if (result != null && result.IsContains(position))
+                    return result;
+                return null;
             }
 
             /// <summary>
@@ -371,34 +393,50 @@ namespace TerrainDemo.Voronoi
             /// <returns></returns>
             public IEnumerable<Cell> GetBorderCells()
             {
-                return Cells.Where(c => !c.Neighbors.All(c2 => Cells.Contains(c2)));
+                if(_borderCells == null)
+                    _borderCells = Cells.Where(c => !c.Neighbors.All(Contains)).ToArray();
+                return _borderCells;
             }
 
+            /// <summary>
+            /// All cells that's not border
+            /// </summary>
+            /// <returns></returns>
             public IEnumerable<Cell> GetInnerCells()
             {
-                return Cells.Where(c => c.Neighbors.All(c2 => Cells.Contains(c2)));
+                return Cells.Where(c => c.Neighbors.All(Contains));
             }
 
-            public FloodFillResult GetFloodFill([NotNull] Cell[] start, Predicate<Cell> searchFor = null)
+            public FloodFiller FloodFill([NotNull] Cell[] start, Predicate<Cell> searchFor = null)
             {
                 if (start == null) throw new ArgumentNullException("start");
                 Assert.IsTrue(start.All(c => Cells.Contains(c)));
 
                 if(searchFor != null)
-                    return _mesh.FloodFill(start, cell => Cells.Contains(cell) && searchFor(cell));
+                    return _mesh.FloodFill(start, cell => Contains(cell) && searchFor(cell));
                 else
-                    return _mesh.FloodFill(start, cell => Cells.Contains(cell));
+                    return _mesh.FloodFill(start, Contains);
             }
 
-            public FloodFillResult GetFloodFill([NotNull] Cell start, Predicate<Cell> searchFor = null)
+            public FloodFiller FloodFill([NotNull] Cell start, Predicate<Cell> searchFor = null)
             {
                 if (start == null) throw new ArgumentNullException("start");
                 Assert.IsTrue(Cells.Contains(start));
 
                 if (searchFor != null)
-                    return _mesh.FloodFill(start, cell => Cells.Contains(cell) && searchFor(cell));
+                    return _mesh.FloodFill(start, cell => Contains(cell) && searchFor(cell));
                 else
-                    return _mesh.FloodFill(start, cell => Cells.Contains(cell));
+                    return _mesh.FloodFill(start, Contains);
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return GetEnumerator();
+            }
+
+            public IEnumerator<Cell> GetEnumerator()
+            {
+                return ((IEnumerable<Cell>)Cells).GetEnumerator();
             }
         }
     }

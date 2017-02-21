@@ -154,7 +154,7 @@ namespace TerrainDemo.Tests.Editor
             Assert.That(border, Is.EquivalentTo(expectedBorder));
             Assert.That(border, Is.Unique);
 
-            var innerNeighborsStep1 = submesh.GetFloodFill(border).GetNeighbors(1);
+            var innerNeighborsStep1 = submesh.FloodFill(border).GetNeighbors(1);
             var expectedInnerStep1 = submeshCells.Except(expectedBorder).ToArray();
 
             Assert.That(innerNeighborsStep1, Is.EquivalentTo(expectedInnerStep1));

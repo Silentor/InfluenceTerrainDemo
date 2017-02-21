@@ -278,16 +278,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a282cbeb1025553469988496950cb3ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  LandSize: 30
-  RegenerateSeed: 0
-  Seed: -983288434
+  LandSize: 40
+  RegenerateSeed: 1
+  Seed: 1864647073
   GlobalHeightFreq: 0.002
   GlobalHeightAmp: 0
-  ZonesDensity: {x: 30, y: 40}
+  ZonesRange: {x: 30, y: 40}
+  ClusterSize: {x: 15, y: 20}
   Zones:
   - {fileID: 11400000, guid: 6d9e47604d34fe64686ce4c7b4247a74, type: 2}
-  - {fileID: 11400000, guid: b7ea798b05685aa4086f3ad12b3c60a1, type: 2}
   - {fileID: 11400000, guid: efe303b16c6dfa0419eaeabce0cc1f5a, type: 2}
+  - {fileID: 11400000, guid: b7ea798b05685aa4086f3ad12b3c60a1, type: 2}
   LayoutGenerator: 1
   IDWNearestPoints: 7
   InterpolateInfluence: 1

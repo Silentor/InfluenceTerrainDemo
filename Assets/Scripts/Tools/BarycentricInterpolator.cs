@@ -141,7 +141,7 @@ namespace TerrainDemo.Tools
             Cell[] result;
             if (!_neighbors.TryGetValue(cell, out result))
             {
-                result = _mesh.GetFloodFill(cell).GetNeighbors(1).ToArray();
+                result = _mesh.FloodFill(cell).GetNeighbors(1).ToArray();
                 Array.Sort(result, (x, y) => VectorExtensions.ClockWiseComparer(x.Center, y.Center, cell.Center));
                 _neighbors[cell] = result;
             }

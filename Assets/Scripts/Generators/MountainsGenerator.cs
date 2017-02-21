@@ -57,7 +57,6 @@ namespace TerrainDemo.Generators
             //yValue = Math.Pow(yValue + 1, 2);
 
             yValue += Land.GetBaseHeight(worldX, worldZ);
-            yValue += _zoneSettings.Height;
             if (_cluster != null) yValue += _cluster.HeightInterpolator.GetValue(new Vector2(worldX, worldZ));
 
             return yValue;
@@ -115,7 +114,7 @@ namespace TerrainDemo.Generators
                     var mountSubmesh = new CellMesh.Submesh(land.CellMesh, mountCluster.Select(z => z.Cell).ToArray());
                     //Get mountain zone height coeff
                     var border = mountSubmesh.GetBorderCells().ToArray();
-                    var floodFiller = mountSubmesh.GetFloodFill(border);
+                    var floodFiller = mountSubmesh.FloodFill(border);
                     var neigh1 = floodFiller.GetNeighbors(1);
                     var neigh2 = floodFiller.GetNeighbors(2);
                     var neigh3 = floodFiller.GetNeighbors(3);

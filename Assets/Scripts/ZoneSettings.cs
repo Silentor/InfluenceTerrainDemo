@@ -11,11 +11,6 @@ namespace TerrainDemo
         public ZoneType Type;
         public BlockType DefaultBlock;
 
-        /// <summary>
-        /// Base height
-        /// </summary>
-        public double Height_ = 0;
-
         [Header("Simplex Fractal noise")]
         public double NoiseFreq = 1 / 10.0;
         public double NoiseAmp = 5;
@@ -26,8 +21,6 @@ namespace TerrainDemo
         public FastNoise.FractalType NoiseFractal = FastNoise.FractalType.FBM;
 
         public Color LandColor { get { return LandColor_; } }
-
-        public double Height { get { return Height_; } }
 
         public static readonly ZoneTypeEqualityComparer TypeComparer = new ZoneTypeEqualityComparer();
 

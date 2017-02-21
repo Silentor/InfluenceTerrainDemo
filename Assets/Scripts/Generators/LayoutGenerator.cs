@@ -33,7 +33,7 @@ namespace TerrainDemo.Generators
 
             var bounds = _settings.LandBounds;
 
-            var points = GeneratePoints(bounds, _settings.ZonesDensity);
+            var points = GeneratePoints(bounds, _settings.ZonesRange);
             var cellMesh = CellMeshGenerator.Generate(points, (Bounds)bounds);
             var clusters = SetClusters(cellMesh, _settings);
 

@@ -29,6 +29,8 @@ namespace TerrainDemo.Layout
 
         public IEnumerable<ClusterLayout> Clusters { get; private set; }
 
+        public IEnumerable<Vector3> Heights { get; private set; }
+
         public LandLayout(LandSettings settings, CellMesh cellMesh, ClusterInfo[] clusters)
         {
             _settings = settings;
@@ -57,18 +59,45 @@ namespace TerrainDemo.Layout
             }
             alglib.kdtreebuildtagged(positions, tags, 2, 0, 2, out _influence);
 
-            //Build base height interpolator
-            var baseHeights = clusters.SelectMany(c => c.Heights).ToArray();
-            var points = new double[baseHeights.Length, 3];
-            for (int i = 0; i < baseHeights.Length; i++)
+            //Remove close height points
+            var removedPointsCount = 0;
+            var baseHeights = clusters.SelectMany(c => c.ZoneHeights).ToList();
+            for (int i = 0; i < baseHeights.Count; i++)
             {
+                for (int j = 0; j < baseHeights.Count; j++)
+                {
+                    if (baseHeights[i] != baseHeights[j])
+                    {
+                        if (Vector2.Distance(baseHeights[i].ConvertTo2D(), baseHeights[j].ConvertTo2D()) < 20)
+                        {
+                            baseHeights[i] = new Vector3(baseHeights[i].x, (baseHeights[i].y + baseHeights[j].y)/2, baseHeights[i].z);
+                            baseHeights.RemoveAt(j);
+                            removedPointsCount++;
+                        }
+                    }
+                }
+            }
+            Debug.LogFormat("Land layout removed {0} close height points", removedPointsCount);
+
+            _globalHeights = MakeClusterHeightInterpolator(clusters);
+            
+            //Build base height interpolator
+            var points = new double[baseHeights.Count, 3];
+            for (int i = 0; i < baseHeights.Count; i++)
+            {
+                //Modify zone height with cluster height
+                var clusterHeight = alglib.idwcalc(_globalHeights, new double[] { baseHeights[i].x, baseHeights[i].z });
+                baseHeights[i] = new Vector3(baseHeights[i].x, (float)(baseHeights[i].y + clusterHeight), baseHeights[i].z);
+
                 points[i, 0] = baseHeights[i].x;
                 points[i, 1] = baseHeights[i].z;
                 points[i, 2] = baseHeights[i].y;
             }
-
+            
             _baseHeight = new alglib.idwinterpolant();
-            alglib.idwbuildmodifiedshepard(points, baseHeights.Length, 2, 1, 6, 10, out _baseHeight);
+            alglib.idwbuildmodifiedshepard(points, points.GetLength(0), 2, 2, 10, 15, out _baseHeight);
+
+            Heights = baseHeights;
 
             //Set Clusters and Zones collections
             var clusterLayouts = new ClusterLayout[clusters.Length];
@@ -89,8 +118,12 @@ namespace TerrainDemo.Layout
 
                 clusterLayouts[i] = new ClusterLayout(clusterInfo, zoneLayouts, cellMesh);
             }
+
             Clusters = clusterLayouts;
             Zones = zones;
+
+            foreach (var cluster in clusterLayouts)
+                cluster.Init(clusterLayouts);
 
             for (int i = 0; i < zones.Length; i++)
             {
@@ -210,13 +243,16 @@ namespace TerrainDemo.Layout
         [Pure]
         public ZoneLayout GetZoneFor(Vector2 position)
         {
-            return Zones.ElementAt(CellMesh.GetCellFor(position).Id);
+            var cell = CellMesh.GetCellFor(position);
+            if (cell != null)
+                return Zones.ElementAt(cell.Id);
+            return null;
         }
 
         public double GetBaseHeight(float worldX, float worldZ)
         {
-            //return _globalHeight.GetSimplex(worldX, worldZ) * _settings.GlobalHeightAmp;    
             return alglib.idwcalc(_baseHeight, new double[] { worldX, worldZ });
+            //return alglib.idwcalc(_globalHeights, new double[] { worldX, worldZ });
         }
 
         /// <summary>
@@ -252,6 +288,7 @@ namespace TerrainDemo.Layout
         private readonly FastNoise _globalHeight;
         private alglib.kdtree _influence;
         private alglib.idwinterpolant _baseHeight;
+        private alglib.idwinterpolant _globalHeights;
 
         private void GetChunksFloodFill(ZoneLayout zone, Vector2i from, List<Vector2i> processed, List<Vector2i> result)
         {
@@ -283,47 +320,57 @@ namespace TerrainDemo.Layout
 
             var chunkBounds = Chunk.GetBounds(chunkPosition);
             var floatBounds = (Bounds)chunkBounds;
-            var chunkCorner1 = Convert(floatBounds.min);
+            var chunkCorner1 = floatBounds.min.ConvertTo2D();
             var chunkCorner2 = new Vector2(floatBounds.min.x, floatBounds.max.z);
-            var chunkCorner3 = Convert(floatBounds.max);
+            var chunkCorner3 = floatBounds.max.ConvertTo2D();
             var chunkCorner4 = new Vector2(floatBounds.max.x, floatBounds.min.z);
 
-            ZoneLayout zone1 = zone, zone2 = zone, zone3 = zone, zone4 = zone;
-            var distanceCorner1 = float.MaxValue;
-            var distanceCorner2 = float.MaxValue;
-            var distanceCorner3 = float.MaxValue;
-            var distanceCorner4 = float.MaxValue;
-
-            foreach (var z in Zones)
+            //Check chunk vertices in zone layout
+            if (zone.Cell.IsClosed)
             {
-                if (Vector2.SqrMagnitude(z.Center - chunkCorner1) < distanceCorner1)
-                {
-                    zone1 = z;
-                    distanceCorner1 = Vector2.SqrMagnitude(z.Center - chunkCorner1);
-                }
-                if (Vector2.SqrMagnitude(z.Center - chunkCorner2) < distanceCorner2)
-                {
-                    zone2 = z;
-                    distanceCorner2 = Vector2.SqrMagnitude(z.Center - chunkCorner2);
-                }
-                if (Vector2.SqrMagnitude(z.Center - chunkCorner3) < distanceCorner3)
-                {
-                    zone3 = z;
-                    distanceCorner3 = Vector2.SqrMagnitude(z.Center - chunkCorner3);
-                }
-                if (Vector2.SqrMagnitude(z.Center - chunkCorner4) < distanceCorner4)
-                {
-                    zone4 = z;
-                    distanceCorner4 = Vector2.SqrMagnitude(z.Center - chunkCorner4);
-                }
+                if (zone.Cell.IsContains(chunkCorner1) || zone.Cell.IsContains(chunkCorner2)
+                    || zone.Cell.IsContains(chunkCorner3) || zone.Cell.IsContains(chunkCorner4))
+                    return true;
             }
-
-            if (zone1 == zone || zone2 == zone || zone3 == zone || zone4 == zone)
-                return true;
+            else  //todo optimize open cell check by providing missed vertices for Cell.IsContains()
+            {
+                ZoneLayout zone1 = zone, zone2 = zone, zone3 = zone, zone4 = zone;
+                var distanceCorner1 = float.MaxValue;
+                var distanceCorner2 = float.MaxValue;
+                var distanceCorner3 = float.MaxValue;
+                var distanceCorner4 = float.MaxValue;
+                
+                foreach (var z in Zones)                                        
+                {
+                    if (Vector2.SqrMagnitude(z.Center - chunkCorner1) < distanceCorner1)
+                    {
+                        zone1 = z;
+                        distanceCorner1 = Vector2.SqrMagnitude(z.Center - chunkCorner1);
+                    }
+                    if (Vector2.SqrMagnitude(z.Center - chunkCorner2) < distanceCorner2)
+                    {
+                        zone2 = z;
+                        distanceCorner2 = Vector2.SqrMagnitude(z.Center - chunkCorner2);
+                    }
+                    if (Vector2.SqrMagnitude(z.Center - chunkCorner3) < distanceCorner3)
+                    {
+                        zone3 = z;
+                        distanceCorner3 = Vector2.SqrMagnitude(z.Center - chunkCorner3);
+                    }
+                    if (Vector2.SqrMagnitude(z.Center - chunkCorner4) < distanceCorner4)
+                    {
+                        zone4 = z;
+                        distanceCorner4 = Vector2.SqrMagnitude(z.Center - chunkCorner4);
+                    }
+                }
+    
+                if (zone1 == zone || zone2 == zone || zone3 == zone || zone4 == zone)
+                    return true;
+            }
 
             //Check zone vertices in chunk
             foreach (var vert in zone.Cell.Vertices)
-                if (floatBounds.Contains(Convert(vert)))
+                if (floatBounds.Contains(vert.ConvertTo3D()))
                     return true;
 
             return false;
@@ -339,14 +386,22 @@ namespace TerrainDemo.Layout
             return b*b;
         }
 
-        private static Vector3 Convert(Vector2 v)
+        private alglib.idwinterpolant MakeClusterHeightInterpolator(ClusterInfo[] clusters)
         {
-            return new Vector3(v.x, 0, v.y);
-        }
+            var heightPoint = clusters.SelectMany(c => c.ClusterHeights).ToArray();
 
-        private static Vector2 Convert(Vector3 v)
-        {
-            return new Vector2(v.x, v.z);
+            //Build base height interpolator
+            var points = new double[heightPoint.Length, 3];
+            for (int i = 0; i < heightPoint.Length; i++)
+            {
+                points[i, 0] = heightPoint[i].x;
+                points[i, 1] = heightPoint[i].z;
+                points[i, 2] = heightPoint[i].y;
+            }
+
+            alglib.idwinterpolant result;
+            alglib.idwbuildmodifiedshepard(points, points.GetLength(0), 2, 1, 10, 15, out result);
+            return result;
         }
     }
 }

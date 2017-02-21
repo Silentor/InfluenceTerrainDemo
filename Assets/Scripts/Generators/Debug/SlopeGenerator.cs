@@ -14,7 +14,7 @@ namespace TerrainDemo.Generators.Debug
         public override double GenerateBaseHeight(float worldX, float worldZ)
         {
             //var settings = Land.GetZoneNoiseSettings(influence);
-            return _zoneSettings.Height + worldX;
+            return worldX;
         }
     }
 }

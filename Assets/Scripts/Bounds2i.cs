@@ -80,7 +80,7 @@ namespace TerrainDemo
         }
 
         /// <summary>
-        /// Inclusive enumeration of bound
+        /// Enumerate all containing blocks
         /// </summary>
         /// <returns></returns>
         public IEnumerator<Vector2i> GetEnumerator()
