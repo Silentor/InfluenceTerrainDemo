@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel.Design;
 using System.Linq;
-using System.Net.NetworkInformation;
 using Assets.Code.Tools;
 using JetBrains.Annotations;
 using TerrainDemo.Layout;
@@ -12,9 +10,7 @@ using TerrainDemo.Settings;
 using TerrainDemo.Tools;
 using TerrainDemo.Voronoi;
 using UnityEditor;
-using UnityEditor.Graphs;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 
 namespace TerrainDemo.Editor
@@ -27,12 +23,12 @@ namespace TerrainDemo.Editor
         private Main _main;
         private static RunnerEditor _self;
 
+        private LandSettings _settings;
         private Vector3? _mapIntersection;
         private Vector2? _layoutIntersection;
         private float _mapIntersectionDistance;
         private float _layoutIntersectionDistance;
 
-        private LandSettings _settings;
         private Ray _userInputRay;
         private Vector2i? _selectedBlock;
         private Vector2i? _selectedChunk;
@@ -47,6 +43,7 @@ namespace TerrainDemo.Editor
         private Rect _clusterInfoRect;
         private Rect _influenceInfoRect;
         private GUIStyle _zonesIdLabelStyle;
+        private Vector2[] _clusterCenters;
 
         const float DecalOffset = 0.01f;
 
@@ -94,8 +91,29 @@ namespace TerrainDemo.Editor
                 if (GUILayout.Button("Rebuild mesh"))
                     _runner.GenerateMesh();
 
-                if (GUILayout.Button("Save mesh"))
-                    _runner.SaveMesh();
+                GUILayout.BeginHorizontal();
+                if (_main.LandLayout != null && GUILayout.Button("Save mesh"))
+                {
+                    var fileName = string.Format("cellmesh{0}.json", _settings.Seed);
+                    var savePath = EditorUtility.SaveFilePanelInProject("Save cellmesh", fileName, "json",
+                        "Save current cellmesh to file");
+                    if (!string.IsNullOrEmpty(savePath))
+                    {
+                        _runner.SaveMesh(savePath);
+                    }
+                }
+
+                if (_main.LandLayout != null && GUILayout.Button("Load mesh"))
+                {
+                    var loadPath = EditorUtility.OpenFilePanelWithFilters("Load cellmesh", Application.dataPath,
+                        new[] {"Cellmesh data", "json"});
+                    if (!string.IsNullOrEmpty(loadPath))
+                    {
+                        _runner.LoadMesh(loadPath);
+                    }
+                }
+
+                GUILayout.EndHorizontal();
             }
         }
 
@@ -115,16 +133,16 @@ namespace TerrainDemo.Editor
                 DrawSelectedBlock(_selectedBlock.Value);
             }
 
-            if (LandState >= LandState.Layout)
-                DrawBaseHeightPoints(_main.LandLayout);
-
             if (LandState == LandState.Layout || LandState == LandState.Map ||
                 (LandState == LandState.Mesh && IsTopDown))
             {
                 DrawLandLayout();
 
-                if(RunnerEditorMainMenu.IsShowId)
+                if(RunnerEditorMainMenu.IsShowCellId)
                     DrawZonesId();
+
+                if (RunnerEditorMainMenu.IsShowClusterId)
+                    DrawClusterId();
 
                 if (_selectedZone != null)
                 {
@@ -134,6 +152,9 @@ namespace TerrainDemo.Editor
                 if(_selectedCluster != null)
                     DrawSelectedCluster(_selectedCluster);
             }
+
+            if (LandState >= LandState.Layout)
+                DrawBaseHeightPoints(_main.LandLayout);
 
             if (LandState == LandState.Mesh && _mapIntersection.HasValue)
             {
@@ -330,9 +351,9 @@ namespace TerrainDemo.Editor
 
         private void DrawBaseHeightPoints(LandLayout layout)
         {
-            foreach (var cluster in layout.Clusters)
-            foreach (var heightPoint in cluster.BaseHeightPoints)
-                DebugExtension.DebugPoint(heightPoint, Color.red);
+            Handles.color = Color.red;
+            foreach (var heightPoint in layout.Heights)
+                Handles.SphereCap(0, heightPoint, Quaternion.identity, 2);
         }
 
         private void DrawLandBound(Bounds2i bounds)
@@ -424,6 +445,8 @@ namespace TerrainDemo.Editor
             {
                 GUILayout.Label(string.Format("Id, type: {0} - {1}", cluster.Id, cluster.Type));
                 GUILayout.Label(string.Format("Zones: {0}", cluster.Zones.Count()));
+                GUILayout.Label(string.Format("Neighbors: {0}", string.Join(", ", 
+                    cluster.Neighbors.Select(c => c.Id.ToString()).ToArray())));
             };
 
             Handles.BeginGUI();
@@ -509,6 +532,21 @@ namespace TerrainDemo.Editor
                 Handles.Label(zone.Center.ConvertTo3D(), zone.Cell.Id.ToString(), _zonesIdLabelStyle);
         }
 
+        private void DrawClusterId()
+        {
+            if (_zonesIdLabelStyle == null)
+                _zonesIdLabelStyle = new GUIStyle { normal = { textColor = Color.white } };
+
+            UpdateClustersCenter();
+
+            //Draw cluster id's
+            foreach (var cluster in _main.LandLayout.Clusters)
+            {
+                var clusterCenter = _clusterCenters[cluster.Id];           
+                Handles.Label(clusterCenter.ConvertTo3D(), cluster.Id.ToString(), _zonesIdLabelStyle);
+            }
+        }
+
         #endregion
 
 
@@ -559,6 +597,7 @@ namespace TerrainDemo.Editor
                 _mapIntersectionDistance = _layoutIntersectionDistance = float.PositiveInfinity;
                 _selectedBlock = _selectedChunk = null;
                 _selectedZone = null;
+                _selectedCluster = null;
 
                 //Update user input intersection points and distances
                 if (LandState == LandState.Mesh)
@@ -658,6 +697,51 @@ namespace TerrainDemo.Editor
             }
 
             return result.ToArray();
+        }
+
+        private void UpdateClustersCenter()
+        {
+            if (_clusterCenters == null)
+            {
+                _clusterCenters = new Vector2[_main.LandLayout.Clusters.Count()];
+                for (int i = 0; i < _clusterCenters.Length; i++)
+                {
+                    var cluster = _main.LandLayout.Clusters.ElementAt(i);
+                    //Get most centered cell of cluster
+                    var borders = cluster.Cells.GetBorderCells().ToArray();
+                    var floodFill = cluster.Cells.FloodFill(borders);
+                    Cell[] mostCenteredCells = floodFill.GetNeighbors(0).ToArray();
+                    for (int floodFillStep = 1; floodFillStep < 10; floodFillStep++)
+                    {
+                        var floodFillResult = floodFill.GetNeighbors(floodFillStep).ToArray();
+                        if (!floodFillResult.Any())
+                            break;
+                        else
+                            mostCenteredCells = floodFillResult;
+                    }
+
+                    //Find most centered cell by geometrical center distance;
+                    Vector2 center = Vector2.zero;
+                    foreach (var clusterCell in cluster.Cells)
+                        center += clusterCell.Center;
+                    center /= cluster.Cells.Cells.Length;
+
+                    //Select from mostCenteredCells nearest to geomertical center
+                    float distance = float.MaxValue;
+                    Cell centerCell = null;
+                    for (int j = 0; j < mostCenteredCells.Length; j++)
+                    {
+                        var dist = Vector2.Distance(mostCenteredCells[j].Center, center);
+                        if (dist < distance)
+                        {
+                            distance = dist;
+                            centerCell = mostCenteredCells[j];
+                        }
+                    }
+
+                    _clusterCenters[i] = centerCell.Center;
+                }
+            }
         }
     }
 

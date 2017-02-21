@@ -15,11 +15,14 @@ namespace TerrainDemo.Editor
     {
         public static bool IsShowDelaunay { get; private set; }
         public static bool IsShowFill { get; private set; }
-        public static bool IsShowId { get; private set; }
+        public static bool IsShowCellId { get; private set; }
+
+        public static bool IsShowClusterId { get; private set; }
 
         private const string ShowDelaunay = "Land/Show zones Delaunay";
         private const string ShowFill = "Land/Show zones fill";
-        private const string ShowId = "Land/Show zones Id";
+        private const string ShowCellId = "Land/Show zones Id";
+        private const string ShowClusterId = "Land/Show clusters Id";
         private static readonly Dictionary<string, bool> Settings;
 
         static RunnerEditorMainMenu()
@@ -28,7 +31,8 @@ namespace TerrainDemo.Editor
             {
                 {ShowDelaunay, EditorPrefs.GetBool(ShowDelaunay, false)},
                 {ShowFill, EditorPrefs.GetBool(ShowFill, false)},
-                {ShowId, EditorPrefs.GetBool(ShowId, false)},
+                {ShowCellId, EditorPrefs.GetBool(ShowCellId, false)},
+                {ShowClusterId, EditorPrefs.GetBool(ShowClusterId, false)},
             };
 
             EditorApplication.delayCall += DelayCall;
@@ -55,10 +59,16 @@ namespace TerrainDemo.Editor
             ToggleFlag(ShowFill, !Settings[ShowFill]);
         }
 
-        [MenuItem(ShowId)]
-        private static void MenuId()
+        [MenuItem(ShowCellId)]
+        private static void MenuCellId()
         {
-            ToggleFlag(ShowId, !Settings[ShowId]);
+            ToggleFlag(ShowCellId, !Settings[ShowCellId]);
+        }
+
+        [MenuItem(ShowClusterId)]
+        private static void MenuClusterId()
+        {
+            ToggleFlag(ShowClusterId, !Settings[ShowClusterId]);
         }
 
         private static void ToggleFlag(string key, bool value)
@@ -77,8 +87,12 @@ namespace TerrainDemo.Editor
                     IsShowFill = value;
                     break;
 
-                case ShowId:
-                    IsShowId = value;
+                case ShowCellId:
+                    IsShowCellId = value;
+                    break;
+
+                case ShowClusterId:
+                    IsShowClusterId = value;
                     break;
 
                 default:
