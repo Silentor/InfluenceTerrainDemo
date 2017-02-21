@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using TerrainDemo.Hero;
 using TerrainDemo.Layout;
@@ -43,9 +44,29 @@ namespace TerrainDemo
         }
 
         //private Bounds2i _landSizeChunks;
-        public void SaveMesh()
+        public void SaveMesh(string path)
         {
-            Main.SaveCellMesh();
+            var data = Main.SaveCellMesh();
+
+            using (var file = File.CreateText(path))
+            {
+                file.Write(data);
+            }
+
+            Debug.Log("Write cell mesh to " + path);
+        }
+
+        public void LoadMesh(string path)
+        {
+            string data;
+            using (var file = File.OpenText(path))
+            {
+                data = file.ReadToEnd();
+            }
+
+            Main.LoadCellMesh(data);
+
+            Debug.Log("Read cell mesh from " + path);
         }
 
         private GameObject _zonesParent;

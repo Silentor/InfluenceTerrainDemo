@@ -7,9 +7,11 @@ using JetBrains.Annotations;
 using TerrainDemo.Generators;
 using TerrainDemo.Hero;
 using TerrainDemo.Layout;
+using TerrainDemo.Libs.SimpleJSON;
 using TerrainDemo.Map;
 using TerrainDemo.Meshing;
 using TerrainDemo.Settings;
+using TerrainDemo.Voronoi;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -105,16 +107,29 @@ namespace TerrainDemo
             //ObserverOnChanged();
         }
 
-        public void SaveCellMesh()
+        public string SaveCellMesh()
         {
-            var fileName = string.Format("cellmesh{0}.json", _settings.Seed);
-            var path = string.Format("{0}/{1}", Application.dataPath, fileName);
             var json = LandLayout.CellMesh.ToJSON();
-            var file = File.CreateText(path);
-            file.Write(json.ToString());
-            file.Close();
+            return json.ToString();
+        }
 
-            Debug.Log("Write cell mesh to " + path);
+        public void LoadCellMesh(string data)
+        {
+            var json = JSON.Parse(data);
+            var cellMesh = CellMesh.FromJSON(json);
+
+            //Stub layout info
+            var zones = new ZoneInfo[cellMesh.Cells.Length];
+            for (int i = 0; i < zones.Length; i++)
+                zones[i] = new ZoneInfo {ClusterId = 0, Id = i, Type = _settings.Zones[0].Type};
+            LandLayout.Update(cellMesh, new []{new ClusterInfo
+            {
+                Id = 0,
+                ClusterHeights = new []{ Vector3.zero, Vector3.one * 20, },
+                ZoneHeights = new []{ Vector3.zero, Vector3.one * 20, },
+                Type = _settings.Zones[0].Type,
+                Zones = zones
+            }} );
         }
 
         private readonly BaseMesher _mesher;
