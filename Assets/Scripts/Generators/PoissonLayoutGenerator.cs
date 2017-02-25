@@ -26,9 +26,10 @@ namespace TerrainDemo.Generators
             var checkedPoints = new List<Vector2>();
             var uncheckedPoints = new List<Vector2>();
 
-            //Generate start point
-            var zoneCenterX = Random.Range((float)landBounds.Min.X, landBounds.Max.X);
-            var zoneCenterY = Random.Range((float)landBounds.Min.Z, landBounds.Max.Z);
+            //Generate start point (near bounds center)
+            var center = (landBounds.Max + landBounds.Min) / 2;
+            var zoneCenterX = Random.Range(center.X - density.y / 2, center.X + density.y / 2);
+            var zoneCenterY = Random.Range(center.Z - density.y / 2, center.Z + density.y / 2);
             var startPoint = new Vector2(zoneCenterX, zoneCenterY);
 
             uncheckedPoints.Add(startPoint);

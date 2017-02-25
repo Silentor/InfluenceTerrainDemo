@@ -28,36 +28,36 @@ namespace TerrainDemo.Generators
             var zones = new ZoneInfo[mesh.Cells.Length];
             var clusterId = -1;
 
-            //Calculate clusters and zone types
+            //Get clusters Poisson points
+            var clusterCenters = GeneratePoints(settings.LandBounds, new Vector2(100, 100));        //Вынести в настройки
+
+            //Fill main clusters
+            for (int i = 0; i < clusterCenters.Length; i++)
+            {
+                var startCell = mesh.GetCellFor(clusterCenters[i]);
+                if (zones[startCell.Id].Type == ZoneType.Empty)
+                {
+                    clusterId++;
+                    var clusterSize = settings.ClusterSize.GetRandomRange();
+                    var zoneType = zoneTypes[Random.Range(0, zoneTypes.Length)];
+
+                    var newCluster = FillCluster(mesh, startCell, clusterSize, zoneType, zones, clusterId);
+                    clusters.Add(newCluster);
+                }
+            }
+
+            UnityEngine.Debug.LogFormat("Main clusters: 0 - {0}", clusterId);
+
+            //Fill remaining gaps between main clusters
             for (var i = 0; i < zones.Length; i++)
             {
                 if (zones[i].Type == ZoneType.Empty)
                 {
-                    //Fill cluster
                     clusterId++;
-                    
                     var zoneType = zoneTypes[Random.Range(0, zoneTypes.Length)];
                     var clusterSize = settings.ClusterSize.GetRandomRange();
-                    var neighbors = mesh.GetNeighbors(mesh[i], c => zones[c.Id].Type == ZoneType.Empty).Take(clusterSize).ToArray();
-                    var clusterCells = new List<Cell>(neighbors.Length + 1);
-                    clusterCells.Add(mesh[i]);
-                    clusterCells.AddRange(neighbors);
 
-                    var zonesInCluster = new List<ZoneInfo>(clusterCells.Count);
-                    foreach (var cell in clusterCells)
-                    {
-                        var zoneInfo = new ZoneInfo {Id = cell.Id, ClusterId = clusterId, Type = zoneType};
-                        zones[cell.Id] = zoneInfo;
-                        zonesInCluster.Add(zoneInfo);
-                    }
-
-                    var newCluster = new ClusterInfo
-                    {
-                        Id = clusterId, Type = zoneType, Zones = zonesInCluster.ToArray(),
-                        Mesh = new CellMesh.Submesh(mesh, clusterCells.ToArray()),
-                    };
-                    
-                    
+                    var newCluster = FillCluster(mesh, mesh.Cells[i], clusterSize, zoneType, zones, clusterId);
                     clusters.Add(newCluster);
                 }
             }
@@ -79,6 +79,31 @@ namespace TerrainDemo.Generators
             }
 
             return clusters.ToArray();
+        }
+
+        private static ClusterInfo FillCluster(CellMesh mesh, Cell startCell, int clusterSize, ZoneType zoneType, ZoneInfo[] zones, int clusterId)
+        {
+            var neighbors = mesh.GetNeighbors(startCell, c => zones[c.Id].Type == ZoneType.Empty).Take(clusterSize).ToArray();
+            var clusterCells = new List<Cell>(neighbors.Length + 1);
+            clusterCells.Add(startCell);
+            clusterCells.AddRange(neighbors);
+
+            var zonesInCluster = new List<ZoneInfo>(clusterCells.Count);
+            foreach (var cell in clusterCells)
+            {
+                var zoneInfo = new ZoneInfo {Id = cell.Id, ClusterId = clusterId, Type = zoneType};
+                zones[cell.Id] = zoneInfo;
+                zonesInCluster.Add(zoneInfo);
+            }
+
+            var newCluster = new ClusterInfo
+            {
+                Id = clusterId,
+                Type = zoneType,
+                Zones = zonesInCluster.ToArray(),
+                Mesh = new CellMesh.Submesh(mesh, clusterCells.ToArray()),
+            };
+            return newCluster;
         }
 
         /// <summary>
