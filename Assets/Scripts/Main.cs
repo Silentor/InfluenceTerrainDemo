@@ -125,7 +125,7 @@ namespace TerrainDemo
             LandLayout.Update(cellMesh, new []{new ClusterInfo
             {
                 Id = 0,
-                ClusterHeights = new []{ Vector3.zero, Vector3.one * 20, },
+                ClusterHeight = Vector3.zero,
                 ZoneHeights = new []{ Vector3.zero, Vector3.one * 20, },
                 Type = _settings.Zones[0].Type,
                 Zones = zones

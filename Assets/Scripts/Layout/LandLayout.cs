@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using JetBrains.Annotations;
+using TerrainDemo.Generators;
 using TerrainDemo.Settings;
 using TerrainDemo.Threads;
 using TerrainDemo.Tools;
 using TerrainDemo.Voronoi;
 using UnityEngine;
 using UnityEngine.Assertions;
+using UnityEngine.Profiling;
 using Debug = UnityEngine.Debug;
 
 namespace TerrainDemo.Layout
@@ -30,6 +32,8 @@ namespace TerrainDemo.Layout
         public IEnumerable<ClusterLayout> Clusters { get; private set; }
 
         public IEnumerable<Vector3> Heights { get; private set; }
+
+        public Dictionary<int, ClusterGenerator> Generators = new Dictionary<int, ClusterGenerator>();
 
         public LandLayout(LandSettings settings, CellMesh cellMesh, ClusterInfo[] clusters)
         {
@@ -62,9 +66,9 @@ namespace TerrainDemo.Layout
             //Remove close height points
             var removedPointsCount = 0;
             var baseHeights = clusters.SelectMany(c => c.ZoneHeights).ToList();
-            for (int i = 0; i < baseHeights.Count; i++)
+            for (var i = 0; i < baseHeights.Count; i++)
             {
-                for (int j = 0; j < baseHeights.Count; j++)
+                for (var j = 0; j < baseHeights.Count; j++)
                 {
                     if (baseHeights[i] != baseHeights[j])
                     {
@@ -388,7 +392,7 @@ namespace TerrainDemo.Layout
 
         private alglib.idwinterpolant MakeClusterHeightInterpolator(ClusterInfo[] clusters)
         {
-            var heightPoint = clusters.SelectMany(c => c.ClusterHeights).ToArray();
+            var heightPoint = clusters.Select(c => c.ClusterHeight).ToArray();
 
             //Build base height interpolator
             var points = new double[heightPoint.Length, 3];

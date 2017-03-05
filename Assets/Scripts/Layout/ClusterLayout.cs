@@ -38,7 +38,7 @@ namespace TerrainDemo.Layout
 
         public ClusterLayout(ClusterInfo info, IEnumerable<ZoneLayout> zones, CellMesh mesh)
         {
-            if (info.ClusterHeights == null) throw new ArgumentNullException("baseHeightPoints");
+            if (info.ClusterHeight == null) throw new ArgumentNullException("baseHeightPoints");
             if (info.ZoneHeights == null) throw new ArgumentNullException("baseHeightPoints");
             if (zones == null) throw new ArgumentNullException("zones");
 

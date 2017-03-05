@@ -27,6 +27,7 @@ namespace TerrainDemo.Generators
             var clusters = new List<ClusterInfo>();
             var zones = new ZoneInfo[mesh.Cells.Length];
             var clusterId = -1;
+            var generators = new Dictionary<int, ClusterGenerator>();
 
             //Get clusters Poisson points
             var clusterCenters = GeneratePoints(settings.LandBounds, new Vector2(100, 100));        //Вынести в настройки
@@ -38,10 +39,10 @@ namespace TerrainDemo.Generators
                 if (zones[startCell.Id].Type == ZoneType.Empty)
                 {
                     clusterId++;
-                    var clusterSize = settings.ClusterSize.GetRandomRange();
                     var zoneType = zoneTypes[Random.Range(0, zoneTypes.Length)];
-
-                    var newCluster = FillCluster(mesh, startCell, clusterSize, zoneType, zones, clusterId);
+                    var generator = CreateGenerator(zoneType, mesh, clusterId);
+                    generators.Add(clusterId, generator);
+                    var newCluster = generator.FillCluster(startCell, zones);
                     clusters.Add(newCluster);
                 }
             }
@@ -55,9 +56,9 @@ namespace TerrainDemo.Generators
                 {
                     clusterId++;
                     var zoneType = zoneTypes[Random.Range(0, zoneTypes.Length)];
-                    var clusterSize = settings.ClusterSize.GetRandomRange();
-
-                    var newCluster = FillCluster(mesh, mesh.Cells[i], clusterSize, zoneType, zones, clusterId);
+                    var generator = CreateGenerator(zoneType, mesh, clusterId);
+                    generators.Add(clusterId, generator);
+                    var newCluster = generator.FillCluster(mesh.Cells[i], zones);
                     clusters.Add(newCluster);
                 }
             }
@@ -74,36 +75,11 @@ namespace TerrainDemo.Generators
                 cluster.Neighbors = neighborClusterIds.Select(cid => clusters[cid]).ToArray();
 
                 //Calculate heights
-                cluster.ClusterHeights = GetClusterHeights(cluster, mesh);
-                cluster.ZoneHeights = GetZoneHeights(cluster, mesh, zones);
+                cluster.ClusterHeight = generators[cluster.Id].GetClusterHeight();
+                cluster.ZoneHeights = generators[cluster.Id].GetZoneHeights();
             }
 
             return clusters.ToArray();
-        }
-
-        private static ClusterInfo FillCluster(CellMesh mesh, Cell startCell, int clusterSize, ZoneType zoneType, ZoneInfo[] zones, int clusterId)
-        {
-            var neighbors = mesh.GetNeighbors(startCell, c => zones[c.Id].Type == ZoneType.Empty).Take(clusterSize).ToArray();
-            var clusterCells = new List<Cell>(neighbors.Length + 1);
-            clusterCells.Add(startCell);
-            clusterCells.AddRange(neighbors);
-
-            var zonesInCluster = new List<ZoneInfo>(clusterCells.Count);
-            foreach (var cell in clusterCells)
-            {
-                var zoneInfo = new ZoneInfo {Id = cell.Id, ClusterId = clusterId, Type = zoneType};
-                zones[cell.Id] = zoneInfo;
-                zonesInCluster.Add(zoneInfo);
-            }
-
-            var newCluster = new ClusterInfo
-            {
-                Id = clusterId,
-                Type = zoneType,
-                Zones = zonesInCluster.ToArray(),
-                Mesh = new CellMesh.Submesh(mesh, clusterCells.ToArray()),
-            };
-            return newCluster;
         }
 
         /// <summary>
@@ -315,6 +291,15 @@ namespace TerrainDemo.Generators
                 }
                 
                 return heights.ToArray();
+            }
+        }
+
+        protected ClusterGenerator CreateGenerator(ZoneType type, CellMesh mesh, int clusterId)
+        {
+            switch (type)
+            {
+                default:
+                    return new DefaultClusterGenerator(_settings, mesh, clusterId, type);
             }
         }
     }

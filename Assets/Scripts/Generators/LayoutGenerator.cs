@@ -15,7 +15,7 @@ namespace TerrainDemo.Generators
     /// </summary>
     public abstract class LayoutGenerator
     {
-        private readonly LandSettings _settings;
+        protected readonly LandSettings _settings;
 
         protected LayoutGenerator(LandSettings settings)
         {
@@ -30,13 +30,26 @@ namespace TerrainDemo.Generators
         public virtual LandLayout Generate(LandLayout oldLandLayout)
         {
             var timer = Stopwatch.StartNew();
+            long pointsTime, cellmeshTime, clustersTime, updateLayoutTime;
 
             var bounds = _settings.LandBounds;
 
+            timer.Start();
             var points = GeneratePoints(bounds, _settings.ZonesRange);
-            var cellMesh = CellMeshGenerator.Generate(points, (Bounds)bounds);
-            var clusters = SetClusters(cellMesh, _settings);
+            pointsTime = timer.ElapsedMilliseconds;
+            timer.Reset();
 
+            timer.Start();
+            var cellMesh = CellMeshGenerator.Generate(points, (Bounds)bounds);
+            cellmeshTime = timer.ElapsedMilliseconds;
+            timer.Reset();
+
+            timer.Start();
+            var clusters = SetClusters(cellMesh, _settings);
+            clustersTime = timer.ElapsedMilliseconds;
+            timer.Reset();
+
+            timer.Start();
             LandLayout result;
             if (oldLandLayout == null)
             {
@@ -47,8 +60,12 @@ namespace TerrainDemo.Generators
                 oldLandLayout.Update(cellMesh, clusters);
                 result = oldLandLayout;
             }
+            updateLayoutTime = timer.ElapsedMilliseconds;
+            timer.Stop();
 
-            UnityEngine.Debug.LogFormat("Generated layout: {0} msec", timer.ElapsedMilliseconds);
+            UnityEngine.Debug.LogFormat("Generated layout: generate points {0} msec, create cellmesh {1} msec, set clusters {2} msec, update land layout {3} msec, total {4} msec", 
+                pointsTime, cellmeshTime, clustersTime, updateLayoutTime,
+                pointsTime + cellmeshTime + clustersTime + updateLayoutTime);
 
             return result;
         }
