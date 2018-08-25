@@ -20,7 +20,7 @@ namespace TerrainDemo
             if (values == null) throw new ArgumentNullException("values");
             //Fast debug precondition
             for(var i = 0; i < values.Length; i++)
-                if(values[i].Zone == ZoneType.Empty)
+                if(values[i].Zone == ClusterType.Empty)
                     throw new ArgumentException("values");
 
             Array.Sort(values);
@@ -97,7 +97,7 @@ namespace TerrainDemo
             return new ZoneRatio(result);
         }
 
-        public double this[ZoneType i]
+        public double this[ClusterType i]
         {
             get
             {
@@ -168,10 +168,10 @@ namespace TerrainDemo
     [DebuggerDisplay("{Zone} = {Value}")]
     public struct ZoneValue : IComparable<ZoneValue>
     {
-        public readonly ZoneType Zone;
+        public readonly ClusterType Zone;
         public double Value;
 
-        public ZoneValue(ZoneType type, double value)
+        public ZoneValue(ClusterType type, double value)
         {
             Zone = type;
             Value = value;

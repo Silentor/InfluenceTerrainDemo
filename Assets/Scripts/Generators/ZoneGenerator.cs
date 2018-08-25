@@ -61,12 +61,12 @@ namespace TerrainDemo.Generators
                         var worldTurbulated = blockPos + new Vector2i(turbulenceX, turbulenceZ);
                         blockInfluence =
                             zoneInfluences[localPos.X, localPos.Z] =
-                                Land.GetInfluence((Vector2)worldTurbulated);}
+                                Land.GetRBFInfluence((Vector2)worldTurbulated);}
                 }
                 else
                 {
                     var worldTurbulated = blockPos + new Vector2i(turbulenceX, turbulenceZ);
-                    blockInfluence = Land.GetInfluence((Vector2)worldTurbulated);
+                    blockInfluence = Land.GetRBFInfluence((Vector2)worldTurbulated);
                 }
                 */
 
@@ -93,33 +93,33 @@ namespace TerrainDemo.Generators
         /// <param name="land"></param>
         /// <param name="landSettings"></param>
         /// <returns></returns>
-        public static ZoneGenerator Create(ZoneType type, ZoneLayout zone, [NotNull] LandLayout land, LandGenerator generator, [NotNull] LandSettings landSettings)
+        public static ZoneGenerator Create(ClusterType type, ZoneLayout zone, [NotNull] LandLayout land, LandGenerator generator, [NotNull] LandSettings landSettings)
         {
             switch (type)
             {
-                case ZoneType.Hills:
+                case ClusterType.Hills:
                     return new HillsGenerator(zone, land, generator, landSettings);
-                case ZoneType.Lake:
+                case ClusterType.Lake:
                         return new LakeGenerator(zone, land, generator, landSettings);
-                case ZoneType.Forest:
+                case ClusterType.Forest:
                         return new ForestGenerator(zone, land, generator, landSettings);
-                case ZoneType.Mountains:
+                case ClusterType.Mountains:
                         return new MountainsGenerator(zone, land, generator, landSettings);
-                case ZoneType.Foothills:
+                case ClusterType.Foothills:
                         return new FoothillsGenerator(zone, land, generator, landSettings);
-                case ZoneType.Snow:
+                case ClusterType.Snow:
                         return new SnowGenerator(zone, land, generator, landSettings);
-                case ZoneType.Desert:
+                case ClusterType.Desert:
                     return new DefaultGenerator(zone, land, generator, landSettings);
-                case ZoneType.Checkboard:
+                case ClusterType.Checkboard:
                         return new CheckboardGenerator(zone, land, generator, landSettings);
-                case ZoneType.Cone:
+                case ClusterType.Cone:
                         return new ConeGenerator(zone, land, generator, landSettings);
-                case ZoneType.Slope:
+                case ClusterType.Slope:
                         return new SlopeGenerator(zone, land, generator, landSettings);
                 default:
                     {
-                        if (type >= ZoneType.Influence1 && type <= ZoneType.Influence8)
+                        if (type >= ClusterType.Influence1 && type <= ClusterType.Influence8)
                             return new FlatGenerator(zone, land, generator, landSettings);
 
                         throw new NotImplementedException(string.Format("Generator for zone type {0} is not implemented", type));
@@ -127,7 +127,7 @@ namespace TerrainDemo.Generators
             }
         }
 
-        private readonly ZoneType _type;
+        private readonly ClusterType _type;
         protected readonly ZoneLayout _zone;
         protected readonly LandLayout Land;
         private readonly LandGenerator _generator;
@@ -135,12 +135,12 @@ namespace TerrainDemo.Generators
         private ZoneRatio _influence;
         private static readonly float NormalY = 2*Mathf.Sqrt(3/2f);
         private static readonly Quaternion NormalCorrectRotation = Quaternion.Euler(0, -45, 0);
-        private readonly Dictionary<ZoneType, ZoneGenerator> _generators = new Dictionary<ZoneType, ZoneGenerator>();
-        protected ZoneSettings _zoneSettings;
+        private readonly Dictionary<ClusterType, ZoneGenerator> _generators = new Dictionary<ClusterType, ZoneGenerator>();
+        protected ClusterSettings _clusterSettings;
         protected readonly FastNoise _noise;
         private const float NoHeight = -10000;
 
-        protected ZoneGenerator(ZoneType type, ZoneLayout zone, [NotNull] LandLayout land, LandGenerator generator, [NotNull] LandSettings landSettings)
+        protected ZoneGenerator(ClusterType type, ZoneLayout zone, [NotNull] LandLayout land, LandGenerator generator, [NotNull] LandSettings landSettings)
         {
             if (land == null) throw new ArgumentNullException("land");
             if (landSettings == null) throw new ArgumentNullException("landSettings");
@@ -150,15 +150,15 @@ namespace TerrainDemo.Generators
             Land = land;
             _generator = generator;
             _landSettings = landSettings;
-            _zoneSettings = landSettings[type];
-            DefaultBlock = _zoneSettings.DefaultBlock;
+            _clusterSettings = landSettings[type];
+            DefaultBlock = _clusterSettings.DefaultBlock;
 
             _noise = new FastNoise(landSettings.Seed);
-            _noise.SetFrequency(_zoneSettings.NoiseFreq);
-            _noise.SetFractalGain(_zoneSettings.NoiseGain);
-            _noise.SetFractalLacunarity(_zoneSettings.NoiseLacunarity);
-            _noise.SetFractalOctaves(_zoneSettings.NoiseOctaves);
-            _noise.SetFractalType(_zoneSettings.NoiseFractal);
+            //_noise.SetFrequency(_clusterSettings.NoiseFreq);
+            //_noise.SetFractalGain(_clusterSettings.NoiseGain);
+            //_noise.SetFractalLacunarity(_clusterSettings.NoiseLacunarity);
+            //_noise.SetFractalOctaves(_clusterSettings.NoiseOctaves);
+            //_noise.SetFractalType(_clusterSettings.NoiseFractal);
         }
 
         /// <summary>
@@ -184,8 +184,8 @@ namespace TerrainDemo.Generators
         {
             var yValue = 0d;
 
-            if (_zoneSettings.NoiseAmp > 0.001)
-                yValue = _noise.GetSimplexFractal(worldX, worldZ)*_zoneSettings.NoiseAmp;
+            //if (_clusterSettings.NoiseAmp > 0.001)
+                //yValue = _noise.GetSimplexFractal(worldX, worldZ)*_clusterSettings.NoiseAmp;
 
             yValue += Land.GetBaseHeight(worldX, worldZ);
 

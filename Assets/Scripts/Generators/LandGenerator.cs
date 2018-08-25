@@ -34,7 +34,7 @@ namespace TerrainDemo.Generators
         /// </summary>
         public void Generate(bool isAsync)
         {
-            Generate(_land.Zones.Where(z => z.Cell.IsClosed), isAsync);
+            //Generate(_land.Zones.Where(z => z.Cell.IsClosed), isAsync);
         }
 
         /// <summary>
@@ -82,8 +82,8 @@ namespace TerrainDemo.Generators
         private readonly LandSettings _settings;
         private readonly LandMap _map;
         private readonly LandGeneratorWorker _worker;
-        private readonly Dictionary<ZoneType, ZoneGenerator> _generators = new Dictionary<ZoneType, ZoneGenerator>();
-        private readonly Dictionary<ZoneType, AverageTimer> _generationTimers = new Dictionary<ZoneType, AverageTimer>();
+        private readonly Dictionary<ClusterType, ZoneGenerator> _generators = new Dictionary<ClusterType, ZoneGenerator>();
+        private readonly Dictionary<ClusterType, AverageTimer> _generationTimers = new Dictionary<ClusterType, AverageTimer>();
 
         private void WorkerOnCompleted(ZoneGenerator.ZoneContent zoneContent)
         {
@@ -97,7 +97,7 @@ namespace TerrainDemo.Generators
         {
             var result = input.Generate();
 
-            UnityEngine.Debug.LogFormat("Generated zone {0}", result.Zone.Cell.Id);
+            UnityEngine.Debug.LogFormat("Generated zone {0}", result.Zone.Face.Id);
 
             return result;
         }

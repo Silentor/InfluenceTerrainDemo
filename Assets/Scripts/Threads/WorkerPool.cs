@@ -93,6 +93,7 @@ namespace TerrainDemo.Threads
             }
         }
 
+#if UNITY_EDITOR
         internal void ShowInspectorGUI()
         {
             GUILayout.Label(string.Format("Workers {0}, max {1}, total {2}", _worksCount, _maxWorks, _totalWorks));
@@ -111,6 +112,7 @@ namespace TerrainDemo.Threads
                 }
             }
         }
+#endif
 
         private readonly int _threadsCount;
         private int _worksCount;

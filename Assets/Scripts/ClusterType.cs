@@ -1,6 +1,6 @@
 ﻿namespace TerrainDemo
 {
-    public enum ZoneType
+    public enum ClusterType
     {
         Empty,
 
@@ -29,13 +29,5 @@
         Checkboard = 300,
         Cone,
         Slope
-    }
-
-    public static class ZoneTypeExtensions
-    {
-        public static bool IsInterval(ZoneType type)
-        {
-            return type >= ZoneType.IntervalZones;
-        }
     }
 }

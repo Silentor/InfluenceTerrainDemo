@@ -14,10 +14,10 @@ namespace TerrainDemo.Meshing
         {
             _settings = settings;
             _meshSettings = meshSettings;
-            _zoneInfluenceColors = new Color[(int)settings.Zones.Max(z => z.Type) + 1];
-            foreach (var zoneSettingse in settings.Zones)
+            _zoneInfluenceColors = new Color[(int)settings.Clusters.Max(z => z.Type) + 1];
+            foreach (var zoneSettingse in settings.Clusters)
                 _zoneInfluenceColors[(int) zoneSettingse.Type] = zoneSettingse.LandColor;
-            _zoneTypes = _settings.Zones.Select(z => z.Type).ToArray();
+            _zoneTypes = _settings.Clusters.Select(z => z.Type).ToArray();
         }
 
         public override ChunkModel Generate(Chunk chunk, Dictionary<Vector2i, Chunk> map)
@@ -64,7 +64,7 @@ namespace TerrainDemo.Meshing
         private readonly LandSettings _settings;
         private readonly MesherSettings _meshSettings;
         private readonly Color[] _zoneInfluenceColors;
-        private readonly ZoneType[] _zoneTypes;
+        private readonly ClusterType[] _zoneTypes;
 
         private Color Lerp(ZoneRatio ratio)
         {

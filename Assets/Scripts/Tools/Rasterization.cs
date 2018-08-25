@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using OpenTK;
 using UnityEngine;
+using Vector2 = OpenTK.Vector2;
+using Vector3 = UnityEngine.Vector3;
 
 namespace TerrainDemo.Tools
 {
@@ -11,29 +15,36 @@ namespace TerrainDemo.Tools
             return DDA(new Vector2(p1.X + 0.5f, p1.Z + 0.5f), new Vector2(p2.X + 0.5f, p2.Z + 0.5f), conservative);
         }
 
+        /// <summary>
+        /// Conservative rasterizing still need improvement
+        /// </summary>
+        /// <param name="p1"></param>
+        /// <param name="p2"></param>
+        /// <param name="conservative"></param>
+        /// <returns></returns>
         public static IEnumerable<Vector2i> DDA(Vector2 p1, Vector2 p2, bool conservative)
         {
             //Based on http://www.sunshine2k.de/coding/java/Bresenham/RasterisingLinesCircles.pdf
-            float len = Mathf.Max(Mathf.Abs(p2.x - p1.x), Mathf.Abs(p2.y - p1.y));
+            double len = Mathf.Max(Mathf.Abs(p2.X - p1.X), Mathf.Abs(p2.Y - p1.Y));
 
             //Short path
-            if (Mathf.Approximately(len, 0))
+            if (Math.Abs(len) < 0.000001)
             {
                 yield return (Vector2i)p1;
                 yield break;
             }
 
             // calculate increments
-            var dx = (p2.x - p1.x) / len;
-            var dy = (p2.y - p1.y) / len;
+            var dx = (p2.X - p1.X) / len;
+            var dy = (p2.Y - p1.Y) / len;
 
             // start point
-            float x = p1.x;
-            float y = p1.y;
+            double x = p1.X;
+            double y = p1.Y;
 
             //Additional blocks for conservative rasterization
-            var addX = new Vector2i(Mathf.Sign(dx), 0);
-            var addZ = new Vector2i(0, Mathf.Sign(dy));
+            var addX = new Vector2i(Math.Sign(dx), 0);
+            var addZ = new Vector2i(0, Math.Sign(dy));
 
             var result = (Vector2i)p1;
             for (var i = 0; i < len; i++)
@@ -96,6 +107,12 @@ namespace TerrainDemo.Tools
                 yield return (Vector3i)p2;
         }
 
+        /// <summary>
+        /// Issues in some quadrants, need speed test against DDA
+        /// </summary>
+        /// <param name="p1"></param>
+        /// <param name="p2"></param>
+        /// <returns></returns>
         public static IEnumerable<Vector2i> BresenhamInt(Vector2i p1, Vector2i p2)
         {
             //Based http://www.sunshine2k.de/coding/java/Bresenham/RasterisingLinesCircles.pdf
@@ -132,6 +149,213 @@ namespace TerrainDemo.Tools
             }
         }
 
+        public static IEnumerable<Vector2i> lineNoDiag(int x0, int y0, int x1, int y1)
+        {
+            int xDist = Math.Abs(x1 - x0);
+            int yDist = -Math.Abs(y1 - y0);
+            int xStep = (x0 < x1 ? +1 : -1);
+            int yStep = (y0 < y1 ? +1 : -1);
+            int error = xDist + yDist;
+
+            yield return new Vector2i(x0, y0);
+
+            while (x0 != x1 || y0 != y1)
+            {
+                if (2 * error - yDist > xDist - 2 * error)
+                {
+                    // horizontal step
+                    error += yDist;
+                    x0 += xStep;
+                }
+                else
+                {
+                    // vertical step
+                    error += xDist;
+                    y0 += yStep;
+                }
+
+                yield return new Vector2i(x0, y0);
+            }
+        }
+
+        public static IEnumerable<Vector2i> Bresenham2(int x0, int y0, int x1, int y1)
+        {
+            var dx = Math.Abs(x1 - x0);
+            var dy = Math.Abs(y1 - y0);
+
+            var sx = -1;
+            var sy = -1;
+
+            if (x0 < x1)
+                sx = 1;
+            if (y0 < y1)
+                sy = 1;
+
+            var err = dx - dy;
+            int e2;
+
+            while (true)
+            {
+                yield return new Vector2i(x0, y0);
+
+                if (x0 == x1 && y0 == y1) yield break;
+
+                e2 = 2 * err;
+
+                if (dy > dx)
+                {
+                    if (e2 > -dy)
+                    {
+                        err = err - dy;
+                        x0 = x0 + sx;
+                    }
+                    else if (e2 < dx)
+                    {
+                        err = err + dx;
+                        y0 = y0 + sy;
+                    }
+                }
+                else
+                {
+                    if (e2 < dx)
+                    {
+                        err = err + dx;
+                        y0 = y0 + sy;
+                    }
+                    else if (e2 > -dy)
+                    {
+                        err = err - dy;
+                        x0 = x0 + sx;
+                    }
+                }
+            }
+        }
+
+        public static IEnumerable<Vector2i> Line(float x1, float y1, float x2, float y2)
+        {
+            int x = Mathf.FloorToInt(x1);
+            int y = Mathf.FloorToInt(y1);
+            double slope = (x2 - x1) / (y2 - y1);
+            if (y2 >= y1)
+            {
+                while (y < y2)
+                {
+                    int r = (int)Math.Floor(slope * (y - y1) + x1);
+                    do
+                    {
+                        yield return new Vector2i(x, y);
+                        ++x;
+                    } while (x < r);
+                    yield return new Vector2i(x, y);
+                    ++y;
+                }
+            }
+            else
+            {
+                while (y > y2)
+                {
+                    int r = (int)Math.Floor(slope * (y - y1) + x1);
+                    do
+                    {
+                        yield return new Vector2i(x, y);
+                        ++x;
+                    } while (x < r);
+                    yield return new Vector2i(x, y);
+                    --y;
+                }
+            }
+        }
+
+        public static IEnumerable<Vector2i> Polygon(Macro.Cell cell)
+        {
+            var edges = new List<Vector2i>();
+            foreach (var edge in cell.Edges)
+                edges.AddRange(DDA(edge.Vertex1.Coords, edge.Vertex2.Coords, false));
+
+            var bounds = (Bounds2i)cell.Bounds;
+
+            Debug.Log(bounds);
+
+            edges = edges.Where(e => bounds.Contains(e)).Distinct().ToList();
+            edges.Sort();
+
+            for (int i = 0; i < edges.Count;)
+            {
+                if (i == edges.Count - 1)
+                {
+                    yield return edges.Last();
+                    yield break;
+                }
+
+                var z1 = edges[i].Z;
+                var j = i;
+                while (j < edges.Count - 1 && edges[j + 1].Z == z1)
+                    j++;
+
+                for (var x = edges[i].X; x <= edges[j].X; x++)
+                    yield return new Vector2i(x, z1);
+
+                i = j + 1;
+            }
+        }
+
+        /// <summary>
+        /// Bounds scan algorithm. Not very fast but accurate. As fast as bounding box is tight
+        /// </summary>
+        /// <returns></returns>
+        public static Vector2i[] Polygon2(Predicate<Vector2> contains, Box2 bounds)
+        {
+            var result = new List<Vector2i>();
+            var blockBounds = (Bounds2i) bounds;
+
+            //Scan bound from top to bottom
+            for (int z = blockBounds.Min.Z; z <= blockBounds.Max.Z; z++)
+            {
+                int? leftContainingPos = null;
+                int? rightContainingPos = null;
+
+                //Find left and right blocks in cell
+                for (int x = blockBounds.Min.X; x <= blockBounds.Max.X; x++)
+                {
+                    if (contains(new Vector2(x + 0.5f, z + 0.5f)))
+                    {
+                        leftContainingPos = x;
+                        break;
+                    }
+                }
+
+                if (leftContainingPos != null)
+                {
+                    for (int x = blockBounds.Max.X; x >= blockBounds.Min.X; x--)
+                    {
+                        if (contains(new Vector2(x + 0.5f, z + 0.5f)))
+                        {
+                            rightContainingPos = x;
+                            break;
+                        }
+                    }
+                }
+
+                if (leftContainingPos.HasValue && rightContainingPos.HasValue)
+                {
+                    //Add block pos from left to right
+                    for (int x = leftContainingPos.Value; x <= rightContainingPos.Value; x++)
+                    {
+                        result.Add(new Vector2i(x, z));
+                    }
+                }
+            }
+
+            return result.ToArray();
+        }
+
+        /// <summary>
+        /// Do not accurately rasterize, need invesigation
+        /// </summary>
+        /// <param name="v1"></param>
+        /// <param name="v2"></param>
+        /// <param name="v3"></param>
+        /// <returns></returns>
         public static IEnumerable<Vector2i> Triangle(Vector2 v1, Vector2 v2, Vector2 v3)
         {
             //Based on http://www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html
@@ -167,7 +391,7 @@ namespace TerrainDemo.Tools
                     yield return pos;
             else
             {
-                var v4 = new Vector2(v1.x + (v2.y - v1.y) / (v3.y - v1.y) * (v3.x - v1.x), v2.y);
+                var v4 = new Vector2(v1.X + (v2.Y - v1.Y) / (v3.Y - v1.Y) * (v3.X - v1.X), v2.Y);
                 foreach (var pos in FillBottomFlatTriangle(v1i, v2i, (Vector2i) v4))
                     yield return pos;
                 foreach (var pos in FillTopFlatTriangle(v2i, (Vector2i)v4, v3i))

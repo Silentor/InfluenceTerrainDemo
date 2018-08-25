@@ -15,37 +15,83 @@ namespace TerrainDemo.Generators
     /// </summary>
     public abstract class ClusterGenerator
     {
+        public ClusterInfo Info { get; private set; }
+        public ClusterLayout Layout { get; private set; }
+
         /// <summary>
         /// Fill some cells as cluster
         /// </summary>
         /// <param name="start"></param>
-        /// <param name="zones"></param>
-        /// <returns></returns>
-        public virtual ClusterInfo FillCluster(Cell start, ZoneInfo[] zones)
+        /// <param name="allZones">All land zones</param>
+        /// <returns>Occupied zones</returns>
+        public virtual ClusterInfo FillCluster(Mesh<ZoneLayout>.Face start)
         {
             var clusterSize = _settings.ClusterSize.GetRandomRange();
-            var neighbors = _mesh.GetNeighbors(start, c => zones[c.Id].Type == ZoneType.Empty).Take(clusterSize).ToArray();
-            var clusterCells = new List<Cell>(neighbors.Length + 1);
-            clusterCells.Add(start);
-            clusterCells.AddRange(neighbors);
+            var neighbors = _allMesh.GetNeighbors(start, c => c.Data.Type == ClusterType.Empty).Take(clusterSize).ToArray();
+            _mesh = new Mesh<ZoneLayout>.Submesh(_allMesh, neighbors);
 
-            var zonesInCluster = new List<ZoneInfo>(clusterCells.Count);
-            foreach (var cell in clusterCells)
+            /*
+            var zonesInCluster = new ZoneLayout[neighbors.Length];
+            for (var i = 0; i < neighbors.Length; i++)
             {
-                var zoneInfo = new ZoneInfo { Id = cell.Id, ClusterId = _clusterId, Type = DefaultZoneType };
-                zones[cell.Id] = zoneInfo;
-                zonesInCluster.Add(zoneInfo);
+                var zoneInfo = new ZoneLayout { Id = neighbors[i].Id, ClusterId = _clusterId, Type = DefaultZoneType};
+                neighbors[i].Data = zoneInfo;
+                zonesInCluster[i] = zoneInfo;
             }
+            Info = new ClusterInfo {Id = _clusterId, Center = start, Mesh = _mesh, Type = DefaultZoneType, Zones = zonesInCluster, };
 
-            _cluster = new ClusterInfo
+            return Info;
+            */
+            return null;
+        }
+
+        /// <summary>
+        /// Fill given cells as cluster. Mostly debug method
+        /// </summary>
+        /// <param name="faces"></param>
+        /// <returns>Occupied zones</returns>
+        public virtual ClusterInfo FillCluster(Mesh<ZoneInfo>.Face[] faces)
+        {
+            //_mesh = new Mesh<ZoneInfo>.Submesh(_allMesh, cells);
+
+            var zonesInCluster = new ZoneInfo[faces.Length];
+            for (var i = 0; i < zonesInCluster.Length; i++)
             {
-                Id = _clusterId,
-                Type = DefaultZoneType,
-                Zones = zonesInCluster.ToArray(),
-                Mesh = new CellMesh.Submesh(_mesh, clusterCells.ToArray()),
-            };
+                var zoneInfo = new ZoneInfo { Id = faces[i].Id, ClusterId = _clusterId, Type = DefaultZoneType };
+                faces[i].Data = zoneInfo;
+                zonesInCluster[i] = zoneInfo;
+            }
+            //Info = new ClusterInfo { Id = _clusterId, Center = cells[0], Mesh = _mesh, Type = DefaultZoneType, Zones = zonesInCluster, };
 
-            return _cluster;
+            //return Info;
+            return null;
+        }
+
+        /*
+        /// <summary>
+        /// Call after <see cref="FillCluster"/>
+        /// </summary>
+        public virtual void GenerateZones()
+        {
+            //Add some zone features...
+            for (var i = 0; i < Info.Zones.Length; i++)
+            {
+                var zone = Info.Zones[i];
+                zone.Type = DefaultZoneType;
+                Info.Zones[i] = zone;
+            }
+        }
+        */
+
+        /// <summary>
+        /// Generate heights for cluster zones
+        /// </summary>
+        public virtual void GenerateHeights()
+        {
+            foreach (var zoneLayout in Layout.Zones)
+            {
+                //zoneLayout.Height = 0;
+            }
         }
 
         /// <summary>
@@ -54,8 +100,9 @@ namespace TerrainDemo.Generators
         /// <returns></returns>
         public virtual Vector3 GetClusterHeight()
         {
-            var centerCell = GetCenterCell();
-            return new Vector3(centerCell.Center.x, 0, centerCell.Center.y);   
+            //var centerCell = GetCenterCell();
+            //return new Vector3(centerCell.Center.x, 0, centerCell.Center.y);   
+            return default(Vector3);
         }
 
         /// <summary>
@@ -64,23 +111,41 @@ namespace TerrainDemo.Generators
         /// <returns></returns>
         public virtual Vector3[] GetZoneHeights()
         {
-            return _cluster.Mesh.Select(c => new Vector3(c.Center.x, 0, c.Center.y)).ToArray();
+            //return _mesh.Select(c => new Vector3(c.Center.x, 0, c.Center.y)).ToArray();
+            return default(Vector3[]); 
         }
 
-        protected readonly LandSettings _settings;
-        private readonly CellMesh _mesh;
-        private readonly int _clusterId;
-        protected readonly ZoneType DefaultZoneType;
-        private ClusterInfo _cluster;
-        private Cell _centerCell;
+        
+        public ClusterLayout CreateClusterLayout(LandLayout land, Mesh<ZoneLayout> allZones, ClusterInfo clusterInfo, Graph<ClusterLayout>.Node node)
+        {
+            var clusterIds = clusterInfo.Zones.Select(z => z.Id).ToArray();
+            var clusterZones = allZones.Where(zl => Array.FindIndex(clusterIds, id => id == zl.Id) > -1);
+            var clusterMesh = new Mesh<ZoneLayout>.Submesh(allZones, clusterZones);
+            foreach (var clusterCell in clusterMesh)
+            {
+                clusterCell.Data = new ZoneLayout(clusterInfo.Mesh[clusterCell.Id].Data, clusterCell, null);
+            }
 
-        protected ClusterGenerator([NotNull] LandSettings settings, [NotNull] CellMesh mesh, int clusterId, ZoneType defaultZone)
+            var result = new ClusterLayout(Info, clusterMesh, node, land);
+            result.Generator = this;
+            return result;
+        }
+        
+
+        protected readonly LandSettings _settings;
+        private readonly Mesh<ZoneLayout> _allMesh;
+        private Mesh<ZoneLayout>.Submesh _mesh;
+        private readonly int _clusterId;
+        protected readonly ClusterType DefaultZoneType;
+        private Mesh<ZoneLayout>.Face _centerFace;
+
+        protected ClusterGenerator([NotNull] LandSettings settings, [NotNull] Mesh<ZoneLayout> mesh, int clusterId, ClusterType defaultZone)
         {
             if (settings == null) throw new ArgumentNullException("settings");
             if (mesh == null) throw new ArgumentNullException("mesh");
 
             _settings = settings;
-            _mesh = mesh;
+            _allMesh = mesh;
             _clusterId = clusterId;
             DefaultZoneType = defaultZone;
         }
@@ -89,17 +154,17 @@ namespace TerrainDemo.Generators
         /// Most isolated cell of cluster
         /// </summary>
         /// <returns></returns>
-        protected Cell GetCenterCell()
+        protected Mesh<ZoneInfo>.Face GetCenterCell()
         {
-            if(_cluster == null)
+            if(Info == null)
                 throw new InvalidOperationException();
 
-            if (_centerCell == null)
+            if (_centerFace == null)
             {
                 //Get most centered cell of cluster
-                var borders = _cluster.Mesh.GetBorderCells().ToArray();
-                var floodFill = _cluster.Mesh.FloodFill(borders);
-                Cell[] mostCenteredCells = floodFill.GetNeighbors(0).ToArray();
+                var borders = _mesh.GetBorderCells().ToArray();
+                var floodFill = _mesh.FloodFill(borders);
+                var mostCenteredCells = floodFill.GetNeighbors(0).ToArray();
                 for (int floodFillStep = 1; floodFillStep < 10; floodFillStep++)
                 {
                     var floodFillResult = floodFill.GetNeighbors(floodFillStep).ToArray();
@@ -111,23 +176,26 @@ namespace TerrainDemo.Generators
 
                 //Find most centered cell by geometrical center distance;
                 var center = Vector2.zero;
-                foreach (var clusterCell in _cluster.Mesh)
-                    center += clusterCell.Center;
-                center /= _cluster.Mesh.Cells.Length;
+                //foreach (var clusterCell in _mesh)
+                    //center += clusterCell.Center;
+                //center /= _mesh.Cells.Count();
 
                 var distance = float.MaxValue;
                 for (int i = 0; i < mostCenteredCells.Length; i++)
                 {
+                    /*
                     var dist = Vector2.Distance(mostCenteredCells[i].Center, center);
                     if (dist < distance)
                     {
                         distance = dist;
                         _centerCell = mostCenteredCells[i];
                     }
+                    */
                 }
             }
 
-            return _centerCell;
+            //return _centerCell;
+            return null;
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using TerrainDemo.Voronoi;
+﻿using TerrainDemo.Generators;
+using TerrainDemo.Voronoi;
 using UnityEngine;
 
 namespace TerrainDemo.Layout
@@ -6,12 +7,10 @@ namespace TerrainDemo.Layout
     public class ClusterInfo
     {
         public int Id;
-        public ZoneType Type;
+        public ClusterType Type;
         public ZoneInfo[] Zones;
-        public Vector3 ClusterHeight;
-        public Vector3[] ZoneHeights = new Vector3[0];
-        public ClusterInfo[] Neighbors = new ClusterInfo[0];
-        public CellMesh.Submesh Mesh;
-        public Cell Center;
+        public Mesh<ZoneInfo>.Submesh Mesh;
+        public Mesh<ZoneInfo>.Face Center;
+        public ClusterGenerator Generator;
     }
 }

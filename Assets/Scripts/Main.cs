@@ -109,8 +109,9 @@ namespace TerrainDemo
 
         public string SaveCellMesh()
         {
-            var json = LandLayout.CellMesh.ToJSON();
-            return json.ToString();
+            //var json = LandLayout.Zones2.ToJSON();
+            //return json.ToString();\
+            return null;
         }
 
         public void LoadCellMesh(string data)
@@ -121,15 +122,18 @@ namespace TerrainDemo
             //Stub layout info
             var zones = new ZoneInfo[cellMesh.Cells.Length];
             for (int i = 0; i < zones.Length; i++)
-                zones[i] = new ZoneInfo {ClusterId = 0, Id = i, Type = _settings.Zones[0].Type};
+                zones[i] = new ZoneInfo {ClusterId = 0, Id = i, Type = _settings.Clusters[0].Type};
+            /*
             LandLayout.Update(cellMesh, new []{new ClusterInfo
             {
                 Id = 0,
                 ClusterHeight = Vector3.zero,
                 ZoneHeights = new []{ Vector3.zero, Vector3.one * 20, },
-                Type = _settings.Zones[0].Type,
+                Type = _settings.Clusters[0].Type,
                 Zones = zones
             }} );
+            */
+            throw new NotImplementedException();
         }
 
         private readonly BaseMesher _mesher;
@@ -141,6 +145,7 @@ namespace TerrainDemo
 
         private void GenerateAllMap()
         {
+            /*
             if (LandLayout != null)
             {
                 Debug.Log("Generating entire land...");
@@ -162,6 +167,7 @@ namespace TerrainDemo
 
                 Debug.Log("...Entire land generated");
             }
+            */
         }
 
         /// <summary>
@@ -186,6 +192,7 @@ namespace TerrainDemo
 
         private void ObserverOnChangedGenerator()
         {
+            /*
             if (LandLayout != null)
             {
                 //Get zones in Observer range
@@ -196,6 +203,7 @@ namespace TerrainDemo
                 _landGenerator.Generate(zones, true);
                 _alreadyGeneratedZones.AddRange(zones);
             }
+            */
         }
 
         private void ObserverOnChangedVisualizer()

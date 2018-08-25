@@ -110,7 +110,7 @@ namespace TerrainDemo.Map
         {
             var from = new Vector2(ray.origin.x, ray.origin.z);
             var to = new Vector2(ray.GetPoint(1000).x, ray.GetPoint(1000).z);
-            var blocks = Rasterization.DDA(from, to, true);
+            var blocks = Rasterization.DDA((OpenTK.Vector2)from, (OpenTK.Vector2)to, true);
 
             foreach (var blockPos in blocks)
             {

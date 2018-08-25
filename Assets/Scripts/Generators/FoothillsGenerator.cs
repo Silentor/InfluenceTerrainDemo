@@ -14,10 +14,10 @@ namespace TerrainDemo.Generators
     public class FoothillsGenerator : ZoneGenerator
     {
         public FoothillsGenerator(ZoneLayout zone, LandLayout land, LandGenerator generator, LandSettings landSettings) 
-            : base(ZoneType.Foothills, zone, land, generator, landSettings)
+            : base(ClusterType.Foothills, zone, land, generator, landSettings)
         {
-            var plains = Land.Zones.Where(z => z.Type == ZoneType.Hills).ToArray();
-            var mountains = Land.Zones.Where(z => z.Type == ZoneType.Mountains).ToArray();
+            var plains = Land.Zones.Where(z => z.Type == ClusterType.Hills).ToArray();
+            var mountains = Land.Zones.Where(z => z.Type == ClusterType.Mountains).ToArray();
             var zones = plains.Concat(mountains).ToArray();
 
             var mountainGenerator = new MountainsGenerator(zone, land, generator, landSettings);

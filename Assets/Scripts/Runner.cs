@@ -90,7 +90,9 @@ namespace TerrainDemo
             LandSettings = GetComponent<LandSettings>();
             var mesherSettings = GetComponent<MesherSettings>();
 
-            Main = new Main(LandSettings, Observer, mesherSettings);
+            //Main = new Main(LandSettings, Observer, mesherSettings);
+
+
         }
 
         #endregion

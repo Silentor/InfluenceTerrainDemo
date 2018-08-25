@@ -9,7 +9,7 @@ namespace TerrainDemo.Generators
     public class ForestGenerator : ZoneGenerator
     {
         public ForestGenerator(ZoneLayout zone, LandLayout land, LandGenerator generator, LandSettings landSettings) 
-            : base(ZoneType.Forest, zone, land, generator, landSettings)
+            : base(ClusterType.Forest, zone, land, generator, landSettings)
         {
         }
 

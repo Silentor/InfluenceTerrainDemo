@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Assets.Code.Tools;
 using JetBrains.Annotations;
 using TerrainDemo.Layout;
 using TerrainDemo.Map;
@@ -123,6 +122,8 @@ namespace TerrainDemo.Editor
 
             //Most basic land properties
             DrawLandBound(_settings.LandBounds);
+
+
 
             if (LandState < LandState.Mesh || IsTopDown)
                 DrawChunkGrid(_settings.LandBounds);
@@ -251,12 +252,12 @@ namespace TerrainDemo.Editor
 
             //var zoneColor = _settings[zone.Type].LandColor;
 
-            var zonePoints = new Vector3[zone.Cell.Vertices.Length + 1];
-            for (var i = 0; i < zone.Cell.Vertices.Length; i++)
-                zonePoints[i] = zone.Cell.Vertices[i].ConvertTo3D();
-            zonePoints[zonePoints.Length - 1] = zone.Cell.Vertices.First().ConvertTo3D();
-            Handles.color = Color.red;
-            Handles.DrawPolyLine(zonePoints);
+            //var zonePoints = new Vector3[zone.Cell.Vertices.Length + 1];
+            //for (var i = 0; i < zone.Cell.Vertices.Length; i++)
+              //  zonePoints[i] = zone.Cell.Vertices[i].ConvertTo3D();
+            //zonePoints[zonePoints.Length - 1] = zone.Cell.Vertices.First().ConvertTo3D();
+            //Handles.color = Color.red;
+            //Handles.DrawPolyLine(zonePoints);
 
             //Draw zone bounds
             //foreach (var chunk in selectedZone.ChunkBounds)
@@ -289,18 +290,18 @@ namespace TerrainDemo.Editor
                 var zonesSegments = new List<Vector3>();                //todo consider cache and remove duplicate segments
                 foreach (var zoneLayout in cluster.Zones)
                 {
-                    foreach (var cellEdge in zoneLayout.Cell.Edges)
+                    foreach (var cellEdge in zoneLayout.Face.Edges)
                     {
-                        zonesSegments.Add(cellEdge.Vertex1.ConvertTo3D());
-                        zonesSegments.Add(cellEdge.Vertex2.ConvertTo3D());
+                        //zonesSegments.Add(cellEdge.Vertex1.ConvertTo3D());
+                        //zonesSegments.Add(cellEdge.Vertex2.ConvertTo3D());
                     }
 
                     if (RunnerEditorMainMenu.IsShowFill)
                     {
-                        foreach (var cellVertex in zoneLayout.Cell.Vertices)
+                        //foreach (var cellVertex in zoneLayout.Cell.Vertices)
                         {
-                            zonesSegments.Add(zoneLayout.Center.ConvertTo3D());
-                            zonesSegments.Add(cellVertex.ConvertTo3D());
+                            //zonesSegments.Add(zoneLayout.Center.ConvertTo3D());
+                            //zonesSegments.Add(cellVertex.ConvertTo3D());
                         }
                     }
                 }
@@ -320,10 +321,10 @@ namespace TerrainDemo.Editor
                 var delaunaySegments = new List<Vector3>();
                 foreach (var zone in layout.Zones)
                 {
-                    foreach (var cellNeighbor in zone.Cell.Neighbors)
+                    foreach (var cellNeighbor in zone.Face.Neighbors)
                     {
                         delaunaySegments.Add(zone.Center.ConvertTo3D());
-                        delaunaySegments.Add(cellNeighbor.Center.ConvertTo3D());
+                        //delaunaySegments.Add(cellNeighbor.Center.ConvertTo3D());
                     }
                 }
 
@@ -427,9 +428,9 @@ namespace TerrainDemo.Editor
         {
             GUI.WindowFunction windowFunc = id =>
             {
-                GUILayout.Label(string.Format("Id, type: {0} - {1}", zone.Cell.Id, zone.Type));
+                GUILayout.Label(string.Format("Id, type: {0} - {1}", zone.Face.Id, zone.Type));
                 GUILayout.Label(string.Format("Cluster: {0}", zone.ClusterId));
-                GUILayout.Label(string.Format("Is closed: {0}", zone.Cell.IsClosed));
+                //GUILayout.Label(string.Format("Is closed: {0}", zone.Cell.IsClosed));
             };
 
             Handles.BeginGUI();
@@ -445,8 +446,7 @@ namespace TerrainDemo.Editor
             {
                 GUILayout.Label(string.Format("Id, type: {0} - {1}", cluster.Id, cluster.Type));
                 GUILayout.Label(string.Format("Zones: {0}", cluster.Zones.Count()));
-                GUILayout.Label(string.Format("Neighbors: {0}", string.Join(", ", 
-                    cluster.Neighbors.Select(c => c.Id.ToString()).ToArray())));
+                //GUILayout.Label(string.Format("NeighborsSafe: {0}", string.Join(", ", cluster.NeighborsSafe.Select(c => c.Id.ToString()).ToArray())));
             };
 
             Handles.BeginGUI();
@@ -529,7 +529,7 @@ namespace TerrainDemo.Editor
 
             //Draw zone id's
             foreach (var zone in _main.LandLayout.Zones)
-                Handles.Label(zone.Center.ConvertTo3D(), zone.Cell.Id.ToString(), _zonesIdLabelStyle);
+                Handles.Label(zone.Center.ConvertTo3D(), zone.Face.Id.ToString(), _zonesIdLabelStyle);
         }
 
         private void DrawClusterId()
@@ -708,8 +708,9 @@ namespace TerrainDemo.Editor
                 {
                     var cluster = _main.LandLayout.Clusters.ElementAt(i);
                     //Get most centered cell of cluster
-                    var borders = cluster.Cells.GetBorderCells().ToArray();
-                    var floodFill = cluster.Cells.FloodFill(borders);
+                    var borders = cluster.Mesh.GetBorderCells().ToArray();
+                    var floodFill = cluster.Mesh.FloodFill(borders);
+                    /*
                     Cell[] mostCenteredCells = floodFill.GetNeighbors(0).ToArray();
                     for (int floodFillStep = 1; floodFillStep < 10; floodFillStep++)
                     {
@@ -719,16 +720,19 @@ namespace TerrainDemo.Editor
                         else
                             mostCenteredCells = floodFillResult;
                     }
+                    */
 
                     //Find most centered cell by geometrical center distance;
                     Vector2 center = Vector2.zero;
-                    foreach (var clusterCell in cluster.Cells)
-                        center += clusterCell.Center;
-                    center /= cluster.Cells.Cells.Length;
+                    //foreach (var clusterCell in cluster.Mesh)
+                        //center += clusterCell.Center;
+                    //center /= cluster.Mesh.Cells.Count();
 
                     //Select from mostCenteredCells nearest to geomertical center
                     float distance = float.MaxValue;
                     Cell centerCell = null;
+
+                    /*
                     for (int j = 0; j < mostCenteredCells.Length; j++)
                     {
                         var dist = Vector2.Distance(mostCenteredCells[j].Center, center);
@@ -738,6 +742,7 @@ namespace TerrainDemo.Editor
                             centerCell = mostCenteredCells[j];
                         }
                     }
+                    */
 
                     _clusterCenters[i] = centerCell.Center;
                 }

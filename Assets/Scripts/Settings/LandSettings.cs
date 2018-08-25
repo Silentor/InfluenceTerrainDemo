@@ -16,9 +16,10 @@ namespace TerrainDemo.Settings
         public int Seed;
         public double GlobalHeightFreq = 1/200.0;
         public double GlobalHeightAmp = 200.0/4;
+        public Vector2 ClustersDensity = new Vector2(100, 100);
         public Vector2 ZonesRange = new Vector2(30, 40);
         public Vector2 ClusterSize = new Vector2(20, 30);
-        public ZoneSettings[] Zones = new ZoneSettings[0];
+        public ClusterSettings[] Clusters = new ClusterSettings[0];
         public LayoutGenerator.Type LayoutGenerator = Generators.LayoutGenerator.Type.PoissonClustered;
 
         [Header("Influence settings")]
@@ -52,9 +53,9 @@ namespace TerrainDemo.Settings
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public ZoneSettings this[ZoneType index]            //todo change non-obvious indexer to function
+        public ClusterSettings this[ClusterType index]            //todo change non-obvious indexer to function
         {
-            get { return Zones.First(zt => zt.Type == index); }
+            get { return Clusters.First(zt => zt.Type == index); }
         }
 
         public LayoutGenerator CreateLayoutGenerator()
@@ -81,8 +82,8 @@ namespace TerrainDemo.Settings
 
         void Awake()
         {
-            if (!Zones.Any()) throw new InvalidOperationException("There are no zones configured");
-            if (Zones.Distinct(ZoneSettings.TypeComparer).Count() != Zones.Length)
+            if (!Clusters.Any()) throw new InvalidOperationException("There are no zones configured");
+            if (Clusters.Distinct(ClusterSettings.TypeComparer).Count() != Clusters.Length)
                 throw new InvalidOperationException("There is duplicate Zone Settings");
             if (BlockSize * BlocksCount != Chunk.Size)
                 throw new ArgumentException("Block size and blocks count invalid");

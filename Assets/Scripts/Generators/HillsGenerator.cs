@@ -7,7 +7,7 @@ namespace TerrainDemo.Generators
     public class HillsGenerator : ZoneGenerator
     {
         public HillsGenerator(ZoneLayout zone, LandLayout land, LandGenerator generator, LandSettings landSettings) 
-            : base(ZoneType.Hills, zone, land, generator, landSettings)
+            : base(ClusterType.Hills, zone, land, generator, landSettings)
         {
         }
 

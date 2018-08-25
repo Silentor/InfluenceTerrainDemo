@@ -16,13 +16,13 @@ namespace TerrainDemo.Generators
         private FastNoise _rotateNoise;
         MountainClusterContext _cluster;
 
-        public MountainsGenerator(ZoneLayout zone, LandLayout land, LandGenerator generator, LandSettings landSettings) 
-            : base(ZoneType.Mountains, zone, land, generator, landSettings)
+        public MountainsGenerator(ZoneLayout zone, LandLayout land, LandGenerator generator, LandSettings landSettings)
+            : base(ClusterType.Mountains, zone, land, generator, landSettings)
         {
-            _scaleNoise = new FastNoise(landSettings.Seed + 1);   
+            _scaleNoise = new FastNoise(landSettings.Seed + 1);
             _rotateNoise = new FastNoise(landSettings.Seed - 1);
 
-            if (zone.Type == ZoneType.Mountains)
+            if (zone.Type == ClusterType.Mountains)
             {
                 //Prepare shared cluster context
                 if (!generator.Clusters.TryGetValue(zone.ClusterId, out _cluster))
@@ -35,7 +35,7 @@ namespace TerrainDemo.Generators
             else
             {
                 //Supporting zone generator (for transient blocks), use nearest mountains cluster context
-                var nearestMount = land.GetNeighbors(zone).First(z => z.Type == ZoneType.Mountains);
+                var nearestMount = land.GetNeighbors(zone).First(z => z.Type == ClusterType.Mountains);
                 if (!generator.Clusters.TryGetValue(nearestMount.ClusterId, out _cluster))
                 {
                     //DEBUG
@@ -45,15 +45,19 @@ namespace TerrainDemo.Generators
             }
         }
 
-        public override BlockType DefaultBlock { get {return BlockType.Grass;} }
+        public override BlockType DefaultBlock
+        {
+            get { return BlockType.Grass; }
+        }
 
         public override double GenerateBaseHeight(float worldX, float worldZ)
         {
             var yValue = 0d;
 
             //Lava-like features
-            var scaleRatio = (_scaleNoise.GetSimplex(worldX, worldZ) / 2) + 1;      //0.5 .. 1.5
-            yValue = _noise.GetSimplexFractal(scaleRatio * worldX, (2 - scaleRatio) * worldZ) * _zoneSettings.NoiseAmp;
+            var scaleRatio = (_scaleNoise.GetSimplex(worldX, worldZ) / 2) + 1; //0.5 .. 1.5
+            yValue = _noise.GetSimplexFractal(scaleRatio * worldX,
+                (2 - scaleRatio) * worldZ) /* * _clusterSettings.NoiseAmp*/;
             //yValue = Math.Pow(yValue + 1, 2);
 
             yValue += Land.GetBaseHeight(worldX, worldZ);
@@ -62,16 +66,17 @@ namespace TerrainDemo.Generators
             return yValue;
         }
 
-        protected override BlockType GenerateBlock(Vector2i worldPosition, Vector2i turbulence, Vector3 normal, ZoneRatio influence)
+        protected override BlockType GenerateBlock(Vector2i worldPosition, Vector2i turbulence, Vector3 normal,
+            ZoneRatio influence)
         {
-            var mountInfluence = influence[ZoneType.Mountains];
+            var mountInfluence = influence[ClusterType.Mountains];
 
             if (mountInfluence > 0.85f && Vector3.Angle(Vector3.up, normal) < 45)
                 return BlockType.Snow;
 
             if (mountInfluence < 0.6f && Vector3.Angle(Vector3.up, normal) < 45)
                 return BlockType.Grass;
-            
+
             return base.GenerateBlock(worldPosition, turbulence, normal, influence);
         }
 
@@ -101,7 +106,7 @@ namespace TerrainDemo.Generators
 
             public MountainClusterContext(LandLayout land, LandSettings settings)
             {
-                var allMountZones = land.Zones.Where(z => z.Type == ZoneType.Mountains).ToArray();
+                var allMountZones = land.Zones.Where(z => z.Type == ClusterType.Mountains).ToArray();
                 var allMountClusters = allMountZones.GroupBy(z => z.ClusterId);
 
                 var allMountCells = new List<Cell>(allMountZones.Length);
@@ -111,7 +116,8 @@ namespace TerrainDemo.Generators
 
                 foreach (var mountCluster in allMountClusters)
                 {
-                    var mountSubmesh = new CellMesh.Submesh(land.CellMesh, mountCluster.Select(z => z.Cell).ToArray());
+                    /*
+                    var mountSubmesh = new CellMesh.Submesh(land.Zones2, mountCluster.Select(z => z.Cell).ToArray());
                     //Get mountain zone height coeff
                     var border = mountSubmesh.GetBorderCells().ToArray();
                     var floodFiller = mountSubmesh.FloodFill(border);
@@ -157,9 +163,15 @@ namespace TerrainDemo.Generators
 
                         allMountCells.Add(cell);
                     }
+                    
                 }
 
-                HeightInterpolator = new ShepardInterpolator(new CellMesh.Submesh(land.CellMesh, allMountCells.ToArray()), allMountHeights.ToArray());
+
+                //HeightInterpolator = new ShepardInterpolator(new CellMesh.Submesh(land.Zones2, allMountCells.ToArray()), allMountHeights.ToArray());
+                return null;
+                }
+                */
+                }
             }
         }
     }

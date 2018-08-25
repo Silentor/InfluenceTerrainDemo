@@ -155,22 +155,23 @@ namespace TerrainDemo
             return new Vector2i(v.X, v.Z);
         }
 
-        public static explicit operator Vector3i(Vector2i v)
+        public static implicit operator Vector3i(Vector2i v)
         {
             return new Vector3i(v.X, 0, v.Z);
         }
 
-        public static explicit operator Vector3(Vector3i v)
+        public static implicit operator Vector3(Vector3i v)
         {
             return new Vector3(v.X, v.Z);
         }
 
         public static explicit operator Vector3i(Vector3 v)
         {
-            var resultX = v.x >= 0 ? (int)v.x : (int)(v.x - Vector2i.ConversionOffset);
-            var resultY = v.y >= 0 ? (int)v.y : (int)(v.y - Vector2i.ConversionOffset);
-            var resultZ = v.z >= 0 ? (int)v.z : (int)(v.z - Vector2i.ConversionOffset);
-            return new Vector3i(resultX, resultY, resultZ);
+            //var resultX = v.x >= 0 ? (int)v.x : (int)(v.x - Vector2i.ConversionOffset);
+            //var resultY = v.y >= 0 ? (int)v.y : (int)(v.y - Vector2i.ConversionOffset);
+            //var resultZ = v.z >= 0 ? (int)v.z : (int)(v.z - Vector2i.ConversionOffset);
+            //return new Vector3i(resultX, resultY, resultZ);
+            return new Vector3i(Mathf.FloorToInt(v.x), Mathf.FloorToInt(v.y), Mathf.FloorToInt(v.z));
         }
 
         //public void Set(int x, int y, int z)

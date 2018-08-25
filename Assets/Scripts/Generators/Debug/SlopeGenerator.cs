@@ -7,7 +7,7 @@ namespace TerrainDemo.Generators.Debug
     public class SlopeGenerator : ZoneGenerator
     {
         public SlopeGenerator(ZoneLayout zone, [NotNull] LandLayout land, LandGenerator generator, [NotNull] LandSettings landSettings) 
-            : base(ZoneType.Slope, zone, land, generator, landSettings)
+            : base(ClusterType.Slope, zone, land, generator, landSettings)
         {
         }
 

@@ -22,7 +22,7 @@ namespace TerrainDemo.Layout
     {
         public Bounds2i Bounds { get; private set; }
 
-        public CellMesh CellMesh { get; private set; }
+        public ZoneInfoMesh Zones2 { get; private set; }
 
         /// <summary>
         /// Sorted by Id (same as a Cells in CellMesh)
@@ -31,11 +31,14 @@ namespace TerrainDemo.Layout
 
         public IEnumerable<ClusterLayout> Clusters { get; private set; }
 
+        /// <summary>
+        /// For debug purposes todo retreive from ZoneLayout's
+        /// </summary>
         public IEnumerable<Vector3> Heights { get; private set; }
 
         public Dictionary<int, ClusterGenerator> Generators = new Dictionary<int, ClusterGenerator>();
 
-        public LandLayout(LandSettings settings, CellMesh cellMesh, ClusterInfo[] clusters)
+        public LandLayout(LandSettings settings, Mesh<ZoneInfo> cellMesh, Graph<ClusterGenerator> clusters)
         {
             _settings = settings;
             _globalHeight = new FastNoise(settings.Seed);
@@ -43,27 +46,28 @@ namespace TerrainDemo.Layout
             Update(cellMesh, clusters);
         }
 
-        public void Update(CellMesh cellMesh, ClusterInfo[] clusters)
+        public void Update(Mesh<ZoneInfo> cellMesh, Graph<ClusterGenerator> generators)
         {
             _globalHeight.SetSeed(_settings.Seed);
             _globalHeight.SetFrequency(_settings.GlobalHeightFreq);
 
             Bounds = _settings.LandBounds;
-            CellMesh = cellMesh;
-            _zoneSettings = _settings.Zones.ToArray();
-            _zoneMaxType = (int)_settings.Zones.Max(z => z.Type);
+            //CellMesh = cellMesh;
+            _clusterSettings = _settings.Clusters.ToArray();
+            _zoneMaxType = (int)_settings.Clusters.Max(z => z.Type);
 
             //Build zone influence KD-Tree
-            var tags = cellMesh.Cells.Select(c => c.Id).ToArray();
-            var positions = new double[cellMesh.Cells.Length, 2];
-            for (int i = 0; i < cellMesh.Cells.Length; i++)
+            var ids = cellMesh.Nodes.Select(c => c.Id).ToArray();
+            var positions = new double[cellMesh.Nodes.Count(), 2];
+            for (int i = 0; i < cellMesh.Nodes.Count(); i++)
             {
-                positions[i, 0] = cellMesh[i].Center.x;
-                positions[i, 1] = cellMesh[i].Center.y;
+                //positions[i, 0] = cellMesh[i].Center.x;
+                //positions[i, 1] = cellMesh[i].Center.y;
             }
-            alglib.kdtreebuildtagged(positions, tags, 2, 0, 2, out _influence);
+            alglib.kdtreebuildtagged(positions, ids, 2, 0, 2, out _influence);
 
             //Remove close height points
+            /*
             var removedPointsCount = 0;
             var baseHeights = clusters.SelectMany(c => c.ZoneHeights).ToList();
             for (var i = 0; i < baseHeights.Count; i++)
@@ -82,59 +86,49 @@ namespace TerrainDemo.Layout
                 }
             }
             Debug.LogFormat("Land layout removed {0} close height points", removedPointsCount);
+            */
 
-            _globalHeights = MakeClusterHeightInterpolator(clusters);
+            var clusterHeights = generators.Select(g => g.Data.GetClusterHeight()).ToArray();
+            _globalHeights = MakeClusterHeightInterpolator(clusterHeights);
             
             //Build base height interpolator
-            var points = new double[baseHeights.Count, 3];
-            for (int i = 0; i < baseHeights.Count; i++)
-            {
-                //Modify zone height with cluster height
-                var clusterHeight = alglib.idwcalc(_globalHeights, new double[] { baseHeights[i].x, baseHeights[i].z });
-                baseHeights[i] = new Vector3(baseHeights[i].x, (float)(baseHeights[i].y + clusterHeight), baseHeights[i].z);
+            var zonesHeights = generators.SelectMany(g => g.Data.GetZoneHeights()).ToArray();
+            _baseHeight = MakeZonesHeightInterpolator(zonesHeights, _globalHeights);
 
-                points[i, 0] = baseHeights[i].x;
-                points[i, 1] = baseHeights[i].z;
-                points[i, 2] = baseHeights[i].y;
-            }
-            
-            _baseHeight = new alglib.idwinterpolant();
-            alglib.idwbuildmodifiedshepard(points, points.GetLength(0), 2, 2, 10, 15, out _baseHeight);
-
-            Heights = baseHeights;
+            Heights = zonesHeights;
 
             //Set Clusters and Zones collections
-            var clusterLayouts = new ClusterLayout[clusters.Length];
-            var zones = new ZoneLayout[cellMesh.Cells.Length];
+            var clusterLayouts = generators.Convert<ClusterLayout>();
+            //var zones = cellMesh.Convert<ZoneLayout>();
 
-            for (var i = 0; i < clusters.Length; i++)
+            for (var i = 0; i < generators.Nodes.Count(); i++)
             {
-                var clusterInfo = clusters[i];
+                var clusterInfo = generators.ElementAt(i);
                 var zoneLayouts = new List<ZoneLayout>();
 
-                foreach (var zoneInfo in clusterInfo.Zones)
+                foreach (var zoneInfo in clusterInfo.Data.Info.Zones)
                 {
-                    var zoneLayout = new ZoneLayout(zoneInfo, cellMesh.Cells[zoneInfo.Id],
-                        _zoneSettings.First(z => z.Type == zoneInfo.Type));
-                    zones[zoneInfo.Id] = zoneLayout;
-                    zoneLayouts.Add(zoneLayout);
+                    //var zoneLayout = new ZoneLayout(zoneInfo, zones[zoneInfo.Id],
+                        //_clusterSettings.First(z => z.Type == zoneInfo.Type));
+                    //zones[zoneInfo.Id].Data = zoneLayout;
+                    //zoneLayouts.Add(zoneLayout);
                 }
 
-                clusterLayouts[i] = new ClusterLayout(clusterInfo, zoneLayouts, cellMesh);
+                //clusterLayouts.Nodes[i].Data = new ClusterLayout(clusterInfo, zoneLayouts, cellMesh);
             }
 
-            Clusters = clusterLayouts;
-            Zones = zones;
+            //Clusters = clusterLayouts;
+            //Zones = zones;
 
-            foreach (var cluster in clusterLayouts)
-                cluster.Init(clusterLayouts);
+            //foreach (var cluster in clusterLayouts)
+                //cluster.Init(clusterLayouts);
 
-            for (int i = 0; i < zones.Length; i++)
-            {
-                var zone = zones[i];
-                zone.Init(this);
-                zones[i] = zone;
-            }
+            //for (int i = 0; i < zones.Length; i++)
+            //{
+            //    var zone = zones[i];
+            //    zone.Init(this);
+            //    zones[i] = zone;
+            //}
         }
 
         /// <summary>
@@ -160,7 +154,8 @@ namespace TerrainDemo.Layout
 
         public IEnumerable<ZoneLayout> GetNeighbors(ZoneLayout zone)
         {
-            return CellMesh.GetNeighbors(zone.Cell).Select(c => Zones.ElementAt(c.Id));
+            //return Zones2.GetNeighbors(zone.Cell).Select(c => Zones.ElementAt(c.Id));
+            return null;
         }
 
         public ZoneRatio GetInfluence(Vector2 worldPosition)
@@ -178,12 +173,13 @@ namespace TerrainDemo.Layout
         public ZoneRatio GetInfluenceLocalIDW(Vector2 worldPosition)
         {
             //Spatial optimization
-            var center = CellMesh.GetCellFor(worldPosition);
-            var nearestCells = new List<Cell>(center.Neighbors.Length + center.Neighbors2.Length + 1);
-            nearestCells.Add(center);
-            nearestCells.AddRange(center.Neighbors);
-            nearestCells.AddRange(center.Neighbors2);
-            nearestCells.Sort(new Cell.DistanceComparer(worldPosition));
+            //var center = Zones2.GetCellFor(worldPosition);
+            //var nearestCells = new List<Cell>(center.NeighborsSafe.Length + center.Neighbors2.Length + 1);
+            //nearestCells.Add(center);
+            //nearestCells.AddRange(center.NeighborsSafe);
+            //nearestCells.AddRange(center.Neighbors2);
+            //nearestCells.Sort(new Cell.DistanceComparer(worldPosition));
+            var nearestCells = new List<Cell>();
 
             Assert.IsTrue(nearestCells.Count >= _settings.IDWNearestPoints);
 
@@ -195,7 +191,7 @@ namespace TerrainDemo.Layout
             {
                 var cell = nearestCells[i];
                 var zone = Zones.ElementAt(cell.Id);
-                if (zone.Type != ZoneType.Empty)
+                if (zone.Type != ClusterType.Empty)
                 {
                     //var zoneWeight = IDWShepardWeighting(zone.Center, worldPosition, searchRadius);
                     var zoneWeight = IDWLocalShepard(zone.Center, worldPosition, searchRadius);
@@ -205,7 +201,7 @@ namespace TerrainDemo.Layout
             }
 
             var values =
-                influenceLookup.Select((v, i) => new ZoneValue((ZoneType)i, v)).Where(v => v.Value > 0).ToArray();
+                influenceLookup.Select((v, i) => new ZoneValue((ClusterType)i, v)).Where(v => v.Value > 0).ToArray();
             var result = new ZoneRatio(values, values.Length);
 
             return result;
@@ -220,25 +216,25 @@ namespace TerrainDemo.Layout
             alglib.kdtreequeryresultstags(_influence, ref cellsId);
 
             //Calc search radius
-            var searchRadius = Vector2.Distance(CellMesh[cellsId[cellsId.Length - 1]].Center, worldPosition);
+            //var searchRadius = Vector2.Distance(Zones2[cellsId[cellsId.Length - 1]].Center, worldPosition);
             var influenceLookup = new double[_zoneMaxType + 1];
 
             //Sum up zones influence
             for (int i = 0; i < cellsId.Length; i++)
             {
-                var cell = CellMesh[cellsId[i]];
+                var cell = Zones2[cellsId[i]];
                 var zone = Zones.ElementAt(cell.Id);
-                if (zone.Type != ZoneType.Empty)
+                if (zone.Type != ClusterType.Empty)
                 {
                     //var zoneWeight = IDWShepardWeighting(zone.Center, worldPosition, searchRadius);
-                    var zoneWeight = IDWLocalShepard(zone.Center, worldPosition, searchRadius);
+                    //var zoneWeight = IDWLocalShepard(zone.Center, worldPosition, searchRadius);
                     //var zoneWeight = IDWLocalLinear(zone.Center, worldPosition, searchRadius);
-                    influenceLookup[(int)zone.Type] += zoneWeight;
+                    //influenceLookup[(int)zone.Type] += zoneWeight;
                 }
             }
 
             var values =
-                influenceLookup.Select((v, i) => new ZoneValue((ZoneType)i, v)).Where(v => v.Value > 0).ToArray();
+                influenceLookup.Select((v, i) => new ZoneValue((ClusterType)i, v)).Where(v => v.Value > 0).ToArray();
             var result = new ZoneRatio(values, values.Length);
 
             return result;
@@ -247,9 +243,9 @@ namespace TerrainDemo.Layout
         [Pure]
         public ZoneLayout GetZoneFor(Vector2 position)
         {
-            var cell = CellMesh.GetCellFor(position);
-            if (cell != null)
-                return Zones.ElementAt(cell.Id);
+            //var cell = Zones2.GetCellFor(position);
+            //if (cell != null)
+                //return Zones.ElementAt(cell.Id);
             return null;
         }
 
@@ -285,7 +281,7 @@ namespace TerrainDemo.Layout
         }
 
         private readonly LandSettings _settings;
-        private ZoneSettings[] _zoneSettings;
+        private ClusterSettings[] _clusterSettings;
         private int _zoneMaxType;
         private float[,][] _sourceBitmap;
         private float[,][] _targetBitmap;
@@ -330,13 +326,14 @@ namespace TerrainDemo.Layout
             var chunkCorner4 = new Vector2(floatBounds.max.x, floatBounds.min.z);
 
             //Check chunk vertices in zone layout
-            if (zone.Cell.IsClosed)
+            
+            //if (zone.Cell.IsClosed)
             {
-                if (zone.Cell.IsContains(chunkCorner1) || zone.Cell.IsContains(chunkCorner2)
-                    || zone.Cell.IsContains(chunkCorner3) || zone.Cell.IsContains(chunkCorner4))
-                    return true;
+              //  if (zone.Cell.IsContains(chunkCorner1) || zone.Cell.IsContains(chunkCorner2)
+                //    || zone.Cell.IsContains(chunkCorner3) || zone.Cell.IsContains(chunkCorner4))
+                  //  return true;
             }
-            else  //todo optimize open cell check by providing missed vertices for Cell.IsContains()
+            //else  //todo optimize open cell check by providing missed vertices for Cell.IsContains()
             {
                 ZoneLayout zone1 = zone, zone2 = zone, zone3 = zone, zone4 = zone;
                 var distanceCorner1 = float.MaxValue;
@@ -373,9 +370,9 @@ namespace TerrainDemo.Layout
             }
 
             //Check zone vertices in chunk
-            foreach (var vert in zone.Cell.Vertices)
-                if (floatBounds.Contains(vert.ConvertTo3D()))
-                    return true;
+            //foreach (var vert in zone.Cell.Vertices)
+                //if (floatBounds.Contains(vert.ConvertTo3D()))
+                    //return true;
 
             return false;
         }
@@ -390,21 +387,36 @@ namespace TerrainDemo.Layout
             return b*b;
         }
 
-        private alglib.idwinterpolant MakeClusterHeightInterpolator(ClusterInfo[] clusters)
+        private alglib.idwinterpolant MakeClusterHeightInterpolator(Vector3[] clusterHeights)
         {
-            var heightPoint = clusters.Select(c => c.ClusterHeight).ToArray();
-
             //Build base height interpolator
-            var points = new double[heightPoint.Length, 3];
-            for (int i = 0; i < heightPoint.Length; i++)
+            var points = new double[clusterHeights.Length, 3];
+            for (int i = 0; i < clusterHeights.Length; i++)
             {
-                points[i, 0] = heightPoint[i].x;
-                points[i, 1] = heightPoint[i].z;
-                points[i, 2] = heightPoint[i].y;
+                points[i, 0] = clusterHeights[i].x;
+                points[i, 1] = clusterHeights[i].z;
+                points[i, 2] = clusterHeights[i].y;
             }
 
             alglib.idwinterpolant result;
             alglib.idwbuildmodifiedshepard(points, points.GetLength(0), 2, 1, 10, 15, out result);
+            return result;
+        }
+
+        private alglib.idwinterpolant MakeZonesHeightInterpolator(Vector3[] zonesHeights, alglib.idwinterpolant clusterHeightFunc)
+        {
+            var points = new double[zonesHeights.Length, 3];
+            for (int i = 0; i < zonesHeights.Length; i++)
+            {
+                //Modify zone height with cluster height
+                var clusterHeight = alglib.idwcalc(clusterHeightFunc, new double[] { zonesHeights[i].x, zonesHeights[i].z });
+                points[i, 0] = zonesHeights[i].x;
+                points[i, 1] = zonesHeights[i].z;
+                points[i, 2] = zonesHeights[i].y + clusterHeight;
+            }
+
+            alglib.idwinterpolant result;
+            alglib.idwbuildmodifiedshepard(points, points.GetLength(0), 2, 2, 10, 15, out result);
             return result;
         }
     }

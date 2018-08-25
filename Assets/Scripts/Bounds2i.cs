@@ -3,7 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
+using OpenTK;
 using UnityEngine;
+using Vector2 = UnityEngine.Vector2;
+using Vector3 = UnityEngine.Vector3;
 
 namespace TerrainDemo
 {
@@ -12,11 +15,11 @@ namespace TerrainDemo
         public readonly Vector2i Min;
         public readonly Vector2i Max;
 
-        public Vector2i Size { get { return Max - Min + Vector2i.One; } }
-        public Vector2i Corner1 { get { return Min; } }
-        public Vector2i Corner2 { get { return new Vector2i(Min.X, Max.Z); } }
-        public Vector2i Corner3 { get { return Max; } }
-        public Vector2i Corner4 { get { return new Vector2i(Max.X, Min.Z); } }
+        public Vector2i Size => Max - Min + Vector2i.One;
+        public Vector2i Corner1 => Min;
+        public Vector2i Corner2 => new Vector2i(Min.X, Max.Z);
+        public Vector2i Corner3 => Max;
+        public Vector2i Corner4 => new Vector2i(Max.X, Min.Z);
 
         public static readonly Bounds2i Empty = new Bounds2i(Vector2i.Zero, Vector2i.Zero);
         public static readonly Bounds2i Infinite = new Bounds2i(new Vector2i(-10000, -10000), new Vector2i(10000, 10000));
@@ -25,7 +28,7 @@ namespace TerrainDemo
 
         public Bounds2i(Vector2i min, Vector2i max)
         {
-            if(min.X > max.X || min.Z > max.Z) throw new ArgumentException(String.Format("Min point {0} greater then Max {1} ", min, max));
+            if(min.X > max.X || min.Z > max.Z) throw new ArgumentException($"Min point {min} greater then Max {max} ");
 
             Min = min;
             Max = max;
@@ -90,10 +93,7 @@ namespace TerrainDemo
                     yield return new Vector2i(x, z);
         }
 
-        public override string ToString()
-        {
-            return string.Format("Bounds2i(min = {0}, max = {1})", Min, Max);
-        }
+        public override string ToString() => $"Bounds2i(min = {Min}, max = {Max})";
 
         public override int GetHashCode()
         {
@@ -143,6 +143,17 @@ namespace TerrainDemo
 
             return new Bounds2i((Vector2i)(new Vector2(xMin, yMin)), (Vector2i)(new Vector2(xMax, yMax)));         //To bias float bounds values to integer
         }
+
+        public static explicit operator Bounds2i(Box2 input)
+        {
+            var xMin = input.Left % 1 == 0 ? input.Left + RoundBiasValue : input.Left;
+            var yMin = input.Bottom % 1 == 0 ? input.Bottom + RoundBiasValue : input.Bottom;
+            var xMax = input.Right % 1 == 0 ? input.Right - RoundBiasValue : input.Right;
+            var yMax = input.Top % 1 == 0 ? input.Top - RoundBiasValue : input.Top;
+
+            return new Bounds2i((Vector2i)(new Vector2(xMin, yMin)), (Vector2i)(new Vector2(xMax, yMax)));         //To bias float bounds values to integer
+        }
+
 
         IEnumerator IEnumerable.GetEnumerator()
         {

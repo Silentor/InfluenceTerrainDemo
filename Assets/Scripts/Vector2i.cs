@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Vector2 = OpenTK.Vector2;
 
 namespace TerrainDemo
 {
@@ -34,15 +35,20 @@ namespace TerrainDemo
 
         public Vector2i(int x, int z)
         {
-            this.X = x;
-            this.Z = z;
+            X = x;
+            Z = z;
         }
 
         public Vector2i(float x, float z)
         {
-            var tempValue = (Vector2i)new Vector2(x, z);
-            X = tempValue.X;
-            Z = tempValue.Z;
+            X = (int)Math.Floor(x);
+            Z = (int)Math.Floor(z);
+        }
+
+        public Vector2i(double x, double z)
+        {
+            X = (int)Math.Floor(x);
+            Z = (int)Math.Floor(z);
         }
 
         public Vector2i(int xz) : this(xz, xz)
@@ -138,28 +144,43 @@ namespace TerrainDemo
             return new Vector2i(a.X / b, a.Z / b);
         }
 
-        public static explicit operator Vector2(Vector2i v)
+        public static implicit operator Vector2(Vector2i v)
         {
             return new Vector2(v.X, v.Z);
         }
 
-        public static explicit operator Vector3(Vector2i v)
+        public static implicit operator UnityEngine.Vector2(Vector2i v)
+        {
+            return new UnityEngine.Vector2(v.X, v.Z);
+        }
+
+        public static implicit operator Vector3(Vector2i v)
         {
             return new Vector3(v.X, 0, v.Z);
         }
 
         public static explicit operator Vector2i(Vector2 v)
         {
-            var resultX = v.x >= 0 ? (int) v.x : (int) (v.x - ConversionOffset);
-            var resultZ = v.y >= 0 ? (int)v.y : (int)(v.y - ConversionOffset);
-            return new Vector2i(resultX, resultZ);
+            //var resultX = v.X >= 0 ? (int) v.X : (int) (v.X - ConversionOffset);
+            //var resultZ = v.Y >= 0 ? (int)v.Y : (int)(v.Y - ConversionOffset);
+            //return new Vector2i(resultX, resultZ);
+            return new Vector2i((int)Math.Floor(v.X), (int)Math.Floor(v.Y));
+        }
+
+        public static explicit operator Vector2i(UnityEngine.Vector2 v)
+        {
+            //var resultX = v.x >= 0 ? (int)v.x : (int)(v.x - ConversionOffset);
+            //var resultZ = v.y >= 0 ? (int)v.y : (int)(v.y - ConversionOffset);
+            //return new Vector2i(resultX, resultZ);
+            return new Vector2i((int)Math.Floor(v.x), (int)Math.Floor(v.y));
         }
 
         public static explicit operator Vector2i(Vector3 v)
         {
-            var resultX = v.x >= 0 ? (int)v.x : (int)(v.x - ConversionOffset);
-            var resultZ = v.z >= 0 ? (int)v.z : (int)(v.z - ConversionOffset);
-            return new Vector2i(resultX, resultZ);
+            //var resultX = v.x >= 0 ? (int)v.x : (int)(v.x - ConversionOffset);
+            //var resultZ = v.z >= 0 ? (int)v.z : (int)(v.z - ConversionOffset);
+            //return new Vector2i(resultX, resultZ);
+            return new Vector2i((int)Math.Floor(v.x), (int)Math.Floor(v.z));
         }
 
         //public static Vector2i Unity2MapPosition(Vector2 position)

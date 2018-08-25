@@ -12,13 +12,14 @@ namespace TerrainDemo.Layout
     /// <summary>
     /// Description of Zone layout
     /// </summary>
-    [DebuggerDisplay("Id = {Cell.Id}, type = {Type}")]
+    [DebuggerDisplay("Id = {Face.Id}, type = {Type}")]
     public class ZoneLayout
     {
         public readonly Vector2 Center;
-        public readonly ZoneType Type;
+        public readonly ClusterType Type;
         public readonly int ClusterId;
-        public readonly Cell Cell;
+        public readonly Mesh<ZoneLayout>.Face Face;
+        public readonly ClusterLayout Cluster;
 
         /// <summary>
         /// World bounds in blocks
@@ -32,7 +33,7 @@ namespace TerrainDemo.Layout
         /// </summary>
         public readonly Bounds2i ChunkBounds;
 
-        public ZoneSettings Settings { get { return _settings; } }
+        public ClusterSettings Settings { get { return _settings; } }
 
         public IEnumerable<ZoneLayout> Neighbors { get { return _neighbors; } }
 
@@ -41,18 +42,18 @@ namespace TerrainDemo.Layout
         /// </summary>
         public float Height { get; private set; }
 
-        //public IEnumerable<ZoneLayout> Neighbors { get { return _neighbors; } }
+        //public IEnumerable<ZoneLayout> NeighborsSafe { get { return _neighbors; } }
 
         public static readonly IEqualityComparer<ZoneLayout> TypeComparer = new ZoneTypeComparer();
 
-        public ZoneLayout(ZoneInfo info, Cell cell, ZoneSettings settings)
+        public ZoneLayout(ZoneInfo info, Mesh<ZoneLayout>.Face face, ClusterSettings settings)
         {
-            Cell = cell;
+            Face = face;
             _settings = settings;
-            Center = cell.Center;
+            //Center = cell.Center;
             Type = info.Type;
             ClusterId = info.ClusterId;
-            Bounds = (Bounds2i)cell.Bounds;
+            Bounds = (Bounds2i)face.Bounds;
             ChunkBounds = new Bounds2i(Chunk.GetPositionFromBlock(Bounds.Min), Chunk.GetPositionFromBlock(Bounds.Max));
             _chunks = null;
             _neighbors = null;
@@ -64,7 +65,7 @@ namespace TerrainDemo.Layout
         public void Init(LandLayout landLayout)
         {
             _chunks = landLayout.GetChunks(this).ToArray();
-            _neighbors = Cell.Neighbors.Select(c => landLayout.Zones.ElementAt(c.Id)).ToArray();
+            _neighbors = Face.Neighbors.Select(c => landLayout.Zones.ElementAt(c.Id)).ToArray();
             Height = (float)landLayout.GetBaseHeight(Center.x, Center.y);
         }
 
@@ -75,10 +76,13 @@ namespace TerrainDemo.Layout
         [Pure]
         public IEnumerable<Vector2i> GetBlocks()
         {
+            /*
             for (int i = 1; i < Cell.Vertices.Length - 1; i++)
-                foreach (var pos in Rasterization.Triangle(Cell.Vertices[0], Cell.Vertices[i], Cell.Vertices[i + 1]))
+                foreach (var pos in Rasterization.Triangle((OpenTK.Vector2)Cell.Vertices[0], (OpenTK.Vector2)Cell.Vertices[i], (OpenTK.Vector2)Cell.Vertices[i + 1]))
                     if (Bounds.Contains(pos))
                         yield return pos;
+                        */
+            return null;
         }
 
         /// <summary>
@@ -89,8 +93,9 @@ namespace TerrainDemo.Layout
         public IEnumerable<Vector2i> GetBlocks2()                   //Todo consider move to Rasterization class
         {
             var edges = new List<Vector2i>();
-            foreach (var edge in Cell.Edges)
-                edges.AddRange(Rasterization.DDA(edge.Vertex1, edge.Vertex2, false));
+            foreach (var edge in Face.Edges)
+                //edges.AddRange(Rasterization.DDA((OpenTK.Vector2)edge.Vertex1, (OpenTK.Vector2)edge.Vertex2, false));
+                ;
 
             var bounds = Bounds;
             edges = edges.Where(e => bounds.Contains(e)).Distinct().ToList();
@@ -124,7 +129,7 @@ namespace TerrainDemo.Layout
 
 
         //private readonly ZoneLayout[] _neighbors;
-        private readonly ZoneSettings _settings;
+        private readonly ClusterSettings _settings;
         private Vector2i[] _chunks;
         private ZoneLayout[] _neighbors;
 

@@ -20,7 +20,7 @@ namespace TerrainDemo.Generators
         /// <param name="landBounds"></param>
         /// <param name="density"></param>
         /// <returns></returns>
-        protected override Vector2[] GeneratePoints(Bounds2i landBounds, Vector2 density)
+        protected Vector2[] GeneratePoints(Bounds2i landBounds, Vector2 density)
         {
             const int maxPointsCount = 1000;
             var checkedPoints = new List<Vector2>();

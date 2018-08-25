@@ -14,31 +14,41 @@ namespace TerrainDemo.Generators
         {
         }
 
-        protected override ClusterInfo[] SetClusters(CellMesh mesh, LandSettings settings)
+        protected Graph<ClusterGenerator> GenerateClusters(Mesh<ZoneInfo> mesh, LandSettings settings)
         {
             //Divide cells to two sides (vertically)
-            var center = mesh.Cells.Select(c => c.Center.x).Average();
-            var leftSideZone = settings.Zones.ElementAt(0);
-            var rightSideZone = settings.Zones.ElementAt(1);
+            /*
+            var center = mesh.Nodes.Select(c => c.Center.x).Average();
+            var leftSideCluster = settings.Clusters.ElementAt(0);
+            var rightSideCluster = settings.Clusters.ElementAt(1);
 
-            var cluster1Zones = new List<ZoneInfo>();
-            var cluster2Zones = new List<ZoneInfo>();
-            for (int i = 0; i < mesh.Cells.Length; i++)
+            var leftCells = new List<Mesh<ZoneInfo>.Cell>();
+            var rightCells = new List<Mesh<ZoneInfo>.Cell>();
+            for (int i = 0; i < mesh.Nodes.Count(); i++)
             {
                 if (mesh[i].Center.x < center)
-                    cluster1Zones.Add(new ZoneInfo {Id = i, Type = leftSideZone.Type, ClusterId = 1});
+                    leftCells.Add(mesh[i]);
                 else
-                    cluster2Zones.Add(new ZoneInfo {Id = i, Type = rightSideZone.Type, ClusterId = 2 });
+                    rightCells.Add(mesh[i]);
             }
+            var leftGenerator = CreateGenerator(leftSideCluster.Type, mesh, 0);
+            leftGenerator.FillCluster(leftCells.ToArray());
+            var rightGenerator = CreateGenerator(rightSideCluster.Type, mesh, 1);
+            rightGenerator.FillCluster(rightCells.ToArray());
 
-            return new ClusterInfo[2]
-            {
-                new ClusterInfo() {Id = 1, Zones = cluster1Zones.ToArray()},
-                new ClusterInfo() {Id = 2, Zones = cluster2Zones.ToArray()},
-            };
+            //Setup graph of cluster generators
+            var clustersGraph = new Graph<ClusterGenerator>();
+            clustersGraph.Add(leftGenerator);
+            clustersGraph.Add(rightGenerator);
+            clustersGraph.AddEdge(clustersGraph.Nodes.ElementAt(0), clustersGraph.Nodes.ElementAt(1));
+
+            return clustersGraph;
+            */
+
+            return null;
         }
 
-        private IEnumerable<ZoneType> GetNeighborsOf(Cell cell, ZoneInfo[] zones)
+        private IEnumerable<ClusterType> GetNeighborsOf(Cell cell, ZoneInfo[] zones)
         {
             return cell.Neighbors.Select(c => zones[c.Id].Type);
         }

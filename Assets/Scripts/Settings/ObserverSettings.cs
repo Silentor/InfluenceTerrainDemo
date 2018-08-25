@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Assets.Code.Tools;
 using TerrainDemo.Hero;
 using TerrainDemo.Layout;
 using TerrainDemo.Tools;
@@ -100,12 +99,13 @@ namespace TerrainDemo.Settings
         public bool IsZoneVisible(ZoneLayout zone)
         {
             //todo check Zone with Observer position and neighbour zones
-
+            /*
             var observerPos = new Vector2(Position.x, Position.z);
 
             foreach (var zoneVert in zone.Cell.Vertices)
                 if (Vector2.Distance(zoneVert, observerPos) < Range)
                     return true;
+                    */
 
             return false;
         }
@@ -173,15 +173,18 @@ namespace TerrainDemo.Settings
         {
             if (Application.isPlaying)
             {
+#if UNITY_EDITOR
                 if (Camera == CameraType.SceneCamera)
                     _camera = SceneView.currentDrawingSceneView.camera;
                 else
+#endif
                     _camera = UnityEngine.Camera.main;
             }
             else
                 _camera = GetComponent<Camera>();
         }
 
+#if UNITY_EDITOR
         void OnDrawGizmos()
         {
             if (ShowChunksValue)
@@ -195,8 +198,9 @@ namespace TerrainDemo.Settings
             if (DebugDraw)
                 DrawArrow.ForGizmo(transform.position, transform.forward*10, Color.magenta, 3);
         }
+#endif
 
-        #endregion
+#endregion
 
         public enum CameraType
         {

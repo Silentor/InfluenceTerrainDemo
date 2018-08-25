@@ -81,7 +81,7 @@ namespace TerrainDemo.Tools
             if (neighbors.Length < 2)
                 return null;
 
-            if (Event.current.shift && Event.current.type == EventType.repaint)
+            if (Event.current.shift && Event.current.type == EventType.Repaint)
             {
                 //DEBUG mode
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using TerrainDemo.Generators;
 using TerrainDemo.Voronoi;
 using UnityEngine;
 
@@ -13,7 +14,7 @@ namespace TerrainDemo.Layout
     {
         public readonly int Id;
 
-        public readonly ZoneType Type;
+        public readonly ClusterType Type;
 
         /// <summary>
         /// Points to build land base height
@@ -30,38 +31,30 @@ namespace TerrainDemo.Layout
         /// </summary>
         public readonly IEnumerable<Edge> Edges;
 
-        public readonly CellMesh.Submesh Cells;
+        public readonly Mesh<ZoneLayout>.Submesh Mesh;
 
-        public ClusterLayout[] Neighbors { get; private set; }
+        public ClusterGenerator Generator;
 
-        private ClusterInfo[] _neighbors;
-
-        public ClusterLayout(ClusterInfo info, IEnumerable<ZoneLayout> zones, CellMesh mesh)
+        public ClusterLayout(ClusterInfo info, Mesh<ZoneLayout>.Submesh mesh, Graph<ClusterLayout>.Node node, LandLayout land)
         {
-            if (info.ClusterHeight == null) throw new ArgumentNullException("baseHeightPoints");
-            if (info.ZoneHeights == null) throw new ArgumentNullException("baseHeightPoints");
-            if (zones == null) throw new ArgumentNullException("zones");
+            //if (info.ClusterHeight == null) throw new ArgumentNullException("baseHeightPoints");
+            //if (info.ZoneHeights == null) throw new ArgumentNullException("baseHeightPoints");
+            if (mesh == null) throw new ArgumentNullException("mesh");
 
             Id = info.Id;
             //BaseHeightPoints = info.ClusterHeights;
-            Zones = zones;
+            Zones = mesh.Select(zl => zl.Data).ToArray();
             Type = info.Type;
-            _neighbors = info.Neighbors;
-            Cells = info.Mesh;
+            //_neighbors = info.NeighborsSafe;
+            Mesh = mesh;
 
             //Get edges
-            var cells = zones.Select(z => z.Cell).ToArray();
-            var cluster = new CellMesh.Submesh(mesh, cells);
-            var outerEdges = cluster.GetBorderCells().SelectMany(c => c.Edges).Where(e => !cells.Contains(e.Neighbor));
+            var cells = Zones.Select(z => z.Face).ToArray();
+            //var outerEdges = mesh.GetBorderCells().SelectMany(c => c.Edges).Where(e => !cells.Contains(e.Neighbor));
             var edges = new List<Edge>();
-            foreach (var outerEdge in outerEdges)
-                edges.Add(new Edge {Vertex1 = outerEdge.Vertex1, Vertex2 = outerEdge.Vertex2});
+            //foreach (var outerEdge in outerEdges)
+                //edges.Add(new Edge {Vertex1 = outerEdge.Vertex1, Vertex2 = outerEdge.Vertex2});
             Edges = edges;
-        }
-
-        public void Init(ClusterLayout[] layout)
-        {
-            Neighbors = _neighbors.Select(c => layout.First(c2 => c2.Id == c.Id)).ToArray();
         }
 
         public struct Edge

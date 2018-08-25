@@ -80,5 +80,16 @@ namespace TerrainDemo.Tools
             // check which point is closer to the center
             return ca.sqrMagnitude.CompareTo(cb.sqrMagnitude);
         }
+
+        /// <summary>
+        /// Unity Vector == operator does approx comparison also, this is a coarse version
+        /// </summary>
+        /// <param name="v1"></param>
+        /// <param name="v2"></param>
+        /// <returns></returns>
+        public static bool ApproxEqual(Vector2 v1, Vector2 v2)
+        {
+            return Math.Abs(v1.x - v2.x) < 0.001 && Math.Abs(v1.y - v2.y) < 0.001;
+        }
     }
 }
