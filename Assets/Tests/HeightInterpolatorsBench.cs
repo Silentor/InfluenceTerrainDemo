@@ -6,6 +6,7 @@ using TerrainDemo.Voronoi;
 using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
+using Random = UnityEngine.Random;
 
 namespace TerrainDemo.Tests
 {

@@ -22,7 +22,7 @@ namespace TerrainDemo.Tests.Editor
             //        Id = 0, ZoneHeights = new[] { Vector3.zero, Vector3.one*10 },
             //        ClusterHeights = new[] { Vector3.zero, Vector3.one*10 },
             //        Type = settings.Zones[0].Type,
-            //        Neighbors = new ClusterInfo[0],
+            //        NeighborsSafe = new ClusterInfo[0],
             //        Cells = new CellMesh.Submesh(mesh, )
 
 
