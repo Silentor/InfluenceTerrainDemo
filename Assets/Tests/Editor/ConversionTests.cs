@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using TerrainDemo.Spatial;
 using UnityEngine;
 using Vector2 = OpenTK.Vector2;
 

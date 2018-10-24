@@ -27,6 +27,10 @@ sysinfo.txt
 UnityVS.VersionSpecific.*
 *.DotSettings
 *.mdb.meta
+.vs/
+
+# Ignore Resharper caches
+_ReSharper.Caches/
 
 
 

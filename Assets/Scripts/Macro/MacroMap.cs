@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 using OpenTK;
+using TerrainDemo.Generators;
+using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using TerrainDemo.Tri;
 using UnityEngine;
@@ -37,27 +39,17 @@ namespace TerrainDemo.Macro
             GenerateGrid();
 
             Heights = new float[Vertices.Count];
-            float top, bottom, left, right;
-            top = right = float.MinValue;
-            bottom = left = float.MaxValue;
 
-            foreach (var vert in Vertices)
-            {
-                if (vert.Coords.X < left)
-                    left = vert.Coords.X;
-                else if (vert.Coords.X > right)
-                    right = vert.Coords.X;
-                if (vert.Coords.Y < bottom)
-                    bottom = vert.Coords.Y;
-                else if (vert.Coords.Y > top)
-                    top = vert.Coords.Y;
-            }
-            Bounds = new Box2(left, top, right, bottom);
+            Bounds = _mesh.Bounds;
 
             EmptyInfluence = new double[_settings.Biomes.Length];
+
+            _influenceTurbulance = new FastNoise(random.Seed);
+            _influenceTurbulance.SetFrequency(settings.InfluencePerturbFreq);
+            _influenceTurbulancePower = settings.InfluencePerturbPower;
         }
 
-        public double[] GetInfluence(Vector2 worldPosition)
+        public Influence GetInfluence(Vector2 worldPosition)
         {
             //return GetNNInfluence(worldPosition);
             return GetIDWInfluence(worldPosition);
@@ -93,12 +85,12 @@ namespace TerrainDemo.Macro
 
         public IEnumerable<Cell> FloodFill(Cell startCell, Predicate<Cell> fillCondition = null)
         {
-            var result = new FloodFillEnumerator(this, startCell, fillCondition);
-            for (int i = 0; i < 10; i++)
-            {
-                foreach (var cell in result.GetNeighbors(i))
-                    yield return cell;
-            }
+            return _mesh.FloodFill(startCell, fillCondition);
+        }
+
+        public CellMesh.Submesh GetSubmesh(IEnumerable<Cell> cells)
+        {
+            return _mesh.GetSubmesh(cells);
         }
 
         public string InfluenceToString(double[] influence)
@@ -116,6 +108,7 @@ namespace TerrainDemo.Macro
 
         private readonly TriRunner _settings;
         private readonly Random _random;
+        private readonly FastNoise _influenceTurbulance;
 
         private Box2 _bounds;
         private readonly float _side;
@@ -123,28 +116,17 @@ namespace TerrainDemo.Macro
         private alglib.kdtree _idwInfluence;
         private int[] _nearestCellsTags = new int[0];
         private readonly double[] EmptyInfluence;
+        private readonly List<Tuple<Cell, float>> _getInfluenceBuffer = new List<Tuple<Cell, float>>();
         private CellMesh _mesh;
+        private float _influenceTurbulancePower;
 
         private void GenerateGrid()
         {
             Debug.LogFormat("Generating grid of macrocells");
 
-            Vertices.Clear();
-            Edges.Clear();
-            Cells.Clear();
-
-            var mesh = new CellMesh( );
-            var faces = new List<CellMesh.Face>();
-            var vertices = new List<CellMesh.Vertice>();
-            var edges = new List<CellMesh.Edge>();
-            var cellCandidates = new List<CellCandidate>();
-
-            var noise = new FastNoise(_random.Seed);
-            noise.SetFractalOctaves(1);
-            noise.SetFrequency(0.01);
-
+            var processedCells = new List<CellCandidate>();
             var unprocessedCells = new List<CellCandidate>();
-            unprocessedCells.Add(new CellCandidate(Vector2i.Zero, Vector2.Zero));
+            unprocessedCells.Add(new CellCandidate(new Coord(0, 0), Vector2.Zero, CalcVertsPosition(Vector2.Zero, _settings.Side)));
 
             //Iteratively process flood-fill cell generation algorithm
             while (unprocessedCells.Count > 0)
@@ -153,84 +135,60 @@ namespace TerrainDemo.Macro
                 unprocessedCells.RemoveAt(0);
 
                 //Check if cell in land bound
-                var vertPositions = CalcVertsPosition(candidateCell.Center, _settings.Side);
-
                 if (!_settings.LandBounds.Contains(candidateCell.Center)
-                    || !vertPositions.All(v => _settings.LandBounds.Contains(v)))
+                    || !candidateCell.Vertices.All(v => _settings.LandBounds.Contains(v)))
                     continue;
 
-                //Candidate within land bounds, create actual cell: 1) vertices, 2) edges, 3) cell
-                var cellVertices = vertPositions.Select(p => GetVertice(p, vertices, mesh)).ToArray();
-
-                var cellEdges = new CellMesh.Edge[Cell.MaxNeighborsCount];
-                for (int i = 0; i < cellVertices.Length; i++)
-                {
-                    var vert1 = cellVertices[i];
-                    var vert2 = cellVertices[(i + 1) % cellVertices.Length];
-                    var edge = GetEdge(vert1, vert2, edges, mesh);
-                    cellEdges[i] = edge;
-                }
-
-                var face = new CellMesh.Face(mesh, candidateCell.Center, faces.Count, cellVertices, cellEdges);
-                faces.Add(face);
-                candidateCell.Face = face;
-                cellCandidates.Add(candidateCell);
+                processedCells.Add(candidateCell);
 
                 //Prepare neighbors for adding
                 const double triangleHeight = 1.732050807568877 / 2d; //https://en.wikipedia.org/wiki/Equilateral_triangle#Principal_properties
-                var neighborsCenters = CalcNeighborCellsPosition(face.Center, triangleHeight * _side * 2);
+                var neighborsCenters = CalcNeighborCellsPosition(candidateCell.Center, triangleHeight * _side * 2);
                 for (int i = 0; i < neighborsCenters.Length; i++)
                 {
-                    var position = candidateCell.Position + Cell.Directions[i];
-                    if (!unprocessedCells.Exists(c => c.Position == position) &&
-                        !cellCandidates.Exists(c => c.Position == position))
-                        unprocessedCells.Add(new CellCandidate(position, neighborsCenters[i]));
+                    var position = candidateCell.Coords.Translated(Coord.Directions[i]);
+                    if (!unprocessedCells.Exists(c => c.Coords == position) &&
+                        !processedCells.Exists(c => c.Coords == position))
+                    {
+                        unprocessedCells.Add(new CellCandidate(position, neighborsCenters[i], CalcVertsPosition(neighborsCenters[i], _settings.Side)));
+                    }
                 }
             }
 
-            mesh.Set(faces, edges, vertices);
+            _mesh = new CellMesh(processedCells.Select(pc => pc.Vertices));
 
             //Make MacroMap elements
-            Vertices.AddRange(vertices.Select(v => new MacroVert(this, v.Id, v, _settings)));
-            Edges.AddRange(edges.Select(e => new MacroEdge(this, e, Vertices)));
-            Cells.AddRange(cellCandidates.Select(c => new Cell(this, c.Position, c.Face, Vertices, Edges)));
+            Vertices.Clear();
+            Edges.Clear();
+            Cells.Clear();
 
-            foreach (var face in faces)
-            {
-                face.Data = Cells.First(c => c.Id == face.Id);
-            }
-           
+            _mesh.AssignData(
+                delegate(Mesh<Cell, MacroEdge, MacroVert>.Vertex vertex)
+                {
+                    var vert = new MacroVert(this, _mesh, vertex, _settings);
+                    Vertices.Add(vert);
+                    return vert;
+                },
+                delegate(Mesh<Cell, MacroEdge, MacroVert>.Edge edge, MacroVert vert1, MacroVert vert2)
+                {
+                    var macroEdge = new MacroEdge(this, _mesh, edge, vert1, vert2);
+                    Edges.Add(macroEdge);
+                    return macroEdge;
+                },
+                delegate(CellMesh.Face face, IEnumerable<MacroVert> vertices, IEnumerable<MacroEdge> edges)
+                {
+                    var faceCoord = processedCells[face.Id].Coords;
+                    var cell = new Cell(this, faceCoord, face, vertices, edges);
+                    Cells.Add(cell);
+                    return cell;
+                });
 
             //Init all cells
             foreach (var cell in Cells)
             {
-                var neighbors = Cell.Directions.Select(dir => Cells.Find(c => c.Position == cell.Position + dir));
+                var neighbors = Coord.Directions.Select(dir => Cells.Find(c => c.Coords == cell.Coords.Translated(dir)));
                 cell.Init(neighbors);
             }
-
-            //Init all edges
-            foreach (var edge in Edges)
-            {
-                var neighborCells = Cells.Where(c => c.Edges.Contains(edge)).ToArray();
-
-                Assert.IsTrue(neighborCells.Length > 0 && neighborCells.Length <= 2);
-
-                edge.Init(neighborCells[0], neighborCells.Length > 1 ? neighborCells[1] : null);
-            }
-
-            //Init all vertices
-            foreach (var vertex in Vertices)
-            {
-                var neighborEdges = Edges.Where(e => e.Vertex1 == vertex || e.Vertex2 == vertex).ToArray();
-                var neighborCells = Cells.Where(c => c.Vertices2.Contains(vertex)).ToArray();
-
-                Assert.IsTrue(neighborEdges.Length >= 2 && neighborEdges.Length <= 3, $"vertex {vertex}");
-                Assert.IsTrue(neighborCells.Length >= 1 && neighborCells.Length <= 3);
-
-                vertex.Init(neighborCells, neighborEdges);
-            }
-
-            _mesh = new CellMesh();
 
             Debug.LogFormat("Generated macromap of {0} vertices, {1} cells, {2} edges", Vertices.Count, Cells.Count, Edges.Count);
         }
@@ -287,7 +245,7 @@ namespace TerrainDemo.Macro
 
                 debug.Cells[i] = new CellWeightInfo()
                 {
-                    Id = Cells[_nearestCellsTags[i]].Position,
+                    Id = Cells[_nearestCellsTags[i]].Coords,
                     Height = cellsHeights[i],
                     Weight = cellsWeights[i] / weightsSum
                 };
@@ -296,94 +254,72 @@ namespace TerrainDemo.Macro
             return (float) result;
         }
 
-        private double[] GetIDWInfluence(Vector2 worldPosition)
+        private Influence GetIDWInfluence(Vector2 worldPosition)
         {
             PrepareLandIDW();
+
+            //Turbulate position
+            worldPosition = new Vector2(
+                worldPosition.X + (float)_influenceTurbulance.GetValue(worldPosition.X, worldPosition.Y) * _influenceTurbulancePower, 
+                worldPosition.Y + (float)_influenceTurbulance.GetValue(worldPosition.X + 1000, worldPosition.Y - 1000) * _influenceTurbulancePower);
 
             const float searchRadius = 25;
             var nearestCellsCount = alglib.kdtreequeryrnn(_idwInfluence, new double[] { worldPosition.X, worldPosition.Y }, searchRadius, true);
             alglib.kdtreequeryresultstags(_idwInfluence, ref _nearestCellsTags);
 
-            var result = new double[_settings.Biomes.Length];
+            //Short path - no cells in search radius, return influence of nearest cell
+            if (nearestCellsCount == 0)
+            {
+                nearestCellsCount = alglib.kdtreequeryknn(_idwInfluence, new double[] {worldPosition.X, worldPosition.Y}, 1, true);
+                if (nearestCellsCount > 0)
+                {
+                    var cell = Cells[_nearestCellsTags[0]];
+                    return cell.Zone.Influence;
+                }
+
+                throw new InvalidOperationException("Cant calculate influence, no cells found");
+            }
+
+            _getInfluenceBuffer.Clear();
 
             //Sum up zones influence
             for (int i = 0; i < nearestCellsCount; i++)
             {
                 var cell = Cells[_nearestCellsTags[i]];
+                var cellWeight = IDWLocalShepard(cell.Center, worldPosition, searchRadius);
 
-                var zoneWeight = IDWLocalShepard(cell.Center, worldPosition, searchRadius);
+                if(cellWeight < 0.01)
+                    continue;
 
-                for (int j = 0; j < result.Length; j++)
-                {
-                    result[j] += cell.Zone.Influence[j] * zoneWeight;
-                }
+                _getInfluenceBuffer.Add(new Tuple<Cell, float>(cell, (float)cellWeight));
             }
 
-            //Normalize
-            var sum = 0d;
-            for (int i = 0; i < result.Length; i++)
-            {
-                if (result[i] > 0)
-                    sum += result[i];
-                else
-                    result[i] = 0;
-            }
-
-            Assert.IsTrue(sum != 0, "for position " + worldPosition);
-
-            for (int i = 0; i < result.Length; i++)
-                result[i] /= sum;
-
-            return result;
+            return new Influence(_getInfluenceBuffer);
         }
 
         private double IDWLocalShepard(Vector2 interpolatePoint, Vector2 point, double searchRadius)
         {
+            Assert.IsTrue(searchRadius > 0);
+
             if (interpolatePoint == point)
                 return 1;
 
-            double d = Vector2.Distance(interpolatePoint, point);
+            double distance = Vector2.Distance(interpolatePoint, point);
 
-            Assert.IsTrue(d <= searchRadius);
+            Assert.IsTrue(distance <= searchRadius);
 
-            //DEBUG
-            var linear = Mathf.InverseLerp((float) searchRadius, 0, (float) d);
-            //return linear;
-            //return OutQuad(linear);
-            //return InOutCosine(linear);
-            //return SmoothStep(linear);
-            //return SmootherStep(linear);
-            //return SmoothestStep(linear);
-            //return InCubic(linear);
-            return InQuad(linear);
-            //DEBUG
-
-            var a = searchRadius - d;
-            if (a < 0) a = 0;
-            var b = a / (searchRadius * d);
-            //return b * b;
-            return Math.Pow(b, 1.2);
+            var ratio = 1 - distance / searchRadius;        //Inverse lerp
+            return ratio * ratio * ratio * ratio;           //In quintic
         }
 
         private double IDWLocalShepard2(Vector2 interpolatePoint, Vector2 point, double searchRadius)
         {
-            double d = Vector2.Distance(interpolatePoint, point);
+            double distance = Vector2.Distance(interpolatePoint, point);
 
-            Assert.IsTrue(d <= searchRadius);
+            Assert.IsTrue(distance <= searchRadius);
 
-            var linear = Mathf.InverseLerp((float)searchRadius, 0, (float)d);
-            //return linear;
-            //return InOutCosine(linear);
-            //return InQuad(linear);
-            //return OutCubic(linear);
-            //return SmoothestStep(linear);
-            //return SmootherStep(linear);
-            return SmoothStep(linear);
-            //return OutQuad(linear);
-            //return InExpo(linear);
-            //return SmoothCustom1(linear);
-            //return InCubic(linear);
-            //return InQuintic(linear);
+            var ratio = 1 - distance / searchRadius;        //Inverse lerp
+            return SmoothStep(ratio);
         }
 
 
@@ -419,6 +355,11 @@ namespace TerrainDemo.Macro
         public double InQuad(double x)
         {
             return x * x;
+        }
+
+        public double InQuint(double x)
+        {
+            return x * x * x * x;
         }
 
         public double InExpo(double x)
@@ -520,20 +461,20 @@ namespace TerrainDemo.Macro
             return result;
         }
 
-
-        private CellMesh.Vertice GetVertice(Vector2 position, List<CellMesh.Vertice> vertices, CellMesh mesh)
+        /*
+        private CellMesh.Vertex GetVertice(Vector2 position, List<CellMesh.Vertex> vertices, CellMesh mesh)
         {
             var vert = vertices.Find(v => Vector2.DistanceSquared(v.Coords, position) < 0.01 * 0.01);
             if (vert == null)
             {
-                vert = new CellMesh.Vertice(mesh, vertices.Count, position);
+                vert = new CellMesh.Vertex(mesh, vertices.Count, position);
                 vertices.Add(vert);
             }
 
             return vert;
         }
 
-        private CellMesh.Edge GetEdge(CellMesh.Vertice vert1, CellMesh.Vertice vert2, List<CellMesh.Edge> edges, CellMesh mesh)
+        private CellMesh.Edge GetEdge(CellMesh.Vertex vert1, CellMesh.Vertex vert2, List<CellMesh.Edge> edges, CellMesh mesh)
         {
             var edge = edges.Find(e => e.IsConnects(vert1, vert2));
             if (edge == null)
@@ -544,103 +485,12 @@ namespace TerrainDemo.Macro
 
             return edge;
         }
+        */
 
-        public class CellMesh : TerrainDemo.Voronoi.Mesh<Cell>
+        public class CellMesh : Mesh<Cell, MacroEdge, MacroVert>
         {
-        }
-
-        /// <summary>
-        /// For searching cells using flood-fill algorithm
-        /// </summary>
-        public class FloodFillEnumerator
-        {
-            private readonly MacroMap _mesh;
-            private readonly Predicate<Cell> _searchFor;
-            private readonly List<List<Cell>> _neighbors = new List<List<Cell>>();
-
-            /// <summary>
-            /// Create flood-fill around <see cref="start"> cell
-            /// </summary>
-            /// <param name="mesh"></param>
-            /// <param name="start"></param>
-            public FloodFillEnumerator(MacroMap mesh, Cell start, Predicate<Cell> searchFor = null)
+            public CellMesh(IEnumerable<Vector2[]> facesFromVertices) : base(facesFromVertices)
             {
-                Assert.IsTrue(mesh.Cells.Contains(start));
-                Assert.IsTrue(searchFor == null || searchFor(start));
-
-                _mesh = mesh;
-                _searchFor = searchFor;
-                _neighbors.Add(new List<Cell> { start });
-            }
-
-            /// <summary>
-            /// Create flood-fill around <see cref="start"> cells
-            /// </summary>
-            /// <param name="mesh"></param>
-            /// <param name="start"></param>
-            public FloodFillEnumerator(MacroMap mesh, Cell[] start, Predicate<Cell> searchFor = null)
-            {
-                Assert.IsTrue(start.All(c => mesh.Cells.Contains(c)));
-                Assert.IsTrue(searchFor == null || start.All(c => searchFor(c)));
-
-                _mesh = mesh;
-                _searchFor = searchFor;
-                var startStep = new List<Cell>();
-                startStep.AddRange(start);
-                _neighbors.Add(startStep);
-            }
-
-
-            /// <summary>
-            /// Get neighbors of cell(s)
-            /// </summary>
-            /// <param name="step">0 - start cell(s), 1 - direct neighbors, 2 - neighbors of step 1 neighbors, etc</param>
-            /// <returns></returns>
-            public IEnumerable<Cell> GetNeighbors(int step)
-            {
-                if (step == 0)
-                    return _neighbors[0];
-
-                if (step < _neighbors.Count)
-                    return _neighbors[step];
-
-                //Calculate neighbors
-                if (step - 1 < _neighbors.Count)
-                {
-                    var processedCellsIndex = Math.Max(0, step - 2);
-                    var result = GetNeighbors(_neighbors[step - 1], _neighbors[processedCellsIndex]);
-                    _neighbors.Add(result);
-                    return result;
-                }
-                else
-                {
-                    //Calculate previous steps (because result of step=n used for step=n+1)
-                    for (int i = _neighbors.Count; i < step; i++)
-                        GetNeighbors(i);
-                    return GetNeighbors(step);
-                }
-            }
-
-            /// <summary>
-            /// Get neighbors of <see cref="prevNeighbors"/> doesnt contained in <see cref="alreadyProcessed"/>
-            /// </summary>
-            /// <param name="prevNeighbors"></param>
-            /// <param name="alreadyProcessed"></param>
-            /// <returns></returns>
-            private List<Cell> GetNeighbors(List<Cell> prevNeighbors, List<Cell> alreadyProcessed)
-            {
-                var result = new List<Cell>();
-                foreach (var neigh1 in prevNeighbors)
-                {
-                    foreach (var neigh2 in neigh1.NeighborsSafe)
-                    {
-                        if ((_searchFor == null || _searchFor(neigh2))          //check search for condition
-                            && !result.Contains(neigh2) && !prevNeighbors.Contains(neigh2) && !alreadyProcessed.Contains(neigh2))
-                            result.Add(neigh2);
-                    }
-                }
-
-                return result;
             }
         }
 
@@ -653,22 +503,22 @@ namespace TerrainDemo.Macro
 
         public struct CellWeightInfo
         {
-            public Vector2i Id;
+            public Coord Id;
             public double Weight;
             public float Height;
         }
 
         public struct CellCandidate
         {
-            public readonly Vector2i Position;
+            public readonly Coord Coords;
             public readonly Vector2 Center;
-            public CellMesh.Face Face;
+            public Vector2[] Vertices;
 
-            public CellCandidate(Vector2i position, Vector2 center)
+            public CellCandidate(Coord coords, Vector2 center, Vector2[] vertices)
             {
-                Position = position;
+                Coords = coords;
                 Center = center;
-                Face = null;
+                Vertices = vertices;
             }
         }
     }

@@ -1,6 +1,6 @@
 ﻿using System;
 using JetBrains.Annotations;
-using TerrainDemo.Voronoi;
+using TerrainDemo.Macro;
 using UnityEngine;
 
 namespace TerrainDemo.Tools
@@ -17,8 +17,8 @@ namespace TerrainDemo.Tools
             if (cell == null) throw new ArgumentNullException("cell");
 
             Gizmos.color = color;
-            for (int i = 0; i < cell.Vertices.Length - 1; i++)
-                Gizmos.DrawLine(Convert(cell.Vertices[i]), Convert(cell.Vertices[i + 1]));
+            for (int i = 0; i < cell.Vertices.Count - 1; i++)
+                Gizmos.DrawLine(Convert(cell.Vertices[i].Position), Convert(cell.Vertices[i + 1].Position));
         }
 
         public static void ForDebug([NotNull] Cell cell)
@@ -30,14 +30,14 @@ namespace TerrainDemo.Tools
         {
             if (cell == null) throw new ArgumentNullException("cell");
 
-            for (int i = 0; i < cell.Vertices.Length - 1; i++)
-                Debug.DrawLine(Convert(cell.Vertices[i]), Convert(cell.Vertices[i + 1]), color);
+            for (int i = 0; i < cell.Vertices.Count - 1; i++)
+                Debug.DrawLine(Convert(cell.Vertices[i].Position), Convert(cell.Vertices[i + 1].Position), color);
 
         }
 
-        private static Vector3 Convert(Vector2 v)
+        private static Vector3 Convert(OpenTK.Vector2 v)
         {
-            return new Vector3(v.x, 0, v.y);
+            return new Vector3(v.X, 0, v.Y);
         }
     }
 }

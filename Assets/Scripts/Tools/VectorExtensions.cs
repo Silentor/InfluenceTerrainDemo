@@ -1,4 +1,5 @@
 ﻿using System;
+using TerrainDemo.Spatial;
 using UnityEngine;
 
 namespace TerrainDemo.Tools

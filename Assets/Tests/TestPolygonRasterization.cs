@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using OpenTK;
+using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using UnityEngine;
 using UnityEngine.Assertions;

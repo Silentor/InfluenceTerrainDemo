@@ -1,45 +1,41 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using OpenTK;
+using TerrainDemo.Settings;
 using TerrainDemo.Tri;
 
 namespace TerrainDemo.Macro
 {
     public class Zone
     {
-        private readonly MacroMap _mesh;
-        public readonly Cell[] Cells;
+        public const int InvalidId = -1;
+
+        public readonly int Id;
+        public readonly MacroMap.CellMesh.Submesh Submesh;
+
+        public IReadOnlyCollection<Cell> Cells => Submesh.Faces;
 
         /// <summary>
         /// Border cells of Zone
         /// </summary>
-        public readonly Cell[] Border;
+        public IReadOnlyCollection<Cell> Border => Submesh.BorderFaces;
 
-        public readonly int Id;
+        public IReadOnlyCollection<MacroEdge> Edges => Submesh.BorderEdges;
 
-        public IEnumerable<MacroEdge> Edges { get; private set; }
+        public BiomeSettings Biome { get; private set; }
 
-        public TriBiome Biome { get; private set; }
+        public readonly Influence Influence;
 
-        public readonly double[] Influence;
-
-        public Zone(MacroMap mesh, IEnumerable<Cell> cells, int id, TriBiome biome, TriRunner settings)
+        public Zone(MacroMap mesh, MacroMap.CellMesh.Submesh cells, int id, BiomeSettings biome, TriRunner settings)
         {
             _mesh = mesh;
-            Cells = cells.ToArray();
+            Submesh = cells;
             Id = id;
             Biome = biome;
 
-            Border = Cells.Where(c => c.Neighbors.Any(n => n == null || !Cells.Contains(n))).ToArray();
-            var edges = from b in Border
-                from e in b.Edges
-                where e.GetOppositeOf(b) == null || !Cells.Contains(e.GetOppositeOf(b))
-                select e;
-            Edges = edges.Distinct().ToArray();
-            Influence = new double[settings.Biomes.Length];
-            Influence[biome.Index] = 1;
-
+            Influence = new Influence(id);
         }
 
-        
+        private readonly MacroMap _mesh;
     }
 }

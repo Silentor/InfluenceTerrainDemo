@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using TerrainDemo.Macro;
+using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using TerrainDemo.Tri;
 using UnityEngine;
 using UnityEngine.Assertions;
-using UnityEngine.Tilemaps;
 
 namespace TerrainDemo.Micro
 {
@@ -30,14 +30,12 @@ namespace TerrainDemo.Micro
             for (var i = 0; i < macromap.Cells.Count; i++)
             {
                 var macroCell = macromap.Cells[i];
-                var cellBlocks = Rasterization.Polygon2(macroCell.Contains, macroCell.Bounds);
-                var microCell = new Cell(macroCell, cellBlocks.ToArray());
+                var microCell = new Cell(macroCell);
                 Cells[i] = microCell;
             }
 
-            _heightMap = new float[Bounds.Size.X + 1, Bounds.Size.Z + 1];
-            _blocks = new BlockInfo[Bounds.Size.X, Bounds.Size.Z];
-            _influences = new double[Bounds.Size.X, Bounds.Size.Z][];
+            _heightMap = new MicroHeight[Bounds.Size.X + 1, Bounds.Size.Z + 1];
+            _blocks = new Blocks[Bounds.Size.X, Bounds.Size.Z];
 
             Debug.LogFormat("Generated micromap {0} x {1} = {2} blocks", Bounds.Size.X, Bounds.Size.Z, Bounds.Size.X * Bounds.Size.Z);
         }
@@ -50,39 +48,7 @@ namespace TerrainDemo.Micro
             return Cells[_macromap.Cells.IndexOf(cell)];
         }
 
-        public void SetInfluence(IEnumerable<Vector2i> positions, IEnumerable<double[]> influences)
-        {
-            var posEnumerator = positions.GetEnumerator();
-            var infEnumerator = influences.GetEnumerator();
-            using (posEnumerator)
-            {
-                using (infEnumerator)
-                {
-                    while (posEnumerator.MoveNext() & infEnumerator.MoveNext())
-                    {
-                        var arrayX = posEnumerator.Current.X - Bounds.Min.X;
-                        var arrayZ = posEnumerator.Current.Z - Bounds.Min.Z;
-                        _influences[arrayX, arrayZ] = infEnumerator.Current;
-                    }
-                }
-            }
-        }
-
-        public IEnumerable<double[]> GetBlocks(IEnumerable<Vector2i> positions)
-        {
-            var posEnumerator = positions.GetEnumerator();
-            using (posEnumerator)
-            {
-                if (posEnumerator.MoveNext())
-                {
-                    var arrayX = posEnumerator.Current.X - Bounds.Min.X;
-                    var arrayZ = posEnumerator.Current.Z - Bounds.Min.Z;
-                    yield return _influences[arrayX, arrayZ];
-                }
-            }
-        }
-
-        public void SetHeights(IEnumerable<Vector2i> positions, IEnumerable<float> heights)
+        public void SetHeights(IEnumerable<Vector2i> positions, IEnumerable<MicroHeight> heights)
         {
             var posEnumerator = positions.GetEnumerator();
             var infEnumerator = heights.GetEnumerator();
@@ -100,35 +66,65 @@ namespace TerrainDemo.Micro
             }
         }
 
-        public double[,][] GetInfluenceChunk()
+        public void SetBlocks(IEnumerable<Vector2i> positions, IEnumerable<Blocks> blocks)
         {
-            return _influences;
+            var posEnumerator = positions.GetEnumerator();
+            var blockEnumerator = blocks.GetEnumerator();
+            using (posEnumerator)
+            {
+                using (blockEnumerator)
+                {
+                    while (posEnumerator.MoveNext() & blockEnumerator.MoveNext())
+                    {
+                        var localX = posEnumerator.Current.X - Bounds.Min.X;
+                        var localZ = posEnumerator.Current.Z - Bounds.Min.Z;
+                        _blocks[localX, localZ] = blockEnumerator.Current;
+                    }
+                }
+            }
         }
 
-        public float[,] GetHeightMap()
+        public MicroHeight[,] GetHeightMap()
         {
             return _heightMap;
+        }
+
+        public Blocks[,] GetBlockMap()
+        {
+            return _blocks;
         }
 
         public BlockInfo GetBlock(Vector2i blockPos)
         {
             var localPos = blockPos - Bounds.Min;
-            var blockHeight = (_heightMap[localPos.X, localPos.Z] + _heightMap[localPos.X + 1, localPos.Z] +
-                              _heightMap[localPos.X + 1, localPos.Z + 1] + _heightMap[localPos.X, localPos.Z + 1]) / 4;
-            var blockInfluence = _influences[localPos.X, localPos.Z];
+            var blockHeight = (_heightMap[localPos.X, localPos.Z].Height + _heightMap[localPos.X + 1, localPos.Z].Height +
+                              _heightMap[localPos.X + 1, localPos.Z + 1].Height + _heightMap[localPos.X, localPos.Z + 1].Height) / 4;
+            //var blockInfluence = _influences[localPos.X, localPos.Z];
 
-            BlockInfo result;
-            if(blockInfluence != null)
-                result = new BlockInfo(blockPos, BlockType.Grass, blockHeight, Vector3.up, blockInfluence);
-            else
-                result = new BlockInfo(blockPos, BlockType.Empty, blockHeight, Vector3.up, null);
+            var result = new BlockInfo(_blocks[localPos.X, localPos.Z], blockHeight, Vector3.up);
             return result;
+        }
+
+        /// <summary>
+        /// Clockwise
+        /// </summary>
+        /// <param name="blockPos"></param>
+        /// <returns></returns>
+        public ValueTuple<MicroHeight, MicroHeight, MicroHeight, MicroHeight> GetBlockVertices(Vector2i blockPos)
+        {
+            var localPos = blockPos - Bounds.Min;
+
+            return new ValueTuple<MicroHeight, MicroHeight, MicroHeight, MicroHeight>(
+                _heightMap[localPos.X, localPos.Z],
+                _heightMap[localPos.X, localPos.Z + 1],
+                _heightMap[localPos.X + 1, localPos.Z + 1],
+                _heightMap[localPos.X + 1, localPos.Z]);
         }
 
         private readonly MacroMap _macromap;
         private readonly TriRunner _settings;
-        private readonly float[,] _heightMap;
-        private readonly BlockInfo[,] _blocks;
-        private readonly double[,][] _influences;
+        private readonly MicroHeight[,] _heightMap;
+        private readonly Blocks[,] _blocks;
+        //private readonly double[,][] _influences;
     }
 }

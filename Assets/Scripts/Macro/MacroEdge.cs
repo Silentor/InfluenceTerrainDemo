@@ -3,31 +3,56 @@ using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using TerrainDemo.Tri;
-using TerrainDemo.Voronoi;
 using UnityEngine.Assertions;
 
 namespace TerrainDemo.Macro
 {
-    public class MacroEdge : IEquatable<MacroEdge>
+    public class MacroEdge : IEquatable<MacroEdge>, MacroMap.CellMesh.IEdgeOwner
     {
-        public readonly int Id;
+        public int Id => _edge.Id;
         public MacroVert Vertex1 { get; }
 
         public MacroVert Vertex2 { get; }
 
-        public Cell Cell1 { get; private set; }
-
-        public Cell Cell2 { get; private set; }
-
-        public MacroEdge([NotNull] MacroMap mesh, MacroMap.CellMesh.Edge edge, IEnumerable<MacroVert> vertices)
+        public Cell Cell1
         {
-            if (mesh == null) throw new ArgumentNullException(nameof(mesh));
+            get
+            {
+                if (_cell1 == null)
+                {
+                    var faces = _mesh.GetAdjacentFaces(this);
+                    _cell1 = faces.Item1;
+                    _cell2 = faces.Item2;
+                }
+
+                return _cell1;
+            }
+        }
+
+        public Cell Cell2
+        {
+            get
+            {
+                if (_cell1 == null)
+                {
+                    var faces = _mesh.GetAdjacentFaces(this);
+                    _cell1 = faces.Item1;
+                    _cell2 = faces.Item2;
+                }
+
+                return _cell2;
+            }
+        }
+
+        public MacroEdge([NotNull] MacroMap map, MacroMap.CellMesh mesh, MacroMap.CellMesh.Edge edge, MacroVert vertex1, MacroVert vertex2)
+        {
+            if (map == null) throw new ArgumentNullException(nameof(map));
 
             _edge = edge;
+            _map = map;
             _mesh = mesh;
-            Id = edge.Id;
-            Vertex1 = vertices.First(v => v.Id == edge.Vertex1.Id);
-            Vertex2 = vertices.First(v => v.Id == edge.Vertex2.Id);
+            Vertex1 = vertex1;
+            Vertex2 = vertex2;
         }
 
         public bool IsConnects(MacroVert vert1, MacroVert vert2)
@@ -47,16 +72,13 @@ namespace TerrainDemo.Macro
             throw new ArgumentOutOfRangeException(nameof(cell), "Unknown cell");
         }
 
-        public void Init(Cell cell1, Cell cell2)
-        {
-            Cell1 = cell1;
-            Cell2 = cell2;
-        }
+        public override string ToString() => $"Edge {Id}, {Cell1?.Coords.ToString() ?? "?"}|{Cell2?.Coords.ToString() ?? "?"}, {Vertex1.Id}-{Vertex2.Id}";
 
-        public override string ToString() => $"Edge {Id}, {Cell1?.Position.ToString() ?? "?"}|{Cell2?.Position.ToString() ?? "?"}, {Vertex1.Id}-{Vertex2.Id}";
-
-        private readonly MacroMap _mesh;
-        private readonly Mesh<Cell>.Edge _edge;
+        private readonly MacroMap _map;
+        private readonly MacroMap.CellMesh _mesh;
+        private readonly MacroMap.CellMesh.Edge _edge;
+        private Cell _cell2;
+        private Cell _cell1;
 
         #region IEquatable
 
@@ -87,5 +109,7 @@ namespace TerrainDemo.Macro
         }
 
         #endregion
+
+        MacroMap.CellMesh.Edge MacroMap.CellMesh.IEdgeOwner.Edge => _edge;
     }
 }

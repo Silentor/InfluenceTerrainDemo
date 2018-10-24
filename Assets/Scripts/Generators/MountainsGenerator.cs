@@ -1,178 +1,70 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using TerrainDemo.Layout;
+using TerrainDemo.Macro;
+using TerrainDemo.Micro;
 using TerrainDemo.Settings;
-using TerrainDemo.Tools;
-using TerrainDemo.Voronoi;
-using UnityEngine;
+using TerrainDemo.Tri;
 using UnityEngine.Assertions;
+using Cell = TerrainDemo.Macro.Cell;
+using Vector2 = OpenTK.Vector2;
 
 namespace TerrainDemo.Generators
 {
-    public class MountainsGenerator : ZoneGenerator
+    public class MountainsGenerator : TriZoneGenerator
     {
-        private FastNoise _scaleNoise;
-        private FastNoise _rotateNoise;
-        MountainClusterContext _cluster;
-
-        public MountainsGenerator(ZoneLayout zone, LandLayout land, LandGenerator generator, LandSettings landSettings)
-            : base(ClusterType.Mountains, zone, land, generator, landSettings)
+        public MountainsGenerator(MacroMap macroMap, IEnumerable<Cell> zoneCells, int id, BiomeSettings biome, TriRunner settings) : base(macroMap, zoneCells, id, biome, settings)
         {
-            _scaleNoise = new FastNoise(landSettings.Seed + 1);
-            _rotateNoise = new FastNoise(landSettings.Seed - 1);
+            Assert.IsTrue(biome.Type == BiomeType.Mountain);
 
-            if (zone.Type == ClusterType.Mountains)
+            _microReliefNoise = new FastNoise(_random.Seed);
+            _microReliefNoise.SetFrequency(1);
+        }
+
+        public override Macro.Zone GenerateMacroZone()
+        {
+            //Select some center zone as mountain top
+            
+            Vector2 zoneAverageCenterPoint = Vector2.Zero;
+            foreach (var cell in Zone.Cells)
             {
-                //Prepare shared cluster context
-                if (!generator.Clusters.TryGetValue(zone.ClusterId, out _cluster))
-                {
-                    //DEBUG
-                    _cluster = new MountainClusterContext(land, landSettings);
-                    generator.Clusters[zone.ClusterId] = _cluster;
-                }
+                zoneAverageCenterPoint += cell.Center;
             }
-            else
+
+            zoneAverageCenterPoint /= Zone.Cells.Count;
+
+            var peak = Zone.Submesh.GetNearestFace(zoneAverageCenterPoint);
+            var cellsInDistanceOrder = Zone.Submesh.FloodFill(peak).ToArray();
+
+            //Make one-peak conus mountain
+            var heights = 5 * cellsInDistanceOrder.Length;
+            foreach (var cell in cellsInDistanceOrder)
             {
-                //Supporting zone generator (for transient blocks), use nearest mountains cluster context
-                var nearestMount = land.GetNeighbors(zone).First(z => z.Type == ClusterType.Mountains);
-                if (!generator.Clusters.TryGetValue(nearestMount.ClusterId, out _cluster))
-                {
-                    //DEBUG
-                    _cluster = new MountainClusterContext(land, landSettings);
-                    generator.Clusters[nearestMount.ClusterId] = _cluster;
-                }
+                cell.Height = heights;
+                heights -= 5;
             }
-        }
 
-        public override BlockType DefaultBlock
-        {
-            get { return BlockType.Grass; }
-        }
-
-        public override double GenerateBaseHeight(float worldX, float worldZ)
-        {
-            var yValue = 0d;
-
-            //Lava-like features
-            var scaleRatio = (_scaleNoise.GetSimplex(worldX, worldZ) / 2) + 1; //0.5 .. 1.5
-            yValue = _noise.GetSimplexFractal(scaleRatio * worldX,
-                (2 - scaleRatio) * worldZ) /* * _clusterSettings.NoiseAmp*/;
-            //yValue = Math.Pow(yValue + 1, 2);
-
-            yValue += Land.GetBaseHeight(worldX, worldZ);
-            if (_cluster != null) yValue += _cluster.HeightInterpolator.GetValue(new Vector2(worldX, worldZ));
-
-            return yValue;
-        }
-
-        protected override BlockType GenerateBlock(Vector2i worldPosition, Vector2i turbulence, Vector3 normal,
-            ZoneRatio influence)
-        {
-            var mountInfluence = influence[ClusterType.Mountains];
-
-            if (mountInfluence > 0.85f && Vector3.Angle(Vector3.up, normal) < 45)
-                return BlockType.Snow;
-
-            if (mountInfluence < 0.6f && Vector3.Angle(Vector3.up, normal) < 45)
-                return BlockType.Grass;
-
-            return base.GenerateBlock(worldPosition, turbulence, normal, influence);
-        }
-
-        //protected override void DecorateZone(Chunk chunk)
-        //{
-        //    base.DecorateZone(chunk);
-
-        //    var stones = new List<Vector3>();
-        //    for (int x = 0; x < chunk.GridSize; x++)
-        //        for (int z = 0; z < chunk.GridSize; z++)
-        //        {
-        //            var mountInfluence = chunk.Influence[x, z][ZoneType.Mountains];
-        //            if (mountInfluence < 0.8f)
-        //                if (UnityEngine.Random.value < 0.05f * mountInfluence)
-        //                    stones.Add(new Vector3(x, chunk.HeightMap[x, z], z));
-        //        }
-
-        //    chunk.Stones = stones.ToArray();
-        //}
-
-        /// <summary>
-        /// Shared mountain generator's logic
-        /// </summary>
-        public class MountainClusterContext
-        {
-            public readonly ShepardInterpolator HeightInterpolator;
-
-            public MountainClusterContext(LandLayout land, LandSettings settings)
+            /*
+            foreach (var cell in Zone.Cells)
             {
-                var allMountZones = land.Zones.Where(z => z.Type == ClusterType.Mountains).ToArray();
-                var allMountClusters = allMountZones.GroupBy(z => z.ClusterId);
-
-                var allMountCells = new List<Cell>(allMountZones.Length);
-                var allMountHeights = new List<double>(allMountZones.Length);
-
-                var rnd = new System.Random(settings.Seed);
-
-                foreach (var mountCluster in allMountClusters)
-                {
-                    /*
-                    var mountSubmesh = new CellMesh.Submesh(land.Zones2, mountCluster.Select(z => z.Cell).ToArray());
-                    //Get mountain zone height coeff
-                    var border = mountSubmesh.GetBorderCells().ToArray();
-                    var floodFiller = mountSubmesh.FloodFill(border);
-                    var neigh1 = floodFiller.GetNeighbors(1);
-                    var neigh2 = floodFiller.GetNeighbors(2);
-                    var neigh3 = floodFiller.GetNeighbors(3);
-
-                    for (int i = 0; i < mountSubmesh.Cells.Length; i++)
-                    {
-                        var cell = mountSubmesh[i];
-
-                        //DEBUG
-                        //allMountHeights.Add(cell.Center.x);
-                        //allMountCells.Add(cell);
-                        //continue;
-                        //DEBUG
-
-                        if (border.Contains(cell))
-                        {
-                            var heightVariance = rnd.NextDouble() * 10;                     
-                            allMountHeights.Add(heightVariance);                            //0 .. 10 
-                        }
-                        else if (neigh1.Contains(cell))
-                        {
-                            var heightVariance = rnd.NextDouble() * 20;            
-                            allMountHeights.Add(10 + heightVariance);                       //10 .. 30 
-                        }
-                        else if (neigh2.Contains(cell))
-                        {
-                            var heightVariance = rnd.NextDouble() * 30;            
-                            allMountHeights.Add(25 + heightVariance);                       //25 .. 55 
-                        }
-                        else if (neigh3.Contains(cell))
-                        {
-                            var heightVariance = rnd.NextDouble() * 20;           
-                            allMountHeights.Add(50 + heightVariance);                       //50 .. 70
-                        }
-                        else
-                        {
-                            var heightVariance = rnd.NextDouble() * 20;                     //70 .. 90
-                            allMountHeights.Add(70 + heightVariance);
-                        }
-
-                        allMountCells.Add(cell);
-                    }
-                    
-                }
-
-
-                //HeightInterpolator = new ShepardInterpolator(new CellMesh.Submesh(land.Zones2, allMountCells.ToArray()), allMountHeights.ToArray());
-                return null;
-                }
-                */
-                }
+                //Make one great mountain with peak at map's center (height = 20 m)
+                var mountRadius = Vector2.Distance(Vector2.Zero,
+                    new Vector2(_macroMap.Bounds.Left, _macroMap.Bounds.Bottom));
+                cell.Height = Mathf.Lerp(20, 1, Vector2.Distance(Vector2.Zero, cell.Center) / mountRadius);
             }
+            */
+
+            return Zone;
         }
+
+        public override MicroHeight GetMicroHeight(Vector2 position, float macroHeight)
+        {
+            return new MicroHeight(macroHeight / 2,
+                +(float)System.Math.Pow(_microReliefNoise.GetSimplex(position.X / 10, position.Y / 10) + 1, 2) - 2    //Вытянутые пики средней частоты
+                + (float)_microReliefNoise.GetSimplex(position.X / 2, position.Y / 2)    //Высокочастотные неровности
+                + macroHeight,
+                Zone.Id);
+        }
+
+        private readonly FastNoise _microReliefNoise;
     }
 }

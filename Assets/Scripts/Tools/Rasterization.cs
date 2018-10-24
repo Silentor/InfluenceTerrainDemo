@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using OpenTK;
+using TerrainDemo.Spatial;
 using UnityEngine;
 using Vector2 = OpenTK.Vector2;
 using Vector3 = UnityEngine.Vector3;
@@ -270,7 +271,7 @@ namespace TerrainDemo.Tools
         {
             var edges = new List<Vector2i>();
             foreach (var edge in cell.Edges)
-                edges.AddRange(DDA(edge.Vertex1.Coords, edge.Vertex2.Coords, false));
+                edges.AddRange(DDA(edge.Vertex1.Position, edge.Vertex2.Position, false));
 
             var bounds = (Bounds2i)cell.Bounds;
 

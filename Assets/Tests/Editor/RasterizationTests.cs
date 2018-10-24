@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using OpenTK;
 using TerrainDemo.Macro;
+using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 
 namespace TerrainDemo.Tests.Editor

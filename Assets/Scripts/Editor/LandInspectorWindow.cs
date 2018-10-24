@@ -4,11 +4,13 @@ using System.Xml;
 using OpenTK;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
+using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using TerrainDemo.Tri;
 using UnityEditor;
 using UnityEngine;
 using Cell = TerrainDemo.Macro.Cell;
+using Renderer = TerrainDemo.Visualization.Renderer;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
 
@@ -19,16 +21,21 @@ namespace TerrainDemo.Editor
         public Color Inactive = Color.gray;
         public Color Active = Color.white;
 
-        private TriRunner _settings;
-        private MacroMap _macro;
-        private MicroMap _micro;
+        private TriRunner _runner;
+        private MacroMap MacroMap => _runner ? _runner.Macro : null;
+        private MicroMap MicroMap => _runner ? _runner.Micro : null;
+
+        private MacroTemplate _land;
         private Vector2 _sceneViewScreenPosition;
         private Input _input;
         private bool _enabled = true;
         private bool _drawLayout;
         private MacroMap.CellWeightDebug _getHeightDebug;
+        private bool _isShowInfluenceDebug;
         private bool _drawMicro;
+        private bool _showZonesList;
 
+        private Renderer.MicroRenderMode _microRenderMode = Renderer.MicroRenderMode.Default;
 
         [MenuItem("Land/Inspector")]
         static void Init()
@@ -49,7 +56,7 @@ namespace TerrainDemo.Editor
             var userInputRay = SceneView.currentDrawingSceneView.camera.ScreenPointToRay(sceneScreenPosition);
             var layoutPlane = new Plane(Vector3.up, Vector3.zero);
 
-            if (_macro != null)
+            if (MacroMap != null)
             {
                 var distance = 0f;
                 if (layoutPlane.Raycast(userInputRay, out distance))
@@ -58,16 +65,16 @@ namespace TerrainDemo.Editor
                     var layoutPoint = (OpenTK.Vector2)userInputRay.GetPoint(distance);
                     result.WorldPosition = layoutPoint;
                     result.Distance = distance;
-                    result.SelectedMacroCell = _macro.GetCellAt(layoutPoint);
-                    result.SelectedVert = _macro.Vertices.FirstOrDefault(v => OpenTK.Vector2.Distance(v.Coords, layoutPoint) < 1);
+                    result.SelectedMacroCell = MacroMap.GetCellAt(layoutPoint);
+                    result.SelectedVert = MacroMap.Vertices.FirstOrDefault(v => OpenTK.Vector2.Distance(v.Position, layoutPoint) < 1);
 
                     if (result.SelectedMacroCell != null)
-                        result.SelectedMicroCell = _micro.GetCell(result.SelectedMacroCell);
+                        result.SelectedMicroCell = MicroMap.GetCell(result.SelectedMacroCell);
 
-                    if (_micro != null)
+                    if (MicroMap != null)
                     {
                         var blockPos = (Vector2i) result.WorldPosition;
-                        if (_micro.Bounds.Contains(blockPos))
+                        if (MicroMap.Bounds.Contains(blockPos))
                         {
                             result.BlockPosition = blockPos;
                             result.IsBlockSelected = true;
@@ -87,16 +94,16 @@ namespace TerrainDemo.Editor
         private void DrawMacroCell(Cell cell, Color color, bool labelVertices)
         {
             Handles.color = color;
-            var isRelief = _settings.MacroCellReliefVisualization == TriRenderer.MacroCellReliefMode.Rude;
+            var isRelief = _runner.MacroCellReliefVisualization == Renderer.MacroCellReliefMode.Rude;
 
             Handles.DrawPolyLine(
-                VertexToPosition(cell.Vertices3[0], isRelief),
-                VertexToPosition(cell.Vertices3[1], isRelief),
-                VertexToPosition(cell.Vertices3[2], isRelief),
-                VertexToPosition(cell.Vertices3[3], isRelief),
-                VertexToPosition(cell.Vertices3[4], isRelief),
-                VertexToPosition(cell.Vertices3[5], isRelief),
-                VertexToPosition(cell.Vertices3[0], isRelief));
+                VertexToPosition(cell.Vertices[0], isRelief),
+                VertexToPosition(cell.Vertices[1], isRelief),
+                VertexToPosition(cell.Vertices[2], isRelief),
+                VertexToPosition(cell.Vertices[3], isRelief),
+                VertexToPosition(cell.Vertices[4], isRelief),
+                VertexToPosition(cell.Vertices[5], isRelief),
+                VertexToPosition(cell.Vertices[0], isRelief));
 
             var cellDistance = Vector3.Distance(cell.Center, SceneView.lastActiveSceneView.camera.transform.position);
             var fontSize = Mathf.RoundToInt(-cellDistance * 1 / 8 + 15);
@@ -107,18 +114,18 @@ namespace TerrainDemo.Editor
                 var contrastColor = (new Color(1, 1, 1, 2) - cell.Biome.LayoutColor) * 2;
                 style.normal.textColor = contrastColor;
                 style.fontSize = fontSize;
-                Handles.Label( CellToPosition(cell, isRelief), cell.Position.ToString(), style);
+                Handles.Label( CellToPosition(cell, isRelief), cell.Coords.ToString(), style);
                 Handles.color = contrastColor;
                 Handles.DrawWireDisc(CellToPosition(cell, isRelief), Vector3.up, 0.1f);
 
                 if (labelVertices)
                 {
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices3[0], isRelief), CellToPosition(cell, isRelief), 0.2f), cell.Vertices3[0].Id.ToString(), style);
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices3[1], isRelief), CellToPosition(cell, isRelief), 0.2f), cell.Vertices3[1].Id.ToString(), style);
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices3[2], isRelief), CellToPosition(cell, isRelief), 0.2f), cell.Vertices3[2].Id.ToString(), style);
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices3[3], isRelief), CellToPosition(cell, isRelief), 0.2f), cell.Vertices3[3].Id.ToString(), style);
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices3[4], isRelief), CellToPosition(cell, isRelief), 0.2f), cell.Vertices3[4].Id.ToString(), style);
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices3[5], isRelief), CellToPosition(cell, isRelief), 0.2f), cell.Vertices3[5].Id.ToString(), style);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[0], isRelief), CellToPosition(cell, isRelief), 0.2f), cell.Vertices[0].Id.ToString(), style);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[1], isRelief), CellToPosition(cell, isRelief), 0.2f), cell.Vertices[1].Id.ToString(), style);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[2], isRelief), CellToPosition(cell, isRelief), 0.2f), cell.Vertices[2].Id.ToString(), style);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[3], isRelief), CellToPosition(cell, isRelief), 0.2f), cell.Vertices[3].Id.ToString(), style);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[4], isRelief), CellToPosition(cell, isRelief), 0.2f), cell.Vertices[4].Id.ToString(), style);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[5], isRelief), CellToPosition(cell, isRelief), 0.2f), cell.Vertices[5].Id.ToString(), style);
                 }
             }
 
@@ -127,7 +134,7 @@ namespace TerrainDemo.Editor
         private void DrawMicroCell(Micro.Cell cell, Color color)
         {
             Handles.color = color;
-            foreach (var block in cell.Blocks)
+            foreach (var block in cell.BlockPositions)
             {
                 DrawBlock(block, color);
             }
@@ -141,10 +148,10 @@ namespace TerrainDemo.Editor
         private void DrawTriVert(MacroVert vert)
         {
             Handles.color = Color.white;
-            Handles.DrawWireDisc(vert.Coords, Vector3.up, 1);
+            Handles.DrawWireDisc(vert.Position, Vector3.up, 1);
         }
 
-        private void DrawBlock(Vector2i position, Color color, int width = 0)
+        private void DrawBlock(Vector2i position, Color color, uint width = 0)
         {
             Handles.color = color;
             DrawRectangle.ForHandle(BlockInfo.GetBounds(position), color, width);
@@ -157,31 +164,40 @@ namespace TerrainDemo.Editor
         private void DrawMacroZone(Macro.Zone zone, Color color)
         {
             Handles.color = color;
-            var isRelief = _settings.MacroCellReliefVisualization == TriRenderer.MacroCellReliefMode.Rude;
+            var isRelief = _runner.MacroCellReliefVisualization == Renderer.MacroCellReliefMode.Rude;
 
             //Get zone outer border
             foreach (var edge in zone.Edges)
                 Handles.DrawLine(VertexToPosition(edge.Vertex1, isRelief), VertexToPosition(edge.Vertex2, isRelief));
         }
 
-        #region UI
+        #region Window content
+
+        private void ShowSettings()
+        {
+            
+        }
+
+        private void ShowMacroZoneInfo(Macro.Zone zone)
+        {
+            GUILayout.Label($"Macro.Zone {zone.Id}", EditorStyles.boldLabel);
+            GUILayout.Label($"Cells: {zone.Cells.ToJoinedString(c => c.Coords.ToString())}");
+            GUILayout.Label($"Biome: {zone.Biome.name}");
+        }
 
         private void ShowMacroCellInfo(Cell cell)
         {
-            GUILayout.Label("Macro.Cell", EditorStyles.boldLabel);
-            GUILayout.Label($"Position: {cell.Position}, {cell.Biome.name}");
-            GUILayout.Label($"Zone: {cell.ZoneId}");
-            GUILayout.Label($"Influence: {InfluenceToString(cell.Zone.Influence)}");
+            GUILayout.Label($"Macro.Cell {cell.Coords}", EditorStyles.boldLabel);
+            GUILayout.Label($"Zone: {cell.ZoneId} - {cell.Biome.name}");
             GUILayout.Label($"Height: {cell.Height:F1}");
-
         }
 
         private void ShowTriVertInfo(MacroVert vert, float distance)
         {
             GUILayout.Label("MacroVert", EditorStyles.boldLabel);
-            GUILayout.Label($"Id: {vert.Id}, pos: {vert.Coords.ToString(GetZoomLevel(distance))}");
-            GUILayout.Label($"Cells: {vert.Cells.Select(c => c.Position).ToJoinedString()}");
-            GUILayout.Label("Influence: " + InfluenceToBiomesString(vert.Influence));
+            GUILayout.Label($"Id: {vert.Id}, pos: {vert.Position.ToString(GetZoomLevel(distance))}");
+            GUILayout.Label($"Cells: {vert.Cells.Select(c => c.Coords).ToJoinedString()}");
+            GUILayout.Label($"Influence: {vert.Influence}");
         }
 
         private void ShowCursorInfo(Input input)
@@ -192,26 +208,45 @@ namespace TerrainDemo.Editor
             if (input.IsBlockSelected)
             {
                 GUILayout.Label(
-                    $"Influence: {InfluenceToString(_macro.GetInfluence((OpenTK.Vector2) input.WorldPosition))}");
+                    $"Influence: {MacroMap.GetInfluence((OpenTK.Vector2) input.WorldPosition)}");
                 MacroMap.CellWeightDebug debug;
-                GUILayout.Label($"Height: {_macro.GetHeight((OpenTK.Vector2) input.WorldPosition, out debug):N}");
+                GUILayout.Label($"Height: {MacroMap.GetHeight((OpenTK.Vector2) input.WorldPosition, out debug):N}");
                 var debugWeightInfo = debug.Cells.Select(d => $"Id: {d.Id}, Height: {d.Height}, Weight: {d.Weight:F7}")
                     .ToJoinedString(",\n");
-                GUILayout.Label($"Debug radius: {debug.Radius:N1}, weights({debug.Cells.Length}): \n{debugWeightInfo}");
+                _isShowInfluenceDebug = GUILayout.Toggle(_isShowInfluenceDebug, "Show influence debug");
+                if(_isShowInfluenceDebug)
+                    GUILayout.Label($"Debug radius: {debug.Radius:N1}, weights({debug.Cells.Length}): \n{debugWeightInfo}");
                 _getHeightDebug = debug;
             }
         }
 
         private void ShowBlockInfo(Vector2i blockPos)
         {
-            GUILayout.Label("Block", EditorStyles.boldLabel);
+            GUILayout.Label($"Block {blockPos}", EditorStyles.boldLabel);
 
-            var block = _micro.GetBlock(blockPos);
-            GUILayout.Label($"Block pos: {blockPos}");
-            if (block.Type != BlockType.Empty)
+            var block = MicroMap.GetBlock(blockPos);
+            if (block.Block.Top != BlockType.Empty)
             {
-                GUILayout.Label($"Influence: {InfluenceToString(block.Influence)}");
+                //GUILayout.Label($"Influence: {InfluenceToString(block.Influence)}");
                 GUILayout.Label($"Height: {block.Height:F1}");
+                GUILayout.Label($"Type: {block.Block}");
+
+                //Show block vertices info
+                var vertices = MicroMap.GetBlockVertices(blockPos);
+                GUILayout.BeginVertical();
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(MicroHeightToString(vertices.Item2));
+                GUILayout.Label(MicroHeightToString(vertices.Item3));
+                GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(MicroHeightToString(vertices.Item1));
+                GUILayout.Label(MicroHeightToString(vertices.Item4));
+                GUILayout.EndHorizontal();
+                GUILayout.EndVertical();
+                //GUILayout.Box("Test");
+
+
+
             }
             else
                 GUILayout.Label("Empty block");
@@ -220,14 +255,9 @@ namespace TerrainDemo.Editor
 
         #endregion
 
-        private string InfluenceToString(double[] influence)
-        {
-            return $"[{influence.ToJoinedString(i => i.ToString("F2"))}]";
-        }
-
         private string InfluenceToBiomesString(double[] influence)
         {
-            var biomes = from biome in _settings.Biomes
+            var biomes = from biome in _runner.Biomes
                 where influence[biome.Index] > 0
                 select $"{biome.name}: {influence[biome.Index]:G3}";
             return string.Join(", ", biomes.ToArray());
@@ -247,7 +277,7 @@ namespace TerrainDemo.Editor
 
         private static Vector3 VertexToPosition(MacroVert vertex, bool is3d)
         {
-            return new Vector3(vertex.Coords.X, is3d ? vertex.Height : 0, vertex.Coords.Y);
+            return new Vector3(vertex.Position.X, is3d ? vertex.Height : 0, vertex.Position.Y);
         }
 
         private static Vector3 CellToPosition(Cell cell, bool is3d)
@@ -273,22 +303,18 @@ namespace TerrainDemo.Editor
             }
         }
 
-        #region Unity
-
-        void Awake()
+        private string MicroHeightToString(MicroHeight microHeight)
         {
-            Debug.Log("Awake");
+            return $"({microHeight.ZoneId}) {microHeight.Layer1Height:F1}, {microHeight.BaseHeight:F1}";
         }
+
+        #region Unity
 
         private void OnEnable()
         {
             SceneView.onSceneGUIDelegate -= OnSceneGuiDelegate;
             SceneView.onSceneGUIDelegate += OnSceneGuiDelegate;
-            //_settings = FindObjectOfType<TriRunner>();
-            //_mesh = _settings.Mesh;
         }
-
-
 
         /// <summary>
         /// Process scene view handles and gizmos
@@ -296,40 +322,7 @@ namespace TerrainDemo.Editor
         /// <param name="sceneView"></param>
         private void OnSceneGuiDelegate(SceneView sceneView)
         {
-            if (!Application.isPlaying)
-                return;
-
-            //DEBUG
-            /*
-            if (_enabled)
-            {
-                Handles.color = Color.black;
-                Handles.DrawWireDisc(_getHeightDebug.Position, Vector3.up, _getHeightDebug.Radius);
-                if (_getHeightDebug.Cells != null)
-                    foreach (var cellInfo in _getHeightDebug.Cells)
-                    {
-                        var cell = _macro.Cells.Find(c => c.Position == cellInfo.Id);
-                        DrawMacroCell(cell, Color.black, false);
-                    }
-            }
-            */
-            //DEBUG
-
-            if (!_settings)
-                _settings = FindObjectOfType<TriRunner>();
-            if (_settings == null)
-                return;
-
-            if (_macro == null)
-                _macro = _settings.Macro;
-
-            if (_micro == null)
-                _micro = _settings.Micro;
-
-            if (!_settings || _macro == null)
-                return;
-
-            if (!_enabled)
+            if (!Application.isPlaying || _runner == null || !_enabled)
                 return;
 
             _sceneViewScreenPosition = HandleUtility.GUIPointToScreenPixelCoordinate(Event.current.mousePosition);
@@ -338,12 +331,12 @@ namespace TerrainDemo.Editor
             if (_drawLayout)
             {
                 //Wanted bounds
-                DrawLandBounds(_settings.LandBounds, Color.gray / 2);
+                DrawLandBounds(_runner.LandBounds, Color.gray / 2);
                 //Actual bounds
-                DrawLandBounds(_macro.Bounds, Color.gray);
+                DrawLandBounds(MacroMap.Bounds, Color.gray);
 
                 //Draw macro cell outlines
-                foreach (var meshCell in _macro.Cells)
+                foreach (var meshCell in MacroMap.Cells)
                 {
                     DrawMacroCell(meshCell);
                 }
@@ -353,7 +346,7 @@ namespace TerrainDemo.Editor
             if (_input.SelectedMacroCell != null)
             {
                 DrawMacroCell(_input.SelectedMacroCell, Active, true);
-                DrawMacroZone(_input.SelectedMacroCell.Zone, Color.white);
+                DrawMacroZone(_input.SelectedMacroCell.Zone, _drawLayout ? Active : _input.SelectedMacroCell.Zone.Biome.LayoutColor);
             }
 
             //Draw selected vertex
@@ -377,27 +370,27 @@ namespace TerrainDemo.Editor
         /// </summary>
         private void OnGUI()
         {
-            if (!Application.isPlaying)
-                return;
-
-            if (!_settings)
-                _settings = FindObjectOfType<TriRunner>();
-            if (_settings == null)
-                return;
-
-            if (_macro == null)
-                _macro = _settings.Macro;
-
-            if (!_settings || _macro == null)
-                return;
-
             _enabled = GUILayout.Toggle(_enabled, "Enabled");
             if (!_enabled)
                 return;
 
-            _drawLayout = GUILayout.Toggle(_drawLayout, "Draw layout");
+            if (!Application.isPlaying || _runner == null || !_enabled)
+                return;
 
+            EditorGUILayout.Separator();
+
+            _drawLayout = GUILayout.Toggle(_drawLayout, "Draw layout");
             _drawMicro = GUILayout.Toggle(_drawMicro, "Draw micro");
+
+            _microRenderMode.BlockMode = (Renderer.BlockRenderMode)EditorGUILayout.EnumPopup(_microRenderMode.BlockMode);
+            _microRenderMode.RenderMainLayer = GUILayout.Toggle(_microRenderMode.RenderMainLayer, "Render main layer");
+            if (GUILayout.Button("Render"))
+                _runner.Render(_microRenderMode);
+
+
+            if (GUILayout.Button("Generate"))
+                _runner.Generate();
+
 
             if (_input.IsWorldPlaneSelected)
             {
@@ -412,6 +405,7 @@ namespace TerrainDemo.Editor
             if (_input.SelectedMacroCell != null)
             {
                 ShowMacroCellInfo(_input.SelectedMacroCell);
+                ShowMacroZoneInfo(_input.SelectedMacroCell.Zone);
             }
 
             if (_input.SelectedVert != null)
@@ -419,16 +413,33 @@ namespace TerrainDemo.Editor
                 ShowTriVertInfo(_input.SelectedVert, _input.Distance);
             }
 
+            _showZonesList = GUILayout.Toggle(_showZonesList, "Show all zones");
+            if (_showZonesList)
+            {
+                foreach (var macroZone in MacroMap.Zones)
+                    GUILayout.Label($"{macroZone.Id}, {macroZone.Biome.name}");
+            }
+
         }
 
         private void OnInspectorUpdate()
         {
-            if(Application.isPlaying)
+            if (Application.isPlaying)
+            {
+                if (_runner == null)
+                    _runner = FindObjectOfType<TriRunner>();
+
                 Repaint();
+            }
+            else
+            {
+                _runner = null;
+            }
         }
 
         private void OnDestroy()
         {
+            _runner = null;
             SceneView.onSceneGUIDelegate -= OnSceneGuiDelegate;
         }
 
@@ -444,6 +455,7 @@ namespace TerrainDemo.Editor
             /// Is some land block selected?
             /// </summary>
             public bool IsBlockSelected;
+
             public Vector3 ViewPoint;
             public Vector3 WorldPosition;
             public Vector2i BlockPosition;

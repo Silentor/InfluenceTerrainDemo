@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using OpenTK;
+using TerrainDemo.Settings;
+using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using TerrainDemo.Tri;
 using UnityEngine;
@@ -13,22 +15,20 @@ using Vector3 = UnityEngine.Vector3;
 namespace TerrainDemo.Macro
 {
     //[DebuggerDisplay("TriCell {Id}({North.Id}, {East.Id}, {South.Id})")]
-    public class Cell
+    public class Cell : MacroMap.CellMesh.IFaceOwner
     {
         public const int MaxNeighborsCount = 6;
-        public const int InvalidZoneId = -1;
         public const int InvalidCellId = -1;
 
         public int Id => _face.Id;
-        public readonly Vector2i Position;
-        public int ZoneId = InvalidZoneId;
+        public readonly Coord Coords;
+        public int ZoneId = Zone.InvalidId;
         public readonly MacroMap Map;
         public Box2 Bounds => _face.Bounds;
 
         //Vertices
 
-        public IEnumerable<MacroVert> Vertices2 => _vertices;
-        public IReadOnlyList<MacroVert> Vertices3 => _vertices;
+        public IReadOnlyList<MacroVert> Vertices => _vertices;
 
         public IEnumerable<Cell> NeighborsSafe => _neighbors.Where(n => n != null);
 
@@ -42,40 +42,14 @@ namespace TerrainDemo.Macro
 
         public float[] MicroHeights { get; private set; }
 
-        public readonly Vector2 Center;
+        public Vector2 Center => _face.Center;
 
         public Zone Zone
         {
             get { return _zone ?? (_zone = Map.Zones.First(z => z.Id == ZoneId)); }
         }
 
-        //From cell "top" clockwise
-        public static IEnumerable<Sides> AllSides
-        {
-            get
-            {
-                yield return Sides.ZPositive;           
-                yield return Sides.YPositive;
-                yield return Sides.XPositive;
-                yield return Sides.ZNegative;
-                yield return Sides.YNegative;
-                yield return Sides.XNegative;
-            }
-        }
-
-        //From cell "top" clockwise
-        //      Z+
-        // X-  ---  Y+ 
-        //    /   \
-        //    \   /
-        // Y-  ---  X+ 
-        //      Z-
-        public static readonly Vector2i[] Directions =
-        {
-            new Vector2i(0, 1), new Vector2i(1, 1), new Vector2i(1, 0), new Vector2i(0, -1), new Vector2i(-1, -1), new Vector2i(-1, 0),
-        };
-
-        public TriBiome Biome;
+        public BiomeSettings Biome => Zone?.Biome;
 
         //public static readonly IdComparer IdIncComparer = new IdComparer();
         //public static readonly CellEqualityComparer CellComparer = new CellEqualityComparer();
@@ -88,24 +62,23 @@ namespace TerrainDemo.Macro
         }
         */
 
-        public Cell(MacroMap map, Vector2i position, MacroMap.CellMesh.Face face, IEnumerable<MacroVert> vertices, IEnumerable<MacroEdge> edges)
+        public Cell(MacroMap map, Coord coords, MacroMap.CellMesh.Face face, IEnumerable<MacroVert> vertices, IEnumerable<MacroEdge> edges)
         {
             Assert.IsTrue(face.Vertices.Count() == MaxNeighborsCount);
             Assert.IsTrue(face.Edges.Count() == MaxNeighborsCount);
 
             _face = face;
-            _vertices = face.Vertices.Select(v => vertices.First(v2 => v.Id == v2.Id)).ToArray();
-            _edges = face.Edges.Select(e => edges.First(e2 => e.Id == e2.Id)).ToArray();
+            _vertices = vertices.ToArray();
+            _edges = edges.ToArray();
             Map = map;
-            Position = position;
+            Coords = coords;
         }   
 
         public void Init(IEnumerable<Cell> neighbors)
         {
-            Assert.IsTrue(neighbors.Count() == Cell.MaxNeighborsCount);
-
             _neighbors = neighbors.ToArray();
 
+            Assert.IsTrue(_neighbors.Count() == Cell.MaxNeighborsCount);
             //Do not accept same neigbours for different sides
             Assert.IsTrue(NeighborsSafe.Count() == NeighborsSafe.Distinct().Count());
         }
@@ -157,7 +130,7 @@ namespace TerrainDemo.Macro
 
         public override string ToString()
         {
-            return $"TriCell {Position}({_neighbors[0]?.Position.ToString() ?? "?"}, {_neighbors[1]?.Position.ToString() ?? "?"}, {_neighbors[2]?.Position.ToString() ?? "?"}, {_neighbors[3]?.Position.ToString() ?? "?"}, {_neighbors[4]?.Position.ToString() ?? "?"}, {_neighbors[5]?.Position.ToString() ?? "?"})";
+            return $"TriCell {Coords}({_neighbors[0]?.Coords.ToString() ?? "?"}, {_neighbors[1]?.Coords.ToString() ?? "?"}, {_neighbors[2]?.Coords.ToString() ?? "?"}, {_neighbors[3]?.Coords.ToString() ?? "?"}, {_neighbors[4]?.Coords.ToString() ?? "?"}, {_neighbors[5]?.Coords.ToString() ?? "?"})";
         }
 
         private readonly MacroMap.CellMesh.Face _face;
@@ -167,15 +140,7 @@ namespace TerrainDemo.Macro
         private readonly MacroEdge[] _edges;
         private Cell[] _neighbors;
 
-        public enum Sides
-        {
-            ZPositive = 0,
-            YPositive,
-            XPositive,
-            ZNegative,
-            YNegative,
-            XNegative
-        }
+        
 
         /*
         /// <summary>
@@ -210,5 +175,9 @@ namespace TerrainDemo.Macro
             }
         }
         */
+        Mesh<Cell, MacroEdge, MacroVert>.Face Mesh<Cell, MacroEdge, MacroVert>.IFaceOwner.Face
+        {
+            get { return _face; }
+        }
     }
 }

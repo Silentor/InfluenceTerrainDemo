@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using UnityEngine;
 using UnityEngine.Assertions;

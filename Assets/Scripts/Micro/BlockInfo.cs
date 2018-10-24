@@ -1,26 +1,23 @@
-﻿using UnityEngine;
+﻿using TerrainDemo.Spatial;
+using UnityEngine;
 using Vector2 = OpenTK.Vector2;
 
 namespace TerrainDemo.Micro
 {
     public struct BlockInfo
     {
-        public readonly Vector2i Position;
-        public readonly BlockType Type;
+        public readonly Blocks Block;
         public readonly float Height;
         public Vector3 Normal;
-        public readonly double[] Influence;
 
-        public BlockInfo(Vector2i position, BlockType type, float height, Vector3 normal, double[] influence)
+        public BlockInfo(Blocks block, float height, Vector3 normal)
         {
-            Position = position;
-            Type = type;
+            Block = block;
             Height = height;
             Normal = normal;
-            Influence = influence;
         }
 
-        public static readonly Map.BlockInfo Empty = new Map.BlockInfo(Vector2i.Zero, BlockType.Empty, 0, Vector3.zero);
+        public static readonly BlockInfo Empty = new BlockInfo(Blocks.Empty, 0, Vector3.zero);
 
         public static Bounds2i GetBounds(Vector2i worldPosition)
         {

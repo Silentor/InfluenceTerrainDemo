@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
+using TerrainDemo.Settings;
 using TerrainDemo.Tools;
 using TerrainDemo.Tri;
 using UnityEngine.Assertions;
@@ -9,23 +10,34 @@ using Vector2 = OpenTK.Vector2;
 
 namespace TerrainDemo.Macro
 {
-    public class MacroVert
+    public class MacroVert : MacroMap.CellMesh.IVertexOwner
     {
         public const int MaxNeighborsCount = 3;
 
-        public readonly int Id;
-        public readonly Vector2 Coords;
-        public Cell[] Cells { get; private set; }
-        public MacroEdge[] Edges { get; private set; }
+        public int Id => _vertex.Id;
 
-        public double[] Influence => _influence ?? (_influence = CalculateInfluence(Cells));
+        public Vector2 Position => _vertex.Position;
+
+        public Cell[] Cells => _cells ?? (_cells = _mesh2.GetAdjacentFaces(this).ToArray());
+
+        public MacroEdge[] Edges => _edges ?? (_edges = _mesh2.GetAdjacentEdges(this).ToArray());
+
+        public Influence Influence
+        {
+            get
+            {
+                if (!_influence.HasValue)
+                    _influence = CalculateInfluence(Cells);
+                return _influence.Value;
+            }
+        }
 
         public float Height
         {
             get
             {
                 if (!_height.HasValue)
-                    _height = _mesh.GetHeight(Coords);
+                    _height = _map.GetHeight(Position);
                 return _height.Value;
             }
         }
@@ -33,39 +45,35 @@ namespace TerrainDemo.Macro
         /// <summary>
         /// Vertex of macro map
         /// </summary>
-        /// <param name="mesh"></param>
+        /// <param name="map"></param>
         /// <param name="id"></param>
-        public MacroVert(MacroMap mesh, int id, MacroMap.CellMesh.Vertice vertice, TriRunner settings)
+        public MacroVert(MacroMap map, MacroMap.CellMesh mesh2, MacroMap.CellMesh.Vertex vertex, TriRunner settings)
         {
-            _mesh = mesh;
-            _vertice = vertice;
-            Id = id;
-            Coords = _vertice.Coords;
+            Assert.IsTrue(vertex.AdjacentEdges.Count >=1 && vertex.AdjacentEdges.Count <= 3);
+            Assert.IsTrue(vertex.AdjacentFaces.Count >= 1 && vertex.AdjacentFaces.Count <= 3);
+
+            _map = map;
+            _mesh2 = mesh2;
+            _vertex = vertex;
             _biomes = settings.Biomes;
+            //_vertex.Data = this;
         }
 
-        public void Init([NotNull] IEnumerable<Cell> cells, IEnumerable<MacroEdge> edges)
-        {
-            if (cells == null) throw new ArgumentNullException(nameof(cells));
-            Assert.IsTrue(cells.Count() <= MaxNeighborsCount);
-            Assert.IsTrue(edges.Count() <= MaxNeighborsCount);
+        public override string ToString() => $"Vert {Id}, cells: {Cells?.ToJoinedString(c => c.Coords.ToString())}";
 
-            Cells = cells.ToArray();
-            Edges = edges.ToArray();
-        }
-
-        public override string ToString() => $"Vert {Id}, cells: {Cells?.ToJoinedString(c => c.Position.ToString())}";
-
-        private MacroMap.CellMesh.Vertice _vertice;
-        private readonly MacroMap _mesh;
-        private TriBiome[] _biomes;
-        private double[] _influence;
+        private MacroMap.CellMesh.Vertex _vertex;
+        private readonly MacroMap _map;
+        private BiomeSettings[] _biomes;
+        private Influence? _influence;
         private float? _height;
+        private MacroMap.CellMesh _mesh2;
+        private Cell[] _cells;
+        private MacroEdge[] _edges;
 
 
-        private double[] CalculateInfluence(Cell[] neighbors)
+        private Influence CalculateInfluence(Cell[] neighbors)
         {
-            return _mesh.GetInfluence(Coords);
+            return _map.GetInfluence(Position);
 
             /*
             var result = new double[_biomes.Length];
@@ -103,5 +111,7 @@ namespace TerrainDemo.Macro
             return result;
             */
         }
+
+        MacroMap.CellMesh.Vertex MacroMap.CellMesh.IVertexOwner.Vertex => _vertex;
     }
 }

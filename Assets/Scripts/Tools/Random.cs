@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace TerrainDemo.Tools
 {
+    /// <summary>
+    /// Wrapper around some random generator (currently BCL Random)
+    /// </summary>
     public class Random
     {
         public readonly int Seed;

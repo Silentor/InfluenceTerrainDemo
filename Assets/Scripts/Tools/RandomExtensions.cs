@@ -37,5 +37,10 @@ namespace TerrainDemo.Tools
         {
             return collection.ElementAt(random.Next(0, collection.Count()));
         }
+
+        public static T GetRandomItem<T>(this IEnumerable<T> collection, Random random)
+        {
+            return collection.ElementAt(random.Range(collection.Count()));
+        }
     }
 }

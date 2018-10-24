@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using NUnit.Framework;
 using OpenTK;
+using TerrainDemo.Spatial;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Vector3 = UnityEngine.Vector3;

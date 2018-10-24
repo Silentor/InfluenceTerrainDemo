@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using OpenTK;
+using TerrainDemo.Spatial;
 using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -85,7 +86,7 @@ namespace TerrainDemo.Tools
 
 #if UNITY_EDITOR
         [Conditional("UNITY_EDITOR")]
-        public static void ForHandle(Bounds2i rectangle, Color color, int width = 0, bool filled = false)
+        public static void ForHandle(Bounds2i rectangle, Color color, uint width = 0, bool filled = false)
         {
             var corner1 = new Vector3(rectangle.Min.X, 0, rectangle.Min.Z);
             var corner2 = new Vector3(rectangle.Min.X, 0, rectangle.Max.Z + 1);
