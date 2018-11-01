@@ -37,8 +37,10 @@ namespace TerrainDemo.Macro
 
         public IEnumerable<MacroEdge> Edges => _edges;
        
-        //Heights
-        public float Height;
+        /// <summary>
+        /// Planned height for this cell
+        /// </summary>
+        public float DesiredHeight;
 
         public float[] MicroHeights { get; private set; }
 
@@ -50,6 +52,43 @@ namespace TerrainDemo.Macro
         }
 
         public BiomeSettings Biome => Zone?.Biome;
+
+        //Ready after Macromap building completed
+        #region 3D properties   
+
+        ///Actual height based on neighbor cells 
+        public Vector3 CenterPoint
+        {
+            get
+            {
+                if (!_centerPoint.HasValue)
+                    _centerPoint = new Vector3(Center.X, Map.GetHeight(Center), Center.Y);
+
+                return _centerPoint.Value;
+            }
+        }
+
+        public IReadOnlyList<Vector3> GetCorners()
+        {
+            if (_corners == null)
+            {
+                _corners = new[]
+                {
+                    new Vector3(Vertices[0].Position.X, Map.GetHeight(Vertices[0].Position), Vertices[0].Position.Y),
+                    new Vector3(Vertices[1].Position.X, Map.GetHeight(Vertices[1].Position), Vertices[1].Position.Y),
+                    new Vector3(Vertices[2].Position.X, Map.GetHeight(Vertices[2].Position), Vertices[2].Position.Y),
+                    new Vector3(Vertices[3].Position.X, Map.GetHeight(Vertices[3].Position), Vertices[3].Position.Y),
+                    new Vector3(Vertices[4].Position.X, Map.GetHeight(Vertices[4].Position), Vertices[4].Position.Y),
+                    new Vector3(Vertices[5].Position.X, Map.GetHeight(Vertices[5].Position), Vertices[5].Position.Y),
+                };
+            }
+
+            return _corners;
+        }
+
+
+        #endregion
+
 
         //public static readonly IdComparer IdIncComparer = new IdComparer();
         //public static readonly CellEqualityComparer CellComparer = new CellEqualityComparer();
@@ -116,16 +155,23 @@ namespace TerrainDemo.Macro
             return _face.Contains(point);
         }
 
-        public IEnumerable<Vector3> GetHeightPoints()
+        public Vector3? IsIntersected(Ray ray)
         {
-            return new Vector3[Cell.MaxNeighborsCount];
+            var corners = GetCorners();
 
-            /*
-            yield return new Vector3(SWPos.X, H1, SWPos.Y);
-            yield return new Vector3(NWPos.X, H2, NWPos.Y);
-            yield return new Vector3(NEPos.X, H3, NEPos.Y);
-            yield return new Vector3(SEPos.X, H4, SEPos.Y);
-            */
+            for (int i = 0; i < corners.Count; i++)
+            {
+                var v1 = corners[i];
+                var v2 = corners[(i + 1) % corners.Count];
+
+                Vector3 intersectionPoint;
+                if (Intersections.LineTriangleIntersection(ray, v1, v2, CenterPoint, out intersectionPoint) == 1)
+                {
+                    return intersectionPoint;
+                }
+            }
+
+            return null;
         }
 
         public override string ToString()
@@ -139,6 +185,8 @@ namespace TerrainDemo.Macro
         private readonly MacroVert[] _vertices;
         private readonly MacroEdge[] _edges;
         private Cell[] _neighbors;
+        private Vector3? _centerPoint;
+        private Vector3[] _corners;
 
         
 

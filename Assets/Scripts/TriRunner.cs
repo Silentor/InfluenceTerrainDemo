@@ -32,7 +32,8 @@ namespace TerrainDemo.Tri
         public LandRenderMode LandRender_Mode;
         [Header("Macro")]
         public Renderer.MacroCellInfluenceMode MacroCellInfluenceVisualization;
-        public Renderer.MacroCellReliefMode MacroCellReliefVisualization;
+        //[Obsolete]
+        //public Renderer.MacroCellReliefMode MacroCellReliefVisualization;
         public Material VertexColoredMat;
         [Header("Micro")]
         public Material TexturedMat;
@@ -59,7 +60,7 @@ namespace TerrainDemo.Tri
 
             //Visualization
             if (LandRender_Mode == LandRenderMode.Macro)
-                _renderer.Render(Macro, MacroCellInfluenceVisualization, MacroCellReliefVisualization);
+                _renderer.Render(Macro, MacroCellInfluenceVisualization);
             else
                 _renderer.Render(Micro, mode);
 
@@ -100,7 +101,7 @@ namespace TerrainDemo.Tri
             Cell maxDiffCell = null;
             foreach (var macroCell in Macro.Cells)
             {
-                var heightDiff = macroCell.Height - Macro.GetHeight(macroCell.Center);
+                var heightDiff = macroCell.DesiredHeight - Macro.GetHeight(macroCell.Center);
                 if (Mathf.Abs(maxDiff) < Mathf.Abs(heightDiff))
                 {
                     maxDiffCell = macroCell;

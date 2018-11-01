@@ -131,7 +131,7 @@ namespace TerrainDemo.Visualization
             return new Tuple<Mesh, Texture>(resultMesh, resultTexture);
         }
 
-        public Mesh CreateMesh(MacroMap mapMesh, Renderer.MacroCellInfluenceMode influence, Renderer.MacroCellReliefMode relief)
+        public Mesh CreateMesh(MacroMap mapMesh, Renderer.MacroCellInfluenceMode influence)
         {
             var result = new Mesh();
             var vertices = new List<Vector3>();
@@ -140,7 +140,7 @@ namespace TerrainDemo.Visualization
 
             foreach (var cell in mapMesh.Cells)
             {
-                CreateMacroCell(vertices, colors, indices, cell, influence, relief);
+                CreateMacroCell(vertices, colors, indices, cell, influence);
             }
 
             result.SetVertices(vertices);
@@ -243,30 +243,23 @@ namespace TerrainDemo.Visualization
         /// <param name="cell"></param>
         /// <param name="influence"></param>
         private void CreateMacroCell(List<Vector3> vertices, List<Color> colors, List<int> indices, Cell cell,
-            Renderer.MacroCellInfluenceMode influence, Renderer.MacroCellReliefMode relief)
+            Renderer.MacroCellInfluenceMode influence)
         {
             var baseIndex = vertices.Count;
 
-            if (relief == Renderer.MacroCellReliefMode.Flat)
-            {
-                vertices.Add(new Vector3(cell.Center.X, 0, cell.Center.Y));
-                vertices.Add(new Vector3(cell.Vertices[0].Position.X, 0, cell.Vertices[0].Position.Y));
-                vertices.Add(new Vector3(cell.Vertices[1].Position.X, 0, cell.Vertices[1].Position.Y));
-                vertices.Add(new Vector3(cell.Vertices[2].Position.X, 0, cell.Vertices[2].Position.Y));
-                vertices.Add(new Vector3(cell.Vertices[3].Position.X, 0, cell.Vertices[3].Position.Y));
-                vertices.Add(new Vector3(cell.Vertices[4].Position.X, 0, cell.Vertices[4].Position.Y));
-                vertices.Add(new Vector3(cell.Vertices[5].Position.X, 0, cell.Vertices[5].Position.Y));
-            }
-            else
-            {
-                vertices.Add(new Vector3(cell.Center.X, _macroMap.GetHeight(cell.Center), cell.Center.Y));
-                vertices.Add(new Vector3(cell.Vertices[0].Position.X, cell.Vertices[0].Height, cell.Vertices[0].Position.Y));
-                vertices.Add(new Vector3(cell.Vertices[1].Position.X, cell.Vertices[1].Height, cell.Vertices[1].Position.Y));
-                vertices.Add(new Vector3(cell.Vertices[2].Position.X, cell.Vertices[2].Height, cell.Vertices[2].Position.Y));
-                vertices.Add(new Vector3(cell.Vertices[3].Position.X, cell.Vertices[3].Height, cell.Vertices[3].Position.Y));
-                vertices.Add(new Vector3(cell.Vertices[4].Position.X, cell.Vertices[4].Height, cell.Vertices[4].Position.Y));
-                vertices.Add(new Vector3(cell.Vertices[5].Position.X, cell.Vertices[5].Height, cell.Vertices[5].Position.Y));
-            }
+            vertices.Add(cell.CenterPoint);
+            vertices.Add(new Vector3(cell.Vertices[0].Position.X, cell.Vertices[0].Height,
+                cell.Vertices[0].Position.Y));
+            vertices.Add(new Vector3(cell.Vertices[1].Position.X, cell.Vertices[1].Height,
+                cell.Vertices[1].Position.Y));
+            vertices.Add(new Vector3(cell.Vertices[2].Position.X, cell.Vertices[2].Height,
+                cell.Vertices[2].Position.Y));
+            vertices.Add(new Vector3(cell.Vertices[3].Position.X, cell.Vertices[3].Height,
+                cell.Vertices[3].Position.Y));
+            vertices.Add(new Vector3(cell.Vertices[4].Position.X, cell.Vertices[4].Height,
+                cell.Vertices[4].Position.Y));
+            vertices.Add(new Vector3(cell.Vertices[5].Position.X, cell.Vertices[5].Height,
+                cell.Vertices[5].Position.Y));
 
             indices.Add(baseIndex);
             indices.Add(baseIndex + 1);
@@ -307,7 +300,6 @@ namespace TerrainDemo.Visualization
                 colors.Add(cell.Zone.Biome.LayoutColor);
                 colors.Add(cell.Zone.Biome.LayoutColor);
             }
-
         }
 
         private Color InfluenceToColorSmooth(Influence influence)

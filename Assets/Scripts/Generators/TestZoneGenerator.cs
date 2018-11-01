@@ -23,14 +23,14 @@ namespace TerrainDemo.Generators
             {
                 foreach (var cell in Zone.Cells)
                 {
-                    cell.Height = UnityEngine.Random.Range(20, 30);
+                    cell.DesiredHeight = UnityEngine.Random.Range(20, 30);
                 }
             }
             else
             {
                 foreach (var cell in Zone.Cells)
                 {
-                    cell.Height = 0;
+                    cell.DesiredHeight = 0;
                 }
             }
 

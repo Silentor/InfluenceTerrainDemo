@@ -22,14 +22,14 @@ namespace TerrainDemo.Visualization
             _textured = settings.TexturedMat;
         }
 
-        public void Render(MacroMap map, MacroCellInfluenceMode influence, MacroCellReliefMode relief)
+        public void Render(MacroMap map, MacroCellInfluenceMode influence)
         {
             var meshGO = new GameObject("MacroMap");
             var filter = meshGO.AddComponent<MeshFilter>();
             var renderer = meshGO.AddComponent<MeshRenderer>();
             meshGO.transform.SetParent(GetMeshRoot());
 
-            var mesh = _mesher.CreateMesh(map, influence, relief);
+            var mesh = _mesher.CreateMesh(map, influence);
             filter.mesh = mesh;
             renderer.sharedMaterial = _vertexColor;
         }

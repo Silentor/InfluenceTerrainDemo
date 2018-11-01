@@ -48,32 +48,29 @@ namespace TerrainDemo.Editor
         {
             Input result = new Input
             {
-                IsWorldPlaneSelected = false,
+                IsMapSelected = false,
                 ViewPoint = SceneView.currentDrawingSceneView.camera.transform.position,
                 ViewDirection = SceneView.currentDrawingSceneView.camera.transform.forward,
             };
 
             var userInputRay = SceneView.currentDrawingSceneView.camera.ScreenPointToRay(sceneScreenPosition);
-            var layoutPlane = new Plane(Vector3.up, Vector3.zero);
 
             if (MacroMap != null)
             {
-                var distance = 0f;
-                if (layoutPlane.Raycast(userInputRay, out distance))
+                var selectedCell = MacroMap.Intersect(userInputRay);
+                if (selectedCell.Item1 != null)
                 {
-                    result.IsWorldPlaneSelected = true;
-                    var layoutPoint = (OpenTK.Vector2)userInputRay.GetPoint(distance);
-                    result.WorldPosition = layoutPoint;
-                    result.Distance = distance;
-                    result.SelectedMacroCell = MacroMap.GetCellAt(layoutPoint);
-                    result.SelectedVert = MacroMap.Vertices.FirstOrDefault(v => OpenTK.Vector2.Distance(v.Position, layoutPoint) < 1);
-
-                    if (result.SelectedMacroCell != null)
-                        result.SelectedMicroCell = MicroMap.GetCell(result.SelectedMacroCell);
+                    result.IsMapSelected = true;
+                    result.CursorPosition = selectedCell.Item2;
+                    result.Distance = Vector3.Distance(result.CursorPosition, result.ViewPoint);
+                    result.SelectedMacroCell = selectedCell.Item1;
+                    result.SelectedVert = MacroMap.Vertices.FirstOrDefault(v => Vector3.Distance(
+                        new Vector3(v.Position.X, v.Height, v.Position.Y), result.CursorPosition) < 1);
 
                     if (MicroMap != null)
                     {
-                        var blockPos = (Vector2i) result.WorldPosition;
+                        result.SelectedMicroCell = MicroMap.GetCell(result.SelectedMacroCell);
+                        var blockPos = (Vector2i) result.CursorPosition;
                         if (MicroMap.Bounds.Contains(blockPos))
                         {
                             result.BlockPosition = blockPos;
@@ -88,24 +85,35 @@ namespace TerrainDemo.Editor
 
         private void DrawMacroCell(Cell cell)
         {
-            DrawMacroCell(cell, cell.Biome != null ? cell.Biome.LayoutColor : Inactive, false);
+            DrawMacroCell(cell, cell.Biome != null ? cell.Biome.LayoutColor : Inactive, 0, false);
         }
 
-        private void DrawMacroCell(Cell cell, Color color, bool labelVertices)
+        private void DrawMacroCell(Cell cell, Color color, int width, bool labelVertices)
         {
             Handles.color = color;
-            var isRelief = _runner.MacroCellReliefVisualization == Renderer.MacroCellReliefMode.Rude;
 
-            Handles.DrawPolyLine(
-                VertexToPosition(cell.Vertices[0], isRelief),
-                VertexToPosition(cell.Vertices[1], isRelief),
-                VertexToPosition(cell.Vertices[2], isRelief),
-                VertexToPosition(cell.Vertices[3], isRelief),
-                VertexToPosition(cell.Vertices[4], isRelief),
-                VertexToPosition(cell.Vertices[5], isRelief),
-                VertexToPosition(cell.Vertices[0], isRelief));
+            if(width == 0)
+                Handles.DrawPolyLine(
+                    VertexToPosition(cell.Vertices[0]),
+                    VertexToPosition(cell.Vertices[1]),
+                    VertexToPosition(cell.Vertices[2]),
+                    VertexToPosition(cell.Vertices[3]),
+                    VertexToPosition(cell.Vertices[4]),
+                    VertexToPosition(cell.Vertices[5]),
+                    VertexToPosition(cell.Vertices[0]));
+            else
+            {
+                Handles.DrawAAPolyLine(width,
+                    VertexToPosition(cell.Vertices[0]),
+                    VertexToPosition(cell.Vertices[1]),
+                    VertexToPosition(cell.Vertices[2]),
+                    VertexToPosition(cell.Vertices[3]),
+                    VertexToPosition(cell.Vertices[4]),
+                    VertexToPosition(cell.Vertices[5]),
+                    VertexToPosition(cell.Vertices[0]));
+            }
 
-            var cellDistance = Vector3.Distance(cell.Center, SceneView.lastActiveSceneView.camera.transform.position);
+            var cellDistance = Vector3.Distance(cell.Center, _input.ViewPoint);
             var fontSize = Mathf.RoundToInt(-cellDistance * 1 / 8 + 15);
 
             if (cellDistance < 80 && cellDistance > 3 && fontSize > 0)
@@ -114,18 +122,18 @@ namespace TerrainDemo.Editor
                 var contrastColor = (new Color(1, 1, 1, 2) - cell.Biome.LayoutColor) * 2;
                 style.normal.textColor = contrastColor;
                 style.fontSize = fontSize;
-                Handles.Label( CellToPosition(cell, isRelief), cell.Coords.ToString(), style);
+                Handles.Label( cell.CenterPoint, cell.Coords.ToString(), style);
                 Handles.color = contrastColor;
-                Handles.DrawWireDisc(CellToPosition(cell, isRelief), Vector3.up, 0.1f);
+                Handles.DrawWireDisc(cell.CenterPoint, Vector3.up, 0.1f);
 
                 if (labelVertices)
                 {
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[0], isRelief), CellToPosition(cell, isRelief), 0.2f), cell.Vertices[0].Id.ToString(), style);
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[1], isRelief), CellToPosition(cell, isRelief), 0.2f), cell.Vertices[1].Id.ToString(), style);
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[2], isRelief), CellToPosition(cell, isRelief), 0.2f), cell.Vertices[2].Id.ToString(), style);
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[3], isRelief), CellToPosition(cell, isRelief), 0.2f), cell.Vertices[3].Id.ToString(), style);
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[4], isRelief), CellToPosition(cell, isRelief), 0.2f), cell.Vertices[4].Id.ToString(), style);
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[5], isRelief), CellToPosition(cell, isRelief), 0.2f), cell.Vertices[5].Id.ToString(), style);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[0]), cell.CenterPoint, 0.2f), cell.Vertices[0].Id.ToString(), style);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[1]), cell.CenterPoint, 0.2f), cell.Vertices[1].Id.ToString(), style);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[2]), cell.CenterPoint, 0.2f), cell.Vertices[2].Id.ToString(), style);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[3]), cell.CenterPoint, 0.2f), cell.Vertices[3].Id.ToString(), style);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[4]), cell.CenterPoint, 0.2f), cell.Vertices[4].Id.ToString(), style);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[5]), cell.CenterPoint, 0.2f), cell.Vertices[5].Id.ToString(), style);
                 }
             }
 
@@ -150,7 +158,7 @@ namespace TerrainDemo.Editor
         private void DrawTriVert(MacroVert vert)
         {
             Handles.color = Color.white;
-            Handles.DrawWireDisc(vert.Position, Vector3.up, 1);
+            Handles.DrawWireDisc(new Vector3(vert.Position.X, vert.Height, vert.Position.Y), -_input.ViewDirection, 1);
         }
 
         private void DrawBlock(Vector2i position, Color color, uint width = 0, Vector3? normal = null)
@@ -189,7 +197,7 @@ namespace TerrainDemo.Editor
 
             //Get zone outer border
             foreach (var edge in zone.Edges)
-                Handles.DrawLine(VertexToPosition(edge.Vertex1, isRelief), VertexToPosition(edge.Vertex2, isRelief));
+                Handles.DrawLine(VertexToPosition(edge.Vertex1), VertexToPosition(edge.Vertex2));
         }
 
         #region Window content
@@ -210,7 +218,7 @@ namespace TerrainDemo.Editor
         {
             GUILayout.Label($"Macro.Cell {cell.Coords}", EditorStyles.boldLabel);
             GUILayout.Label($"Zone: {cell.ZoneId} - {cell.Biome.name}");
-            GUILayout.Label($"Height: {cell.Height:F1}");
+            GUILayout.Label($"Height: {cell.DesiredHeight:F1} desired, {cell.CenterPoint.y:F1} true");
         }
 
         private void ShowTriVertInfo(MacroVert vert, float distance)
@@ -224,13 +232,13 @@ namespace TerrainDemo.Editor
         private void ShowCursorInfo(Input input)
         {
             GUILayout.Label("Cursor", EditorStyles.boldLabel);
-            GUILayout.Label($"World pos: {VectorToString(input.WorldPosition, GetZoomLevel(input.Distance))}");
-            GUILayout.Label($"Camera dist: {Vector3.Distance(input.WorldPosition, input.ViewPoint):N0} m");
+            GUILayout.Label($"World pos: {VectorToString(input.CursorPosition, GetZoomLevel(input.Distance))}");
+            GUILayout.Label($"Camera dist: {Vector3.Distance(input.CursorPosition, input.ViewPoint):N0} m");
             if (input.IsBlockSelected)
             {
                 GUILayout.Label(
-                    $"Influence: {MacroMap.GetInfluence((OpenTK.Vector2) input.WorldPosition)}");
-                GUILayout.Label($"Height: {MacroMap.GetHeight((OpenTK.Vector2) input.WorldPosition):N}");
+                    $"Influence: {MacroMap.GetInfluence((OpenTK.Vector2) input.CursorPosition)}");
+                GUILayout.Label($"Height: {MacroMap.GetHeight((OpenTK.Vector2) input.CursorPosition):N}");
             }
         }
 
@@ -285,14 +293,9 @@ namespace TerrainDemo.Editor
             return 0;
         }
 
-        private static Vector3 VertexToPosition(MacroVert vertex, bool is3d)
+        private static Vector3 VertexToPosition(MacroVert vertex)
         {
-            return new Vector3(vertex.Position.X, is3d ? vertex.Height : 0, vertex.Position.Y);
-        }
-
-        private static Vector3 CellToPosition(Cell cell, bool is3d)
-        {
-            return new Vector3(cell.Center.X, is3d ? cell.Height : 0, cell.Center.Y);
+            return new Vector3(vertex.Position.X, vertex.Height, vertex.Position.Y);
         }
 
 
@@ -352,10 +355,15 @@ namespace TerrainDemo.Editor
                 }
             }
 
+            if (_input.IsMapSelected)
+            {
+                DebugExtension.DebugPoint(_input.CursorPosition, Color.white, 0.5f, 0, true);
+            }
+
             //Draw selected macrocell
             if (_input.SelectedMacroCell != null)
             {
-                DrawMacroCell(_input.SelectedMacroCell, Active, true);
+                DrawMacroCell(_input.SelectedMacroCell, Active, 5, true);
                 DrawMacroZone(_input.SelectedMacroCell.Zone, _drawLayout ? Active : _input.SelectedMacroCell.Zone.Biome.LayoutColor);
             }
 
@@ -372,7 +380,7 @@ namespace TerrainDemo.Editor
             //Draw selected block
             if (_drawMicro)
             {
-                var blockPos = (Vector2i) _input.WorldPosition;
+                var blockPos = (Vector2i) _input.CursorPosition;
                 if (MicroMap != null)
                 {
                     var block = MicroMap.GetBlock(blockPos);
@@ -413,7 +421,7 @@ namespace TerrainDemo.Editor
                 _runner.Generate();
 
 
-            if (_input.IsWorldPlaneSelected)
+            if (_input.IsMapSelected)
             {
                 ShowCursorInfo(_input);
             }
@@ -469,9 +477,9 @@ namespace TerrainDemo.Editor
         private struct Input
         {
             /// <summary>
-            /// Is some point of world plane selected?
+            /// Is some point of map selected? Cursor position contains point
             /// </summary>
-            public bool IsWorldPlaneSelected;
+            public bool IsMapSelected;
             /// <summary>
             /// Is some land block selected?
             /// </summary>
@@ -480,10 +488,10 @@ namespace TerrainDemo.Editor
             public Vector3 ViewPoint;
             public Vector3 ViewDirection;
 
-            public Vector3 WorldPosition;
+            public Vector3 CursorPosition;
             public Vector2i BlockPosition;
             /// <summary>
-            /// Distance between <see cref="ViewPoint"/> and <see cref="WorldPosition"/>
+            /// Distance between <see cref="ViewPoint"/> and <see cref="CursorPosition"/>
             /// </summary>
             public float Distance;
             public Macro.Cell SelectedMacroCell;

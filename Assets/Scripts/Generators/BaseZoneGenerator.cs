@@ -52,11 +52,11 @@ namespace TerrainDemo.Generators
             foreach (var cell in Zone.Cells)
             {
                 if (Zone.Biome.Type == BiomeType.Plains)
-                    cell.Height = _random.Range(0, 1f);
+                    cell.DesiredHeight = _random.Range(0, 1f);
                 else if (Zone.Biome.Type == BiomeType.Hills)
-                    cell.Height = _random.Range(1, 3);
+                    cell.DesiredHeight = _random.Range(1, 3);
                 else if (Zone.Biome.Type == BiomeType.Lake)
-                    cell.Height = Zone.Border.Contains(cell) ? 0 : -10;
+                    cell.DesiredHeight = Zone.Border.Contains(cell) ? 0 : -10;
             }
 
             return Zone;

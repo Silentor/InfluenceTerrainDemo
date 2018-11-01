@@ -73,15 +73,19 @@ namespace TerrainDemo.Macro
             return null;
         }
 
-        /*
-        public Cell Intersect(Ray ray)
+        public ValueTuple<Cell, Vector3> Intersect(Ray ray)
         {
-            foreach (var cell in Cells)
+            foreach (var cell in Cells.OrderBy(c => Vector3.SqrMagnitude(c.CenterPoint - ray.origin)))
             {
-                
+                var intersection = cell.IsIntersected(ray);
+                if (intersection.HasValue)
+                {
+                    return new ValueTuple<Cell, Vector3>(cell, intersection.Value);
+                }
             }
+
+            return new ValueTuple<Cell, Vector3>(null, Vector3.zero);
         }
-        */
 
         public IEnumerable<Cell> FloodFill(Cell startCell, Predicate<Cell> fillCondition = null)
         {
@@ -228,7 +232,7 @@ namespace TerrainDemo.Macro
             {
                 var cell = Cells[_nearestCellsTags[i]];
 
-                cellsHeights[i] = cell.Height;
+                cellsHeights[i] = cell.DesiredHeight;
                 cellsWeights[i] = IDWLocalShepard2(cell.Center, worldPosition, searchRadius);
                 weightsSum += cellsWeights[i];
             }

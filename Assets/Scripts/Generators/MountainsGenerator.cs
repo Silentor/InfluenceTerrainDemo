@@ -39,7 +39,7 @@ namespace TerrainDemo.Generators
             var heights = 5 * cellsInDistanceOrder.Length;
             foreach (var cell in cellsInDistanceOrder)
             {
-                cell.Height = heights;
+                cell.DesiredHeight = heights;
                 heights -= 5;
             }
 

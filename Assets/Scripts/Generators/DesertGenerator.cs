@@ -29,7 +29,7 @@ namespace TerrainDemo.Generators
         public override Macro.Zone GenerateMacroZone()
         {
             foreach (var cell in Zone.Cells)
-                cell.Height = _random.Range(0, 3);
+                cell.DesiredHeight = _random.Range(0, 3);
 
             return Zone;
         }
