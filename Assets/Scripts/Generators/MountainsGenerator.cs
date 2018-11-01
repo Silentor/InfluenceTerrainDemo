@@ -10,7 +10,7 @@ using Vector2 = OpenTK.Vector2;
 
 namespace TerrainDemo.Generators
 {
-    public class MountainsGenerator : TriZoneGenerator
+    public class MountainsGenerator : BaseZoneGenerator
     {
         public MountainsGenerator(MacroMap macroMap, IEnumerable<Cell> zoneCells, int id, BiomeSettings biome, TriRunner settings) : base(macroMap, zoneCells, id, biome, settings)
         {
@@ -56,13 +56,12 @@ namespace TerrainDemo.Generators
             return Zone;
         }
 
-        public override MicroHeight GetMicroHeight(Vector2 position, float macroHeight)
+        public override MicroHeight GetMicroHeight(Vector2 position, MacroTemplate.CellMixVertex vertex)
         {
-            return new MicroHeight(macroHeight / 2,
+            return new MicroHeight(vertex.MacroHeight / 2 - 10,
                 +(float)System.Math.Pow(_microReliefNoise.GetSimplex(position.X / 10, position.Y / 10) + 1, 2) - 2    //Вытянутые пики средней частоты
                 + (float)_microReliefNoise.GetSimplex(position.X / 2, position.Y / 2)    //Высокочастотные неровности
-                + macroHeight,
-                Zone.Id);
+                + vertex.MacroHeight);
         }
 
         private readonly FastNoise _microReliefNoise;

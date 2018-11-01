@@ -10,7 +10,7 @@ using Cell = TerrainDemo.Macro.Cell;
 
 namespace TerrainDemo.Generators
 {
-    public class TestZoneGenerator : TriZoneGenerator
+    public class TestZoneGenerator : BaseZoneGenerator
     {
         public TestZoneGenerator(MacroMap macroMap, IEnumerable<Cell> zoneCells, int id, BiomeSettings biome, TriRunner settings) : base(macroMap, zoneCells, id, biome, settings)
         {
@@ -19,22 +19,35 @@ namespace TerrainDemo.Generators
 
         public override Macro.Zone GenerateMacroZone()
         {
-            foreach (var cell in Zone.Cells)
+            if (Zone.Biome.Type == BiomeType.TestOnlyMacroHigh)
             {
-                cell.Height = 0;
+                foreach (var cell in Zone.Cells)
+                {
+                    cell.Height = UnityEngine.Random.Range(20, 30);
+                }
+            }
+            else
+            {
+                foreach (var cell in Zone.Cells)
+                {
+                    cell.Height = 0;
+                }
             }
 
             return Zone;
         }
 
-        public override MicroHeight GetMicroHeight(Vector2 position, float macroHeight)
+        public override MicroHeight GetMicroHeight(Vector2 position, MacroTemplate.CellMixVertex vertex)
         {
             if (Zone.Biome.Type == BiomeType.TestBulge)
-                return new MicroHeight(macroHeight, macroHeight + 10, Zone.Id);
+                return new MicroHeight(vertex.MacroHeight, vertex.MacroHeight + 10);
             else if (Zone.Biome.Type == BiomeType.TestPit)
-                return new MicroHeight(macroHeight - 10, macroHeight - 10, Zone.Id);
+                return new MicroHeight(vertex.MacroHeight - 10, vertex.MacroHeight - 10);
             else if(Zone.Biome.Type == BiomeType.TestFlat)
-                return new MicroHeight(macroHeight, macroHeight, Zone.Id);
+                return new MicroHeight(vertex.MacroHeight, vertex.MacroHeight);
+            else if (Zone.Biome.Type == BiomeType.TestOnlyMacroLow || Zone.Biome.Type == BiomeType.TestOnlyMacroHigh)
+                return new MicroHeight(vertex.MacroHeight, vertex.MacroHeight);
+
             else
                 throw new NotImplementedException();
         }

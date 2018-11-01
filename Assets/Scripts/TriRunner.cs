@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using OpenTK;
@@ -7,6 +8,7 @@ using TerrainDemo.Micro;
 using TerrainDemo.Settings;
 using TerrainDemo.Visualization;
 using UnityEngine;
+using UnityEngine.Profiling;
 using Cell = TerrainDemo.Macro.Cell;
 using Debug = UnityEngine.Debug;
 using Renderer = TerrainDemo.Visualization.Renderer;
@@ -43,8 +45,11 @@ namespace TerrainDemo.Tri
 
         public MacroTemplate Land { get; private set; }
 
+        public IReadOnlyCollection<BlockSettings> AllBlocks => _allBlocks;
+
         private Tools.Random _random;
         private Renderer _renderer;
+        private BlockSettings[] _allBlocks;
 
         public void Render(Renderer.MicroRenderMode mode)
         {
@@ -123,6 +128,10 @@ namespace TerrainDemo.Tri
 
         #region Unity
 
+        void Awake()
+        {
+            _allBlocks = Resources.LoadAll<BlockSettings>("");
+        }
 
         void Start()
         {

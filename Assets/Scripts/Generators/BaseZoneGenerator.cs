@@ -5,6 +5,7 @@ using TerrainDemo.Micro;
 using TerrainDemo.Settings;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tri;
+using UnityEngine;
 using UnityEngine.Assertions;
 using Cell = TerrainDemo.Macro.Cell;
 using Random = TerrainDemo.Tools.Random;
@@ -19,17 +20,17 @@ namespace TerrainDemo.Generators
     /// <summary>
     /// Generate given zone heights, materials etc
     /// </summary>
-    public class TriZoneGenerator
+    public class BaseZoneGenerator
     {
         protected readonly MacroMap _macroMap;
-        private readonly TriRunner _settings;
+        protected readonly TriRunner _settings;
         private Cell[] _cells;
         public readonly Macro.Zone Zone;
         protected readonly Random _random;
         private readonly FastNoise _microReliefNoise;
         
 
-        public TriZoneGenerator(MacroMap macroMap, IEnumerable<Cell> zoneCells, int id, BiomeSettings biome, TriRunner settings)
+        public BaseZoneGenerator(MacroMap macroMap, IEnumerable<Cell> zoneCells, int id, BiomeSettings biome, TriRunner settings)
         {
             _macroMap = macroMap;
             _settings = settings;
@@ -87,14 +88,14 @@ namespace TerrainDemo.Generators
         }
     
 
-        public virtual MicroHeight GetMicroHeight(Vector2 position, float macroHeight)
+        public virtual MicroHeight GetMicroHeight(Vector2 position, MacroTemplate.CellMixVertex vertex)
         {
             if (Zone.Biome.Type == BiomeType.Lake)
-                return new MicroHeight(macroHeight - 10, macroHeight, Zone.Id);
+                return new MicroHeight(vertex.MacroHeight - 10, vertex.MacroHeight);
             else if (Zone.Biome.Type == BiomeType.Plains)
-                return new MicroHeight(macroHeight - 5, macroHeight, Zone.Id);
+                return new MicroHeight(vertex.MacroHeight / 3 - 10, vertex.MacroHeight);
 
-            return new MicroHeight(macroHeight, macroHeight, Zone.Id);
+            return new MicroHeight(vertex.MacroHeight, vertex.MacroHeight);
         }
         
         public BlockType GetBlock(Vector2i position)
@@ -102,7 +103,7 @@ namespace TerrainDemo.Generators
             return Zone.Biome.DefaultBlock.Block;
         }
 
-        public Blocks GetBlocks(Vector2i position)
+        public virtual Blocks GetBlocks(Vector2i position, Vector3 normal)
         {
             return new Blocks(){Base = _settings.BaseBlock.Block, Layer1 = Zone.Biome.DefaultBlock.Block};
         }

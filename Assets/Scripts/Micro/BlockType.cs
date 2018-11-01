@@ -3,10 +3,10 @@
     public enum BlockType : byte
     {
         Empty,
-        Base,
+        Bedrock,
         Influence,               //Special block to visualize zone influence
         Grass,
-        Rock,
+        Stone,
         Sand,
         Snow,
         Water,

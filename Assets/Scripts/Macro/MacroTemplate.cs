@@ -11,6 +11,7 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using Debug = UnityEngine.Debug;
 using Random = TerrainDemo.Tools.Random;
+using Vector2 = OpenTK.Vector2;
 
 namespace TerrainDemo.Macro
 {
@@ -57,7 +58,7 @@ namespace TerrainDemo.Macro
         {
             //Get generator for this zone
             var mainGenerator = inputMap.Generators.Find(g => g.Zone == zone);
-            var additionalGeneratorsCache = new List<TriZoneGenerator> ();
+            var additionalGeneratorsCache = new List<BaseZoneGenerator> ();
 
             foreach (var cell in zone.Cells)
             {
@@ -68,9 +69,9 @@ namespace TerrainDemo.Macro
                 var cellMixBuffer = new CellMixVertex[bufferSize.Size.X + 1, bufferSize.Size.Z + 1];
                 var heightBuffer = new List<MicroHeight>(microcell.VertexPositions.Length);
 
+                //Prepare cell mix buffer
                 foreach (var vertexPosition in microcell.VertexPositions)
                 {
-                    //Prepare cell mix buffer
                     var localPos = vertexPosition - bufferSize.Min;
                     var cellMixVertex = new CellMixVertex()
                     {
@@ -78,14 +79,29 @@ namespace TerrainDemo.Macro
                         MacroHeight = inputMap.GetHeight(vertexPosition),
                     };
                     cellMixBuffer[localPos.X, localPos.Z] = cellMixVertex;
+                }
 
-                    //Calculate heights for all influencing zones
+                //Calculate normals based on macro height
+                foreach (var vertexPosition in microcell.VertexPositions)
+                {
+                    var localPos = vertexPosition - bufferSize.Min;
+                    var cellMixVertex = cellMixBuffer[localPos.X, localPos.Z];
+
+                    cellMixVertex.Normal = CalculateNormal(cellMixBuffer, localPos);
+                }
+
+                //Calculate micro heightmap
+                foreach (var vertexPosition in microcell.VertexPositions)
+                {
+                    var localPos = vertexPosition - bufferSize.Min;
+                    var cellMixVertex = cellMixBuffer[localPos.X, localPos.Z];
+
                     cellMixVertex.MicroHeights = new MicroHeight[cellMixVertex.Influence.Count];
-                    for (int i = 0; i < cellMixVertex.Influence.Count; i++)
+                    for (var i = 0; i < cellMixVertex.Influence.Count; i++)
                     {
                         var infl = cellMixVertex.Influence.GetInfluence(i);
 
-                        TriZoneGenerator generator;
+                        BaseZoneGenerator generator;
                         if (infl.Item1 == zone.Id)
                             generator = mainGenerator;
                         else
@@ -100,24 +116,9 @@ namespace TerrainDemo.Macro
 
                         Assert.IsNotNull(generator);
 
-                        //var weight = Math.Tan(1.40948538956 * infl.Item2 - 1.56091059484) + 1.15259329272;
-                        //var weight = -100.010204082 * Math.Pow(0.000102030405061, infl.Item2) + 0.0102040816327;
-                        var weight = infl.Item2;
-
-                        //Debug.Log($"{infl.Item2} = {weight}");
-
-                        var microHeight = generator.GetMicroHeight(vertexPosition, cellMixVertex.MacroHeight);
-                        //if (microHeight > maxHeight)
-                        //{
-                        //    maxHeight = microHeight;
-                        //    maxHeightZone = infl.Item1;
-                        //}
-
+                        var microHeight = generator.GetMicroHeight(vertexPosition, cellMixVertex);
                         cellMixVertex.MicroHeights[i] = microHeight;
-
                     }
-
-                    //cellMixVertex.HighestZone = maxHeightZone;
 
                     //Calculate result heights. Простейший способ - лерп высот на основании инфлюенса
                     var resultMicroHeight = CombineSimple(cellMixVertex.Influence, cellMixVertex.MicroHeights);
@@ -134,44 +135,34 @@ namespace TerrainDemo.Macro
 
                 outputMap.SetHeights(microcell.VertexPositions, heightBuffer);
 
-                //Вычислить высоты в 4х углах для каждой из влияющих зон
-                //Вычислить самые высокие высоты, от них зависит, какая из влияющих зон создаст данный блок земли
-                //Создать вычисленный блок земли с усреднёнными высотами
-
+                //Generate blocks
                 var blocksBuffer = new List<Blocks>(microcell.BlockPositions.Length);
                 foreach (var blockPosition in microcell.BlockPositions)
                 {
                     var localPos = blockPosition - bufferSize.Min;
 
-                    //Calculate what zone influenced most to heightmap for given block
-                    //var zoneIdOfBlock = Zone.InvalidId;
+                    var zoneGeneratorId = cellMixBuffer[localPos.X, localPos.Z].Influence.GetMostInfluenceZone();
+                    var isMainLayerPresent = cellMixBuffer[localPos.X, localPos.Z].ResultHeight.IsLayer1Present
+                                             || cellMixBuffer[localPos.X + 1, localPos.Z].ResultHeight.IsLayer1Present
+                                             || cellMixBuffer[localPos.X, localPos.Z + 1].ResultHeight.IsLayer1Present
+                                             || cellMixBuffer[localPos.X + 1, localPos.Z + 1].ResultHeight.IsLayer1Present;
 
-                    var zoneIdOfBlock = MicroHeight.GetMostInfluencedZone(
-                        cellMixBuffer[localPos.X, localPos.Z].ResultHeight,
-                        cellMixBuffer[localPos.X + 1, localPos.Z].ResultHeight,
-                        cellMixBuffer[localPos.X, localPos.Z + 1].ResultHeight,
-                        cellMixBuffer[localPos.X + 1, localPos.Z + 1].ResultHeight);
-
-                    //var randomZone = _random.Range(0, 3);
-                    //if (randomZone == 0)
-                    //    zoneIdOfBlock = cellMixBuffer[localPos.X, localPos.Z].HighestZone;
-                    //else if (randomZone == 1)
-                    //    zoneIdOfBlock = cellMixBuffer[localPos.X + 1, localPos.Z].HighestZone;
-                    //else if (randomZone == 2)
-                    //    zoneIdOfBlock = cellMixBuffer[localPos.X, localPos.Z + 1].HighestZone;
-                    //else if (randomZone == 3)
-                    //    zoneIdOfBlock = cellMixBuffer[localPos.X + 1, localPos.Z + 1].HighestZone;
-
-                    TriZoneGenerator generator;
-                    if (zoneIdOfBlock.Item1 == zone.Id)
+                    BaseZoneGenerator generator;
+                    if (zoneGeneratorId == zone.Id)
                         generator = mainGenerator;
                     else
-                        generator = additionalGeneratorsCache.Find(g => g.Zone.Id == zoneIdOfBlock.Item1);
+                        generator = additionalGeneratorsCache.Find(g => g.Zone.Id == zoneGeneratorId);
 
                     Assert.IsNotNull(generator);
 
-                    var block = generator.GetBlocks(blockPosition);
-                    if (zoneIdOfBlock.Item2 == BlockLayer.Base)
+                    var blockNormal = cellMixBuffer[localPos.X, localPos.Z].Normal
+                                      + cellMixBuffer[localPos.X + 1, localPos.Z].Normal
+                                      + cellMixBuffer[localPos.X, localPos.Z + 1].Normal
+                                      + cellMixBuffer[localPos.X + 1, localPos.Z + 1].Normal;
+                    blockNormal = (blockNormal / 4).normalized;
+                    var block = generator.GetBlocks(blockPosition, blockNormal);
+                    block.Normal = blockNormal;
+                    if (!isMainLayerPresent)
                         block.Layer1 = BlockType.Empty;
                     blocksBuffer.Add(block);
                 }
@@ -181,22 +172,15 @@ namespace TerrainDemo.Macro
             
         }
 
-        /*
-        public TriMesh GenerateLayout(TriMesh mesh, TriRunner settings)
-        {
-
-        }
-        */
-
         /// <summary>
         /// Divide mesh to clustered zones completely random
         /// </summary>
         /// <param name="map"></param>
         /// <param name="settings"></param>
         /// <returns></returns>
-        private IEnumerable<TriZoneGenerator> RandomClusterZonesDivider(MacroMap map, TriRunner settings)
+        private IEnumerable<BaseZoneGenerator> RandomClusterZonesDivider(MacroMap map, TriRunner settings)
         {
-            var zones = new List<TriZoneGenerator>();
+            var zones = new List<BaseZoneGenerator>();
             var zoneId = 0;
             foreach (var cell in map.Cells)
             {
@@ -223,7 +207,7 @@ namespace TerrainDemo.Macro
             return zones;
         }
 
-        private TriZoneGenerator GetZoneGenerator(BiomeSettings biome, MacroMap map, IEnumerable<Cell> cells, int zoneId, TriRunner settings)
+        private BaseZoneGenerator GetZoneGenerator(BiomeSettings biome, MacroMap map, IEnumerable<Cell> cells, int zoneId, TriRunner settings)
         {
             if(biome.Type == BiomeType.Mountain)
                 return new MountainsGenerator(map, cells, zoneId, biome, settings);
@@ -232,9 +216,10 @@ namespace TerrainDemo.Macro
             else if(biome.Type == BiomeType.Desert)
                 return new DesertGenerator(map, cells, zoneId, biome, settings);
             else
-                return new TriZoneGenerator(map, cells, zoneId, biome, settings);
+                return new BaseZoneGenerator(map, cells, zoneId, biome, settings);
         }
 
+        /*
         /// <summary>
         /// Combine influenced heights for given vertex
         /// </summary>
@@ -298,6 +283,7 @@ namespace TerrainDemo.Macro
 
             return new MicroHeight(baseResult, layer2Result.HasValue ? Math.Max(layer2Result.Value, layer1Result) : layer1Result, maxHeightZoneId);
         }
+        */
 
         /// <summary>
         /// Combine influenced heights for given vertex
@@ -310,14 +296,14 @@ namespace TerrainDemo.Macro
             Assert.IsTrue(influnce.Count == heights.Length);
 
             //Fast pass
-            //if (heights.Length == 1)
-            //return new MicroHeight(heights[0].BaseHeight, heights[0].Layer1Height, heights[0].ZoneId);      //Be sure to disable Additional layer flag
+            if (heights.Length == 1)
+                return new MicroHeight(heights[0].BaseHeight, heights[0].Layer1Height);      //Be sure to disable Additional layer flag
 
             float baseResult = 0;
             float layer1Result = 0;
             for (int i = 0; i < heights.Length; i++)
             {
-                Assert.IsTrue(heights[i].ZoneId == influnce.GetZone(i));
+                //Assert.IsTrue(heights[i].ZoneId == influnce.GetZone(i));
 
                 var weight = influnce.GetWeight(i);
                 var baseHeight = heights[i].BaseHeight * weight;
@@ -327,7 +313,41 @@ namespace TerrainDemo.Macro
                 layer1Result += layer1Height;
             }
 
-            return new MicroHeight(baseResult, layer1Result, influnce.GetMostInfluenceZone());
+            return new MicroHeight(baseResult, layer1Result);
+        }
+
+        /// <summary>
+        /// based on http://www.flipcode.com/archives/Calculating_Vertex_Normals_for_Height_Maps.shtml
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="localPosition"></param>
+        /// <returns></returns>
+        private static Vector3 CalculateNormal(CellMixVertex[,] buffer, Vector2i localPosition)
+        {
+            var currentVertex = buffer[localPosition.X, localPosition.Z];
+
+            var x0 = buffer[localPosition.X < buffer.GetLength(0) - 1 ? localPosition.X + 1 : localPosition.X, localPosition.Z];
+            if (x0 == null)
+                x0 = currentVertex;
+            var x1 = buffer[localPosition.X > 0 ? localPosition.X - 1 : localPosition.X, localPosition.Z];
+            if (x1 == null)
+                x1 = currentVertex;
+            var sx = x0.MacroHeight - x1.MacroHeight;
+            if (x0 == currentVertex || x1 == currentVertex)
+                sx *= 2;
+
+            var z0 = buffer[localPosition.X, localPosition.Z < buffer.GetLength(1) - 1 ? localPosition.Z + 1 : localPosition.Z];
+            if (z0 == null)
+                z0 = currentVertex;
+            var z1 = buffer[localPosition.X, localPosition.Z > 0 ? localPosition.Z - 1 : localPosition.Z];
+            if (z1 == null)
+                z1 = currentVertex;
+            var sz = z0.MacroHeight - z1.MacroHeight;
+            if (z0 == currentVertex || z1 == currentVertex)
+                sz *= 2;
+
+            var result = new Vector3(-sx, 2, sz);
+            return result.normalized;
         }
 
         /// <summary>
@@ -335,10 +355,17 @@ namespace TerrainDemo.Macro
         /// </summary>
         public class CellMixVertex
         {
+            //1) Prepare buffer
             public Influence Influence;
             public float MacroHeight;
+
+            //2) Generate macro height normals
+            public Vector3 Normal;
+
+            //3) Generate microheights for every influenced zone
             public MicroHeight[] MicroHeights;   //As in Influence
-            public int HighestZone;
+
+            //4) Generate result microheight in given vertex mixing all influenced zone microheights
             public MicroHeight ResultHeight;
         }
     }

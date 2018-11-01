@@ -38,6 +38,8 @@ namespace TerrainDemo.Settings
         TestFlat = 100,
         TestBulge,
         TestPit,
-        TestEnd = TestPit
+        TestOnlyMacroLow,                   //Cell Macro height = 0, do not modify macro height
+        TestOnlyMacroHigh,                  //Cell Macro height ~ 10, do not modify macro height
+        TestEnd = TestOnlyMacroHigh
     }
 }

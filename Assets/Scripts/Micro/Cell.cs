@@ -24,11 +24,9 @@ namespace TerrainDemo.Micro
             BlockPositions = Rasterization.Polygon2(macro.Contains, macro.Bounds);
             Bounds = (Bounds2i) macro.Bounds;
 
-            var vertices = new List<Vector2i>(BlockPositions.Length * 2);
+            var vertices = new List<Vector2i>(BlockPositions);
             foreach (var blockPosition in BlockPositions)
             {
-                if(!vertices.Contains(blockPosition))
-                    vertices.Add(blockPosition);
                 if (!vertices.Contains(blockPosition + Vector2i.Forward))
                     vertices.Add(blockPosition + Vector2i.Forward);
                 if (!vertices.Contains(blockPosition + Vector2i.Right))

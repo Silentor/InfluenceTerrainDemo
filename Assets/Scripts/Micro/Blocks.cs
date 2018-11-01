@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using UnityEngine;
 
 namespace TerrainDemo.Micro
 {
@@ -8,9 +9,12 @@ namespace TerrainDemo.Micro
         public BlockType Base;
         public BlockType Layer1;
 
+        //Debug
+        public UnityEngine.Vector3 Normal;
+
         public BlockType Top => Layer1 != BlockType.Empty ? Layer1 : Base;
 
-        public static readonly Blocks Empty = new Blocks(){Base = BlockType.Empty, Layer1 = BlockType.Empty};
+        public static readonly Blocks Empty = new Blocks(){Base = BlockType.Empty, Layer1 = BlockType.Empty, Normal = Vector3.up};
 
         public override string ToString()
         {

@@ -27,7 +27,7 @@ namespace TerrainDemo.Macro
         public readonly List<MacroEdge> Edges = new List<MacroEdge>();
         public readonly float[] Heights;
         public readonly List<Zone> Zones = new List<Zone>();
-        public readonly List<TriZoneGenerator> Generators = new List<TriZoneGenerator>();
+        public readonly List<BaseZoneGenerator> Generators = new List<BaseZoneGenerator>();
 
         public MacroMap(TriRunner settings, Random random)
         {
@@ -51,22 +51,12 @@ namespace TerrainDemo.Macro
 
         public Influence GetInfluence(Vector2 worldPosition)
         {
-            //return GetNNInfluence(worldPosition);
             return GetIDWInfluence(worldPosition);
-            //return GetRBFInfluence(worldPosition); uncontrollable overshoot :(
-            //return GetBicubicInfluence(worldPosition);
         }
 
         public float GetHeight(Vector2 worldPosition)
         {
-            CellWeightDebug dummy;
-            return GetHeight(worldPosition, out dummy);
-        }
-
-        public float GetHeight(Vector2 worldPosition, out CellWeightDebug debug)
-        {
-            float height = GetIDWHeight(worldPosition, out debug);
-            return height;
+            return GetIDWHeight(worldPosition);
         }
 
         public Cell GetCellAt(Vector2 position)
@@ -118,7 +108,7 @@ namespace TerrainDemo.Macro
         private readonly double[] EmptyInfluence;
         private readonly List<Tuple<Cell, float>> _getInfluenceBuffer = new List<Tuple<Cell, float>>();
         private CellMesh _mesh;
-        private float _influenceTurbulancePower;
+        private readonly float _influenceTurbulancePower;
 
         private void GenerateGrid()
         {
@@ -211,7 +201,7 @@ namespace TerrainDemo.Macro
             }
         }
 
-        private float GetIDWHeight(Vector2 worldPosition, out CellWeightDebug debug)
+        private float GetIDWHeight(Vector2 worldPosition)
         {
             PrepareLandIDW();
 
@@ -220,14 +210,9 @@ namespace TerrainDemo.Macro
 
             alglib.kdtreequeryresultstags(_idwInfluence, ref _nearestCellsTags);
 
-            debug = new CellWeightDebug();
-            debug.Position = worldPosition;
-
             //Calculate height in the point
             float[] cellsHeights = new float[nearestCellsCount];
             double[] cellsWeights = new double[nearestCellsCount];
-            debug.Cells = new CellWeightInfo[nearestCellsCount];
-            debug.Radius = searchRadius;
             double weightsSum = 0;
             for (int i = 0; i < nearestCellsCount; i++)
             {
@@ -242,13 +227,6 @@ namespace TerrainDemo.Macro
             for (int i = 0; i < nearestCellsCount; i++)
             {
                 result += cellsHeights[i] * (cellsWeights[i] / weightsSum);
-
-                debug.Cells[i] = new CellWeightInfo()
-                {
-                    Id = Cells[_nearestCellsTags[i]].Coords,
-                    Height = cellsHeights[i],
-                    Weight = cellsWeights[i] / weightsSum
-                };
             }
 
             return (float) result;
@@ -288,8 +266,9 @@ namespace TerrainDemo.Macro
                 var cell = Cells[_nearestCellsTags[i]];
                 var cellWeight = IDWLocalShepard(cell.Center, worldPosition, searchRadius);
 
-                if(cellWeight < 0.01)
-                    continue;
+                //Cells from that bring very low weight
+                if(cellWeight < 0.01d)
+                    break;
 
                 _getInfluenceBuffer.Add(new Tuple<Cell, float>(cell, (float)cellWeight));
             }
@@ -320,6 +299,7 @@ namespace TerrainDemo.Macro
 
             var ratio = 1 - distance / searchRadius;        //Inverse lerp
             return SmoothStep(ratio);
+            //return InQuad(ratio);
         }
 
 
@@ -355,11 +335,6 @@ namespace TerrainDemo.Macro
         public double InQuad(double x)
         {
             return x * x;
-        }
-
-        public double InQuint(double x)
-        {
-            return x * x * x * x;
         }
 
         public double InExpo(double x)
@@ -461,32 +436,6 @@ namespace TerrainDemo.Macro
             return result;
         }
 
-        /*
-        private CellMesh.Vertex GetVertice(Vector2 position, List<CellMesh.Vertex> vertices, CellMesh mesh)
-        {
-            var vert = vertices.Find(v => Vector2.DistanceSquared(v.Coords, position) < 0.01 * 0.01);
-            if (vert == null)
-            {
-                vert = new CellMesh.Vertex(mesh, vertices.Count, position);
-                vertices.Add(vert);
-            }
-
-            return vert;
-        }
-
-        private CellMesh.Edge GetEdge(CellMesh.Vertex vert1, CellMesh.Vertex vert2, List<CellMesh.Edge> edges, CellMesh mesh)
-        {
-            var edge = edges.Find(e => e.IsConnects(vert1, vert2));
-            if (edge == null)
-            {
-                edge = new CellMesh.Edge(mesh, edges.Count, vert1, vert2);
-                edges.Add(edge);
-            }
-
-            return edge;
-        }
-        */
-
         public class CellMesh : Mesh<Cell, MacroEdge, MacroVert>
         {
             public CellMesh(IEnumerable<Vector2[]> facesFromVertices) : base(facesFromVertices)
@@ -494,25 +443,11 @@ namespace TerrainDemo.Macro
             }
         }
 
-        public struct CellWeightDebug
-        {
-            public CellWeightInfo[] Cells;
-            public float Radius;
-            public Vector2 Position;
-        }
-
-        public struct CellWeightInfo
-        {
-            public Coord Id;
-            public double Weight;
-            public float Height;
-        }
-
-        public struct CellCandidate
+        private struct CellCandidate
         {
             public readonly Coord Coords;
             public readonly Vector2 Center;
-            public Vector2[] Vertices;
+            public readonly Vector2[] Vertices;
 
             public CellCandidate(Coord coords, Vector2 center, Vector2[] vertices)
             {

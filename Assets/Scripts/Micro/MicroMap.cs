@@ -96,12 +96,15 @@ namespace TerrainDemo.Micro
 
         public BlockInfo GetBlock(Vector2i blockPos)
         {
+            if (!Bounds.Contains(blockPos))
+                return BlockInfo.Empty;
+
             var localPos = blockPos - Bounds.Min;
             var blockHeight = (_heightMap[localPos.X, localPos.Z].Height + _heightMap[localPos.X + 1, localPos.Z].Height +
                               _heightMap[localPos.X + 1, localPos.Z + 1].Height + _heightMap[localPos.X, localPos.Z + 1].Height) / 4;
             //var blockInfluence = _influences[localPos.X, localPos.Z];
 
-            var result = new BlockInfo(_blocks[localPos.X, localPos.Z], blockHeight, Vector3.up);
+            var result = new BlockInfo(_blocks[localPos.X, localPos.Z], blockHeight);
             return result;
         }
 

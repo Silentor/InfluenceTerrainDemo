@@ -8,16 +8,16 @@ namespace TerrainDemo.Micro
     {
         public readonly Blocks Block;
         public readonly float Height;
-        public Vector3 Normal;
+        public readonly Vector3 Normal;
 
-        public BlockInfo(Blocks block, float height, Vector3 normal)
+        public BlockInfo(Blocks block, float height)
         {
             Block = block;
             Height = height;
-            Normal = normal;
+            Normal = block.Normal;
         }
 
-        public static readonly BlockInfo Empty = new BlockInfo(Blocks.Empty, 0, Vector3.zero);
+        public static readonly BlockInfo Empty = new BlockInfo(Blocks.Empty, 0);
 
         public static Bounds2i GetBounds(Vector2i worldPosition)
         {

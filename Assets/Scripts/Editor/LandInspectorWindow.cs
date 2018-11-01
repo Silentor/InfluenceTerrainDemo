@@ -30,7 +30,6 @@ namespace TerrainDemo.Editor
         private Input _input;
         private bool _enabled = true;
         private bool _drawLayout;
-        private MacroMap.CellWeightDebug _getHeightDebug;
         private bool _isShowInfluenceDebug;
         private bool _drawMicro;
         private bool _showZonesList;
@@ -151,10 +150,13 @@ namespace TerrainDemo.Editor
             Handles.DrawWireDisc(vert.Position, Vector3.up, 1);
         }
 
-        private void DrawBlock(Vector2i position, Color color, uint width = 0)
+        private void DrawBlock(Vector2i position, Color color, uint width = 0, Vector3? normal = null)
         {
             Handles.color = color;
             DrawRectangle.ForHandle(BlockInfo.GetBounds(position), color, width);
+
+            if (normal.HasValue)
+                DrawArrow.ForDebug(BlockInfo.GetCenter(position), normal.Value);
         }
 
         /// <summary>
@@ -209,14 +211,7 @@ namespace TerrainDemo.Editor
             {
                 GUILayout.Label(
                     $"Influence: {MacroMap.GetInfluence((OpenTK.Vector2) input.WorldPosition)}");
-                MacroMap.CellWeightDebug debug;
-                GUILayout.Label($"Height: {MacroMap.GetHeight((OpenTK.Vector2) input.WorldPosition, out debug):N}");
-                var debugWeightInfo = debug.Cells.Select(d => $"Id: {d.Id}, Height: {d.Height}, Weight: {d.Weight:F7}")
-                    .ToJoinedString(",\n");
-                _isShowInfluenceDebug = GUILayout.Toggle(_isShowInfluenceDebug, "Show influence debug");
-                if(_isShowInfluenceDebug)
-                    GUILayout.Label($"Debug radius: {debug.Radius:N1}, weights({debug.Cells.Length}): \n{debugWeightInfo}");
-                _getHeightDebug = debug;
+                GUILayout.Label($"Height: {MacroMap.GetHeight((OpenTK.Vector2) input.WorldPosition):N}");
             }
         }
 
@@ -305,7 +300,7 @@ namespace TerrainDemo.Editor
 
         private string MicroHeightToString(MicroHeight microHeight)
         {
-            return $"({microHeight.ZoneId}) {microHeight.Layer1Height:F1}, {microHeight.BaseHeight:F1}";
+            return $"{microHeight.Layer1Height:F1}, {microHeight.BaseHeight:F1}";
         }
 
         #region Unity
@@ -360,8 +355,17 @@ namespace TerrainDemo.Editor
                 DrawMicroCell(_input.SelectedMicroCell, Color.white);
 
             //Draw selected block
-            if(_drawMicro)
-                DrawBlock((Vector2i)_input.WorldPosition, Color.white, 3);
+            if (_drawMicro)
+            {
+                var blockPos = (Vector2i) _input.WorldPosition;
+                if (MicroMap != null)
+                {
+                    var block = MicroMap.GetBlock(blockPos);
+                    DrawBlock(blockPos, Color.white, 3, block.Normal);
+                }
+                else
+                    DrawBlock(blockPos, Color.white, 3);
+            }
 
         }
 
