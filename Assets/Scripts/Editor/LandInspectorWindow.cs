@@ -193,7 +193,6 @@ namespace TerrainDemo.Editor
         private void DrawMacroZone(Macro.Zone zone, Color color)
         {
             Handles.color = color;
-            var isRelief = _runner.MacroCellReliefVisualization == Renderer.MacroCellReliefMode.Rude;
 
             //Get zone outer border
             foreach (var edge in zone.Edges)
