@@ -1,6 +1,13 @@
-# InfluenceTerrainDemo v0.4 "Simple Texturing"
-Some experiments with zone-based terrain generation. Inspired by http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/ and http://www.shamusyoung.com/twentysidedtale/?p=141
+# InfluenceTerrainDemo v0.5.0 "Great refactor"
+Some experiments with zone-based terrain generation. The idea is to generate large scale land like in http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/ and then produce small scale heightmap and blockmap to explore it on fееt like in http://www.shamusyoung.com/twentysidedtale/?p=141
 
+Currently I used hexagonal mesh for divide large scale map (Macromap) on regions (Zones) which implements some Bioms. Then Zones rasterized to 1x1 meter quads and heightmap and blockmap produced (Micromap). And Micromap converted to meshes and textures for viualization in Unity. I'v commented out texturization logic to focus on zone generation and zone mixings algorithms, so block just filled up by solid color. Also I want to research multilayered heightmaps, so I can hide some surprises below land surface :)
+
+<details>
+ <summary>
+  Previous iterations
+  </summary>
+ <p>
 v0.2 reading:
 Inverse Distance Weighting http://www.gitta.info/ContiSpatVar/en/html/Interpolatio_learningObject2.xhtml
 
@@ -50,3 +57,5 @@ This milestone is about texture generation. I prefer pregenerate textures for al
 And an example of result texturing (relief and biomes generation is still completely dumb, bump mapping/specular is left for future work also):
 
 <img src="/Screenshots/SimpleTextured.jpg?raw=true">
+</p>
+</details>
