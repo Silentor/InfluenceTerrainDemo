@@ -301,7 +301,7 @@ namespace TerrainDemo.Tools
         }
 
         /// <summary>
-        /// Bounds scan algorithm. Not very fast but accurate. As fast as bounding box is tight
+        /// Bounds scan algorithm for convex polygon. Not very fast but accurate. As fast as bounding box is tight
         /// </summary>
         /// <returns></returns>
         public static Vector2i[] Polygon2(Predicate<Vector2> contains, Box2 bounds)

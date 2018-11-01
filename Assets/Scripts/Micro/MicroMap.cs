@@ -30,7 +30,7 @@ namespace TerrainDemo.Micro
             for (var i = 0; i < macromap.Cells.Count; i++)
             {
                 var macroCell = macromap.Cells[i];
-                var microCell = new Cell(macroCell);
+                var microCell = new Cell(macroCell, this);
                 Cells[i] = microCell;
             }
 
@@ -97,17 +97,18 @@ namespace TerrainDemo.Micro
         public BlockInfo GetBlock(Vector2i blockPos)
         {
             if (!Bounds.Contains(blockPos))
-                return BlockInfo.Empty;
+                return null;
 
             var localPos = blockPos - Bounds.Min;
-            var blockHeight = (_heightMap[localPos.X, localPos.Z].Height + _heightMap[localPos.X + 1, localPos.Z].Height +
-                              _heightMap[localPos.X + 1, localPos.Z + 1].Height + _heightMap[localPos.X, localPos.Z + 1].Height) / 4;
-            //var blockInfluence = _influences[localPos.X, localPos.Z];
-
-            var result = new BlockInfo(_blocks[localPos.X, localPos.Z], blockHeight);
+            var result = new BlockInfo(blockPos, _blocks[localPos.X, localPos.Z], 
+                _heightMap[localPos.X, localPos.Z],
+                _heightMap[localPos.X, localPos.Z + 1],
+                _heightMap[localPos.X + 1, localPos.Z + 1],
+                _heightMap[localPos.X + 1, localPos.Z]);
             return result;
         }
 
+        /*
         /// <summary>
         /// Clockwise
         /// </summary>
@@ -123,6 +124,7 @@ namespace TerrainDemo.Micro
                 _heightMap[localPos.X + 1, localPos.Z + 1],
                 _heightMap[localPos.X + 1, localPos.Z]);
         }
+        */
 
         private readonly MacroMap _macromap;
         private readonly TriRunner _settings;

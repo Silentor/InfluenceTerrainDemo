@@ -73,6 +73,16 @@ namespace TerrainDemo.Macro
             return null;
         }
 
+        /*
+        public Cell Intersect(Ray ray)
+        {
+            foreach (var cell in Cells)
+            {
+                
+            }
+        }
+        */
+
         public IEnumerable<Cell> FloodFill(Cell startCell, Predicate<Cell> fillCondition = null)
         {
             return _mesh.FloodFill(startCell, fillCondition);

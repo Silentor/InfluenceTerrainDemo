@@ -147,6 +147,24 @@ namespace TerrainDemo.Tools
                 Handles.DrawLine(corner2, corner4);
             }
         }
+
+        [Conditional("UNITY_EDITOR")]
+        public static void ForHandle(Vector3 c00, Vector3 c01, Vector3 c11, Vector3 c10, Color color, uint width = 0, bool filled = false)
+        {
+            var points = new[] { c00, c01, c11, c10, c00 };
+
+            Handles.color = color;
+            if(width == 0)
+                Handles.DrawPolyLine(points);
+            else
+                Handles.DrawAAPolyLine(width, points);
+
+            if (filled)
+            {
+                Handles.DrawLine(c00, c11);
+                Handles.DrawLine(c01, c10);
+            }
+        }
 #endif
     }
 }

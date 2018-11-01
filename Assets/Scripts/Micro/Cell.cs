@@ -14,13 +14,15 @@ namespace TerrainDemo.Micro
     public class Cell
     {
         public readonly Macro.Cell Macro;
+        private readonly MicroMap _map;
         public readonly Vector2i[] BlockPositions;
         public readonly Vector2i[] VertexPositions;
         public readonly Bounds2i Bounds;
 
-        public Cell(Macro.Cell macro)
+        public Cell(Macro.Cell macro, MicroMap map)
         {
             Macro = macro;
+            _map = map;
             BlockPositions = Rasterization.Polygon2(macro.Contains, macro.Bounds);
             Bounds = (Bounds2i) macro.Bounds;
 
@@ -36,6 +38,14 @@ namespace TerrainDemo.Micro
             }
 
             VertexPositions = vertices.ToArray();
+        }
+
+        public IEnumerable<BlockInfo> GetBlocks()
+        {
+            foreach (var blockPosition in BlockPositions)
+            {
+                yield return _map.GetBlock(blockPosition);
+            }
         }
     }
 }

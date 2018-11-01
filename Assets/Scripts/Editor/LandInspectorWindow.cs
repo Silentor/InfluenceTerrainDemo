@@ -50,6 +50,7 @@ namespace TerrainDemo.Editor
             {
                 IsWorldPlaneSelected = false,
                 ViewPoint = SceneView.currentDrawingSceneView.camera.transform.position,
+                ViewDirection = SceneView.currentDrawingSceneView.camera.transform.forward,
             };
 
             var userInputRay = SceneView.currentDrawingSceneView.camera.ScreenPointToRay(sceneScreenPosition);
@@ -133,9 +134,11 @@ namespace TerrainDemo.Editor
         private void DrawMicroCell(Micro.Cell cell, Color color)
         {
             Handles.color = color;
-            foreach (var block in cell.BlockPositions)
+            foreach (var block in cell.GetBlocks())
             {
-                DrawBlock(block, color);
+                //Cull backface blocks
+                if(Vector3.Angle(_input.ViewDirection, block.Normal) > 90)
+                    DrawBlock(block, color);
             }
         }
 
@@ -157,6 +160,22 @@ namespace TerrainDemo.Editor
 
             if (normal.HasValue)
                 DrawArrow.ForDebug(BlockInfo.GetCenter(position), normal.Value);
+        }
+
+        private void DrawBlock(BlockInfo block, Color color, uint width = 0, bool drawNormal = false)
+        {
+            Handles.color = color;
+
+            var bounds = (Bounds)BlockInfo.GetBounds(block.Position);
+            var corner00 = new Vector3(bounds.min.x, block.Corner00.Height, bounds.min.z);
+            var corner10 = new Vector3(bounds.max.x, block.Corner10.Height, bounds.min.z);
+            var corner11 = new Vector3(bounds.max.x, block.Corner11.Height, bounds.max.z);
+            var corner01 = new Vector3(bounds.min.x, block.Corner01.Height, bounds.max.z);
+
+            DrawRectangle.ForHandle(corner00, corner01, corner11, corner10, color, width);
+
+            if (drawNormal)
+                DrawArrow.ForDebug(block.GetCenter(), block.Normal);
         }
 
         /// <summary>
@@ -227,21 +246,17 @@ namespace TerrainDemo.Editor
                 GUILayout.Label($"Type: {block.Block}");
 
                 //Show block vertices info
-                var vertices = MicroMap.GetBlockVertices(blockPos);
+                var vertices = MicroMap.GetBlock(blockPos);
                 GUILayout.BeginVertical();
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(MicroHeightToString(vertices.Item2));
-                GUILayout.Label(MicroHeightToString(vertices.Item3));
+                GUILayout.Label(MicroHeightToString(vertices.Corner01));
+                GUILayout.Label(MicroHeightToString(vertices.Corner11));
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(MicroHeightToString(vertices.Item1));
-                GUILayout.Label(MicroHeightToString(vertices.Item4));
+                GUILayout.Label(MicroHeightToString(vertices.Corner00));
+                GUILayout.Label(MicroHeightToString(vertices.Corner10));
                 GUILayout.EndHorizontal();
                 GUILayout.EndVertical();
-                //GUILayout.Box("Test");
-
-
-
             }
             else
                 GUILayout.Label("Empty block");
@@ -361,7 +376,9 @@ namespace TerrainDemo.Editor
                 if (MicroMap != null)
                 {
                     var block = MicroMap.GetBlock(blockPos);
-                    DrawBlock(blockPos, Color.white, 3, block.Normal);
+
+                    if(block != null)
+                        DrawBlock(block, Color.white, 3, true);
                 }
                 else
                     DrawBlock(blockPos, Color.white, 3);
@@ -461,6 +478,8 @@ namespace TerrainDemo.Editor
             public bool IsBlockSelected;
 
             public Vector3 ViewPoint;
+            public Vector3 ViewDirection;
+
             public Vector3 WorldPosition;
             public Vector2i BlockPosition;
             /// <summary>

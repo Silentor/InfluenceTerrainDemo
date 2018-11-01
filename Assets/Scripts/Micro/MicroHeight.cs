@@ -11,8 +11,6 @@ namespace TerrainDemo.Micro
         public readonly float BaseHeight;
         public readonly float Layer1Height;
         public readonly bool AdditionalLayer;
-        [Obsolete]
-        public readonly int ZoneId;
 
         public float Height => Math.Max(BaseHeight, Layer1Height);
 
@@ -26,7 +24,6 @@ namespace TerrainDemo.Micro
             BaseHeight = baseHeight;
             Layer1Height = layer1Height;
             AdditionalLayer = additionalLayer;
-            ZoneId = -1;
         }
     }
 }
