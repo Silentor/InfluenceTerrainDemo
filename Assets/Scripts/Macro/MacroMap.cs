@@ -4,6 +4,7 @@ using System.Linq;
 using System.Xml;
 using OpenTK;
 using TerrainDemo.Generators;
+using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using TerrainDemo.Tri;
@@ -54,7 +55,7 @@ namespace TerrainDemo.Macro
             return GetIDWInfluence(worldPosition);
         }
 
-        public float GetHeight(Vector2 worldPosition)
+        public Heights GetHeight(Vector2 worldPosition)
         {
             return GetIDWHeight(worldPosition);
         }
@@ -215,7 +216,7 @@ namespace TerrainDemo.Macro
             }
         }
 
-        private float GetIDWHeight(Vector2 worldPosition)
+        private Heights GetIDWHeight(Vector2 worldPosition)
         {
             PrepareLandIDW();
 
@@ -225,25 +226,25 @@ namespace TerrainDemo.Macro
             alglib.kdtreequeryresultstags(_idwInfluence, ref _nearestCellsTags);
 
             //Calculate height in the point
-            float[] cellsHeights = new float[nearestCellsCount];
+            Vector2d[] cellsHeights = new Vector2d[nearestCellsCount];
             double[] cellsWeights = new double[nearestCellsCount];
             double weightsSum = 0;
             for (int i = 0; i < nearestCellsCount; i++)
             {
                 var cell = Cells[_nearestCellsTags[i]];
 
-                cellsHeights[i] = cell.DesiredHeight;
+                cellsHeights[i] = (Vector2d)cell.DesiredHeight;
                 cellsWeights[i] = IDWLocalShepard2(cell.Center, worldPosition, searchRadius);
                 weightsSum += cellsWeights[i];
             }
 
-            double result = 0;
+            var result = Vector2d.Zero;
             for (int i = 0; i < nearestCellsCount; i++)
             {
                 result += cellsHeights[i] * (cellsWeights[i] / weightsSum);
             }
 
-            return (float) result;
+            return (Heights)result;
         }
 
         private Influence GetIDWInfluence(Vector2 worldPosition)

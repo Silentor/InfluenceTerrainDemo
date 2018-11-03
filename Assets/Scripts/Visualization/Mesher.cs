@@ -63,7 +63,7 @@ namespace TerrainDemo.Visualization
                     var chunkLocalZ = worldZ - bounds.Min.Z;
 
                     if(mode.RenderMainLayer)
-                        vertices.Add(new Vector3(worldX, heights[mapLocalX, mapLocalZ].Height, worldZ));
+                        vertices.Add(new Vector3(worldX, heights[mapLocalX, mapLocalZ].Nominal, worldZ));
                     else
                         vertices.Add(new Vector3(worldX, heights[mapLocalX, mapLocalZ].BaseHeight, worldZ));
 
@@ -84,10 +84,10 @@ namespace TerrainDemo.Visualization
                     float height00, height01, height11, height10;
                     if (mode.RenderMainLayer)
                     {
-                        height00 = heights[mapLocalX, mapLocalZ].Height;
-                        height01 = heights[mapLocalX, mapLocalZ + 1].Height;
-                        height11 = heights[mapLocalX + 1, mapLocalZ + 1].Height;
-                        height10 = heights[mapLocalX + 1, mapLocalZ].Height;
+                        height00 = heights[mapLocalX, mapLocalZ].Nominal;
+                        height01 = heights[mapLocalX, mapLocalZ + 1].Nominal;
+                        height11 = heights[mapLocalX + 1, mapLocalZ + 1].Nominal;
+                        height10 = heights[mapLocalX + 1, mapLocalZ].Nominal;
                     }
                     else
                     {
@@ -235,7 +235,7 @@ namespace TerrainDemo.Visualization
 
 
         /// <summary>
-        /// Create flat cell mesh from 2 triangles with influence vertex coloring
+        /// Create macro cell mesh with influence vertex coloring
         /// </summary>
         /// <param name="vertices"></param>
         /// <param name="colors"></param>
@@ -248,17 +248,17 @@ namespace TerrainDemo.Visualization
             var baseIndex = vertices.Count;
 
             vertices.Add(cell.CenterPoint);
-            vertices.Add(new Vector3(cell.Vertices[0].Position.X, cell.Vertices[0].Height,
+            vertices.Add(new Vector3(cell.Vertices[0].Position.X, cell.Vertices[0].Height.Nominal,
                 cell.Vertices[0].Position.Y));
-            vertices.Add(new Vector3(cell.Vertices[1].Position.X, cell.Vertices[1].Height,
+            vertices.Add(new Vector3(cell.Vertices[1].Position.X, cell.Vertices[1].Height.Nominal,
                 cell.Vertices[1].Position.Y));
-            vertices.Add(new Vector3(cell.Vertices[2].Position.X, cell.Vertices[2].Height,
+            vertices.Add(new Vector3(cell.Vertices[2].Position.X, cell.Vertices[2].Height.Nominal,
                 cell.Vertices[2].Position.Y));
-            vertices.Add(new Vector3(cell.Vertices[3].Position.X, cell.Vertices[3].Height,
+            vertices.Add(new Vector3(cell.Vertices[3].Position.X, cell.Vertices[3].Height.Nominal,
                 cell.Vertices[3].Position.Y));
-            vertices.Add(new Vector3(cell.Vertices[4].Position.X, cell.Vertices[4].Height,
+            vertices.Add(new Vector3(cell.Vertices[4].Position.X, cell.Vertices[4].Height.Nominal,
                 cell.Vertices[4].Position.Y));
-            vertices.Add(new Vector3(cell.Vertices[5].Position.X, cell.Vertices[5].Height,
+            vertices.Add(new Vector3(cell.Vertices[5].Position.X, cell.Vertices[5].Height.Nominal,
                 cell.Vertices[5].Position.Y));
 
             indices.Add(baseIndex);

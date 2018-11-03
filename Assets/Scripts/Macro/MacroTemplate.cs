@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using OpenTK;
 using TerrainDemo.Generators;
 using TerrainDemo.Micro;
 using TerrainDemo.Settings;
@@ -12,6 +13,7 @@ using UnityEngine.Assertions;
 using Debug = UnityEngine.Debug;
 using Random = TerrainDemo.Tools.Random;
 using Vector2 = OpenTK.Vector2;
+using Vector3 = UnityEngine.Vector3;
 
 namespace TerrainDemo.Macro
 {
@@ -46,6 +48,8 @@ namespace TerrainDemo.Macro
 
             Debug.LogFormat("Created macromap in {0} msec", timer.ElapsedMilliseconds);
 
+            CheckMacroHeightFunctionQuality(result);
+
             return result;
         }
 
@@ -67,7 +71,7 @@ namespace TerrainDemo.Macro
                 //Prepare buffers for microcell
                 var bufferSize = microcell.Bounds;
                 var cellMixBuffer = new CellMixVertex[bufferSize.Size.X + 1, bufferSize.Size.Z + 1];
-                var heightBuffer = new List<MicroHeight>(microcell.VertexPositions.Length);
+                var heightBuffer = new List<Heights>(microcell.VertexPositions.Length);
 
                 //Prepare cell mix buffer
                 foreach (var vertexPosition in microcell.VertexPositions)
@@ -81,22 +85,13 @@ namespace TerrainDemo.Macro
                     cellMixBuffer[localPos.X, localPos.Z] = cellMixVertex;
                 }
 
-                //Calculate normals based on macro height
-                foreach (var vertexPosition in microcell.VertexPositions)
-                {
-                    var localPos = vertexPosition - bufferSize.Min;
-                    var cellMixVertex = cellMixBuffer[localPos.X, localPos.Z];
-
-                    cellMixVertex.Normal = CalculateNormal(cellMixBuffer, localPos);
-                }
-
                 //Calculate micro heightmap
                 foreach (var vertexPosition in microcell.VertexPositions)
                 {
                     var localPos = vertexPosition - bufferSize.Min;
                     var cellMixVertex = cellMixBuffer[localPos.X, localPos.Z];
 
-                    cellMixVertex.MicroHeights = new MicroHeight[cellMixVertex.Influence.Count];
+                    cellMixVertex.Heightses = new Heights[cellMixVertex.Influence.Count];
                     for (var i = 0; i < cellMixVertex.Influence.Count; i++)
                     {
                         var infl = cellMixVertex.Influence.GetInfluence(i);
@@ -117,11 +112,11 @@ namespace TerrainDemo.Macro
                         Assert.IsNotNull(generator);
 
                         var microHeight = generator.GetMicroHeight(vertexPosition, cellMixVertex);
-                        cellMixVertex.MicroHeights[i] = microHeight;
+                        cellMixVertex.Heightses[i] = microHeight;
                     }
 
                     //Calculate result heights. Простейший способ - лерп высот на основании инфлюенса
-                    var resultMicroHeight = CombineSimple(cellMixVertex.Influence, cellMixVertex.MicroHeights);
+                    var resultMicroHeight = CombineSimple(cellMixVertex.Influence, cellMixVertex.Heightses);
                     //var resultMicroHeight = Combine(cellMixVertex.Influence, cellMixVertex.MicroHeights);
                     cellMixVertex.ResultHeight = resultMicroHeight;
                     heightBuffer.Add(resultMicroHeight);
@@ -155,11 +150,13 @@ namespace TerrainDemo.Macro
 
                     Assert.IsNotNull(generator);
 
-                    var blockNormal = cellMixBuffer[localPos.X, localPos.Z].Normal
-                                      + cellMixBuffer[localPos.X + 1, localPos.Z].Normal
-                                      + cellMixBuffer[localPos.X, localPos.Z + 1].Normal
-                                      + cellMixBuffer[localPos.X + 1, localPos.Z + 1].Normal;
-                    blockNormal = (blockNormal / 4).normalized;
+                    var blockNormal = BlockInfo.GetBlockNormal(
+                        cellMixBuffer[localPos.X, localPos.Z].MacroHeight.Nominal,
+                        cellMixBuffer[localPos.X + 1, localPos.Z + 1].MacroHeight.Nominal,
+                        cellMixBuffer[localPos.X, localPos.Z + 1].MacroHeight.Nominal,
+                        cellMixBuffer[localPos.X + 1, localPos.Z].MacroHeight.Nominal
+                    );
+                                      
                     var block = generator.GetBlocks(blockPosition, blockNormal);
                     block.Normal = blockNormal;
                     if (!isMainLayerPresent)
@@ -291,13 +288,13 @@ namespace TerrainDemo.Macro
         /// <param name="influnce"></param>
         /// <param name="heights"></param>
         /// <returns></returns>
-        private static MicroHeight CombineSimple(Influence influnce, params MicroHeight[] heights)
+        private static Heights CombineSimple(Influence influnce, params Heights[] heights)
         {
             Assert.IsTrue(influnce.Count == heights.Length);
 
             //Fast pass
             if (heights.Length == 1)
-                return new MicroHeight(heights[0].BaseHeight, heights[0].Layer1Height);      //Be sure to disable Additional layer flag
+                return new Heights(heights[0].BaseHeight, heights[0].Layer1Height);      //Be sure to disable Additional layer flag
 
             float baseResult = 0;
             float layer1Result = 0;
@@ -313,41 +310,36 @@ namespace TerrainDemo.Macro
                 layer1Result += layer1Height;
             }
 
-            return new MicroHeight(baseResult, layer1Result);
+            return new Heights(baseResult, layer1Result);
         }
 
-        /// <summary>
-        /// based on http://www.flipcode.com/archives/Calculating_Vertex_Normals_for_Height_Maps.shtml
-        /// </summary>
-        /// <param name="buffer"></param>
-        /// <param name="localPosition"></param>
-        /// <returns></returns>
-        private static Vector3 CalculateNormal(CellMixVertex[,] buffer, Vector2i localPosition)
+        private void CheckMacroHeightFunctionQuality(MacroMap map)
         {
-            var currentVertex = buffer[localPosition.X, localPosition.Z];
+            //Estimate macro height function quality
+            //Узнаем, на сколько отличается функция макровысоты от заданных высот ячеек
+            double maxDiff = 0, averageDiff = 0;
+            Cell maxDiffCell = null;
+            foreach (var macroCell in map.Cells)
+            {
+                var heightDiff = (Vector2d)macroCell.DesiredHeight - (Vector2d)map.GetHeight(macroCell.Center);
+                if (Math.Abs(maxDiff) < Math.Abs(heightDiff.X))
+                {
+                    maxDiffCell = macroCell;
+                    maxDiff = heightDiff.X;
+                }
 
-            var x0 = buffer[localPosition.X < buffer.GetLength(0) - 1 ? localPosition.X + 1 : localPosition.X, localPosition.Z];
-            if (x0 == null)
-                x0 = currentVertex;
-            var x1 = buffer[localPosition.X > 0 ? localPosition.X - 1 : localPosition.X, localPosition.Z];
-            if (x1 == null)
-                x1 = currentVertex;
-            var sx = x0.MacroHeight - x1.MacroHeight;
-            if (x0 == currentVertex || x1 == currentVertex)
-                sx *= 2;
+                if (Math.Abs(maxDiff) < Math.Abs(heightDiff.Y))
+                {
+                    maxDiffCell = macroCell;
+                    maxDiff = heightDiff.Y;
+                }
 
-            var z0 = buffer[localPosition.X, localPosition.Z < buffer.GetLength(1) - 1 ? localPosition.Z + 1 : localPosition.Z];
-            if (z0 == null)
-                z0 = currentVertex;
-            var z1 = buffer[localPosition.X, localPosition.Z > 0 ? localPosition.Z - 1 : localPosition.Z];
-            if (z1 == null)
-                z1 = currentVertex;
-            var sz = z0.MacroHeight - z1.MacroHeight;
-            if (z0 == currentVertex || z1 == currentVertex)
-                sz *= 2;
+                averageDiff = averageDiff + heightDiff.X + heightDiff.Y;
+            }
 
-            var result = new Vector3(-sx, 2, sz);
-            return result.normalized;
+            averageDiff /= map.Cells.Count * Heights.LayersCount;
+
+            Debug.LogFormat("Average diff {0}, max diff {1} on cell {2}", averageDiff, maxDiff, maxDiffCell?.Coords);
         }
 
         /// <summary>
@@ -357,16 +349,13 @@ namespace TerrainDemo.Macro
         {
             //1) Prepare buffer
             public Influence Influence;
-            public float MacroHeight;
+            public Heights MacroHeight;
 
-            //2) Generate macro height normals
-            public Vector3 Normal;
+            //2) Generate microheights for every influenced zone
+            public Heights[] Heightses;   //As in Influence
 
-            //3) Generate microheights for every influenced zone
-            public MicroHeight[] MicroHeights;   //As in Influence
-
-            //4) Generate result microheight in given vertex mixing all influenced zone microheights
-            public MicroHeight ResultHeight;
+            //3) Generate result microheight in given vertex mixing all influenced zone microheights
+            public Heights ResultHeight;
         }
     }
 }

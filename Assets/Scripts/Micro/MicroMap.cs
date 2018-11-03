@@ -34,7 +34,7 @@ namespace TerrainDemo.Micro
                 Cells[i] = microCell;
             }
 
-            _heightMap = new MicroHeight[Bounds.Size.X + 1, Bounds.Size.Z + 1];
+            _heightMap = new Heights[Bounds.Size.X + 1, Bounds.Size.Z + 1];
             _blocks = new Blocks[Bounds.Size.X, Bounds.Size.Z];
 
             Debug.LogFormat("Generated micromap {0} x {1} = {2} blocks", Bounds.Size.X, Bounds.Size.Z, Bounds.Size.X * Bounds.Size.Z);
@@ -48,7 +48,7 @@ namespace TerrainDemo.Micro
             return Cells[_macromap.Cells.IndexOf(cell)];
         }
 
-        public void SetHeights(IEnumerable<Vector2i> positions, IEnumerable<MicroHeight> heights)
+        public void SetHeights(IEnumerable<Vector2i> positions, IEnumerable<Heights> heights)
         {
             var posEnumerator = positions.GetEnumerator();
             var infEnumerator = heights.GetEnumerator();
@@ -84,7 +84,7 @@ namespace TerrainDemo.Micro
             }
         }
 
-        public MicroHeight[,] GetHeightMap()
+        public Heights[,] GetHeightMap()
         {
             return _heightMap;
         }
@@ -128,7 +128,7 @@ namespace TerrainDemo.Micro
 
         private readonly MacroMap _macromap;
         private readonly TriRunner _settings;
-        private readonly MicroHeight[,] _heightMap;
+        private readonly Heights[,] _heightMap;
         private readonly Blocks[,] _blocks;
         //private readonly double[,][] _influences;
     }

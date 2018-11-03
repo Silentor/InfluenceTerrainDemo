@@ -23,30 +23,44 @@ namespace TerrainDemo.Generators
             {
                 foreach (var cell in Zone.Cells)
                 {
-                    cell.DesiredHeight = UnityEngine.Random.Range(20, 30);
+                    cell.DesiredHeight = new Heights(0, 20);
+                }
+            }
+            if (Zone.Biome.Type == BiomeType.TestPit)
+            {
+                foreach (var cell in Zone.Cells)
+                {
+                    cell.DesiredHeight = new Heights(-20, -10);
+                }
+            }
+            if (Zone.Biome.Type == BiomeType.TestBulge)
+            {
+                foreach (var cell in Zone.Cells)
+                {
+                    cell.DesiredHeight = new Heights(10, 20);
                 }
             }
             else
             {
                 foreach (var cell in Zone.Cells)
                 {
-                    cell.DesiredHeight = 0;
+                    cell.DesiredHeight = new Heights(0, 0);
                 }
             }
 
             return Zone;
         }
 
-        public override MicroHeight GetMicroHeight(Vector2 position, MacroTemplate.CellMixVertex vertex)
+        public override Heights GetMicroHeight(Vector2 position, MacroTemplate.CellMixVertex vertex)
         {
             if (Zone.Biome.Type == BiomeType.TestBulge)
-                return new MicroHeight(vertex.MacroHeight, vertex.MacroHeight + 10);
+                return new Heights(vertex.MacroHeight.BaseHeight, vertex.MacroHeight.Layer1Height);
             else if (Zone.Biome.Type == BiomeType.TestPit)
-                return new MicroHeight(vertex.MacroHeight - 10, vertex.MacroHeight - 10);
+                return new Heights(vertex.MacroHeight.BaseHeight, vertex.MacroHeight.Layer1Height);
             else if(Zone.Biome.Type == BiomeType.TestFlat)
-                return new MicroHeight(vertex.MacroHeight, vertex.MacroHeight);
+                return new Heights(vertex.MacroHeight.BaseHeight, vertex.MacroHeight.Layer1Height);
             else if (Zone.Biome.Type == BiomeType.TestOnlyMacroLow || Zone.Biome.Type == BiomeType.TestOnlyMacroHigh)
-                return new MicroHeight(vertex.MacroHeight, vertex.MacroHeight);
+                return new Heights(vertex.MacroHeight.BaseHeight, vertex.MacroHeight.Layer1Height);
 
             else
                 throw new NotImplementedException();

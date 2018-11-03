@@ -32,7 +32,7 @@ namespace TerrainDemo.Macro
             }
         }
 
-        public float Height
+        public Heights Height
         {
             get
             {
@@ -65,7 +65,7 @@ namespace TerrainDemo.Macro
         private readonly MacroMap _map;
         private BiomeSettings[] _biomes;
         private Influence? _influence;
-        private float? _height;
+        private Heights? _height;
         private MacroMap.CellMesh _mesh2;
         private Cell[] _cells;
         private MacroEdge[] _edges;

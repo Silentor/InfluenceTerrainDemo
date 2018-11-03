@@ -29,22 +29,22 @@ namespace TerrainDemo.Generators
         public override Macro.Zone GenerateMacroZone()
         {
             foreach (var cell in Zone.Cells)
-                cell.DesiredHeight = _random.Range(0, 3);
+                cell.DesiredHeight = new Heights(_random.Range(-12, -5), _random.Range(0, 3));
 
             return Zone;
         }
 
-        public override MicroHeight GetMicroHeight(Vector2 position, MacroTemplate.CellMixVertex vertex)
+        public override Heights GetMicroHeight(Vector2 position, MacroTemplate.CellMixVertex vertex)
         {
             position = Vector2.Transform(position, Quaternion.FromEulerAngles(0, 0, _hillsOrientation));
-            return new MicroHeight(vertex.MacroHeight - 5,
-                (float) (_microReliefNoise.GetSimplex(position.X / 10, position.Y / 30)) * 2 + vertex.MacroHeight,         //Вытянутые дюны
+            return new Heights(vertex.MacroHeight.BaseHeight,
+                (float) (_microReliefNoise.GetSimplex(position.X / 10, position.Y / 30)) * 2 + vertex.MacroHeight.Layer1Height,         //Вытянутые дюны
                 true);
         }
 
         public override Blocks GetBlocks(Vector2i position, Vector3 normal)
         {
-            if(NormalToSlope(normal) > 5)
+            if(NormalToSlope(normal) > 45)
                 return new Blocks() { Base = _settings.BaseBlock.Block, Layer1 = _stoneBlock.Block };
             else
             {

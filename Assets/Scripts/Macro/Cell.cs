@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using OpenTK;
+using TerrainDemo.Micro;
 using TerrainDemo.Settings;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
@@ -40,7 +41,7 @@ namespace TerrainDemo.Macro
         /// <summary>
         /// Planned height for this cell
         /// </summary>
-        public float DesiredHeight;
+        public Heights DesiredHeight;
 
         public float[] MicroHeights { get; private set; }
 
@@ -62,7 +63,7 @@ namespace TerrainDemo.Macro
             get
             {
                 if (!_centerPoint.HasValue)
-                    _centerPoint = new Vector3(Center.X, Map.GetHeight(Center), Center.Y);
+                    _centerPoint = new Vector3(Center.X, Map.GetHeight(Center).Nominal, Center.Y);
 
                 return _centerPoint.Value;
             }
@@ -74,12 +75,12 @@ namespace TerrainDemo.Macro
             {
                 _corners = new[]
                 {
-                    new Vector3(Vertices[0].Position.X, Map.GetHeight(Vertices[0].Position), Vertices[0].Position.Y),
-                    new Vector3(Vertices[1].Position.X, Map.GetHeight(Vertices[1].Position), Vertices[1].Position.Y),
-                    new Vector3(Vertices[2].Position.X, Map.GetHeight(Vertices[2].Position), Vertices[2].Position.Y),
-                    new Vector3(Vertices[3].Position.X, Map.GetHeight(Vertices[3].Position), Vertices[3].Position.Y),
-                    new Vector3(Vertices[4].Position.X, Map.GetHeight(Vertices[4].Position), Vertices[4].Position.Y),
-                    new Vector3(Vertices[5].Position.X, Map.GetHeight(Vertices[5].Position), Vertices[5].Position.Y),
+                    new Vector3(Vertices[0].Position.X, Map.GetHeight(Vertices[0].Position).Nominal, Vertices[0].Position.Y),
+                    new Vector3(Vertices[1].Position.X, Map.GetHeight(Vertices[1].Position).Nominal, Vertices[1].Position.Y),
+                    new Vector3(Vertices[2].Position.X, Map.GetHeight(Vertices[2].Position).Nominal, Vertices[2].Position.Y),
+                    new Vector3(Vertices[3].Position.X, Map.GetHeight(Vertices[3].Position).Nominal, Vertices[3].Position.Y),
+                    new Vector3(Vertices[4].Position.X, Map.GetHeight(Vertices[4].Position).Nominal, Vertices[4].Position.Y),
+                    new Vector3(Vertices[5].Position.X, Map.GetHeight(Vertices[5].Position).Nominal, Vertices[5].Position.Y),
                 };
             }
 

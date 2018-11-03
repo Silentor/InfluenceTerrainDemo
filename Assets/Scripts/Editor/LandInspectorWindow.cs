@@ -65,7 +65,7 @@ namespace TerrainDemo.Editor
                     result.Distance = Vector3.Distance(result.CursorPosition, result.ViewPoint);
                     result.SelectedMacroCell = selectedCell.Item1;
                     result.SelectedVert = MacroMap.Vertices.FirstOrDefault(v => Vector3.Distance(
-                        new Vector3(v.Position.X, v.Height, v.Position.Y), result.CursorPosition) < 1);
+                        new Vector3(v.Position.X, v.Height.Nominal, v.Position.Y), result.CursorPosition) < 1);
 
                     if (MicroMap != null)
                     {
@@ -85,13 +85,14 @@ namespace TerrainDemo.Editor
 
         private void DrawMacroCell(Cell cell)
         {
-            DrawMacroCell(cell, cell.Biome != null ? cell.Biome.LayoutColor : Inactive, 0, false);
+            DrawMacroCell(cell, cell.Biome != null ? cell.Biome.LayoutColor : Inactive, 0, false, false);
         }
 
-        private void DrawMacroCell(Cell cell, Color color, int width, bool labelVertices)
+        private void DrawMacroCell(Cell cell, Color color, int width, bool labelVertices, bool filled)
         {
             Handles.color = color;
 
+            //Draw perimeter
             if(width == 0)
                 Handles.DrawPolyLine(
                     VertexToPosition(cell.Vertices[0]),
@@ -113,29 +114,44 @@ namespace TerrainDemo.Editor
                     VertexToPosition(cell.Vertices[0]));
             }
 
+            if (filled)
+            {
+                Handles.DrawLines(new Vector3[]
+                {
+                    VertexToPosition(cell.Vertices[0]), cell.CenterPoint,
+                    VertexToPosition(cell.Vertices[1]), cell.CenterPoint,
+                    VertexToPosition(cell.Vertices[2]), cell.CenterPoint,
+                    VertexToPosition(cell.Vertices[3]), cell.CenterPoint,
+                    VertexToPosition(cell.Vertices[4]), cell.CenterPoint,
+                    VertexToPosition(cell.Vertices[5]), cell.CenterPoint,
+                });
+            }
+
             var cellDistance = Vector3.Distance(cell.Center, _input.ViewPoint);
             var fontSize = Mathf.RoundToInt(-cellDistance * 1 / 8 + 15);
 
             if (cellDistance < 80 && cellDistance > 3 && fontSize > 0)
             {
-                var style = new GUIStyle(GUI.skin.label);
+                var contrastLabelStyle = new GUIStyle(GUI.skin.label);
                 var contrastColor = (new Color(1, 1, 1, 2) - cell.Biome.LayoutColor) * 2;
-                style.normal.textColor = contrastColor;
-                style.fontSize = fontSize;
-                Handles.Label( cell.CenterPoint, cell.Coords.ToString(), style);
+                contrastLabelStyle.normal.textColor = contrastColor;
+                contrastLabelStyle.fontSize = fontSize;
+                Handles.Label( cell.CenterPoint, cell.Coords.ToString(), contrastLabelStyle);
                 Handles.color = contrastColor;
-                Handles.DrawWireDisc(cell.CenterPoint, Vector3.up, 0.1f);
+                Handles.DrawWireDisc(cell.CenterPoint, _input.ViewDirection, 0.1f);
 
                 if (labelVertices)
                 {
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[0]), cell.CenterPoint, 0.2f), cell.Vertices[0].Id.ToString(), style);
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[1]), cell.CenterPoint, 0.2f), cell.Vertices[1].Id.ToString(), style);
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[2]), cell.CenterPoint, 0.2f), cell.Vertices[2].Id.ToString(), style);
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[3]), cell.CenterPoint, 0.2f), cell.Vertices[3].Id.ToString(), style);
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[4]), cell.CenterPoint, 0.2f), cell.Vertices[4].Id.ToString(), style);
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[5]), cell.CenterPoint, 0.2f), cell.Vertices[5].Id.ToString(), style);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[0]), cell.CenterPoint, 0.2f), cell.Vertices[0].Id.ToString(), contrastLabelStyle);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[1]), cell.CenterPoint, 0.2f), cell.Vertices[1].Id.ToString(), contrastLabelStyle);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[2]), cell.CenterPoint, 0.2f), cell.Vertices[2].Id.ToString(), contrastLabelStyle);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[3]), cell.CenterPoint, 0.2f), cell.Vertices[3].Id.ToString(), contrastLabelStyle);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[4]), cell.CenterPoint, 0.2f), cell.Vertices[4].Id.ToString(), contrastLabelStyle);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[5]), cell.CenterPoint, 0.2f), cell.Vertices[5].Id.ToString(), contrastLabelStyle);
                 }
             }
+
+            
 
         }
 
@@ -158,7 +174,7 @@ namespace TerrainDemo.Editor
         private void DrawTriVert(MacroVert vert)
         {
             Handles.color = Color.white;
-            Handles.DrawWireDisc(new Vector3(vert.Position.X, vert.Height, vert.Position.Y), -_input.ViewDirection, 1);
+            Handles.DrawWireDisc(new Vector3(vert.Position.X, vert.Height.Nominal, vert.Position.Y), _input.ViewDirection, 1);
         }
 
         private void DrawBlock(Vector2i position, Color color, uint width = 0, Vector3? normal = null)
@@ -175,10 +191,10 @@ namespace TerrainDemo.Editor
             Handles.color = color;
 
             var bounds = (Bounds)BlockInfo.GetBounds(block.Position);
-            var corner00 = new Vector3(bounds.min.x, block.Corner00.Height, bounds.min.z);
-            var corner10 = new Vector3(bounds.max.x, block.Corner10.Height, bounds.min.z);
-            var corner11 = new Vector3(bounds.max.x, block.Corner11.Height, bounds.max.z);
-            var corner01 = new Vector3(bounds.min.x, block.Corner01.Height, bounds.max.z);
+            var corner00 = new Vector3(bounds.min.x, block.Corner00.Nominal, bounds.min.z);
+            var corner10 = new Vector3(bounds.max.x, block.Corner10.Nominal, bounds.min.z);
+            var corner11 = new Vector3(bounds.max.x, block.Corner11.Nominal, bounds.max.z);
+            var corner01 = new Vector3(bounds.min.x, block.Corner01.Nominal, bounds.max.z);
 
             DrawRectangle.ForHandle(corner00, corner01, corner11, corner10, color, width);
 
@@ -294,7 +310,7 @@ namespace TerrainDemo.Editor
 
         private static Vector3 VertexToPosition(MacroVert vertex)
         {
-            return new Vector3(vertex.Position.X, vertex.Height, vertex.Position.Y);
+            return new Vector3(vertex.Position.X, vertex.Height.Nominal, vertex.Position.Y);
         }
 
 
@@ -315,9 +331,9 @@ namespace TerrainDemo.Editor
             }
         }
 
-        private string MicroHeightToString(MicroHeight microHeight)
+        private string MicroHeightToString(Heights heights)
         {
-            return $"{microHeight.Layer1Height:F1}, {microHeight.BaseHeight:F1}";
+            return $"{heights.Layer1Height:F1}, {heights.BaseHeight:F1}";
         }
 
         #region Unity
@@ -362,7 +378,7 @@ namespace TerrainDemo.Editor
             //Draw selected macrocell
             if (_input.SelectedMacroCell != null)
             {
-                DrawMacroCell(_input.SelectedMacroCell, Active, 5, true);
+                DrawMacroCell(_input.SelectedMacroCell, Active, 5, true, true);
                 DrawMacroZone(_input.SelectedMacroCell.Zone, _drawLayout ? Active : _input.SelectedMacroCell.Zone.Biome.LayoutColor);
             }
 

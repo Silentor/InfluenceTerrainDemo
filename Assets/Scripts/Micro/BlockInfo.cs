@@ -1,4 +1,5 @@
-﻿using TerrainDemo.Spatial;
+﻿using TerrainDemo.Macro;
+using TerrainDemo.Spatial;
 using UnityEngine;
 using Vector2 = OpenTK.Vector2;
 
@@ -12,13 +13,13 @@ namespace TerrainDemo.Micro
         public readonly Vector2i Position;
         public readonly Blocks Block;
         public readonly float Height;
-        public readonly MicroHeight Corner00;
-        public readonly MicroHeight Corner01;
-        public readonly MicroHeight Corner11;
-        public readonly MicroHeight Corner10;
+        public readonly Heights Corner00;
+        public readonly Heights Corner01;
+        public readonly Heights Corner11;
+        public readonly Heights Corner10;
         public readonly Vector3 Normal;
 
-        public BlockInfo(Vector2i position, Blocks block, MicroHeight corner00, MicroHeight corner01, MicroHeight corner11, MicroHeight corner10)
+        public BlockInfo(Vector2i position, Blocks block, Heights corner00, Heights corner01, Heights corner11, Heights corner10)
         {
             Position = position;
             Block = block;
@@ -26,8 +27,9 @@ namespace TerrainDemo.Micro
             Corner01 = corner01;
             Corner11 = corner11;
             Corner10 = corner10;
-            Height = (Corner00.Height + Corner01.Height + Corner11.Height + Corner10.Height) / 4;
-            Normal = GetBlockNormal(Corner00.Height, Corner11.Height, Corner01.Height, Corner10.Height);
+            Height = (Corner00.Nominal + Corner01.Nominal + Corner11.Nominal + Corner10.Nominal) / 4;
+            Normal = block
+                .Normal; // GetBlockNormal(Corner00.Nominal, Corner11.Nominal, Corner01.Nominal, Corner10.Nominal);
         }
 
         public static Bounds2i GetBounds(Vector2i worldPosition)
@@ -45,7 +47,8 @@ namespace TerrainDemo.Micro
             return new Vector3(Position.X + 0.5f, Height, Position.Z + 0.5f);
         }
 
-        private Vector3 GetBlockNormal(float height00, float height11, float height01, float height10)
+        //based on http://www.flipcode.com/archives/Calculating_Vertex_Normals_for_Height_Maps.shtml
+        public static Vector3 GetBlockNormal(float height00, float height11, float height01, float height10)
         {
             var slope1 = height11 - height00;
             var slope2 = height10 - height01;

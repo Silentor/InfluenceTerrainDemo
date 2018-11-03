@@ -39,7 +39,7 @@ namespace TerrainDemo.Generators
             var heights = 5 * cellsInDistanceOrder.Length;
             foreach (var cell in cellsInDistanceOrder)
             {
-                cell.DesiredHeight = heights;
+                cell.DesiredHeight = new Heights((heights - 12f) / 3, heights);
                 heights -= 5;
             }
 
@@ -56,12 +56,12 @@ namespace TerrainDemo.Generators
             return Zone;
         }
 
-        public override MicroHeight GetMicroHeight(Vector2 position, MacroTemplate.CellMixVertex vertex)
+        public override Heights GetMicroHeight(Vector2 position, MacroTemplate.CellMixVertex vertex)
         {
-            return new MicroHeight(vertex.MacroHeight / 2 - 10,
+            return new Heights(vertex.MacroHeight.BaseHeight,
                 +(float)System.Math.Pow(_microReliefNoise.GetSimplex(position.X / 10, position.Y / 10) + 1, 2) - 2    //Вытянутые пики средней частоты
                 + (float)_microReliefNoise.GetSimplex(position.X / 2, position.Y / 2)    //Высокочастотные неровности
-                + vertex.MacroHeight);
+                + vertex.MacroHeight.Layer1Height);
         }
 
         private readonly FastNoise _microReliefNoise;

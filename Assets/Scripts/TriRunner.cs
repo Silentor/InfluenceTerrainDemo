@@ -94,26 +94,6 @@ namespace TerrainDemo.Tri
             _renderer?.Clear();
             _renderer = new Renderer(this, new Mesher(Macro, this));
             Render(Renderer.MicroRenderMode.Default);
-
-            //Estimate macro height function quality
-            //Узнаем, на сколько отличается функция макровысоты от заданных высот ячеек
-            float maxDiff = 0, averageDiff = 0;
-            Cell maxDiffCell = null;
-            foreach (var macroCell in Macro.Cells)
-            {
-                var heightDiff = macroCell.DesiredHeight - Macro.GetHeight(macroCell.Center);
-                if (Mathf.Abs(maxDiff) < Mathf.Abs(heightDiff))
-                {
-                    maxDiffCell = macroCell;
-                    maxDiff = heightDiff;
-                }
-
-                averageDiff += heightDiff;
-            }
-
-            averageDiff /= Macro.Cells.Count;
-
-            Debug.LogFormat("Average diff {0}, max diff {1} on cell {2}", averageDiff, maxDiff, maxDiffCell?.Coords);
         }
 
         private void Prepare()

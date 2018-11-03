@@ -52,11 +52,11 @@ namespace TerrainDemo.Generators
             foreach (var cell in Zone.Cells)
             {
                 if (Zone.Biome.Type == BiomeType.Plains)
-                    cell.DesiredHeight = _random.Range(0, 1f);
+                    cell.DesiredHeight = new Heights(_random.Range(-12, -5), _random.Range(0, 1f));
                 else if (Zone.Biome.Type == BiomeType.Hills)
-                    cell.DesiredHeight = _random.Range(1, 3);
+                    cell.DesiredHeight = new Heights(_random.Range(-12, -5), _random.Range(1, 3));
                 else if (Zone.Biome.Type == BiomeType.Lake)
-                    cell.DesiredHeight = Zone.Border.Contains(cell) ? 0 : -10;
+                    cell.DesiredHeight = new Heights(Zone.Border.Contains(cell) ? -12 : -15, Zone.Border.Contains(cell) ? 0 : -10);
             }
 
             return Zone;
@@ -88,30 +88,14 @@ namespace TerrainDemo.Generators
         }
     
 
-        public virtual MicroHeight GetMicroHeight(Vector2 position, MacroTemplate.CellMixVertex vertex)
+        public virtual Heights GetMicroHeight(Vector2 position, MacroTemplate.CellMixVertex vertex)
         {
-            if (Zone.Biome.Type == BiomeType.Lake)
-                return new MicroHeight(vertex.MacroHeight - 10, vertex.MacroHeight);
-            else if (Zone.Biome.Type == BiomeType.Plains)
-                return new MicroHeight(vertex.MacroHeight / 3 - 10, vertex.MacroHeight);
-
-            return new MicroHeight(vertex.MacroHeight, vertex.MacroHeight);
+            return vertex.MacroHeight;
         }
         
-        public BlockType GetBlock(Vector2i position)
-        {
-            return Zone.Biome.DefaultBlock.Block;
-        }
-
         public virtual Blocks GetBlocks(Vector2i position, Vector3 normal)
         {
             return new Blocks(){Base = _settings.BaseBlock.Block, Layer1 = Zone.Biome.DefaultBlock.Block};
-        }
-
-
-        public BlockType GetBaseBlock(Vector2i position)
-        {
-            return _settings.BaseBlock.Block;
         }
 
         /// <summary>
