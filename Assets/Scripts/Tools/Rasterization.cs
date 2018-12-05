@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using OpenTK;
+using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
 using UnityEngine;
 using Vector2 = OpenTK.Vector2;
@@ -17,7 +18,8 @@ namespace TerrainDemo.Tools
         }
 
         /// <summary>
-        /// Conservative rasterizing still need improvement
+        /// Good quality rasterization, uses floating-point start-stop coords
+        /// but conservative rasterization mode still need improvement (produce unecessary blocks )
         /// </summary>
         /// <param name="p1"></param>
         /// <param name="p2"></param>
@@ -26,7 +28,7 @@ namespace TerrainDemo.Tools
         public static IEnumerable<Vector2i> DDA(Vector2 p1, Vector2 p2, bool conservative)
         {
             //Based on http://www.sunshine2k.de/coding/java/Bresenham/RasterisingLinesCircles.pdf
-            double len = Mathf.Max(Mathf.Abs(p2.X - p1.X), Mathf.Abs(p2.Y - p1.Y));
+            double len = Math.Max(Math.Abs(p2.X - p1.X), Math.Abs(p2.Y - p1.Y));
 
             //Short path
             if (Math.Abs(len) < 0.000001)
@@ -232,38 +234,33 @@ namespace TerrainDemo.Tools
             }
         }
 
-        public static IEnumerable<Vector2i> Line(float x1, float y1, float x2, float y2)
+        /// <summary>
+        /// Quality lower than float DDA
+        /// </summary>
+        /// <param name="x1"></param>
+        /// <param name="y1"></param>
+        /// <param name="x2"></param>
+        /// <param name="y2"></param>
+        /// <returns></returns>
+        public static IEnumerable<Vector2i> BresenhamFloat(float x1, float y1, float x2, float y2)
         {
-            int x = Mathf.FloorToInt(x1);
-            int y = Mathf.FloorToInt(y1);
-            double slope = (x2 - x1) / (y2 - y1);
-            if (y2 >= y1)
+            //Based http://www.sunshine2k.de/coding/java/Bresenham/RasterisingLinesCircles.pdf
+
+            var x = x1;
+            var y = y1;
+            var dx = x2 - x1;
+            var dy = y2 - y1;
+            var e = (dy / dx) - 0.5f;
+            for (int i = 1; i <= dx; i++)
             {
-                while (y < y2)
+                yield return new Vector2i(x, y);
+                while (e >= 0)
                 {
-                    int r = (int)Math.Floor(slope * (y - y1) + x1);
-                    do
-                    {
-                        yield return new Vector2i(x, y);
-                        ++x;
-                    } while (x < r);
-                    yield return new Vector2i(x, y);
-                    ++y;
+                    y = y + 1;
+                    e = e - 1;
                 }
-            }
-            else
-            {
-                while (y > y2)
-                {
-                    int r = (int)Math.Floor(slope * (y - y1) + x1);
-                    do
-                    {
-                        yield return new Vector2i(x, y);
-                        ++x;
-                    } while (x < r);
-                    yield return new Vector2i(x, y);
-                    --y;
-                }
+                x = x + 1;
+                e = e + dy / dx;
             }
         }
 
@@ -303,22 +300,27 @@ namespace TerrainDemo.Tools
         /// <summary>
         /// Bounds scan algorithm for convex polygon. Not very fast but accurate. As fast as bounding box is tight
         /// </summary>
-        /// <returns></returns>
-        public static Vector2i[] Polygon2(Predicate<Vector2> contains, Box2 bounds)
+        /// <returns>Collection of blocks coords</returns>
+        public static Vector2i[] ConvexToBlocks(Predicate<Vector2> contains, Box2 bounds)
         {
             var result = new List<Vector2i>();
-            var blockBounds = (Bounds2i) bounds;
+            var minZ = (int)Math.Round(bounds.Bottom);
+            var maxZ = (int)Math.Round(bounds.Top);
+            var minX = (int)Math.Round(bounds.Left);
+            var maxX = (int)Math.Round(bounds.Right);
 
-            //Scan bound from top to bottom
-            for (int z = blockBounds.Min.Z; z <= blockBounds.Max.Z; z++)
+            //DrawRectangle.ForGizmo(new Box2(minX, maxZ, maxX, minZ), Color.blue / 2);
+
+            //Scan bound from bottom  to top
+            for (int z = minZ; z < maxZ; z++)
             {
                 int? leftContainingPos = null;
                 int? rightContainingPos = null;
 
                 //Find left and right blocks in cell
-                for (int x = blockBounds.Min.X; x <= blockBounds.Max.X; x++)
+                for (int x = minX; x < maxX; x++)
                 {
-                    if (contains(new Vector2(x + 0.5f, z + 0.5f)))
+                    if (contains(BlockInfo.GetWorldCenter(x, z)))
                     {
                         leftContainingPos = x;
                         break;
@@ -327,9 +329,64 @@ namespace TerrainDemo.Tools
 
                 if (leftContainingPos != null)
                 {
-                    for (int x = blockBounds.Max.X; x >= blockBounds.Min.X; x--)
+                    for (int x = maxX; x >= minX; x--)
                     {
-                        if (contains(new Vector2(x + 0.5f, z + 0.5f)))
+                        if (leftContainingPos.Value == x || contains(BlockInfo.GetWorldCenter(x, z)))
+                        {
+                            rightContainingPos = x;
+                            break;
+                        }
+                    }
+                }
+
+                if (leftContainingPos.HasValue && rightContainingPos.HasValue)
+                {
+                    //Add block pos from left to right
+                    for (int x = leftContainingPos.Value; x <= rightContainingPos.Value; x++)
+                    {
+                        result.Add(new Vector2i(x, z));
+                    }
+                }
+            }
+
+            return result.ToArray();
+        }
+
+        /// <summary>
+        /// Bounds scan algorithm for convex polygon. Not very fast but accurate. As fast as bounding box is tight
+        /// </summary>
+        /// <returns>Collection of vertex coords</returns>
+        public static Vector2i[] ConvexToVertices(Predicate<Vector2> contains, Box2 bounds)
+        {
+            var result = new List<Vector2i>();
+            var minZ = (int)Math.Ceiling(bounds.Bottom);
+            var maxZ = (int)Math.Floor(bounds.Top);
+            var minX = (int)Math.Ceiling(bounds.Left);
+            var maxX = (int)Math.Floor(bounds.Right);
+
+            //DrawRectangle.ForGizmo(new Box2(minX, maxZ, maxX, minZ), Color.blue / 2);
+
+            //Scan bound from bottom  to top
+            for (int z = minZ; z <= maxZ; z++)
+            {
+                int? leftContainingPos = null;
+                int? rightContainingPos = null;
+
+                //Find left and right blocks in cell
+                for (int x = minX; x <= maxX; x++)
+                {
+                    if (contains(new Vector2(x, z)))
+                    {
+                        leftContainingPos = x;
+                        break;
+                    }
+                }
+
+                if (leftContainingPos != null)
+                {
+                    for (int x = maxX; x >= minX; x--)
+                    {
+                        if (leftContainingPos.Value == x || contains(new Vector2(x, z)))
                         {
                             rightContainingPos = x;
                             break;

@@ -1,4 +1,5 @@
-﻿using TerrainDemo.Macro;
+﻿using System.Runtime.CompilerServices;
+using TerrainDemo.Macro;
 using TerrainDemo.Spatial;
 using UnityEngine;
 using Vector2 = OpenTK.Vector2;
@@ -37,9 +38,13 @@ namespace TerrainDemo.Micro
             return new Bounds2i(worldPosition, 1, 1);
         }
 
-        public static Vector2 GetCenter(Vector2i worldPosition)
+        public static Vector2 GetWorldCenter(Vector2i blockPosition)
         {
-            return new Vector2(worldPosition.X + 0.5f, worldPosition.Z + 0.5f);
+            return new Vector2(blockPosition.X + 0.5f, blockPosition.Z + 0.5f);
+        }
+        public static Vector2 GetWorldCenter(int blockPositionX, int blockPositionZ)
+        {
+            return new Vector2(blockPositionX + 0.5f, blockPositionZ + 0.5f);
         }
 
         public Vector3 GetCenter()

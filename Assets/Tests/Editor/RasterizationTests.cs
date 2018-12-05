@@ -36,7 +36,7 @@ namespace TerrainDemo.Tests.Editor
 
             var isContains = new Predicate<Vector2>( p => HalfPlane.ContainsInConvex(p, h1, h2, h3, h4));
 
-            var result = Rasterization.Polygon2(isContains, new Box2(-2.4f, 2.3f, 1.2f, -1.1f));
+            var result = Rasterization.ConvexToBlocks(isContains, new Box2(-2.4f, 2.3f, 1.2f, -1.1f));
             Assert.That(result, Is.EquivalentTo(new[]{new Vector2i(0, 1), new Vector2i(0, 0), new Vector2i(0, -1), new Vector2i(0, -2),
                 new Vector2i(-1, 1), new Vector2i(-1, 0), new Vector2i(-1, -1),
                 new Vector2i(-2, 0), new Vector2i(-2, -1)}));

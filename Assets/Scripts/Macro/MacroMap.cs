@@ -74,11 +74,11 @@ namespace TerrainDemo.Macro
             return null;
         }
 
-        public ValueTuple<Cell, Vector3> Intersect(Ray ray)
+        public ValueTuple<Cell, Vector3> Raycast(Ray ray)
         {
             foreach (var cell in Cells.OrderBy(c => Vector3.SqrMagnitude(c.CenterPoint - ray.origin)))
             {
-                var intersection = cell.IsIntersected(ray);
+                var intersection = cell.Raycast(ray);
                 if (intersection.HasValue)
                 {
                     return new ValueTuple<Cell, Vector3>(cell, intersection.Value);

@@ -46,6 +46,7 @@ namespace TerrainDemo.Visualization
                 return new Tuple<Mesh, Texture>(resultMesh, Texture2D.blackTexture);
 
             var heights = map.GetHeightMap();
+            var blocks = map.GetBlockMap();
             var vertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z +1));
             var indices = new List<int>(vertices.Count * 2);
             var uvs = new List<UnityEngine.Vector2>(vertices.Count);
@@ -80,6 +81,9 @@ namespace TerrainDemo.Visualization
                     var chunkLocalX = worldX - bounds.Min.X;
                     var chunkLocalZ = worldZ - bounds.Min.Z;
                     var startIndex = chunkLocalZ * (bounds.Size.X + 1) + chunkLocalX;
+
+                    if( blocks[mapLocalX, mapLocalZ].IsEmpty)
+                        continue;
 
                     float height00, height01, height11, height10;
                     if (mode.RenderMainLayer)

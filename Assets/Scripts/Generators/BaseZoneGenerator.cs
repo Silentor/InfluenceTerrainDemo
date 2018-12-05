@@ -52,7 +52,7 @@ namespace TerrainDemo.Generators
             foreach (var cell in Zone.Cells)
             {
                 if (Zone.Biome.Type == BiomeType.Plains)
-                    cell.DesiredHeight = new Heights(_random.Range(-12, -5), _random.Range(0, 1f));
+                    cell.DesiredHeight = new Heights(_random.Range(-5, 3), _random.Range(0, 1f));
                 else if (Zone.Biome.Type == BiomeType.Hills)
                     cell.DesiredHeight = new Heights(_random.Range(-12, -5), _random.Range(1, 3));
                 else if (Zone.Biome.Type == BiomeType.Lake)

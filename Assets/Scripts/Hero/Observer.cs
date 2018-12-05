@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using TerrainDemo.Hero;
 using TerrainDemo.Spatial;
 using UnityEngine;
 
@@ -25,7 +26,7 @@ namespace TerrainDemo.OldCodeToRevision
 
         bool IsBoundVisible(Bounds2i bounds);
 
-        IEnumerable<ObserverSettings.ChunkPositionValue> ValuableChunkPos(float range);
+        IEnumerable<ObserverController.ChunkPositionValue> ValuableChunkPos(float range);
 
         /// <summary>
         /// Fired when observed moved, rotated or changed view mode

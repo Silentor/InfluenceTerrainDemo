@@ -3,6 +3,7 @@ using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using UnityEngine;
 using UnityEngine.Assertions;
+using Random = TerrainDemo.Tools.Random;
 using Vector2 = OpenTK.Vector2;
 
 namespace TerrainDemo.Tests
@@ -11,17 +12,18 @@ namespace TerrainDemo.Tests
     {
         private GameObject _handle1;
         private GameObject _handle2;
+        private int counter;
 
         // Use this for initialization
         void Start()
         {
             _handle1 = new GameObject("Handle1");
             _handle1.transform.parent = transform;
-            _handle1.transform.localPosition = new Vector3(-10, 0, -5);
+            _handle1.transform.localPosition = new Vector3(UnityEngine.Random.Range(-10f, 10), 0, UnityEngine.Random.Range(-10f, 10));
 
             _handle2 = new GameObject("Handle2");
             _handle2.transform.parent = transform;
-            _handle2.transform.localPosition = new Vector3(10, 0, 5);
+            _handle2.transform.localPosition = new Vector3(UnityEngine.Random.Range(-10f, 10), 0, UnityEngine.Random.Range(-10f, 10));
         }
 
         void OnDrawGizmos()
@@ -38,16 +40,31 @@ namespace TerrainDemo.Tests
                 var pi1 = (Vector2i) p1;
                 var pi2 = (Vector2i)p2;
 
-                //var points = Rasterization.DDA(p1, p2, true).ToArray();
-                var points = Rasterization.DDA(p1, p2, false).ToArray();
-                //var points = Rasterization.lineNoDiag(pi1.X, pi1.Z, pi2.X, pi2.Z).ToArray();
-                //var points = Rasterization.BresenhamInt(pi1, pi2).ToArray();
-                //var points = Rasterization.Bresenham2(pi1.X, pi1.Z, pi2.X, pi2.Z).ToArray();
-                //var points = Rasterization.Line(p1.X, p1.Y, p2.X, p2.Y).ToArray();
+                //var points = Rasterization.DDA(p1, p2, true).ToArray();     Debug.Log("Rasterization.DDA conservative");
+                var pointsDDA = Rasterization.DDA(p1, p2, false).ToArray(); 
+                //var points = Rasterization.lineNoDiag(pi1.X, pi1.Z, pi2.X, pi2.Z).ToArray();  Debug.Log("Rasterization.lineNoDiag");
+                var pointsBresInt = Rasterization.BresenhamInt(pi1, pi2).ToArray(); 
+                var pointsBresFloat = Rasterization.BresenhamFloat(p1.X, p1.Y, p2.X, p2.Y).ToArray(); 
 
-                Assert.IsTrue(points.Length == points.Distinct().Count());
-                foreach (var p in points)
-                    DrawRectangle.ForGizmo(new Bounds2i(p, 1, 1));
+                Assert.IsTrue(pointsDDA.Length == pointsDDA.Distinct().Count());
+                Assert.IsTrue(pointsBresInt.Length == pointsBresInt.Distinct().Count());
+                Assert.IsTrue(pointsBresFloat.Length == pointsBresFloat.Distinct().Count());
+
+                if (counter % 20 < 10)
+                    foreach (var p in pointsDDA)
+                        DrawRectangle.ForGizmo(new Bounds2i(p, 1, 1), Color.white);
+
+                /*
+                else if (counter % 21 < 14)
+                    foreach (var p in pointsBresInt)
+                    DrawRectangle.ForGizmo(new Bounds2i(p, 1, 1), Color.red);
+                    */
+
+                else //if (counter % 21 >= 14)
+                    foreach (var p in pointsBresFloat)
+                        DrawRectangle.ForGizmo(new Bounds2i(p, 1, 1), Color.green);
+
+                counter++;
             }
         }
     }

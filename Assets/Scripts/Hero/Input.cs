@@ -21,9 +21,20 @@ namespace TerrainDemo.Hero
             else if (UnityEngine.Input.GetKey(KeyCode.E))
                 Rotate(1);
 
+            if (UnityEngine.Input.GetMouseButtonUp(0))
+            {
+                Fire();
+            }
+
+            if (UnityEngine.Input.GetMouseButtonUp(1))
+            {
+                Build();
+            }
+
+
             //Debug keys
             //Soft restart
-            if(UnityEngine.Input.GetKey(KeyCode.R) && UnityEngine.Input.GetKey(KeyCode.LeftShift))
+            if (UnityEngine.Input.GetKey(KeyCode.R) && UnityEngine.Input.GetKey(KeyCode.LeftShift))
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
 
@@ -33,5 +44,9 @@ namespace TerrainDemo.Hero
         public event Action<Vector3> Move = delegate { };
 
         public event Action<float> Rotate = delegate { };
+
+        public event Action Fire = delegate { };
+
+        public event Action Build = delegate { };
     }
 }

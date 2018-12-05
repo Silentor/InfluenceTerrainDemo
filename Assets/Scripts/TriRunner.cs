@@ -87,12 +87,15 @@ namespace TerrainDemo.Tri
                 template.GenerateMicroZone(Macro, zone, Micro);
             }
 
+            Micro.Changed += MicroOnChanged;
+
             microtimer.Stop();
             Debug.LogFormat("Created micromap in {0} msec", microtimer.ElapsedMilliseconds);
+        }
 
+        private void MicroOnChanged()
+        {
             //Visualization
-            _renderer?.Clear();
-            _renderer = new Renderer(this, new Mesher(Macro, this));
             Render(Renderer.MicroRenderMode.Default);
         }
 
@@ -117,6 +120,9 @@ namespace TerrainDemo.Tri
         void Start()
         {
             Generate();
+
+            _renderer = new Renderer(this, new Mesher(Macro, this));
+            Render(Renderer.MicroRenderMode.Default);
         }
 
         private void OnValidate()

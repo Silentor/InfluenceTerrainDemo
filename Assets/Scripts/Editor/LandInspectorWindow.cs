@@ -57,7 +57,7 @@ namespace TerrainDemo.Editor
 
             if (MacroMap != null)
             {
-                var selectedCell = MacroMap.Intersect(userInputRay);
+                var selectedCell = MacroMap.Raycast(userInputRay);
                 if (selectedCell.Item1 != null)
                 {
                     result.IsMapSelected = true;
@@ -65,17 +65,37 @@ namespace TerrainDemo.Editor
                     result.Distance = Vector3.Distance(result.CursorPosition, result.ViewPoint);
                     result.SelectedMacroCell = selectedCell.Item1;
                     result.SelectedVert = MacroMap.Vertices.FirstOrDefault(v => Vector3.Distance(
-                        new Vector3(v.Position.X, v.Height.Nominal, v.Position.Y), result.CursorPosition) < 1);
+                                                                                    new Vector3(v.Position.X, v.Height.Nominal, v.Position.Y), result.CursorPosition) < 1);
 
                     if (MicroMap != null)
                     {
                         result.SelectedMicroCell = MicroMap.GetCell(result.SelectedMacroCell);
-                        var blockPos = (Vector2i) result.CursorPosition;
+                        var blockPos = (Vector2i)result.CursorPosition;
                         if (MicroMap.Bounds.Contains(blockPos))
                         {
                             result.BlockPosition = blockPos;
                             result.IsBlockSelected = true;
                         }
+                    }
+                }
+            }
+
+            if (MicroMap != null)
+            {
+                var hitPoint = MicroMap.Raycast(userInputRay);
+                {
+                    if (hitPoint.HasValue)
+                    {
+                        result.IsBlockSelected = true;
+                        result.CursorPosition = hitPoint.Value.Item1;
+                        result.Distance = Vector3.Distance(result.CursorPosition, result.ViewPoint);
+                        result.BlockPosition = hitPoint.Value.Item2;
+                        //result.SelectedMacroCell = MacroMap.GetCellAt((OpenTK.Vector2) result.CursorPosition);
+                        //result.SelectedMicroCell = MicroMap.GetCell(result.SelectedMacroCell);
+                        result.IsMapSelected = true;
+                        result.SelectedVert = MacroMap.Vertices.FirstOrDefault(v => Vector3.Distance(
+                                                                                        new Vector3(v.Position.X, v.Height.Nominal, v.Position.Y), result.CursorPosition) < 1);
+
                     }
                 }
             }
@@ -183,7 +203,7 @@ namespace TerrainDemo.Editor
             DrawRectangle.ForHandle(BlockInfo.GetBounds(position), color, width);
 
             if (normal.HasValue)
-                DrawArrow.ForDebug(BlockInfo.GetCenter(position), normal.Value);
+                DrawArrow.ForDebug(BlockInfo.GetWorldCenter(position), normal.Value);
         }
 
         private void DrawBlock(BlockInfo block, Color color, uint width = 0, bool drawNormal = false)
@@ -395,16 +415,15 @@ namespace TerrainDemo.Editor
             //Draw selected block
             if (_drawMicro)
             {
-                var blockPos = (Vector2i) _input.CursorPosition;
                 if (MicroMap != null)
                 {
-                    var block = MicroMap.GetBlock(blockPos);
+                    var block = MicroMap.GetBlock(_input.BlockPosition);
 
                     if(block != null)
                         DrawBlock(block, Color.white, 3, true);
                 }
                 else
-                    DrawBlock(blockPos, Color.white, 3);
+                    DrawBlock((Vector2i) _input.BlockPosition, Color.white, 3);
             }
 
         }

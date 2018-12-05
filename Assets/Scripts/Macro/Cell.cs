@@ -156,7 +156,7 @@ namespace TerrainDemo.Macro
             return _face.Contains(point);
         }
 
-        public Vector3? IsIntersected(Ray ray)
+        public Vector3? Raycast(Ray ray)
         {
             var corners = GetCorners();
 

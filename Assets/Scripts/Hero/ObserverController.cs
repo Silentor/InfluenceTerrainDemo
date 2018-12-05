@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using TerrainDemo.Micro;
+using TerrainDemo.OldCodeToRevision;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
+using TerrainDemo.Tri;
 using UnityEditor;
 using UnityEngine;
-using Input = TerrainDemo.Hero.Input;
 
-namespace TerrainDemo.OldCodeToRevision
+namespace TerrainDemo.Hero
 {
-    public class ObserverSettings : MonoBehaviour, IObserver
+    public class ObserverController : MonoBehaviour//, IObserver
     {
         public CameraType Camera;
         [Range(0, 100)]
@@ -19,6 +21,8 @@ namespace TerrainDemo.OldCodeToRevision
         public float RotationSpeed = 180;
 
         public bool DebugDraw;
+
+        public GameObject CursorObjectPrefab;
 
         public float FOV { get { return _camera.fieldOfView; } }
         public Vector3 Position { get { return _camera.transform.position; } }
@@ -125,6 +129,27 @@ namespace TerrainDemo.OldCodeToRevision
             return false;
         }
 
+        public void DrawCursor(Vector3? worldPosition)
+        {
+            if (_cursorObj == null && worldPosition.HasValue)
+            {
+                _cursorObj = Instantiate(CursorObjectPrefab, worldPosition.Value, Quaternion.identity);
+            }
+
+            if (_cursorObj)
+            {
+                if (worldPosition.HasValue)
+                {
+                    _cursorObj.SetActive(true);
+                    _cursorObj.transform.position = worldPosition.Value;
+                }
+                else
+                {
+                    _cursorObj.SetActive(false);
+                }
+            }
+        }
+
         public event Action Changed = delegate {};
 
         private Camera _camera;
@@ -133,6 +158,10 @@ namespace TerrainDemo.OldCodeToRevision
         private Quaternion _oldRotation;
         private float _lastOldCheck;
         private float _currentRotation;
+
+        private MicroMap _microMap;
+
+        private GameObject _cursorObj;
         //private LandLayout _land;
 
         private void InputOnRotate(float rotateDir)
@@ -149,6 +178,31 @@ namespace TerrainDemo.OldCodeToRevision
             transform.position += moveDir*Time.deltaTime*Speed;
         }
 
+        private void InputOnFire()
+        {
+            if (_microMap != null)
+            {
+                var worldRay = _camera.ScreenPointToRay(UnityEngine.Input.mousePosition);
+                var hitPoint = _microMap.Raycast(worldRay);
+
+                if(hitPoint.HasValue)
+                    _microMap.DigSphere(hitPoint.Value.Item1, 5);
+            }
+        }
+
+        private void InputOnBuild()
+        {
+            if (_microMap != null)
+            {
+                var worldRay = _camera.ScreenPointToRay(UnityEngine.Input.mousePosition);
+                var hitPoint = _microMap.Raycast(worldRay);
+
+                if (hitPoint.HasValue)
+                    _microMap.Build(hitPoint.Value.Item1, 5);
+            }
+
+        }
+
         #region Unity
 
         void Start()
@@ -158,6 +212,10 @@ namespace TerrainDemo.OldCodeToRevision
             var input = GetComponent<Input>();
             input.Move += InputOnMove;
             input.Rotate += InputOnRotate;
+            input.Fire += InputOnFire;
+            input.Build += InputOnBuild;
+
+            _microMap = GameObject.FindObjectOfType<TriRunner>().Micro;
 
         }
 
@@ -169,6 +227,23 @@ namespace TerrainDemo.OldCodeToRevision
                 _oldPosition = Position;
                 _oldRotation = Rotation;
                 Changed();
+            }
+
+            if(_microMap == null)
+                _microMap = GameObject.FindObjectOfType<TriRunner>().Micro;
+            else
+            {
+                var worldRay = _camera.ScreenPointToRay(UnityEngine.Input.mousePosition);
+                var hitPoint = _microMap.Raycast(worldRay);
+
+                if (hitPoint.HasValue)
+                {
+                    DrawCursor(hitPoint.Value.Item1);
+                }
+                else
+                {
+                    DrawCursor(null);
+                }
             }
         }
 

@@ -1,10 +1,11 @@
 ﻿using System;
+using JetBrains.Annotations;
 using OpenTK;
 
 namespace TerrainDemo.Macro
 {
     /// <summary>
-    /// Multiheightmap vertex height
+    /// Multiheightmap vertex height (immutable)
     /// </summary>
     public struct Heights
     {
@@ -26,6 +27,12 @@ namespace TerrainDemo.Macro
             BaseHeight = baseHeight;
             Layer1Height = layer1Height;
             AdditionalLayer = additionalLayer;
+        }
+
+        [Pure]
+        public Heights Dig(float deep)
+        {
+            return new Heights(BaseHeight, Layer1Height - deep);
         }
 
         /*
