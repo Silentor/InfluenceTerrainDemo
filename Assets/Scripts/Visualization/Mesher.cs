@@ -65,10 +65,12 @@ namespace TerrainDemo.Visualization
 
                     if(mode.RenderMainLayer)
                         vertices.Add(new Vector3(worldX, heights[mapLocalX, mapLocalZ].Nominal, worldZ));
+                    else if(mode.RenderUnderLayer)
+                        vertices.Add(new Vector3(worldX, heights[mapLocalX, mapLocalZ].UndergroundHeight, worldZ));
                     else
                         vertices.Add(new Vector3(worldX, heights[mapLocalX, mapLocalZ].BaseHeight, worldZ));
 
-                    uvs.Add(new UnityEngine.Vector2(chunkLocalX / (float)bounds.Size.X, chunkLocalZ / (float)bounds.Size.Z));
+                    uvs.Add(new Vector2(chunkLocalX / (float)bounds.Size.X, chunkLocalZ / (float)bounds.Size.Z));
                 }
 
 
@@ -95,10 +97,10 @@ namespace TerrainDemo.Visualization
                     }
                     else
                     {
-                        height00 = heights[mapLocalX, mapLocalZ].BaseHeight;
-                        height01 = heights[mapLocalX, mapLocalZ + 1].BaseHeight;
-                        height11 = heights[mapLocalX + 1, mapLocalZ + 1].BaseHeight;
-                        height10 = heights[mapLocalX + 1, mapLocalZ].BaseHeight;
+                        height00 = heights[mapLocalX, mapLocalZ].UndergroundHeight;
+                        height01 = heights[mapLocalX, mapLocalZ + 1].UndergroundHeight;
+                        height11 = heights[mapLocalX + 1, mapLocalZ + 1].UndergroundHeight;
+                        height10 = heights[mapLocalX + 1, mapLocalZ].UndergroundHeight;
                     }
 
                     if (Mathf.Abs(height00 - height11) < Mathf.Abs(height10 - height01))
@@ -225,8 +227,18 @@ namespace TerrainDemo.Visualization
                             BlockType block;
                             if (mode.RenderMainLayer)
                                 block = map.GetBlockMap()[mapLocalX, mapLocalZ].Top;
+                            else if (mode.RenderUnderLayer)
+                            {
+                                var blocks = map.GetBlockMap()[mapLocalX, mapLocalZ];
+                                if (blocks.Underground != BlockType.Empty)
+                                    block = blocks.Underground;
+                                else
+                                    block = blocks.Base;
+                            }
                             else
+                            {
                                 block = map.GetBlockMap()[mapLocalX, mapLocalZ].Base;
+                            }
                             colors[flatIndex] = BlockToColor(block);
                         }
                     }

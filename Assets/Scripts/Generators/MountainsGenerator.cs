@@ -36,11 +36,12 @@ namespace TerrainDemo.Generators
             var cellsInDistanceOrder = Zone.Submesh.FloodFill(peak).ToArray();
 
             //Make one-peak conus mountain
-            var heights = 5 * cellsInDistanceOrder.Length;
+            var height = 5 * cellsInDistanceOrder.Length;
             foreach (var cell in cellsInDistanceOrder)
             {
-                cell.DesiredHeight = new Heights((heights - 12f) / 3, heights);
-                heights -= 5;
+                var baseHeight = (height - 12f) / 3;
+                cell.DesiredHeight = new Heights(baseHeight, UnityEngine.Random.Range(baseHeight - 5, baseHeight + 1), height);
+                height -= 5;
             }
 
             /*
@@ -58,10 +59,16 @@ namespace TerrainDemo.Generators
 
         public override Heights GetMicroHeight(Vector2 position, MacroTemplate.CellMixVertex vertex)
         {
-            return new Heights(vertex.MacroHeight.BaseHeight,
-                +(float)System.Math.Pow(_microReliefNoise.GetSimplex(position.X / 10, position.Y / 10) + 1, 2) - 2    //Вытянутые пики средней частоты
-                + (float)_microReliefNoise.GetSimplex(position.X / 2, position.Y / 2)    //Высокочастотные неровности
-                + vertex.MacroHeight.Layer1Height);
+            var mainLayer =
+                +(float) System.Math.Pow(_microReliefNoise.GetSimplex(position.X / 10, position.Y / 10) + 1, 2) - 2 //Вытянутые пики средней частоты
+                + (float) _microReliefNoise.GetSimplex(position.X / 2, position.Y / 2) //Высокочастотные неровности
+                + vertex.MacroHeight.Layer1Height;
+
+            return new Heights(
+                vertex.MacroHeight.BaseHeight,
+                UnityEngine.Random.Range(vertex.MacroHeight.BaseHeight, vertex.MacroHeight.UndergroundHeight),
+                mainLayer
+                );
         }
 
         private readonly FastNoise _microReliefNoise;

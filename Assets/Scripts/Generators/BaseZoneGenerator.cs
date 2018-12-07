@@ -28,7 +28,8 @@ namespace TerrainDemo.Generators
         public readonly Macro.Zone Zone;
         protected readonly Random _random;
         private readonly FastNoise _microReliefNoise;
-        
+        private readonly FastNoise _resourcesNoise;
+
 
         public BaseZoneGenerator(MacroMap macroMap, IEnumerable<Cell> zoneCells, int id, BiomeSettings biome, TriRunner settings)
         {
@@ -38,6 +39,9 @@ namespace TerrainDemo.Generators
 
             _microReliefNoise = new FastNoise(_random.Seed);
             _microReliefNoise.SetFrequency(1);
+
+            _resourcesNoise = new FastNoise(_random.Seed);
+            _resourcesNoise.SetFrequency(0.05);
 
             Assert.IsTrue(zoneCells.All(c => c.ZoneId == id));
 
@@ -52,11 +56,20 @@ namespace TerrainDemo.Generators
             foreach (var cell in Zone.Cells)
             {
                 if (Zone.Biome.Type == BiomeType.Plains)
-                    cell.DesiredHeight = new Heights(_random.Range(-5, 3), _random.Range(0, 1f));
+                {
+                    var baseHeight = _random.Range(-5f, -1);
+                    cell.DesiredHeight = new Heights(baseHeight, _random.Value() > 0.8 ? baseHeight + 2 : baseHeight - 2, _random.Range(0f, 1f));
+                }
                 else if (Zone.Biome.Type == BiomeType.Hills)
-                    cell.DesiredHeight = new Heights(_random.Range(-12, -5), _random.Range(1, 3));
+                {
+                    var baseHeight = _random.Range(-12f, -5);
+                    cell.DesiredHeight = new Heights(baseHeight, _random.Range(baseHeight - 2, baseHeight + 2), _random.Range(1f, 3));
+                }
                 else if (Zone.Biome.Type == BiomeType.Lake)
-                    cell.DesiredHeight = new Heights(Zone.Border.Contains(cell) ? -12 : -15, Zone.Border.Contains(cell) ? 0 : -10);
+                    cell.DesiredHeight = new Heights(
+                        Zone.Border.Contains(cell) ? -12f : -15, 
+                        -100,
+                        Zone.Border.Contains(cell) ? 0f : -10);
             }
 
             return Zone;
@@ -90,12 +103,17 @@ namespace TerrainDemo.Generators
 
         public virtual Heights GetMicroHeight(Vector2 position, MacroTemplate.CellMixVertex vertex)
         {
-            return vertex.MacroHeight;
+            var resourceLayerHeight = vertex.MacroHeight.UndergroundHeight - vertex.MacroHeight.BaseHeight;
+
+            return new Heights(
+                vertex.MacroHeight.BaseHeight, 
+                (float)(vertex.MacroHeight.BaseHeight + (resourceLayerHeight > 1 ? _resourcesNoise.GetSimplex(position.X, position.Y) * resourceLayerHeight : -1)), 
+                vertex.MacroHeight.Layer1Height);
         }
         
         public virtual Blocks GetBlocks(Vector2i position, Vector3 normal)
         {
-            return new Blocks(){Base = _settings.BaseBlock.Block, Layer1 = Zone.Biome.DefaultBlock.Block};
+            return new Blocks(){Base = _settings.BaseBlock.Block, Underground = BlockType.GoldOre, Layer1 = Zone.Biome.DefaultBlock.Block};
         }
 
         /// <summary>

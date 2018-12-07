@@ -10,5 +10,8 @@
         Sand,
         Snow,
         Water,
+
+        //Undergrounds
+        GoldOre
     }
 }

@@ -205,15 +205,32 @@ namespace TerrainDemo.Micro
             var modifiedBlocksCounter = 0;
             foreach (var blockPosition in changedBlocks)
             {
+                var blockWasModified = false;
                 var localPos = blockPosition - Bounds.Min;
                 var block = _blocks[localPos.X, localPos.Z];
 
-                if (!_heightMap[localPos.X, localPos.Z].IsLayer1Present
+                if (block.Layer1!= BlockType.Empty 
+                    && !_heightMap[localPos.X, localPos.Z].IsLayer1Present
                     && !_heightMap[localPos.X, localPos.Z + 1].IsLayer1Present
                     && !_heightMap[localPos.X + 1, localPos.Z].IsLayer1Present
                     && !_heightMap[localPos.X + 1, localPos.Z + 1].IsLayer1Present)
                 {
                     block.Layer1 = BlockType.Empty;
+                    blockWasModified = true;
+                }
+
+                if (block.Underground != BlockType.Empty 
+                    && !_heightMap[localPos.X, localPos.Z].IsUndergroundLayerPresent
+                    && !_heightMap[localPos.X, localPos.Z + 1].IsUndergroundLayerPresent
+                    && !_heightMap[localPos.X + 1, localPos.Z].IsUndergroundLayerPresent
+                    && !_heightMap[localPos.X + 1, localPos.Z + 1].IsUndergroundLayerPresent)
+                {
+                    block.Underground = BlockType.Empty;
+                    blockWasModified = true;
+                }
+
+                if (blockWasModified)
+                {
                     _blocks[localPos.X, localPos.Z] = block;
                     modifiedBlocksCounter++;
                 }
@@ -234,7 +251,7 @@ namespace TerrainDemo.Micro
             var flatVertices = Rasterization.ConvexToBlocks(v => OpenTK.Vector2.DistanceSquared(v, flatPosition) < sqrRadius, flatBound);
 
             //Modify vertices
-            var counter = 0;
+            var vertexCounter = 0;
             for (int i = 0; i < flatVertices.Length; i++)
             {
                 var fv = flatVertices[i];
@@ -247,18 +264,43 @@ namespace TerrainDemo.Micro
                     var catheti = Vector2.DistanceSquared(flatPosition, fv);
                     var hypotenuse = sqrRadius;
                     var catheti2 = Mathf.Sqrt(hypotenuse - catheti);
-                    _heightMap[localPos.X, localPos.Z] = new Heights(h.BaseHeight, position.y + catheti2);
-                    counter++;
+                    _heightMap[localPos.X, localPos.Z] = _heightMap[localPos.X, localPos.Z].Build(catheti2);
+                    vertexCounter++;
                 }
             }
 
-            Debug.LogFormat("Build, modified {0} vertices", counter);
+            //Update adjoined blocks
+            var changedBlocks = new HashSet<Vector2i>(flatVertices);
+            foreach (var vertex in flatVertices)
+            {
+                //Add adjoined blocks (except vertex own block)
+                changedBlocks.Add(vertex - Vector2i.Forward);
+                changedBlocks.Add(vertex - Vector2i.Right);
+                changedBlocks.Add(vertex - Vector2i.One);
+            }
+
+            var modifiedBlocksCounter = 0;
+            foreach (var blockPosition in changedBlocks)
+            {
+                var localPos = blockPosition - Bounds.Min;
+                
+                if (_heightMap[localPos.X, localPos.Z].IsLayer1Present
+                    || _heightMap[localPos.X, localPos.Z + 1].IsLayer1Present
+                    || _heightMap[localPos.X + 1, localPos.Z].IsLayer1Present
+                    || _heightMap[localPos.X + 1, localPos.Z + 1].IsLayer1Present)
+                {
+                    var block = _blocks[localPos.X, localPos.Z];
+                    block.Layer1 = BlockType.Grass;
+                    _blocks[localPos.X, localPos.Z] = block;
+                    modifiedBlocksCounter++;
+                }
+            }
+
+            Debug.LogFormat("Build, modified {0} vertices and {1} blocks", vertexCounter, modifiedBlocksCounter);
             DebugExtension.DebugWireSphere(position, radius, 1);
 
             Changed();
         }
-
-
 
         public event Action Changed = delegate { };
 

@@ -122,8 +122,9 @@ namespace TerrainDemo.Visualization
         {
             public BlockRenderMode BlockMode;
             public bool RenderMainLayer;
+            public bool RenderUnderLayer;
 
-            public static readonly MicroRenderMode Default = new MicroRenderMode(){BlockMode = BlockRenderMode.Blocks, RenderMainLayer = true};
+            public static readonly MicroRenderMode Default = new MicroRenderMode(){BlockMode = BlockRenderMode.Blocks, RenderMainLayer = true, RenderUnderLayer = true};
         }
 
         public enum BlockRenderMode

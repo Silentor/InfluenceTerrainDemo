@@ -141,6 +141,11 @@ namespace TerrainDemo.Macro
                                              || cellMixBuffer[localPos.X + 1, localPos.Z].ResultHeight.IsLayer1Present
                                              || cellMixBuffer[localPos.X, localPos.Z + 1].ResultHeight.IsLayer1Present
                                              || cellMixBuffer[localPos.X + 1, localPos.Z + 1].ResultHeight.IsLayer1Present;
+                    var isUndergroundLayerPresent = cellMixBuffer[localPos.X, localPos.Z].ResultHeight.IsUndergroundLayerPresent
+                                             || cellMixBuffer[localPos.X + 1, localPos.Z].ResultHeight.IsUndergroundLayerPresent
+                                             || cellMixBuffer[localPos.X, localPos.Z + 1].ResultHeight.IsUndergroundLayerPresent
+                                             || cellMixBuffer[localPos.X + 1, localPos.Z + 1].ResultHeight.IsUndergroundLayerPresent;
+
 
                     BaseZoneGenerator generator;
                     if (zoneGeneratorId == zone.Id)
@@ -161,6 +166,8 @@ namespace TerrainDemo.Macro
                     block.Normal = blockNormal;
                     if (!isMainLayerPresent)
                         block.Layer1 = BlockType.Empty;
+                    if (!isUndergroundLayerPresent)
+                        block.Underground = BlockType.Empty;
                     blocksBuffer.Add(block);
                 }
 
@@ -294,9 +301,10 @@ namespace TerrainDemo.Macro
 
             //Fast pass
             if (heights.Length == 1)
-                return new Heights(heights[0].BaseHeight, heights[0].Layer1Height);      //Be sure to disable Additional layer flag
+                return new Heights(heights[0].BaseHeight, heights[0].UndergroundHeight, heights[0].Layer1Height);      //Be sure to disable Additional layer flag
 
             float baseResult = 0;
+            float undergroundResult = 0;
             float layer1Result = 0;
             for (int i = 0; i < heights.Length; i++)
             {
@@ -304,13 +312,15 @@ namespace TerrainDemo.Macro
 
                 var weight = influnce.GetWeight(i);
                 var baseHeight = heights[i].BaseHeight * weight;
+                var undergroundHeight = heights[i].UndergroundHeight * weight;
                 var layer1Height = heights[i].Layer1Height * weight;
 
                 baseResult += baseHeight;
+                undergroundResult += undergroundHeight;
                 layer1Result += layer1Height;
             }
 
-            return new Heights(baseResult, layer1Result);
+            return new Heights(baseResult, undergroundResult, layer1Result);
         }
 
         private void CheckMacroHeightFunctionQuality(MacroMap map)
@@ -321,7 +331,7 @@ namespace TerrainDemo.Macro
             Cell maxDiffCell = null;
             foreach (var macroCell in map.Cells)
             {
-                var heightDiff = (Vector2d)macroCell.DesiredHeight - (Vector2d)map.GetHeight(macroCell.Center);
+                var heightDiff = (Vector3d)macroCell.DesiredHeight - (Vector3d)map.GetHeight(macroCell.Center);
                 if (Math.Abs(maxDiff) < Math.Abs(heightDiff.X))
                 {
                     maxDiffCell = macroCell;
@@ -334,7 +344,7 @@ namespace TerrainDemo.Macro
                     maxDiff = heightDiff.Y;
                 }
 
-                averageDiff = averageDiff + heightDiff.X + heightDiff.Y;
+                averageDiff = averageDiff + heightDiff.X + heightDiff.Y + heightDiff.Z;
             }
 
             averageDiff /= map.Cells.Count * Heights.LayersCount;

@@ -37,6 +37,11 @@ namespace TerrainDemo.Tools
             return _random.Next(maxExclusive);
         }
 
+        public double Value()
+        {
+            return _random.NextDouble();
+        }
+
         public T Item<T>(IEnumerable<T> collection)
         {
             return collection.ElementAt(_random.Next(collection.Count()));

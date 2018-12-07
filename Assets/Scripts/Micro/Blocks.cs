@@ -7,20 +7,23 @@ namespace TerrainDemo.Micro
     public struct Blocks
     {
         public BlockType Base;
+        public BlockType Underground;
         public BlockType Layer1;
 
         //Debug
         public UnityEngine.Vector3 Normal;
 
-        public BlockType Top => Layer1 != BlockType.Empty ? Layer1 : Base;
+        public BlockType Top => Layer1 
+                                != BlockType.Empty ? Layer1 : Underground 
+                                                              != BlockType.Empty ? Underground : Base;
 
-        public bool IsEmpty => Layer1 == BlockType.Empty && Base == BlockType.Empty;
+        public bool IsEmpty => Layer1 == BlockType.Empty && Underground == BlockType.Empty && Base == BlockType.Empty;
 
         //public static readonly Blocks Empty = new Blocks(){Base = BlockType.Empty, Layer1 = BlockType.Empty, Normal = Vector3.up};
 
         public override string ToString()
         {
-            return $"({Layer1}, {Base})";
+            return $"({Layer1}, {Underground}, {Base})";
         }
 
         public override bool Equals(object obj)
@@ -31,16 +34,21 @@ namespace TerrainDemo.Micro
             }
 
             var blocks = (Blocks)obj;
-            return Base == blocks.Base &&
-                   Layer1 == blocks.Layer1;
+            return Base == blocks.Base 
+                   && Underground == blocks.Underground
+                   && Layer1 == blocks.Layer1;
         }
 
         public override int GetHashCode()
         {
-            var hashCode = -862721379;
-            hashCode = hashCode * -1521134295 + Base.GetHashCode();
-            hashCode = hashCode * -1521134295 + Layer1.GetHashCode();
-            return hashCode;
+            unchecked
+            {
+                var hashCode = -862721379;
+                hashCode = hashCode * -1521134295 + Base.GetHashCode();
+                hashCode = hashCode * -1521134295 + Underground.GetHashCode();
+                hashCode = hashCode * -1521134295 + Layer1.GetHashCode();
+                return hashCode;
+            }
         }
     }
 }

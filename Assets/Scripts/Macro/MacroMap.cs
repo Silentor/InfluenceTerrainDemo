@@ -226,19 +226,19 @@ namespace TerrainDemo.Macro
             alglib.kdtreequeryresultstags(_idwInfluence, ref _nearestCellsTags);
 
             //Calculate height in the point
-            Vector2d[] cellsHeights = new Vector2d[nearestCellsCount];
+            Vector3d[] cellsHeights = new Vector3d[nearestCellsCount];
             double[] cellsWeights = new double[nearestCellsCount];
             double weightsSum = 0;
             for (int i = 0; i < nearestCellsCount; i++)
             {
                 var cell = Cells[_nearestCellsTags[i]];
 
-                cellsHeights[i] = (Vector2d)cell.DesiredHeight;
+                cellsHeights[i] = (Vector3d)cell.DesiredHeight;
                 cellsWeights[i] = IDWLocalShepard2(cell.Center, worldPosition, searchRadius);
                 weightsSum += cellsWeights[i];
             }
 
-            var result = Vector2d.Zero;
+            var result = Vector3d.Zero;
             for (int i = 0; i < nearestCellsCount; i++)
             {
                 result += cellsHeights[i] * (cellsWeights[i] / weightsSum);

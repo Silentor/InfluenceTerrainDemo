@@ -29,7 +29,10 @@ namespace TerrainDemo.Generators
         public override Macro.Zone GenerateMacroZone()
         {
             foreach (var cell in Zone.Cells)
-                cell.DesiredHeight = new Heights(_random.Range(-12, -5), _random.Range(0, 3));
+            {
+                var baseHeight = _random.Range(-12, -5);
+                cell.DesiredHeight = new Heights(baseHeight, _random.Range(baseHeight - 5, baseHeight + 1), _random.Range(0, 3));
+            }
 
             return Zone;
         }
@@ -37,7 +40,9 @@ namespace TerrainDemo.Generators
         public override Heights GetMicroHeight(Vector2 position, MacroTemplate.CellMixVertex vertex)
         {
             position = Vector2.Transform(position, Quaternion.FromEulerAngles(0, 0, _hillsOrientation));
-            return new Heights(vertex.MacroHeight.BaseHeight,
+            return new Heights(
+                vertex.MacroHeight.BaseHeight,
+                vertex.MacroHeight.UndergroundHeight,
                 (float) (_microReliefNoise.GetSimplex(position.X / 10, position.Y / 30)) * 2 + vertex.MacroHeight.Layer1Height,         //Вытянутые дюны
                 true);
         }
@@ -45,7 +50,7 @@ namespace TerrainDemo.Generators
         public override Blocks GetBlocks(Vector2i position, Vector3 normal)
         {
             if(NormalToSlope(normal) > 45)
-                return new Blocks() { Base = _settings.BaseBlock.Block, Layer1 = _stoneBlock.Block };
+                return new Blocks() { Base = _settings.BaseBlock.Block, Underground = BlockType.GoldOre, Layer1 = _stoneBlock.Block };
             else
             {
                 return base.GetBlocks(position, normal);

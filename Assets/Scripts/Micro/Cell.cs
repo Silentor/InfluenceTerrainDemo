@@ -25,9 +25,6 @@ namespace TerrainDemo.Micro
             _map = map;
             BlockPositions = Rasterization.ConvexToBlocks(macro.Contains, macro.Bounds);
 
-            if(macro.Coords == new Coord(0, 0))
-                Debug.LogFormat(BlockPositions.ToJoinedString());
-
             Bounds = (Bounds2i) macro.Bounds;
 
             var vertices = new List<Vector2i>(BlockPositions);

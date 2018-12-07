@@ -292,12 +292,12 @@ namespace TerrainDemo.Editor
                 var vertices = MicroMap.GetBlock(blockPos);
                 GUILayout.BeginVertical();
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(MicroHeightToString(vertices.Corner01));
-                GUILayout.Label(MicroHeightToString(vertices.Corner11));
+                GUILayout.Label(vertices.Corner01.ToString());
+                GUILayout.Label(vertices.Corner11.ToString());
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(MicroHeightToString(vertices.Corner00));
-                GUILayout.Label(MicroHeightToString(vertices.Corner10));
+                GUILayout.Label(vertices.Corner00.ToString());
+                GUILayout.Label(vertices.Corner10.ToString());
                 GUILayout.EndHorizontal();
                 GUILayout.EndVertical();
             }
@@ -447,9 +447,14 @@ namespace TerrainDemo.Editor
 
             _microRenderMode.BlockMode = (Renderer.BlockRenderMode)EditorGUILayout.EnumPopup(_microRenderMode.BlockMode);
             _microRenderMode.RenderMainLayer = GUILayout.Toggle(_microRenderMode.RenderMainLayer, "Render main layer");
+            if (_microRenderMode.RenderMainLayer)
+                _microRenderMode.RenderUnderLayer = true;
+            _microRenderMode.RenderUnderLayer = GUILayout.Toggle(_microRenderMode.RenderUnderLayer, "Render under layer");
+            if (!_microRenderMode.RenderUnderLayer)
+                _microRenderMode.RenderMainLayer = false;
+
             if (GUILayout.Button("Render"))
                 _runner.Render(_microRenderMode);
-
 
             if (GUILayout.Button("Generate"))
                 _runner.Generate();

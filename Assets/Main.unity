@@ -129,7 +129,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &214652176
 Transform:
   m_ObjectHideFlags: 0
@@ -167,7 +167,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Seed: 1611822060
   RandomizeSeed: 0
-  LandSize: 50
+  LandSize: 200
   Side: 10
   InfluencePerturbFreq: 0.25
   InfluencePerturbPower: 3
@@ -236,7 +236,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!81 &1293065046
 AudioListener:
   m_ObjectHideFlags: 0
@@ -423,7 +423,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1897285097
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -459,6 +459,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74094780aebf414892704b113f721842, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Workmode: 0
 --- !u!1 &1902875634
 GameObject:
   m_ObjectHideFlags: 0
