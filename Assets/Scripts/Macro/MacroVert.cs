@@ -4,7 +4,6 @@ using System.Linq;
 using JetBrains.Annotations;
 using TerrainDemo.Settings;
 using TerrainDemo.Tools;
-using TerrainDemo.Tri;
 using UnityEngine.Assertions;
 using Vector2 = OpenTK.Vector2;
 

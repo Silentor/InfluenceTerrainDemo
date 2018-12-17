@@ -4,7 +4,6 @@ using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Settings;
 using TerrainDemo.Spatial;
-using TerrainDemo.Tri;
 using UnityEngine;
 using Cell = TerrainDemo.Macro.Cell;
 

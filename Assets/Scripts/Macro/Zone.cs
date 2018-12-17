@@ -2,7 +2,6 @@
 using System.Linq;
 using OpenTK;
 using TerrainDemo.Settings;
-using TerrainDemo.Tri;
 
 namespace TerrainDemo.Macro
 {

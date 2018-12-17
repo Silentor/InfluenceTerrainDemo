@@ -4,7 +4,6 @@ using OpenTK;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Settings;
-using TerrainDemo.Tri;
 using UnityEngine.Assertions;
 using Cell = TerrainDemo.Macro.Cell;
 

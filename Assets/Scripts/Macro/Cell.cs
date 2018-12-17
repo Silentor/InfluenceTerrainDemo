@@ -7,7 +7,6 @@ using TerrainDemo.Micro;
 using TerrainDemo.Settings;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
-using TerrainDemo.Tri;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Vector2 = OpenTK.Vector2;
@@ -165,11 +164,8 @@ namespace TerrainDemo.Macro
                 var v1 = corners[i];
                 var v2 = corners[(i + 1) % corners.Count];
 
-                Vector3 intersectionPoint;
-                if (Intersections.LineTriangleIntersection(ray, v1, v2, CenterPoint, out intersectionPoint) == 1)
-                {
+                if (Intersections.LineTriangleIntersection(ray, v1, v2, CenterPoint, out var intersectionPoint) == 1)
                     return intersectionPoint;
-                }
             }
 
             return null;

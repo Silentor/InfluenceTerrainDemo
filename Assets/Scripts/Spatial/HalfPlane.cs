@@ -2,13 +2,19 @@
 using UnityEngine;
 using Vector2 = OpenTK.Vector2;
 
-namespace TerrainDemo.Tools
+namespace TerrainDemo.Spatial
 {
     public class HalfPlane
     {
+        public readonly Vector2 Point1;
+        public readonly Vector2 Point2;
+
         public HalfPlane(Vector2 linePoint1, Vector2 linePoint2, Vector2 halflanePoint)
         {
             if(linePoint1 == linePoint2) throw new ArgumentException("Line is undefined");
+
+            Point1 = linePoint1;
+            Point2 = linePoint2;
 
             //Create common line equation
             var a = linePoint1.Y - linePoint2.Y;

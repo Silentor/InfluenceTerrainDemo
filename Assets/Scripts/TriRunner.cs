@@ -1,21 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using OpenTK;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Settings;
 using TerrainDemo.Visualization;
 using UnityEngine;
-using UnityEngine.Profiling;
-using Cell = TerrainDemo.Macro.Cell;
 using Debug = UnityEngine.Debug;
 using Renderer = TerrainDemo.Visualization.Renderer;
-using Vector2 = OpenTK.Vector2;
-using Vector3 = UnityEngine.Vector3;
 
-namespace TerrainDemo.Tri
+namespace TerrainDemo
 {
     public class TriRunner : MonoBehaviour
     {
@@ -23,7 +17,9 @@ namespace TerrainDemo.Tri
         public int Seed;
         public bool RandomizeSeed;
         public float LandSize = 100;
-        public float Side = 10;
+        public float CellSide = 10;
+        public float GridPerturbFreq = 0.01f;
+        public float GridPerturbPower = 10;
         public float InfluencePerturbFreq = 0.25f;
         public float InfluencePerturbPower = 4;
         public BiomeSettings[] Biomes = new BiomeSettings[0];
@@ -87,9 +83,10 @@ namespace TerrainDemo.Tri
                 template.GenerateMicroZone(Macro, zone, Micro);
             }
 
+            microtimer.Stop();
+
             Micro.Changed += MicroOnChanged;
 
-            microtimer.Stop();
             Debug.LogFormat("Created micromap in {0} msec", microtimer.ElapsedMilliseconds);
         }
 

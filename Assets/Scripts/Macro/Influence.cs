@@ -59,21 +59,21 @@ namespace TerrainDemo.Macro
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public ValueTuple<int, float> GetInfluence(int index)
+        public (int ZoneId, float Weight) GetInfluence(int index)
         {
-            if (index < Count)
+            switch (index)
             {
-                if (index == 0)
-                    return new ValueTuple<int, float>(Zone1Id, Zone1Weight);
-                if (index == 1)
-                    return new ValueTuple<int, float>(Zone2Id, Zone2Weight);
-                if (index == 2)
-                    return new ValueTuple<int, float>(Zone3Id, Zone3Weight);
-                if (index == 3)
-                    return new ValueTuple<int, float>(Zone4Id, Zone4Weight);
+                case 0:
+                    return (Zone1Id, Zone1Weight);
+                case 1:
+                    return (Zone2Id, Zone2Weight);
+                case 2:
+                    return (Zone3Id, Zone3Weight);
+                case 3:
+                    return (Zone4Id, Zone4Weight);
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(index));
             }
-
-            throw new ArgumentOutOfRangeException(nameof(index));
         }
 
 

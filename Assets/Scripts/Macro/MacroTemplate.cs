@@ -7,7 +7,6 @@ using TerrainDemo.Generators;
 using TerrainDemo.Micro;
 using TerrainDemo.Settings;
 using TerrainDemo.Spatial;
-using TerrainDemo.Tri;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Debug = UnityEngine.Debug;
@@ -97,14 +96,14 @@ namespace TerrainDemo.Macro
                         var infl = cellMixVertex.Influence.GetInfluence(i);
 
                         BaseZoneGenerator generator;
-                        if (infl.Item1 == zone.Id)
+                        if (infl.ZoneId == zone.Id)
                             generator = mainGenerator;
                         else
                         {
-                            generator = additionalGeneratorsCache.Find(g => g.Zone.Id == infl.Item1);
+                            generator = additionalGeneratorsCache.Find(g => g.Zone.Id == infl.ZoneId);
                             if (generator == null)
                             {
-                                generator = inputMap.Generators.Find(g => g.Zone.Id == infl.Item1);
+                                generator = inputMap.Generators.Find(g => g.Zone.Id == infl.ZoneId);
                                 additionalGeneratorsCache.Add(generator);
                             }
                         }

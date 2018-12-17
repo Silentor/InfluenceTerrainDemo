@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
-using TerrainDemo.Tri;
 using UnityEngine;
 using Cell = TerrainDemo.Macro.Cell;
 using Object = UnityEngine.Object;

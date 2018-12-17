@@ -7,9 +7,9 @@ using TerrainDemo.Generators;
 using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
-using TerrainDemo.Tri;
 using UnityEngine;
 using UnityEngine.Assertions;
+using Quaternion = OpenTK.Quaternion;
 using Random = TerrainDemo.Tools.Random;
 using Vector2 = OpenTK.Vector2;
 using Vector3 = UnityEngine.Vector3;
@@ -35,7 +35,7 @@ namespace TerrainDemo.Macro
             _settings = settings;
             _random = random;
             _bounds = settings.LandBounds;
-            _side = settings.Side;
+            _side = settings.CellSide;
 
             GenerateGrid();
 
@@ -114,7 +114,7 @@ namespace TerrainDemo.Macro
         private readonly TriRunner _settings;
         private readonly Random _random;
         private readonly FastNoise _influenceTurbulance;
-
+        private readonly float _influenceTurbulancePower;
         private Box2 _bounds;
         private readonly float _side;
 
@@ -123,15 +123,17 @@ namespace TerrainDemo.Macro
         private readonly double[] EmptyInfluence;
         private readonly List<Tuple<Cell, float>> _getInfluenceBuffer = new List<Tuple<Cell, float>>();
         private CellMesh _mesh;
-        private readonly float _influenceTurbulancePower;
 
         private void GenerateGrid()
         {
             Debug.LogFormat("Generating grid of macrocells");
 
+            var gridPerturbator = new FastNoise(unchecked (_settings.Seed + 10));
+            gridPerturbator.SetFrequency(_settings.GridPerturbFreq);
+
             var processedCells = new List<CellCandidate>();
             var unprocessedCells = new List<CellCandidate>();
-            unprocessedCells.Add(new CellCandidate(new Coord(0, 0), Vector2.Zero, CalcVertsPosition(Vector2.Zero, _settings.Side)));
+            unprocessedCells.Add(new CellCandidate(new Coord(0, 0), Vector2.Zero, CalcVertsPosition(Vector2.Zero, _settings.CellSide)));
 
             //Iteratively process flood-fill cell generation algorithm
             while (unprocessedCells.Count > 0)
@@ -151,14 +153,19 @@ namespace TerrainDemo.Macro
                 var neighborsCenters = CalcNeighborCellsPosition(candidateCell.Center, triangleHeight * _side * 2);
                 for (int i = 0; i < neighborsCenters.Length; i++)
                 {
-                    var position = candidateCell.Coords.Translated(Coord.Directions[i]);
-                    if (!unprocessedCells.Exists(c => c.Coords == position) &&
-                        !processedCells.Exists(c => c.Coords == position))
+                    var coord = candidateCell.Coords.Translated(Coord.Directions[i]);
+                    if (!unprocessedCells.Exists(c => c.Coords == coord) &&
+                        !processedCells.Exists(c => c.Coords == coord))
                     {
-                        unprocessedCells.Add(new CellCandidate(position, neighborsCenters[i], CalcVertsPosition(neighborsCenters[i], _settings.Side)));
+                        unprocessedCells.Add(new CellCandidate(coord, neighborsCenters[i], CalcVertsPosition(neighborsCenters[i], _settings.CellSide)));
                     }
                 }
             }
+
+            //Perturb grid vertices
+            foreach (var cell in processedCells)
+                for (var i = 0; i < cell.Vertices.Length; i++)
+                    cell.Vertices[i] = PerturbGridPoint(cell.Vertices[i], gridPerturbator);
 
             _mesh = new CellMesh(processedCells.Select(pc => pc.Vertices));
 
@@ -196,6 +203,13 @@ namespace TerrainDemo.Macro
             }
 
             Debug.LogFormat("Generated macromap of {0} vertices, {1} cells, {2} edges", Vertices.Count, Cells.Count, Edges.Count);
+        }
+
+        private Vector2 PerturbGridPoint(Vector2 point, FastNoise gridPerturbator)
+        {
+            var xPerturb = (float)gridPerturbator.GetSimplex(point.X, point.Y) * _settings.GridPerturbPower;
+            var zPerturb = (float)gridPerturbator.GetSimplex(point.X + 1000, point.Y - 1000) * _settings.GridPerturbPower;
+            return point + new Vector2(xPerturb, zPerturb);
         }
 
         private void PrepareLandIDW()
@@ -432,7 +446,8 @@ namespace TerrainDemo.Macro
             {
                 const double deg2rad = Math.PI / 180;
                 var angle = deg2rad * (360 - i * 360d / Cell.MaxNeighborsCount);
-                result[i] = new Vector2((float)(center.X + radius * Math.Cos(angle)), (float)(center.Y + radius * Math.Sin(angle)));
+                result[i] = 
+                    new Vector2((float) (center.X + radius * Math.Cos(angle)), (float) (center.Y + radius * Math.Sin(angle)));
             }
 
             return result;

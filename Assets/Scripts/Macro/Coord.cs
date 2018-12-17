@@ -57,7 +57,7 @@ namespace TerrainDemo.Macro
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
-            return obj is Coord && Equals((Coord) obj);
+            return obj is Coord coord && Equals(coord);
         }
 
         public static bool operator ==(Coord left, Coord right)

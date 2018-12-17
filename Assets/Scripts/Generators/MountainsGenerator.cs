@@ -3,7 +3,6 @@ using System.Linq;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Settings;
-using TerrainDemo.Tri;
 using UnityEngine.Assertions;
 using Cell = TerrainDemo.Macro.Cell;
 using Vector2 = OpenTK.Vector2;

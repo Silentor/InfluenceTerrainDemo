@@ -311,7 +311,9 @@ namespace TerrainDemo.Spatial
             return edge;
         }
 
-
+        /// <summary>
+        /// Convex polygon
+        /// </summary>
         public class Face : IComparable<Face>
         {
             public readonly int Id;
@@ -327,7 +329,7 @@ namespace TerrainDemo.Spatial
 
             public TFaceData Data
             {
-                get { return _data; }
+                get => _data;
                 set
                 {
                     if (!_dataInitialized)
@@ -374,6 +376,8 @@ namespace TerrainDemo.Spatial
                 _halfPlanes = new HalfPlane[edges.Length];
                 for (int i = 0; i < edges.Length; i++)
                     _halfPlanes[i] = new HalfPlane(edges[i].Vertex1.Position, edges[i].Vertex2.Position, Center);
+
+                Assert.IsTrue(IsConvex(_halfPlanes, vertices.Select(v => v.Position)), $"Face {Id} is not convex!");
             }
 
             public void Init(IEnumerable<Face> neighbors)
@@ -472,6 +476,18 @@ namespace TerrainDemo.Spatial
                 if (ReferenceEquals(this, other)) return 0;
                 if (ReferenceEquals(null, other)) return 1;
                 return Id.CompareTo(other.Id);
+            }
+
+            private bool IsConvex(IEnumerable<HalfPlane> faceHalfPlanes, IEnumerable<Vector2> vertices)
+            {
+                foreach (var halfPlane in faceHalfPlanes)
+                {
+                    if (!vertices.Where(v => v != halfPlane.Point1 && v != halfPlane.Point2)
+                                 .All(v => halfPlane.Contains(v)))
+                        return false;
+                }
+
+                return true;
             }
         }
 

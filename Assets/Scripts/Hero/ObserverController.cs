@@ -4,7 +4,6 @@ using TerrainDemo.Micro;
 using TerrainDemo.OldCodeToRevision;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
-using TerrainDemo.Tri;
 using UnityEditor;
 using UnityEngine;
 

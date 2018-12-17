@@ -6,7 +6,6 @@ using OpenTK;
 using TerrainDemo.Macro;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
-using TerrainDemo.Tri;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Vector2 = OpenTK.Vector2;
