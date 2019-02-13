@@ -32,6 +32,7 @@ namespace TerrainDemo.Settings
         Desert,
         Lake,
         Snow,
+        Caves,
         
 
         TestBegin = TestFlat,
@@ -40,6 +41,10 @@ namespace TerrainDemo.Settings
         TestPit,
         TestOnlyMacroLow,                   //Cell Macro height = 0, do not modify macro height
         TestOnlyMacroHigh,                  //Cell Macro height ~ 10, do not modify macro height
-        TestEnd = TestOnlyMacroHigh
+        TestWaves,
+        TestBaseOreAndGround,
+        TestBaseCavesAndGround,
+        TestBaseOreGroundColumn,
+        TestEnd = TestBaseOreGroundColumn,
     }
 }

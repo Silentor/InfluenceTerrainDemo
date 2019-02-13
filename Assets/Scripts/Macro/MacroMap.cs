@@ -121,7 +121,7 @@ namespace TerrainDemo.Macro
         private alglib.kdtree _idwInfluence;
         private int[] _nearestCellsTags = new int[0];
         private readonly double[] EmptyInfluence;
-        private readonly List<Tuple<Cell, float>> _getInfluenceBuffer = new List<Tuple<Cell, float>>();
+        private readonly List<(Cell, float)> _getInfluenceBuffer = new List<(Cell, float)>();
         private CellMesh _mesh;
 
         private void GenerateGrid()
@@ -267,8 +267,8 @@ namespace TerrainDemo.Macro
 
             //Turbulate position
             worldPosition = new Vector2(
-                worldPosition.X + (float)_influenceTurbulance.GetValue(worldPosition.X, worldPosition.Y) * _influenceTurbulancePower, 
-                worldPosition.Y + (float)_influenceTurbulance.GetValue(worldPosition.X + 1000, worldPosition.Y - 1000) * _influenceTurbulancePower);
+                worldPosition.X + (float)_influenceTurbulance.GetSimplex(worldPosition.X, worldPosition.Y) * _influenceTurbulancePower, 
+                worldPosition.Y + (float)_influenceTurbulance.GetSimplex(worldPosition.X + 1000, worldPosition.Y - 1000) * _influenceTurbulancePower);
 
             const float searchRadius = 25;
             var nearestCellsCount = alglib.kdtreequeryrnn(_idwInfluence, new double[] { worldPosition.X, worldPosition.Y }, searchRadius, true);
@@ -299,7 +299,7 @@ namespace TerrainDemo.Macro
                 if(cellWeight < 0.01d)
                     break;
 
-                _getInfluenceBuffer.Add(new Tuple<Cell, float>(cell, (float)cellWeight));
+                _getInfluenceBuffer.Add((cell, (float)cellWeight));
             }
 
             return new Influence(_getInfluenceBuffer);
@@ -327,75 +327,8 @@ namespace TerrainDemo.Macro
             Assert.IsTrue(distance <= searchRadius);
 
             var ratio = 1 - distance / searchRadius;        //Inverse lerp
-            return SmoothStep(ratio);
+            return Interpolation.SmoothStep(ratio);
             //return InQuad(ratio);
-        }
-
-
-        // Slightly slower than linear interpolation but much smoother
-        public double InOutCosine(double x)
-        {
-            double ft = x * Math.PI;
-            double f = (1 - Math.Cos(ft)) * 0.5;
-            return f;
-        }
-
-        public double OutQuad(double x)
-        {
-            return x * (2 - x);
-        }
-
-        public double InCubic(double x)
-        {
-            return x * x * x;
-        }
-
-        public double InQuintic(double x)
-        {
-            return x * x * x * x;
-        }
-
-        public double OutCubic(double x)
-        {
-            return (x - 1) * (x - 1) * (x - 1) + 1;
-        }
-
-
-        public double InQuad(double x)
-        {
-            return x * x;
-        }
-
-        public double InExpo(double x)
-        {
-            return Math.Pow(2, 10 *(x-1));
-        }
-
-        public double SmoothStep(double x)
-        {
-            return 3 * x * x - 2 * x * x * x;
-        }
-
-        public double SmootherStep(double x)
-        {
-            return x * x * x * (6 * x * x - 15 * x + 10);
-        }
-
-        public double SmoothestStep(double x)
-        {
-            return x * x * x * x * (-20 * x * x * x + 70 * x * x - 84 * x + 35);
-        }
-
-        // Much slower than cosine and linear interpolation, but very smooth
-        // v1 = a, v2 = b
-        // v0 = point before a, v3 = point after b
-        private Vector4 InterpolateCubic(Vector4 v0, Vector4 v1, Vector4 v2, Vector4 v3, float x)
-        {
-            var p = (v3 - v2) - (v0 - v1);
-            var q = (v0 - v1) - p;
-            var r = v2 - v0;
-            var s = v1;
-            return p * x * x * x + q * x * x + r * x + s;
         }
 
         private Vector4 InfluenceToVector4(double[] influence)

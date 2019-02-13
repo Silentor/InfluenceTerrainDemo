@@ -3,6 +3,7 @@ using System.Linq;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Settings;
+using TerrainDemo.Spatial;
 using UnityEngine.Assertions;
 using Cell = TerrainDemo.Macro.Cell;
 using Vector2 = OpenTK.Vector2;
@@ -39,7 +40,7 @@ namespace TerrainDemo.Generators
             foreach (var cell in cellsInDistanceOrder)
             {
                 var baseHeight = (height - 12f) / 3;
-                cell.DesiredHeight = new Heights(baseHeight, UnityEngine.Random.Range(baseHeight - 5, baseHeight + 1), height);
+                cell.DesiredHeight = new Heights(height, UnityEngine.Random.Range(baseHeight - 5, baseHeight + 1), baseHeight);
                 height -= 5;
             }
 
@@ -56,18 +57,15 @@ namespace TerrainDemo.Generators
             return Zone;
         }
 
-        public override Heights GetMicroHeight(Vector2 position, MacroTemplate.CellMixVertex vertex)
+        public override Blocks GenerateBlock2(Vector2i position, Heights macroHeight)
         {
             var mainLayer =
-                +(float) System.Math.Pow(_microReliefNoise.GetSimplex(position.X / 10, position.Y / 10) + 1, 2) - 2 //Вытянутые пики средней частоты
-                + (float) _microReliefNoise.GetSimplex(position.X / 2, position.Y / 2) //Высокочастотные неровности
-                + vertex.MacroHeight.Layer1Height;
+                +(float)System.Math.Pow(_microReliefNoise.GetSimplex(position.X / 10f, position.Z / 10f) + 1, 2) - 2 //Вытянутые пики средней частоты
+                + (float)_microReliefNoise.GetSimplex(position.X / 2f, position.Z / 2f) //Высокочастотные неровности
+                + macroHeight.Layer1Height;
 
-            return new Heights(
-                vertex.MacroHeight.BaseHeight,
-                UnityEngine.Random.Range(vertex.MacroHeight.BaseHeight, vertex.MacroHeight.UndergroundHeight),
-                mainLayer
-                );
+            return new Blocks(BlockType.Stone, BlockType.GoldOre,
+                new Heights(mainLayer, UnityEngine.Random.Range(macroHeight.BaseHeight, macroHeight.UndergroundHeight), macroHeight.BaseHeight));
         }
 
         private readonly FastNoise _microReliefNoise;

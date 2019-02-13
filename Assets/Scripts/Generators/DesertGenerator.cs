@@ -18,42 +18,31 @@ namespace TerrainDemo.Generators
         {
             Assert.IsTrue(biome.Type == BiomeType.Desert);
 
-            _microReliefNoise = new FastNoise(_random.Seed);
-            _microReliefNoise.SetFrequency(1);
+            _dunesNoise = new FastNoise(_random.Seed);
+            _dunesNoise.SetFrequency(1);
 
             _hillsOrientation = _random.Range(0, 180f);
             _stoneBlock = settings.AllBlocks.First(b => b.Block == BlockType.Stone);
+            _globalZoneHeight = _random.Range(0, 10);
         }
 
         public override Macro.Zone GenerateMacroZone()
         {
             foreach (var cell in Zone.Cells)
             {
-                var baseHeight = _random.Range(-12, -5);
-                cell.DesiredHeight = new Heights(baseHeight, _random.Range(baseHeight - 5, baseHeight + 1), _random.Range(0, 3));
+                var baseHeight = _random.Range(-12, -5) + _globalZoneHeight;
+                cell.DesiredHeight = new Heights(_random.Range(0, 3) + _globalZoneHeight, _random.Range(baseHeight - 5, baseHeight + 1), baseHeight);
             }
 
             return Zone;
         }
 
-        public override Heights GetMicroHeight(Vector2 position, MacroTemplate.CellMixVertex vertex)
+        public override Blocks GenerateBlock2(Vector2i position, Heights macroHeight)
         {
-            position = Vector2.Transform(position, Quaternion.FromEulerAngles(0, 0, _hillsOrientation));
-            return new Heights(
-                vertex.MacroHeight.BaseHeight,
-                vertex.MacroHeight.UndergroundHeight,
-                (float) (_microReliefNoise.GetSimplex(position.X / 10, position.Y / 30)) * 2 + vertex.MacroHeight.Layer1Height,         //Вытянутые дюны
-                true);
-        }
+            var rotatedPos = Vector2.Transform((Vector2)position, Quaternion.FromEulerAngles(0, 0, _hillsOrientation));
 
-        public override Blocks GetBlocks(Vector2i position, Vector3 normal)
-        {
-            if(NormalToSlope(normal) > 45)
-                return new Blocks() { Base = _settings.BaseBlock.Block, Underground = BlockType.GoldOre, Layer1 = _stoneBlock.Block };
-            else
-            {
-                return base.GetBlocks(position, normal);
-            }
+            return new Blocks(BlockType.Sand, BlockType.GoldOre,
+                new Heights((float)(_dunesNoise.GetSimplex(rotatedPos.X / 10f, rotatedPos.Y / 30f)) * 2 + macroHeight.Layer1Height, macroHeight.UndergroundHeight, macroHeight.BaseHeight)); //Вытянутые дюны
         }
 
         private float NormalToSlope(Vector3 normal)
@@ -61,8 +50,9 @@ namespace TerrainDemo.Generators
             return Vector3.Angle(normal, Vector3.up);
         }
 
-        private readonly FastNoise _microReliefNoise;
+        private readonly FastNoise _dunesNoise;
         private readonly float _hillsOrientation;
         private readonly BlockSettings _stoneBlock;
+        private int _globalZoneHeight;
     }
 }

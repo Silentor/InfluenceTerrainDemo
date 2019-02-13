@@ -57,62 +57,23 @@ namespace TerrainDemo.Generators
                 if (Zone.Biome.Type == BiomeType.Plains)
                 {
                     var baseHeight = _random.Range(-5f, -1);
-                    cell.DesiredHeight = new Heights(baseHeight, _random.Value() > 0.8 ? baseHeight + 2 : baseHeight - 2, _random.Range(0f, 1f));
+                    cell.DesiredHeight = new Heights(_random.Range(0f, 1f), _random.Value() > 0.8 ? baseHeight + 2 : baseHeight - 2, baseHeight);
                 }
                 else if (Zone.Biome.Type == BiomeType.Hills)
                 {
                     var baseHeight = _random.Range(-12f, -5);
-                    cell.DesiredHeight = new Heights(baseHeight, _random.Range(baseHeight - 2, baseHeight + 2), _random.Range(1f, 3));
+                    cell.DesiredHeight = new Heights(_random.Range(1f, 3), _random.Range(baseHeight - 2, baseHeight + 2), baseHeight);
                 }
                 else if (Zone.Biome.Type == BiomeType.Lake)
-                    cell.DesiredHeight = new Heights(
-                        Zone.Border.Contains(cell) ? -12f : -15, 
-                        -100,
-                        Zone.Border.Contains(cell) ? 0f : -10);
+                    cell.DesiredHeight = new Heights(Zone.Border.Contains(cell) ? 0f : -10, -100, Zone.Border.Contains(cell) ? -12f : -15);
             }
 
             return Zone;
         }
 
-        
-        public void GenerateMicroCell(Micro.Cell cell, MicroMap map)
+        public virtual Blocks GenerateBlock2(Vector2i position, Heights macroHeight)
         {
-            /*
-            var influences = new double[cell.Blocks.Length][];
-            for (int i = 0; i < cell.Blocks.Length; i++)
-            {
-                influences[i] = _macroMap.GetInfluence(BlockInfo.GetCenter(cell.Blocks[i]));
-            }
-            */
-
-            /*
-            var heights = new float[cell.BlockPositions.Length];
-            var blocks = new BlockType[cell.BlockPositions.Length];
-            for (int i = 0; i < cell.BlockPositions.Length; i++)
-            {
-                heights[i] = _macroMap.GetHeight(cell.BlockPositions[i]);
-                heights[i] = GetMicroHeight(cell.BlockPositions[i], heights[i]);
-                    //blocks[i] = GetBlock(cell.BlockPositions[i]);
-            }
-
-            map.SetHeights(cell.BlockPositions, heights);
-            */
-        }
-    
-
-        public virtual Heights GetMicroHeight(Vector2 position, MacroTemplate.CellMixVertex vertex)
-        {
-            var resourceLayerHeight = vertex.MacroHeight.UndergroundHeight - vertex.MacroHeight.BaseHeight;
-
-            return new Heights(
-                vertex.MacroHeight.BaseHeight, 
-                (float)(vertex.MacroHeight.BaseHeight + (resourceLayerHeight > 1 ? _resourcesNoise.GetSimplex(position.X, position.Y) * resourceLayerHeight : -1)), 
-                vertex.MacroHeight.Layer1Height);
-        }
-        
-        public virtual Blocks GetBlocks(Vector2i position, Vector3 normal)
-        {
-            return new Blocks(){Base = _settings.BaseBlock.Block, Underground = BlockType.GoldOre, Layer1 = Zone.Biome.DefaultBlock.Block};
+            return new Blocks(Zone.Biome.DefaultBlock.Block, BlockType.GoldOre, macroHeight);
         }
 
         /// <summary>

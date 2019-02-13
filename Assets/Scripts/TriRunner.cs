@@ -6,6 +6,7 @@ using TerrainDemo.Micro;
 using TerrainDemo.Settings;
 using TerrainDemo.Visualization;
 using UnityEngine;
+using UnityEngine.Assertions;
 using Debug = UnityEngine.Debug;
 using Renderer = TerrainDemo.Visualization.Renderer;
 
@@ -58,7 +59,8 @@ namespace TerrainDemo
             if (LandRender_Mode == LandRenderMode.Macro)
                 _renderer.Render(Macro, MacroCellInfluenceVisualization);
             else
-                _renderer.Render(Micro, mode);
+                //_renderer.Render(Micro, mode);
+                _renderer.Render2(Micro, mode);               //Experimental renderer
 
             timer.Stop();
 
@@ -82,6 +84,7 @@ namespace TerrainDemo
             {
                 template.GenerateMicroZone(Macro, zone, Micro);
             }
+            Micro.GenerateHeightmap();
 
             microtimer.Stop();
 
@@ -111,6 +114,7 @@ namespace TerrainDemo
 
         void Awake()
         {
+            Assert.raiseExceptions = true;
             _allBlocks = Resources.LoadAll<BlockSettings>("");
         }
 

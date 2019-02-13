@@ -7,36 +7,40 @@ namespace TerrainDemo.Macro
     /// <summary>
     /// Multiheightmap vertex height (immutable)
     /// </summary>
-    public struct Heights : IEquatable<Heights>
+    public readonly struct Heights : IEquatable<Heights>
     {
         public const int LayersCount = 3;
 
         public readonly float BaseHeight;
         public readonly float UndergroundHeight;
         public readonly float Layer1Height;
-        public readonly bool AdditionalLayer;
+        public readonly bool IsCreated;
 
-        public float Nominal => Math.Max(BaseHeight, Layer1Height);
+        public float Nominal => Math.Max(Math.Max(BaseHeight, Layer1Height), UndergroundHeight);
 
         public bool IsLayer1Present => Layer1Height > UndergroundHeight;
 
         public bool IsUndergroundLayerPresent => UndergroundHeight > BaseHeight;
 
-        public Heights(float baseHeight, float undergroundHeight, float layer1Height, bool additionalLayer = false)
+        public Heights(float layer1Height, float undergroundHeight, float baseHeight)
         {
             if (undergroundHeight < baseHeight)
                 undergroundHeight = baseHeight;
 
-            if (layer1Height < undergroundHeight)
-                layer1Height = undergroundHeight;
-
             if (layer1Height < baseHeight)
                 layer1Height = baseHeight;
+
+            if (layer1Height < undergroundHeight)
+                layer1Height = undergroundHeight;
 
             BaseHeight = baseHeight;
             UndergroundHeight = undergroundHeight;
             Layer1Height = layer1Height;
-            AdditionalLayer = additionalLayer;
+            IsCreated = true;
+        }
+
+        public Heights(Heights copyFrom) : this(copyFrom.Layer1Height, copyFrom.UndergroundHeight, copyFrom.BaseHeight)
+        {
         }
 
         [Pure]
@@ -44,13 +48,13 @@ namespace TerrainDemo.Macro
         {
             var newHeight = Layer1Height - deep;
             var newHeightForOre = Layer1Height - deep / 2;
-            return new Heights(BaseHeight, Math.Min(UndergroundHeight, newHeightForOre), newHeight);
+            return new Heights(newHeight, Math.Min(UndergroundHeight, newHeightForOre), BaseHeight);
         }
 
         [Pure]
         public Heights Build(float pileHeight)
         {
-            return new Heights(BaseHeight, UndergroundHeight, Layer1Height + pileHeight);
+            return new Heights(Layer1Height + pileHeight, UndergroundHeight, BaseHeight);
         }
 
         /*
@@ -72,7 +76,7 @@ namespace TerrainDemo.Macro
 
         public static explicit operator Heights(Vector3d v)
         {
-            return new Heights((float)v.X, (float)v.Y, (float)v.Z);
+            return new Heights((float)v.Z, (float)v.Y, (float)v.X);
         }
 
         public override string ToString()
@@ -84,13 +88,15 @@ namespace TerrainDemo.Macro
 
         public bool Equals(Heights other)
         {
-            return BaseHeight.Equals(other.BaseHeight) && UndergroundHeight.Equals(other.UndergroundHeight) && Layer1Height.Equals(other.Layer1Height);
+            return BaseHeight.Equals(other.BaseHeight) 
+                   && UndergroundHeight.Equals(other.UndergroundHeight) 
+                   && Layer1Height.Equals(other.Layer1Height);
         }
 
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
-            return obj is Heights && Equals((Heights) obj);
+            return obj is Heights heights && Equals(heights);
         }
 
         public override int GetHashCode()

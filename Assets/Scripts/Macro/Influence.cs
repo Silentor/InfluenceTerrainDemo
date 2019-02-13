@@ -9,6 +9,7 @@ namespace TerrainDemo.Macro
     public struct Influence : IEnumerable<ValueTuple<int, float>>
     {
         public const byte InvalidZoneId = unchecked((byte)Zone.InvalidId);
+        public const int Capacity = 4;
 
         public readonly byte Zone1Id;
         public readonly byte Zone2Id;
@@ -20,7 +21,7 @@ namespace TerrainDemo.Macro
         public readonly float Zone3Weight;
         public readonly float Zone4Weight;
 
-        public int GetZone(int index)
+        public int GetZoneId(int index)
         {
             if (index < Count)
             {
@@ -77,7 +78,7 @@ namespace TerrainDemo.Macro
         }
 
 
-        public static readonly Influence Empty = new Influence(new List<Tuple<Cell, float>>(0));
+        public static readonly Influence Empty = new Influence(new List<(Cell, float)>(0));
 
         public bool IsEmpty => Count == 0;
 
@@ -147,7 +148,7 @@ namespace TerrainDemo.Macro
             _maxInfluenceIndex = Zone1Id;
         }
 
-        public Influence(List<Tuple<Cell, float>> cellsAndWeights)
+        public Influence(List<(Cell, float)> cellsAndWeights)
         {
             Zone1Id = InvalidZoneId;
             Zone1Weight = 0;
@@ -211,7 +212,7 @@ namespace TerrainDemo.Macro
         private byte _count;
         private byte _maxInfluenceIndex;
 
-        private static bool AddCell(Tuple<Cell, float> cw, ref byte zoneId, ref float zoneWeight)
+        private static bool AddCell((Cell, float) cw, ref byte zoneId, ref float zoneWeight)
         {
             if (zoneId == cw.Item1.ZoneId)
             {
@@ -230,16 +231,16 @@ namespace TerrainDemo.Macro
 
         #region Enumerable
 
-        public IEnumerator<ValueTuple<int, float>> GetEnumerator()
+        public IEnumerator<(int, float)> GetEnumerator()
         {
             if(Zone1Id != InvalidZoneId)
-                yield return new ValueTuple<int, float>(Zone1Id, Zone1Weight);
+                yield return (Zone1Id, Zone1Weight);
             if (Zone2Id != InvalidZoneId)
-                yield return new ValueTuple<int, float>(Zone2Id, Zone2Weight);
+                yield return (Zone2Id, Zone2Weight);
             if (Zone3Id != InvalidZoneId)
-                yield return new ValueTuple<int, float>(Zone3Id, Zone3Weight);
+                yield return (Zone3Id, Zone3Weight);
             if (Zone4Id != InvalidZoneId)
-                yield return new ValueTuple<int, float>(Zone4Id, Zone4Weight);
+                yield return (Zone4Id, Zone4Weight);
         }
 
         IEnumerator IEnumerable.GetEnumerator()

@@ -15,23 +15,7 @@ namespace TerrainDemo.Spatial
         public static readonly Vector2i Back = new Vector2i(0, -1);
         public static readonly Vector2i Left = new Vector2i(-1, 0);
         public static readonly Vector2i Right = new Vector2i(1, 0);
-
-        public static readonly Vector2i[] Directions =
-        {
-            Forward, Back, Right, Left,
-        };
-
-        /// <summary>
-        /// Стороны света
-        /// </summary>
-        public static readonly Vector2i[] Cardinals = Directions;
-
-        public static readonly Vector2i[] DiagonalDirections = new[]
-        {
-            Left + Forward, Right + Forward,
-            Left + Back, Right + Back,
-        };
-
+        
         internal const float ConversionOffset = 0.999f;
 
         public Vector2i(int x, int z)

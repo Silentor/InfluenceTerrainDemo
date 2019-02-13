@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 31bbfb5f9b0940779bb88583280197fe, type: 3}
-  m_Name: TestExcavation
+  m_Name: TestBaseCaveGround
   m_EditorClassIdentifier: 
-  Type: 102
-  LayoutColor: {r: 0, g: 1, b: 0.21808434, a: 1}
-  SizeRange: {x: 7, y: 7}
+  Type: 107
+  LayoutColor: {r: 1, g: 0.04654569, b: 0, a: 1}
+  SizeRange: {x: 10, y: 20}
   DefaultBlock: {fileID: 11400000, guid: ea38fa3041cdf754cac03d16c05485e0, type: 2}

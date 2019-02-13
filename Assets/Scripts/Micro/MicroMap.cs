@@ -70,6 +70,68 @@ namespace TerrainDemo.Micro
             Changed();
         }
 
+        /// <summary>
+        /// Generate heightmap from blockmap
+        /// </summary>
+        public void GenerateHeightmap()
+        {
+            for (int x = 0; x < _heightMap.GetLength(0); x++)
+            {
+                for (int z = 0; z < _heightMap.GetLength(1); z++)
+                {
+                    var neighborBlockX0 = x - 1;
+                    var neighborBlockX1 = x;
+                    var neighborBlockZ0 = z - 1;
+                    var neighborBlockZ1 = z;
+
+                    if (neighborBlockX0 < 0)
+                        neighborBlockX0 = 0;
+                    if (neighborBlockZ0 < 0)
+                        neighborBlockZ0 = 0;
+                    if (neighborBlockX1 >= _blocks.GetLength(0))
+                        neighborBlockX1 = _blocks.GetLength(0) - 1;
+                    if (neighborBlockZ1 >= _blocks.GetLength(1))
+                        neighborBlockZ1 = _blocks.GetLength(1) - 1;
+
+                    var baseHeight = (_blocks[neighborBlockX0, neighborBlockZ0].Heights.BaseHeight
+                                     + _blocks[neighborBlockX1, neighborBlockZ0].Heights.BaseHeight
+                                     + _blocks[neighborBlockX0, neighborBlockZ1].Heights.BaseHeight
+                                     + _blocks[neighborBlockX1, neighborBlockZ1].Heights.BaseHeight) / 4;
+
+                    float undergroundHeight;
+                    if (_blocks[neighborBlockX0, neighborBlockZ0].Underground == BlockType.Empty
+                        || _blocks[neighborBlockX1, neighborBlockZ0].Underground == BlockType.Empty
+                        || _blocks[neighborBlockX0, neighborBlockZ1].Underground == BlockType.Empty
+                        || _blocks[neighborBlockX1, neighborBlockZ1].Underground == BlockType.Empty)
+                        undergroundHeight = baseHeight;
+                    else
+                    {
+                        undergroundHeight = (_blocks[neighborBlockX0, neighborBlockZ0].Heights.UndergroundHeight
+                                          + _blocks[neighborBlockX1, neighborBlockZ0].Heights.UndergroundHeight
+                                          + _blocks[neighborBlockX0, neighborBlockZ1].Heights.UndergroundHeight
+                                          + _blocks[neighborBlockX1, neighborBlockZ1].Heights.UndergroundHeight) / 4;
+                    }
+
+                    float mainHeight;
+                    if (_blocks[neighborBlockX0, neighborBlockZ0].Ground == BlockType.Empty
+                        || _blocks[neighborBlockX1, neighborBlockZ0].Ground == BlockType.Empty
+                        || _blocks[neighborBlockX0, neighborBlockZ1].Ground == BlockType.Empty
+                        || _blocks[neighborBlockX1, neighborBlockZ1].Ground == BlockType.Empty)
+                        mainHeight = undergroundHeight;
+                    else
+                    {
+                        mainHeight = (_blocks[neighborBlockX0, neighborBlockZ0].Heights.Layer1Height
+                                             + _blocks[neighborBlockX1, neighborBlockZ0].Heights.Layer1Height
+                                             + _blocks[neighborBlockX0, neighborBlockZ1].Heights.Layer1Height
+                                             + _blocks[neighborBlockX1, neighborBlockZ1].Heights.Layer1Height) / 4;
+                    }
+                    
+                    _heightMap[x, z] = new Heights(mainHeight, undergroundHeight, baseHeight);
+
+                }
+            }
+        }
+
         public void SetBlocks(IEnumerable<Vector2i> positions, IEnumerable<Blocks> blocks)
         {
             var posEnumerator = positions.GetEnumerator();
@@ -100,6 +162,31 @@ namespace TerrainDemo.Micro
             return _blocks;
         }
 
+        public Blocks GetBlock2(Vector2i worldBlockPos)
+        {
+            if (!Bounds.Contains(worldBlockPos))
+                return Blocks.Empty;
+
+            var localPos = worldBlockPos - Bounds.Min;
+            return _blocks[localPos.X, localPos.Z];
+        }
+
+        public NeighborBlocks GetNeighborBlocks(Vector2i worldBlockPos)
+        {
+            Blocks forward = Blocks.Empty, right = Blocks.Empty, back = Blocks.Empty, left = Blocks.Empty;
+            var localPos = worldBlockPos - Bounds.Min;
+            if(Bounds.Contains(worldBlockPos + Vector2i.Forward))
+                forward = _blocks[localPos.X, localPos.Z + 1];
+            if (Bounds.Contains(worldBlockPos + Vector2i.Right))
+                right = _blocks[localPos.X + 1, localPos.Z];
+            if (Bounds.Contains(worldBlockPos + Vector2i.Back))
+                back = _blocks[localPos.X, localPos.Z - 1];
+            if (Bounds.Contains(worldBlockPos + Vector2i.Left))
+                left = _blocks[localPos.X - 1, localPos.Z];
+
+            return new NeighborBlocks(forward, right, back, left);
+        }
+
         public BlockInfo GetBlock(Vector2i blockPos)
         {
             if (!Bounds.Contains(blockPos))
@@ -114,7 +201,7 @@ namespace TerrainDemo.Micro
             return result;
         }
 
-        public ValueTuple<Vector3, Vector2i>? Raycast(Ray ray)
+        public (Vector3, Vector2i)? Raycast(Ray ray)
         {
             //Get raycasted blocks
             var rayBlocks = Rasterization.DDA((OpenTK.Vector2)ray.origin, (OpenTK.Vector2)ray.GetPoint(300), true);
@@ -142,7 +229,7 @@ namespace TerrainDemo.Micro
                         if (Intersections.LineTriangleIntersection(ray, v00, v01, v11, out hit) == 1
                             || Intersections.LineTriangleIntersection(ray, v00, v11, v10, out hit) == 1)
                         {
-                            return new ValueTuple<Vector3, Vector2i>(hit, blockPos);
+                            return (hit, blockPos);
                         }
                     }
                     else
@@ -150,7 +237,7 @@ namespace TerrainDemo.Micro
                         if (Intersections.LineTriangleIntersection(ray, v00, v01, v10, out hit) == 1
                             || Intersections.LineTriangleIntersection(ray, v01, v11, v10, out hit) == 1)
                         {
-                            return new ValueTuple<Vector3, Vector2i>(hit, blockPos); 
+                            return (hit, blockPos); 
                         }
                     }
                 }
@@ -208,13 +295,13 @@ namespace TerrainDemo.Micro
                 var localPos = blockPosition - Bounds.Min;
                 var block = _blocks[localPos.X, localPos.Z];
 
-                if (block.Layer1!= BlockType.Empty 
+                if (block.Ground!= BlockType.Empty 
                     && !_heightMap[localPos.X, localPos.Z].IsLayer1Present
                     && !_heightMap[localPos.X, localPos.Z + 1].IsLayer1Present
                     && !_heightMap[localPos.X + 1, localPos.Z].IsLayer1Present
                     && !_heightMap[localPos.X + 1, localPos.Z + 1].IsLayer1Present)
                 {
-                    block.Layer1 = BlockType.Empty;
+                    //block.Layer1 = BlockType.Empty;
                     blockWasModified = true;
                 }
 
@@ -224,7 +311,7 @@ namespace TerrainDemo.Micro
                     && !_heightMap[localPos.X + 1, localPos.Z].IsUndergroundLayerPresent
                     && !_heightMap[localPos.X + 1, localPos.Z + 1].IsUndergroundLayerPresent)
                 {
-                    block.Underground = BlockType.Empty;
+                    //block.Underground = BlockType.Empty;
                     blockWasModified = true;
                 }
 
@@ -289,7 +376,7 @@ namespace TerrainDemo.Micro
                     || _heightMap[localPos.X + 1, localPos.Z + 1].IsLayer1Present)
                 {
                     var block = _blocks[localPos.X, localPos.Z];
-                    block.Layer1 = BlockType.Grass;
+                    //block.Layer1 = BlockType.Grass;
                     _blocks[localPos.X, localPos.Z] = block;
                     modifiedBlocksCounter++;
                 }
@@ -326,5 +413,36 @@ namespace TerrainDemo.Micro
         private readonly Heights[,] _heightMap;
         private readonly Blocks[,] _blocks;
         //private readonly double[,][] _influences;
+    }
+
+    public readonly struct NeighborBlocks
+    {
+        public readonly Blocks Forward;
+        public readonly Blocks Right;
+        public readonly Blocks Back;
+        public readonly Blocks Left;
+
+        public Blocks this[Side2d dir]
+        {
+            get
+            {
+                switch (dir)
+                {
+                    case Side2d.Forward: return Forward;
+                    case Side2d.Right: return Right;
+                    case Side2d.Back: return Back;
+                    case Side2d.Left: return Left;
+                    default: throw new ArgumentOutOfRangeException(nameof(dir));
+                }
+            }
+        }
+
+        public NeighborBlocks(Blocks forward, Blocks right, Blocks back, Blocks left)
+        {
+            Forward = forward;
+            Right = right;
+            Back = back;
+            Left = left;
+        }
     }
 }

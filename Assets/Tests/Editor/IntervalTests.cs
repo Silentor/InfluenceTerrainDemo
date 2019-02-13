@@ -46,12 +46,12 @@ namespace TerrainDemo.Tests.Editor
             var interval6 = new Interval(3, 5);
             var interval7 = new Interval(2, 3);
 
-            Assert.That(interval1.Subtract(interval2), Is.EquivalentTo(new []{interval1}));
-            Assert.That(interval1.Subtract(interval3), Is.EquivalentTo(new[] { interval1 }));
-            Assert.That(interval1.Subtract(interval4), Is.Empty);
-            Assert.That(interval1.Subtract(interval5), Is.EquivalentTo(new []{new Interval(2, 5)}));
-            Assert.That(interval1.Subtract(interval6), Is.EquivalentTo(new[] { new Interval(0, 3) }));
-            Assert.That(interval1.Subtract(interval7), Is.EquivalentTo(new[]{new Interval(0, 2), new Interval(3, 5)}));
+            Assert.That(interval1.Subtract2(interval2), Is.EquivalentTo(new []{interval1}));
+            Assert.That(interval1.Subtract2(interval3), Is.EquivalentTo(new[] { interval1 }));
+            Assert.That(interval1.Subtract2(interval4), Is.Empty);
+            Assert.That(interval1.Subtract2(interval5), Is.EquivalentTo(new []{new Interval(2, 5)}));
+            Assert.That(interval1.Subtract2(interval6), Is.EquivalentTo(new[] { new Interval(0, 3) }));
+            Assert.That(interval1.Subtract2(interval7), Is.EquivalentTo(new[]{new Interval(0, 2), new Interval(3, 5)}));
         }
 
     }

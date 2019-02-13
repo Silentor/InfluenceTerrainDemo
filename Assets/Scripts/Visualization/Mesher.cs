@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Settings;
 using TerrainDemo.Spatial;
+using TerrainDemo.Tools;
 using UnityEngine;
+using UnityEngine.Assertions;
 using Cell = TerrainDemo.Macro.Cell;
 
 namespace TerrainDemo.Visualization
@@ -18,6 +21,18 @@ namespace TerrainDemo.Visualization
         private readonly MacroMap _macroMap;
         private readonly Dictionary<BlockType, Color> _defaultBlockColor = new Dictionary<BlockType, Color>();
 
+        /// <summary>
+        /// <see cref="Directions.Cardinal"/>
+        /// </summary>
+        private static readonly (Vector2, Vector2)[] BlockSideFromDirection = new (Vector2, Vector2)[]
+        {
+            (new Vector2(0, 1), new Vector2(1, 1)),    //Block side for Forward direction
+            (new Vector2(1, 1), new Vector2(1, 0)),    //Block side for Right direction
+            (new Vector2(1, 0), new Vector2(0, 0)),    //Block side for Back direction
+            (new Vector2(0, 0), new Vector2(0, 1)),    //Block side for Left direction
+
+        };
+
         public Mesher(MacroMap macroMap, TriRunner settings)
         {
             _settings = settings;
@@ -30,19 +45,19 @@ namespace TerrainDemo.Visualization
             }
         }
 
-        public Tuple<Mesh, Texture> CreateMesh(MicroMap map, Renderer.MicroRenderMode mode)
+        public (Mesh, Texture) CreateMesh(MicroMap map, Renderer.MicroRenderMode mode)
         {
             return CreateMesh(map, map.Bounds, mode);
         }
 
-        public Tuple<Mesh, Texture> CreateMesh(MicroMap map, Bounds2i bounds, Renderer.MicroRenderMode mode)
+        public (Mesh, Texture) CreateMesh(MicroMap map, Bounds2i bounds, Renderer.MicroRenderMode mode)
         {
             bounds = bounds.Intersect(map.Bounds);
 
             var resultMesh = new Mesh();
 
             if (bounds.IsEmpty)
-                return new Tuple<Mesh, Texture>(resultMesh, Texture2D.blackTexture);
+                return (resultMesh, Texture2D.blackTexture);
 
             var heights = map.GetHeightMap();
             var blocks = map.GetBlockMap();
@@ -133,7 +148,653 @@ namespace TerrainDemo.Visualization
 
             var resultTexture = CreateBlockTexture(map, bounds, mode);
 
-            return new Tuple<Mesh, Texture>(resultMesh, resultTexture);
+            return (resultMesh, resultTexture);
+        }
+
+        public ((Mesh, Texture) Base, (Mesh, Texture) Under, (Mesh, Texture) Main) CreateMesh2(MicroMap map, Bounds2i bounds, Renderer.MicroRenderMode mode)
+        {
+            bounds = bounds.Intersect(map.Bounds);
+
+            if (bounds.IsEmpty)
+            {
+                var emptyMesh = new Mesh();
+                return ((emptyMesh, Texture2D.blackTexture), (emptyMesh, Texture2D.blackTexture), (emptyMesh, Texture2D.blackTexture));
+            }
+
+            var heightMap = map.GetHeightMap();
+            var blockMap = map.GetBlockMap();
+
+            var baseVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1));
+            var baseIndices = new List<int>(baseVertices.Count * 2);
+            var baseUvs = new List<UnityEngine.Vector2>(baseVertices.Count);
+
+            var underVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1));
+            var underIndices = new List<int>(underVertices.Count * 2);
+            //var underUvs = new List<UnityEngine.Vector2>(underVertices.Count);
+
+            var mainVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1));
+            var mainIndices = new List<int>(mainVertices.Count * 2);
+            //var mainUvs = new List<UnityEngine.Vector2>(mainVertices.Count);
+
+            var vertCountX = bounds.Size.X + 1;
+            var vertCountZ = bounds.Size.Z + 1;
+
+            //Set quads
+            bool isCaveMode = true;
+            for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
+                for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
+                {
+                    var mapLocalX = worldX - map.Bounds.Min.X;
+                    var mapLocalZ = worldZ - map.Bounds.Min.Z;
+                    var chunkLocalX = worldX - bounds.Min.X;
+                    var chunkLocalZ = worldZ - bounds.Min.Z;
+                    var startIndex = chunkLocalZ * (bounds.Size.X + 1) + chunkLocalX;
+                    
+                    var block = blockMap[mapLocalX, mapLocalZ];
+                    if (block.IsEmpty)
+                        continue;
+
+                    //Cave mode, draw base layer (cave floor), flipped underground layer (cave ceil) amd main layer
+                    //if (block.Underground == BlockType.Cave)
+                    {
+                        isCaveMode = true;
+
+                        //Main layer
+                        if (block.Ground != BlockType.Empty)
+                        {
+                            mainIndices.Add(startIndex);
+                            mainIndices.Add(startIndex + vertCountX);
+                            mainIndices.Add(startIndex + vertCountX + 1);
+
+                            mainIndices.Add(startIndex);
+                            mainIndices.Add(startIndex + vertCountX + 1);
+                            mainIndices.Add(startIndex + 1);
+                        }
+
+                        if (block.Underground == BlockType.Cave)
+                        {
+                            //Flipped triangles, draw cave ceil
+                            underIndices.Add(startIndex);
+                            underIndices.Add(startIndex + vertCountX + 1);
+                            underIndices.Add(startIndex + vertCountX);
+
+                            underIndices.Add(startIndex);
+                            underIndices.Add(startIndex + 1);
+                            underIndices.Add(startIndex + vertCountX + 1);
+                        }
+                        else
+                        {
+                            if (block.Ground == BlockType.Empty && block.Underground != BlockType.Empty)
+                            {
+                                underIndices.Add(startIndex);
+                                underIndices.Add(startIndex + vertCountX);
+                                underIndices.Add(startIndex + vertCountX + 1);
+
+                                underIndices.Add(startIndex);
+                                underIndices.Add(startIndex + vertCountX + 1);
+                                underIndices.Add(startIndex + 1);
+                            }
+                        }
+
+                        if (block.Underground == BlockType.Cave ||
+                            (block.Ground == BlockType.Empty && block.Underground == BlockType.Empty))
+                        {
+
+                            //Cave floor
+                            baseIndices.Add(startIndex);
+                            baseIndices.Add(startIndex + vertCountX);
+                            baseIndices.Add(startIndex + vertCountX + 1);
+
+                            baseIndices.Add(startIndex);
+                            baseIndices.Add(startIndex + vertCountX + 1);
+                            baseIndices.Add(startIndex + 1);
+                        }
+
+                    }
+                    /*
+                    else     //Simple case - combined layers to one 
+                    {
+                        mainIndices.Add(startIndex);
+                        mainIndices.Add(startIndex + vertCountX);
+                        mainIndices.Add(startIndex + vertCountX + 1);
+
+                        mainIndices.Add(startIndex);
+                        mainIndices.Add(startIndex + vertCountX + 1);
+                        mainIndices.Add(startIndex + 1);
+                    }*/
+                }
+
+            //Set vertices
+            if (isCaveMode)
+            {
+                for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z + 1; worldZ++)
+                    for (int worldX = bounds.Min.X; worldX <= bounds.Max.X + 1; worldX++)
+                    {
+                        var mapLocalX = worldX - map.Bounds.Min.X;
+                        var mapLocalZ = worldZ - map.Bounds.Min.Z;
+                        var chunkLocalX = worldX - bounds.Min.X;
+                        var chunkLocalZ = worldZ - bounds.Min.Z;
+
+                        mainVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Layer1Height, worldZ));
+                        underVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].UndergroundHeight, worldZ));
+                        baseVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].BaseHeight, worldZ));
+
+                        baseUvs.Add(new Vector2(chunkLocalX / (float)bounds.Size.X, chunkLocalZ / (float)bounds.Size.Z));
+                    }
+            }
+            else
+            {
+                for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z + 1; worldZ++)
+                    for (int worldX = bounds.Min.X; worldX <= bounds.Max.X + 1; worldX++)
+                    {
+                        var mapLocalX = worldX - map.Bounds.Min.X;
+                        var mapLocalZ = worldZ - map.Bounds.Min.Z;
+                        var chunkLocalX = worldX - bounds.Min.X;
+                        var chunkLocalZ = worldZ - bounds.Min.Z;
+
+                        mainVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Nominal, worldZ));
+                        baseUvs.Add(new Vector2(chunkLocalX / (float) bounds.Size.X, chunkLocalZ / (float) bounds.Size.Z));
+                    }
+            }
+
+            if (isCaveMode)
+            {
+                var baseMesh = new Mesh();
+                baseMesh.SetVertices(baseVertices);
+                baseMesh.SetTriangles(baseIndices, 0);
+                baseMesh.SetUVs(0, baseUvs);
+                baseMesh.RecalculateNormals();
+
+                var underMesh = new Mesh();
+                underMesh.SetVertices(underVertices);
+                underMesh.SetTriangles(underIndices, 0);
+                underMesh.SetUVs(0, baseUvs);
+                underMesh.RecalculateNormals();
+
+                var mainMesh = new Mesh();
+                mainMesh.SetVertices(mainVertices);
+                mainMesh.SetTriangles(mainIndices, 0);
+                mainMesh.SetUVs(0, baseUvs);
+                mainMesh.RecalculateNormals();
+
+                var (baseTexture, underTexture, mainTexture) = CreateBlockTexture2(map, bounds);
+
+                return ((baseMesh, baseTexture), (underMesh, underTexture), (mainMesh, mainTexture));
+            }
+            else
+            {
+                var combinedMesh = new Mesh();
+                combinedMesh.SetVertices(mainVertices);
+                combinedMesh.SetTriangles(mainIndices, 0);
+                combinedMesh.SetUVs(0, baseUvs);
+                combinedMesh.RecalculateNormals();
+
+                var combinedTexture = CreateBlockTexture(map, bounds, mode);
+
+                return ((null, null), (null, null), (combinedMesh, combinedTexture));
+            }
+        }
+
+        public ((Mesh, Texture) Base, (Mesh, Texture) Under, (Mesh, Texture) Main) CreateMesh2Minecraft(MicroMap map, Bounds2i bounds, Renderer.MicroRenderMode mode)
+        {
+            bounds = bounds.Intersect(map.Bounds);
+
+            if (bounds.IsEmpty)
+            {
+                var emptyMesh = new Mesh();
+                return ((emptyMesh, Texture2D.blackTexture), (emptyMesh, Texture2D.blackTexture), (emptyMesh, Texture2D.blackTexture));
+            }
+
+            var blockMap = map.GetBlockMap();
+
+            var baseVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1));
+            var baseIndices = new List<int>(baseVertices.Count * 2);
+            var baseUv = new List<UnityEngine.Vector2>(baseVertices.Count);
+
+            var underVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1));
+            var underIndices = new List<int>(underVertices.Count * 2);
+            var underUv = new List<UnityEngine.Vector2>(underVertices.Count);
+
+            var mainVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1));
+            var mainIndices = new List<int>(mainVertices.Count * 2);
+            var mainUv = new List<UnityEngine.Vector2>(mainVertices.Count);
+
+            var uvXCoeff = 1f / bounds.Size.X;
+            var uvYCoeff = 1f / bounds.Size.Z;
+
+            for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
+                for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
+                {
+                    var mapLocalX = worldX - map.Bounds.Min.X;
+                    var mapLocalZ = worldZ - map.Bounds.Min.Z;
+                    var chunkLocalX = worldX - bounds.Min.X;
+                    var chunkLocalZ = worldZ - bounds.Min.Z;
+
+                    var block = blockMap[mapLocalX, mapLocalZ];
+                    if (block.IsEmpty)
+                        continue;
+
+                    var neighbors = map.GetNeighborBlocks(new Vector2i(worldX, worldZ));
+                    
+                    if (block.Underground == BlockType.Cave)
+                    {
+                        //Draw cave block (ground block must be)
+                        DrawFloor(mainVertices, mainIndices, mainUv, block.Heights.Layer1Height);
+                        DrawCeil(underVertices, underIndices, underUv, block.Heights.UndergroundHeight);
+                        DrawFloor(baseVertices, baseIndices, baseUv, block.Heights.BaseHeight);
+                    }
+                    else
+                    {
+                        //Draw block top
+                        if (block.Ground != BlockType.Empty)
+                        {
+                            DrawFloor(mainVertices, mainIndices, mainUv, block.Heights.Layer1Height);
+                        }
+                        else if (block.Underground != BlockType.Empty)
+                        {
+                            DrawFloor(underVertices, underIndices, underUv, block.Heights.UndergroundHeight);
+                        }
+                        else
+                            DrawFloor(baseVertices, baseIndices, baseUv, block.Heights.BaseHeight);
+                    }
+
+                    //Draw block sides
+                    foreach (var dir in Directions.Cardinal)
+                    {
+                        var neigh = neighbors[dir];
+                        if (!neigh.IsEmpty)
+                        {
+                            var sidePosition = BlockSideFromDirection[(int)dir];
+
+                            //Draw Ground part of block side
+                            if (block.Ground != BlockType.Empty)
+                            {
+                                //Fast pass - draw only part of Ground layer
+                                /*
+                                if (block.IsSimple && neigh.IsSimple &&
+                                    block.Heights.Layer1Height > neigh.Heights.Layer1Height)
+                                {
+                                    DrawBlockSide(mainVertices, mainIndices, mainUv, sidePosition, block.Heights.Layer1Height,
+                                        neigh.Heights.Layer1Height);
+                                    continue;
+                                }
+                                */
+
+                                //Calculate visible layer part and draw it in a simple way
+                                var visiblePart = CalculateVisiblePart(block.GetMainLayerWidth(), neigh);
+
+                                if(visiblePart.Lenght > 1000)
+                                    Debug.Log("Infinity");
+
+                                if(!visiblePart.IsEmpty)
+                                    DrawBlockSide(mainVertices, mainIndices, mainUv, sidePosition, visiblePart.Max, visiblePart.Min);
+                            }
+
+                            //Draw Base part of block side
+                            {
+                                //Calculate visible layer part and draw it in a simple way
+                                var visiblePart = CalculateVisiblePart(block.GetBaseLayerWidth(), neigh);
+
+                                if (visiblePart.Lenght > 1000)
+                                    Debug.Log("Infinity");
+
+
+                                if (!visiblePart.IsEmpty)
+                                    DrawBlockSide(baseVertices, baseIndices, baseUv, sidePosition, visiblePart.Max, visiblePart.Min);
+
+                            }
+                        }
+
+                        //if (block.Underground != BlockType.Empty && block.Underground != BlockType.Cave)
+                        //{
+                        //    var mainBlock = block.GetUnderLayerWidth();
+                        //    if (mainBlock.top > sideBlock)
+                        //    {
+                        //        DrawBlockSide(underVertices, underIndices, underUv, sidePosition,
+                        //            mainBlock.top, Mathf.Max(mainBlock.bottom, sideBlock));
+                        //    }
+                        //}
+
+                        ////Base block
+                        //{
+                        //    var mainBlock = block.Heights.BaseHeight;
+                        //    if (mainBlock > sideBlock)
+                        //    {
+                        //        DrawBlockSide(baseVertices, baseIndices, baseUv, sidePosition, mainBlock, sideBlock);
+                        //    }
+                        //}
+                    }
+
+                    //if (!neighbors.right.IsEmpty)
+                    //{
+                    //    var sideBlock = neighbors.right.GetNominalHeight();
+                    //    var sidePosition = BlockSideFromDirection[1];
+
+                    //    if (block.Ground != BlockType.Empty)
+                    //    {
+                    //        var mainBlock = block.GetMainLayerWidth();
+                    //        if (mainBlock.top > sideBlock)
+                    //        {
+                    //            DrawBlockSide(mainVertices, mainIndices, mainUv, sidePosition,
+                    //                mainBlock.top, Mathf.Max(mainBlock.bottom, sideBlock));
+                    //        }
+                    //    }
+
+                    //    if (block.Underground != BlockType.Empty && block.Underground != BlockType.Cave)
+                    //    {
+                    //        var mainBlock = block.GetUnderLayerWidth();
+                    //        if (mainBlock.top > sideBlock)
+                    //        {
+                    //            DrawBlockSide(underVertices, underIndices, underUv, sidePosition,
+                    //                mainBlock.top, Mathf.Max(mainBlock.bottom, sideBlock));
+                    //        }
+                    //    }
+
+                    //    //Base block
+                    //    {
+                    //        var mainBlock = block.Heights.BaseHeight;
+                    //        if (mainBlock > sideBlock)
+                    //        {
+                    //            DrawBlockSide(baseVertices, baseIndices, baseUv, sidePosition, mainBlock, sideBlock);
+                    //        }
+                    //    }
+                    //}
+
+                    //if (!neighbors.back.IsEmpty)
+                    //{
+                    //    var sideBlock = neighbors.back.GetNominalHeight();
+                    //    var sidePosition = BlockSideFromDirection[2];
+
+                    //    if (block.Ground != BlockType.Empty)
+                    //    {
+                    //        var mainBlock = block.GetMainLayerWidth();
+                    //        if (mainBlock.top > sideBlock)
+                    //        {
+                    //            DrawBlockSide(mainVertices, mainIndices, mainUv, sidePosition,
+                    //                mainBlock.top, Mathf.Max(mainBlock.bottom, sideBlock));
+                    //        }
+                    //    }
+
+                    //    if (block.Underground != BlockType.Empty && block.Underground != BlockType.Cave)
+                    //    {
+                    //        var mainBlock = block.GetUnderLayerWidth();
+                    //        if (mainBlock.top > sideBlock)
+                    //        {
+                    //            DrawBlockSide(underVertices, underIndices, underUv, sidePosition,
+                    //                mainBlock.top, Mathf.Max(mainBlock.bottom, sideBlock));
+                    //        }
+                    //    }
+
+                    //    //Base block
+                    //    {
+                    //        var mainBlock = block.Heights.BaseHeight;
+                    //        if (mainBlock > sideBlock)
+                    //        {
+                    //            DrawBlockSide(baseVertices, baseIndices, baseUv, sidePosition, mainBlock, sideBlock);
+                    //        }
+                    //    }
+                    //}
+
+                    //if (!neighbors.left.IsEmpty)
+                    //{
+                    //    var sideBlock = neighbors.left.GetNominalHeight();
+                    //    var sidePosition = BlockSideFromDirection[3];
+
+                    //    if (block.Ground != BlockType.Empty)
+                    //    {
+                    //        var mainBlock = block.GetMainLayerWidth();
+                    //        if (mainBlock.top > sideBlock)
+                    //        {
+                    //            DrawBlockSide(mainVertices, mainIndices, mainUv, sidePosition,
+                    //                mainBlock.top, Mathf.Max(mainBlock.bottom, sideBlock));
+                    //        }
+                    //    }
+
+                    //    if (block.Underground != BlockType.Empty && block.Underground != BlockType.Cave)
+                    //    {
+                    //        var mainBlock = block.GetUnderLayerWidth();
+                    //        if (mainBlock.top > sideBlock)
+                    //        {
+                    //            DrawBlockSide(underVertices, underIndices, underUv, sidePosition,
+                    //                mainBlock.top, Mathf.Max(mainBlock.bottom, sideBlock));
+                    //        }
+                    //    }
+
+                    //    //Base block
+                    //    {
+                    //        var mainBlock = block.Heights.BaseHeight;
+                    //        if (mainBlock > sideBlock)
+                    //        {
+                    //            DrawBlockSide(baseVertices, baseIndices, baseUv, sidePosition, mainBlock, sideBlock);
+                    //        }
+                    //    }
+                    //}
+
+                    void DrawFloor(List<Vector3> vertices, List<int> indices, List<Vector2> uv, float height)
+                    {
+                        indices.Add(vertices.Count);
+                        indices.Add(vertices.Count + 1);
+                        indices.Add(vertices.Count + 2);
+                        indices.Add(vertices.Count + 3);
+
+                        vertices.Add(new Vector3(worldX, height, worldZ));
+                        vertices.Add(new Vector3(worldX, height, worldZ + 1));
+                        vertices.Add(new Vector3(worldX + 1, height, worldZ + 1));
+                        vertices.Add(new Vector3(worldX + 1, height, worldZ));
+
+                        uv.Add(new Vector2(chunkLocalX * uvXCoeff, chunkLocalZ * uvYCoeff));
+                        uv.Add(new Vector2(chunkLocalX * uvXCoeff, (chunkLocalZ + 1) * uvYCoeff));
+                        uv.Add(new Vector2((chunkLocalX + 1) * uvXCoeff, (chunkLocalZ + 1) * uvYCoeff));
+                        uv.Add(new Vector2((chunkLocalX + 1) * uvXCoeff, chunkLocalZ * uvYCoeff));
+                    }
+
+                    void DrawCeil(List<Vector3> vertices, List<int> indices, List<Vector2> uv, float height)
+                    {
+                        indices.Add(vertices.Count);
+                        indices.Add(vertices.Count + 3);
+                        indices.Add(vertices.Count + 2);
+                        indices.Add(vertices.Count + 1);
+
+                        vertices.Add(new Vector3(worldX, height, worldZ));
+                        vertices.Add(new Vector3(worldX, height, worldZ + 1));
+                        vertices.Add(new Vector3(worldX + 1, height, worldZ + 1));
+                        vertices.Add(new Vector3(worldX + 1, height, worldZ));
+
+                        uv.Add(new Vector2(chunkLocalX * uvXCoeff, chunkLocalZ * uvYCoeff));
+                        uv.Add(new Vector2(chunkLocalX * uvXCoeff, (chunkLocalZ + 1) * uvYCoeff));
+                        uv.Add(new Vector2((chunkLocalX + 1) * uvXCoeff, (chunkLocalZ + 1) * uvYCoeff));
+                        uv.Add(new Vector2((chunkLocalX + 1) * uvXCoeff, chunkLocalZ * uvYCoeff));
+                    }
+
+                    void DrawBlockSide(List<Vector3> vertices, List<int> indices, List<Vector2> uv, (Vector2 pos1, Vector2 pos2) sidePosition, float topHeight, float bottomHeight)
+                    {
+                        indices.Add(vertices.Count);
+                        indices.Add(vertices.Count + 1);
+                        indices.Add(vertices.Count + 2);
+                        indices.Add(vertices.Count + 3);
+
+                        //Normal outside
+                        vertices.Add(new Vector3(sidePosition.pos1.x + worldX, bottomHeight, sidePosition.pos1.y + worldZ));
+                        vertices.Add(new Vector3(sidePosition.pos2.x + worldX, bottomHeight, sidePosition.pos2.y + worldZ));
+                        vertices.Add(new Vector3(sidePosition.pos2.x + worldX, topHeight, sidePosition.pos2.y + worldZ));
+                        vertices.Add(new Vector3(sidePosition.pos1.x + worldX, topHeight, sidePosition.pos1.y + worldZ));
+
+                        uv.Add(new Vector2(chunkLocalX * uvXCoeff, chunkLocalZ * uvYCoeff));
+                        uv.Add(new Vector2(chunkLocalX * uvXCoeff, (chunkLocalZ + 1) * uvYCoeff));
+                        uv.Add(new Vector2((chunkLocalX + 1) * uvXCoeff, (chunkLocalZ + 1) * uvYCoeff));
+                        uv.Add(new Vector2((chunkLocalX + 1) * uvXCoeff, chunkLocalZ * uvYCoeff));
+                    }
+
+                    Interval CalculateVisiblePart(Interval input, Blocks otherBlock)
+                    {
+                        if (otherBlock.IsSimple)
+                            return input.Subtract(otherBlock.GetTotalWidth()).minPart;
+
+                        //Hide by Base layer (Under layer is Cave bcoz otherBlock is not simples)
+                        var onlyMain = input.Subtract(otherBlock.GetBaseLayerWidth());
+
+                        Assert.IsTrue(onlyMain.maxPart.IsEmpty, "Base layer cant divide other layer to 2 parts");
+
+                        if (onlyMain.minPart.IsEmpty)
+                            return Interval.Empty;
+
+                        //Hide by Main layer
+                        var complete = onlyMain.minPart.Subtract(otherBlock.GetMainLayerWidth());
+
+                        if (!complete.maxPart.IsEmpty)
+                            return onlyMain.minPart;
+
+                        return complete.minPart;
+                    }
+
+                    void DrawBlock(List<Vector3> vertices, List<int> indices, List<Vector2> uv, float blockHeight, bool isCaveBlock)
+                    {
+                        //Set indices for layer's block
+                        var startIndex = vertices.Count;
+
+                        if (isCaveBlock)
+                        {
+                            //Flipped block top (cave ceil)
+                            indices.Add(startIndex);
+                            indices.Add(startIndex + 3);
+                            indices.Add(startIndex + 2);
+                            indices.Add(startIndex + 1);
+                        }
+                        else
+                        {
+                            //Simple block top (ground)
+                            indices.Add(startIndex);
+                            indices.Add(startIndex + 1);
+                            indices.Add(startIndex + 2);
+                            indices.Add(startIndex + 3);
+                        }
+
+                        //Set verts for layer's block
+                        vertices.Add(new Vector3(worldX, blockHeight, worldZ));
+                        vertices.Add(new Vector3(worldX, blockHeight, worldZ + 1));
+                        vertices.Add(new Vector3(worldX + 1, blockHeight, worldZ + 1));
+                        vertices.Add(new Vector3(worldX + 1, blockHeight, worldZ));
+
+                        //Set UV for layer's block
+                        uv.Add(new Vector2(chunkLocalX * uvXCoeff, chunkLocalZ * uvYCoeff));
+                        uv.Add(new Vector2(chunkLocalX * uvXCoeff, (chunkLocalZ + 1) * uvYCoeff));
+                        uv.Add(new Vector2((chunkLocalX + 1) * uvXCoeff, (chunkLocalZ + 1) * uvYCoeff));
+                        uv.Add(new Vector2((chunkLocalX + 1) * uvXCoeff, chunkLocalZ * uvYCoeff));
+
+                        /*
+                        //Process sides
+                        var localPos = new Vector2i(mapLocalX, mapLocalZ);
+                        for (var i = 0; i < Vector2i.Directions.Length; i++)
+                        {
+                            var direction = Vector2i.Directions[i];
+                            var neighborPos = localPos + direction;
+
+                            //Discard out of map side blocks
+                            if (neighborPos.X < 0 || neighborPos.Z < 0
+                                                  || neighborPos.X >= blockMap.GetLength(0) ||
+                                                  neighborPos.Z >= blockMap.GetLength(1))
+                                continue;
+
+                            var neighbor = blockMap[neighborPos.X, neighborPos.Z];
+
+                            //Discard empty blocks
+                            if (neighbor.IsEmpty)
+                                continue;
+
+                            var neighborHeight = 0f;
+
+                            if (isCaveBlock)
+                            {
+                                neighborHeight = neighbor.Heights.UndergroundHeight;
+                                //Discard nrighbor blocks below current block, they will draw sides themselfes
+                                if (neighborHeight <= blockHeight)
+                                    continue;
+                            }
+                            else
+                            {
+                                neighborHeight = neighbor.GetNominalHeight();
+                                //Discard nrighbor blocks above current block, they will draw sides themselfes
+                                if (neighborHeight >= blockHeight)
+                                    continue;
+                            }
+
+                            //Draw block wall - quad from top of current block to top neighbor block
+                            var (localCorner1, localCorner2) = BlockSideFromDirection[i];
+                            DrawBlockSide(localCorner1 + new Vector2(worldX, worldZ),
+                                localCorner2 + new Vector2(worldX, worldZ),
+                                blockHeight, neighborHeight);
+                        }
+                        */
+
+                    }
+
+                    /*
+                    //Underground layer: its a cave ceil or resource layer
+                    if (block.Underground == BlockType.Cave) //Flipped quad, draw cave ceil
+                    {
+                        //Set indices for under layer's block
+                        var startIndex = underVertices.Count;
+                        underIndices.Add(startIndex);
+                        underIndices.Add(startIndex + 3);
+                        underIndices.Add(startIndex + 2);
+                        underIndices.Add(startIndex + 1);
+
+                        //Set verts for under layer's block
+                        underVertices.Add(new Vector3(worldX, block.Heights.UndergroundHeight, worldZ));
+                        underVertices.Add(new Vector3(worldX, block.Heights.UndergroundHeight, worldZ + 1));
+                        underVertices.Add(new Vector3(worldX + 1, block.Heights.UndergroundHeight, worldZ + 1));
+                        underVertices.Add(new Vector3(worldX + 1, block.Heights.UndergroundHeight, worldZ));
+
+                        //Set UV for underground layer's block
+                        underUv.Add(new Vector2(chunkLocalX / (float) bounds.Size.X,
+                            chunkLocalZ / (float) bounds.Size.Z));
+                        underUv.Add(new Vector2(chunkLocalX / (float) bounds.Size.X,
+                            chunkLocalZ + 1 / (float) bounds.Size.Z));
+                        underUv.Add(new Vector2(chunkLocalX + 1 / (float) bounds.Size.X,
+                            chunkLocalZ + 1 / (float) bounds.Size.Z));
+                        underUv.Add(new Vector2(chunkLocalX + 1 / (float) bounds.Size.X,
+                            chunkLocalZ / (float) bounds.Size.Z));
+
+                    }
+                    else
+                    {
+                        if (block.Ground == BlockType.Empty && block.Underground != BlockType.Empty) //Draw resource quad
+                        {
+                            DrawBlock(underVertices, underIndices, underUv, block.GetNominalHeight(), false);
+                        }
+                    }
+
+                    if (block.Underground == BlockType.Cave ||
+                        (block.Ground == BlockType.Empty && block.Underground == BlockType.Empty))
+                    {
+                        DrawBlock(baseVertices, baseIndices, baseUv, block.GetNominalHeight(), false);
+                    }
+                    */
+                }
+
+            var baseMesh = new Mesh();
+            baseMesh.SetVertices(baseVertices);
+            baseMesh.SetIndices(baseIndices.ToArray(), MeshTopology.Quads, 0);
+            baseMesh.SetUVs(0, baseUv);
+            baseMesh.RecalculateNormals();
+
+            var underMesh = new Mesh();
+            underMesh.SetVertices(underVertices);
+            underMesh.SetIndices(underIndices.ToArray(), MeshTopology.Quads, 0);
+            underMesh.SetUVs(0, underUv);
+            underMesh.RecalculateNormals();
+
+            var mainMesh = new Mesh();
+            mainMesh.SetVertices(mainVertices);
+            mainMesh.SetIndices(mainIndices.ToArray(), MeshTopology.Quads, 0);
+            mainMesh.SetUVs(0, mainUv);
+            mainMesh.RecalculateNormals();
+
+            var (baseTexture, underTexture, mainTexture) = CreateBlockTexture2(map, bounds);
+
+            return ((baseMesh, baseTexture), (underMesh, underTexture), (mainMesh, mainTexture));
+
+
         }
 
         public Mesh CreateMesh(MacroMap mapMesh, Renderer.MacroCellInfluenceMode influence)
@@ -246,6 +907,64 @@ namespace TerrainDemo.Visualization
             result.SetPixels(colors);
             result.Apply(true, true);
             return result;
+        }
+
+        private (Texture Base, Texture Under, Texture Main) CreateBlockTexture2(MicroMap map, Bounds2i bounds)
+        {
+            bounds = bounds.Intersect(map.Bounds);
+
+            if (bounds.IsEmpty)
+                return (Texture2D.blackTexture, Texture2D.blackTexture, Texture2D.blackTexture);
+
+            var baseTexture = new Texture2D(bounds.Size.X, bounds.Size.Z, TextureFormat.RGBA32, true, true);
+            baseTexture.filterMode = FilterMode.Point;
+            baseTexture.wrapMode = TextureWrapMode.Clamp;
+            var baseColors = new Color[bounds.Size.X * bounds.Size.Z];
+
+            var underTexture = new Texture2D(bounds.Size.X, bounds.Size.Z, TextureFormat.RGBA32, true, true);
+            underTexture.filterMode = FilterMode.Point;
+            underTexture.wrapMode = TextureWrapMode.Clamp;
+            var underColors = new Color[bounds.Size.X * bounds.Size.Z];
+
+            var mainTexture = new Texture2D(bounds.Size.X, bounds.Size.Z, TextureFormat.RGBA32, true, true);
+            mainTexture.filterMode = FilterMode.Point;
+            mainTexture.wrapMode = TextureWrapMode.Clamp;
+            var mainColors = new Color[bounds.Size.X * bounds.Size.Z];
+
+
+            for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
+                for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
+                {
+                    var mapLocalX = worldX - map.Bounds.Min.X;
+                    var mapLocalZ = worldZ - map.Bounds.Min.Z;
+                    var chunkLocalX = worldX - bounds.Min.X;
+                    var chunkLocalZ = worldZ - bounds.Min.Z;
+                    var flatIndex = chunkLocalZ * bounds.Size.X + chunkLocalX;
+
+                    var blocks = map.GetBlockMap()[mapLocalX, mapLocalZ];
+                    var block = blocks.Base;
+                    baseColors[flatIndex] = BlockToColor(block);
+
+                    block = blocks.Underground;
+                    if (block == BlockType.Cave)
+                        block = blocks.Ground;
+                    //underColors[flatIndex] = BlockToColor(block);
+                    underColors[flatIndex] = Color.cyan;
+
+                    block = blocks.Ground;
+                    mainColors[flatIndex] = BlockToColor(block);
+                }
+
+            baseTexture.SetPixels(baseColors);
+            baseTexture.Apply(true, true);
+
+            underTexture.SetPixels(underColors);
+            underTexture.Apply(true, true);
+
+            mainTexture.SetPixels(mainColors);
+            mainTexture.Apply(true, true);
+
+            return (baseTexture, underTexture, mainTexture);
         }
 
 

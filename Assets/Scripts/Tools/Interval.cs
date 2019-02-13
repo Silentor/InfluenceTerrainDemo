@@ -12,9 +12,16 @@ namespace TerrainDemo.Tools
     {
         public readonly float Min;
         public readonly float Max;
-        public bool IsEmpty => Min == 0 && Max == 0;
+
+        public float Lenght => Max - Min;
 
         public static readonly Interval Empty = new Interval(0, 0);
+
+        public bool IsEmpty => Min == 0 && Max == 0;
+
+        public bool IsNAN => float.IsNaN(Min) || float.IsNaN(Max);
+
+        public bool IsInfinity => float.IsInfinity(Min) || float.IsInfinity(Max);
 
         public Interval(float min, float max)
         {
@@ -32,41 +39,58 @@ namespace TerrainDemo.Tools
             return value >= Min && value <= Max;
         }
 
-        public bool IsIntersect(Interval other)
+        public bool IsIntersects(Interval other)
         {
             return !(other.Min > Max || other.Max < Min);
         }
 
-        public IEnumerable<Interval> Subtract(Interval other)
+        public Interval Intersect(Interval other)
+        {
+            return new Interval(Math.Max(Min, other.Min), Math.Min(Max, other.Max));
+        }
+
+        public IEnumerable<Interval> Subtract2(Interval other)
+        {
+            var result = Subtract(other);
+
+            if (!result.Item1.IsEmpty)
+                yield return result.Item1;
+
+            if (!result.Item2.IsEmpty)
+                yield return result.Item2;
+        }
+
+        public (Interval minPart, Interval maxPart) Subtract(Interval other)
         {
             if (IsEmpty)
             {
-                yield return Empty;
-                yield break;
+                return (Empty, Empty);
             }
 
-            if (other.IsEmpty || !IsIntersect(other))
+            if (other.IsEmpty || !IsIntersects(other))
             {
-                yield return this;
-                yield break;
+                return (this, Empty);
             }
 
+            Interval first = Empty, second = Empty;
             if (other.Min <= Min)
             {
                 if (other.Max < Max)
                 {
-                    yield return new Interval(other.Max, Max);
+                    first = new Interval(other.Max, Max);
                 }
             }
             else
             {
-                yield return new Interval(Min, other.Min);
+                first = new Interval(Min, other.Min);
 
                 if (other.Max < Max)
                 {
-                    yield return new Interval(other.Max, Max);
+                    second = new Interval(other.Max, Max);
                 }
             }
+
+            return (first, second);
 
         }
 

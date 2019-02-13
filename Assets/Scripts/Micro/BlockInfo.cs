@@ -1,8 +1,9 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Numerics;
+using System.Runtime.CompilerServices;
 using TerrainDemo.Macro;
 using TerrainDemo.Spatial;
-using UnityEngine;
 using Vector2 = OpenTK.Vector2;
+using Vector3 = UnityEngine.Vector3;
 
 namespace TerrainDemo.Micro
 {
@@ -13,7 +14,6 @@ namespace TerrainDemo.Micro
     {
         public readonly Vector2i Position;
         public readonly Blocks Block;
-        public readonly float Height;
         public readonly Heights Corner00;
         public readonly Heights Corner01;
         public readonly Heights Corner11;
@@ -28,9 +28,8 @@ namespace TerrainDemo.Micro
             Corner01 = corner01;
             Corner11 = corner11;
             Corner10 = corner10;
-            Height = (Corner00.Nominal + Corner01.Nominal + Corner11.Nominal + Corner10.Nominal) / 4;
-            Normal = block
-                .Normal; // GetBlockNormal(Corner00.Nominal, Corner11.Nominal, Corner01.Nominal, Corner10.Nominal);
+            Normal = Vector3.up; // GetBlockNormal(Corner00.Nominal, Corner11.Nominal, Corner01.Nominal, Corner10.Nominal);
+
         }
 
         public static Bounds2i GetBounds(Vector2i worldPosition)
@@ -49,7 +48,7 @@ namespace TerrainDemo.Micro
 
         public Vector3 GetCenter()
         {
-            return new Vector3(Position.X + 0.5f, Height, Position.Z + 0.5f);
+            return new Vector3(Position.X + 0.5f, Block.Heights.Nominal, Position.Z + 0.5f);
         }
 
         //based on http://www.flipcode.com/archives/Calculating_Vertex_Normals_for_Height_Maps.shtml

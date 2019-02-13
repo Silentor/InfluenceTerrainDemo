@@ -217,7 +217,7 @@ namespace TerrainDemo.Editor
 
             DrawRectangle.ForHandle(corner00, corner01, corner11, corner10, color, width);
 
-            if (drawNormal)
+            if (drawNormal && block.Normal != Vector3.zero)
                 DrawArrow.ForDebug(block.GetCenter(), block.Normal);
         }
 
@@ -284,7 +284,7 @@ namespace TerrainDemo.Editor
             if (block.Block.Top != BlockType.Empty)
             {
                 //GUILayout.Label($"Influence: {InfluenceToString(block.Influence)}");
-                GUILayout.Label($"Height: {block.Height:F1}");
+                GUILayout.Label($"Height: {block.Block.Heights}");
                 GUILayout.Label($"Type: {block.Block}");
 
                 //Show block vertices info

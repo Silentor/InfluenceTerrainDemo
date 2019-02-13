@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using NUnit.Framework;
 using OpenTK;
 using TerrainDemo.Macro;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
+using UnityEngine;
+using Vector2 = OpenTK.Vector2;
 
 namespace TerrainDemo.Tests.Editor
 {
@@ -34,12 +37,25 @@ namespace TerrainDemo.Tests.Editor
             var h3 = new HalfPlane(v3, v4, Vector2.Zero);
             var h4 = new HalfPlane(v4, v1, Vector2.Zero);
 
-            var isContains = new Predicate<Vector2>( p => HalfPlane.ContainsInConvex(p, h1, h2, h3, h4));
+            var isContains = new Predicate<Vector2>( p => HalfPlane.ContainsInConvex(p, new []{h1, h2, h3, h4}));
 
-            var result = Rasterization.ConvexToBlocks(isContains, new Box2(-2.4f, 2.3f, 1.2f, -1.1f));
-            Assert.That(result, Is.EquivalentTo(new[]{new Vector2i(0, 1), new Vector2i(0, 0), new Vector2i(0, -1), new Vector2i(0, -2),
+            var boundingBox = new Box2(-2.4f, 2.3f, 1.2f, -1.55f);
+            var result = Rasterization.ConvexToBlocks(isContains, boundingBox);
+            var correctAnswer = new[]{new Vector2i(0, 1), new Vector2i(0, 0), new Vector2i(0, -1), new Vector2i(0, -2),
                 new Vector2i(-1, 1), new Vector2i(-1, 0), new Vector2i(-1, -1),
-                new Vector2i(-2, 0), new Vector2i(-2, -1)}));
+                new Vector2i(-2, 0), new Vector2i(-2, -1)};
+
+            Assert.That(result, Is.EquivalentTo(correctAnswer));
+
+            //Draw polygon
+            //UnityEngine.Debug.DrawLine(v1, v2, Color.blue, 10);
+            //UnityEngine.Debug.DrawLine(v2, v3, Color.blue, 10);
+            //UnityEngine.Debug.DrawLine(v3, v4, Color.blue, 10);
+            //UnityEngine.Debug.DrawLine(v4, v1, Color.blue, 10);
+
+            //Draw bbox
+            //DrawRectangle.ForDebug();
+
 
         }
 

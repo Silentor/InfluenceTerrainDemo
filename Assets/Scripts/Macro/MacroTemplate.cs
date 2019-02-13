@@ -71,9 +71,107 @@ namespace TerrainDemo.Macro
                 var bufferSize = microcell.Bounds;
                 var cellMixBuffer = new CellMixVertex[bufferSize.Size.X + 1, bufferSize.Size.Z + 1];
                 var heightBuffer = new List<Heights>(microcell.VertexPositions.Length);
+                var blockBuffer = new (Blocks, Heights)[bufferSize.Size.X, bufferSize.Size.Z];
+                var blockMixBuffer = new Blocks[Influence.Capacity];
+                var resultBlock = default(Blocks);
+                var blockBuffer2 = new List<Blocks>(microcell.BlockPositions.Length);
 
+                //NEW logic 2
+                foreach (var blockPosition in microcell.BlockPositions)
+                {
+                    var blockCenterPosition = BlockInfo.GetWorldCenter(blockPosition);
+                    var influence = inputMap.GetInfluence(blockCenterPosition);
+                    var macroHeight = inputMap.GetHeight(blockCenterPosition);
+
+                    //Get blocks from all influencing zones
+                    for (int i = 0; i < influence.Count; i++)
+                    {
+                        var infl = influence.GetInfluence(i);
+
+                        BaseZoneGenerator generator;
+                        if (infl.ZoneId == zone.Id)
+                            generator = mainGenerator;
+                        else
+                        {
+                            generator = additionalGeneratorsCache.Find(g => g.Zone.Id == infl.ZoneId);
+                            if (generator == null)
+                            {
+                                generator = inputMap.Generators.Find(g => g.Zone.Id == infl.ZoneId);
+                                additionalGeneratorsCache.Add(generator);
+                            }
+                        }
+
+                        Assert.IsNotNull(generator);
+
+                        blockMixBuffer[i] = generator.GenerateBlock2(blockPosition, macroHeight);
+                        if (infl.ZoneId == influence.GetMostInfluenceZone())
+                            resultBlock = blockMixBuffer[i];
+                    }
+
+                    //Mix several blocks
+                    if (influence.Count > 1)
+                    {
+                        /*
+                        if (blockMixBuffer.Any(b => b.Layer1 == BlockType.Sand))
+                        {
+                            //Special block mix - sand with another blocks
+                            var sandInfluence = 0f;
+                            for (int i = 0; i < influence.Count; i++)
+                            {
+                                if (blockMixBuffer[i].Layer1 == BlockType.Sand)
+                                {
+                                    sandInfluence += influence.GetWeight(i);
+                                    //sandMicroHeight += (Vector3d) (blockMixBuffer[i].block.Heights);
+                                }
+                            }
+
+                            for (int i = 0; i < influence.Count; i++)
+                            {
+                                if (blockMixBuffer[i].Layer1 == BlockType.Sand)
+                                {
+                                    var t = Mathf.Clamp01((sandInfluence - 0.5f) * 2);
+                                    blockMixBuffer[i].Heights = new Heights(
+                                        Mathf.Lerp(macroHeight.BaseHeight, blockMixBuffer[i].Heights.BaseHeight, t),
+                                        Mathf.Lerp(macroHeight.UndergroundHeight, blockMixBuffer[i].Heights.UndergroundHeight,  t),
+                                        Mathf.Lerp(macroHeight.Layer1Height, blockMixBuffer[i].Heights.Layer1Height, t)
+                                        );
+                                }*/
+                                /*
+                                else
+                                {
+                                    var t = Mathf.Clamp01(((1 - sandInfluence) - 0.5f) * 2);
+                                    blockMixBuffer[i].Heights = new Heights(
+                                        Mathf.Lerp(blockMixBuffer[i].Heights.BaseHeight, macroHeight.BaseHeight, t),
+                                        Mathf.Lerp(blockMixBuffer[i].Heights.UndergroundHeight, macroHeight.UndergroundHeight, t),
+                                        Mathf.Lerp(blockMixBuffer[i].Heights.Layer1Height, macroHeight.Layer1Height, t)
+                                    );
+                                }
+                                */
+                            /*}
+                        }*/
+                        
+
+                        //Common mix algorithm
+                        {
+                            var accum = Vector3d.Zero;
+                            for (int i = 0; i < influence.Count; i++)
+                            {
+                                accum = accum + ((Vector3d) blockMixBuffer[i].Heights) * influence.GetWeight(i);
+                            }
+
+                            var resultHeights = (Heights) accum;
+                            resultBlock = resultBlock.MutateHeight(resultHeights);
+                        }
+                    }
+                    
+                    blockBuffer2.Add(resultBlock);
+                }
+
+                outputMap.SetBlocks(microcell.BlockPositions, blockBuffer2);
+
+                /*
                 //Prepare cell mix buffer
-                foreach (var vertexPosition in microcell.VertexPositions)
+                    foreach (var vertexPosition in microcell.VertexPositions)
                 {
                     var localPos = vertexPosition - bufferSize.Min;
                     var cellMixVertex = new CellMixVertex()
@@ -83,7 +181,55 @@ namespace TerrainDemo.Macro
                     };
                     cellMixBuffer[localPos.X, localPos.Z] = cellMixVertex;
                 }
+                */
 
+                /*
+                //NEW logic
+                foreach (var blockPosition in microcell.BlockPositions)
+                {
+                    var localPos = blockPosition - bufferSize.Min;
+                    var cellMixVertex = cellMixBuffer[localPos.X, localPos.Z];
+                    cellMixVertex.Heightses = new Heights[cellMixVertex.Influence.Count];
+                    Blocks currentBlock;
+
+                    //Generate block and 4 vertices for each influenced zones
+                    for (int i = 0; i < cellMixVertex.Influence.Count; i++)
+                    {
+                        var infl = cellMixVertex.Influence.GetInfluence(i);
+
+                        BaseZoneGenerator generator;
+                        if (infl.ZoneId == zone.Id)
+                            generator = mainGenerator;
+                        else
+                        {
+                            generator = additionalGeneratorsCache.Find(g => g.Zone.Id == infl.ZoneId);
+                            if (generator == null)
+                            {
+                                generator = inputMap.Generators.Find(g => g.Zone.Id == infl.ZoneId);
+                                additionalGeneratorsCache.Add(generator);
+                            }
+                        }
+
+                        Assert.IsNotNull(generator);
+
+                        var block = generator.GenerateBlock(blockPosition,
+                            in cellMixVertex.MacroHeight,
+                            in cellMixBuffer[localPos.X, localPos.Z + 1].MacroHeight,
+                            in cellMixBuffer[localPos.X + 1, localPos.Z].MacroHeight,
+                            in cellMixBuffer[localPos.X + 1, localPos.Z + 1].MacroHeight,
+                            ref cellMixBuffer[localPos.X, localPos.Z].Heightses[i],
+                            ref cellMixBuffer[localPos.X, localPos.Z + 1].Heightses[i],
+                            ref cellMixBuffer[localPos.X + 1, localPos.Z].Heightses[i],
+                            ref cellMixBuffer[localPos.X + 1, localPos.Z + 1].Heightses[i]);
+
+                        //TODO mix blocks, e.g. one zone places dirt, another places water, result block = mud
+                        if (generator == mainGenerator)
+                            currentBlock = block;
+                    }
+                }
+                */
+
+                /*
                 //Calculate micro heightmap
                 foreach (var vertexPosition in microcell.VertexPositions)
                 {
@@ -136,14 +282,7 @@ namespace TerrainDemo.Macro
                     var localPos = blockPosition - bufferSize.Min;
 
                     var zoneGeneratorId = cellMixBuffer[localPos.X, localPos.Z].Influence.GetMostInfluenceZone();
-                    var isMainLayerPresent = cellMixBuffer[localPos.X, localPos.Z].ResultHeight.IsLayer1Present
-                                             || cellMixBuffer[localPos.X + 1, localPos.Z].ResultHeight.IsLayer1Present
-                                             || cellMixBuffer[localPos.X, localPos.Z + 1].ResultHeight.IsLayer1Present
-                                             || cellMixBuffer[localPos.X + 1, localPos.Z + 1].ResultHeight.IsLayer1Present;
-                    var isUndergroundLayerPresent = cellMixBuffer[localPos.X, localPos.Z].ResultHeight.IsUndergroundLayerPresent
-                                             || cellMixBuffer[localPos.X + 1, localPos.Z].ResultHeight.IsUndergroundLayerPresent
-                                             || cellMixBuffer[localPos.X, localPos.Z + 1].ResultHeight.IsUndergroundLayerPresent
-                                             || cellMixBuffer[localPos.X + 1, localPos.Z + 1].ResultHeight.IsUndergroundLayerPresent;
+                    
 
 
                     BaseZoneGenerator generator;
@@ -163,14 +302,65 @@ namespace TerrainDemo.Macro
                                       
                     var block = generator.GetBlocks(blockPosition, blockNormal);
                     block.Normal = blockNormal;
-                    if (!isMainLayerPresent)
+
+                    //Fix blocks DEBUG
+
+                    ref var v00 = ref cellMixBuffer[localPos.X, localPos.Z].ResultHeight;
+                    ref var v11 = ref cellMixBuffer[localPos.X + 1, localPos.Z + 1].ResultHeight;
+                    ref var v01 = ref cellMixBuffer[localPos.X, localPos.Z + 1].ResultHeight;
+                    ref var v10 = ref cellMixBuffer[localPos.X + 1, localPos.Z].ResultHeight;
+
+                    if (!v00.IsLayer1Present && !v01.IsLayer1Present && !v10.IsLayer1Present && !v11.IsLayer1Present)
                         block.Layer1 = BlockType.Empty;
-                    if (!isUndergroundLayerPresent)
+                    if (!v00.IsUndergroundLayerPresent 
+                        && !v01.IsUndergroundLayerPresent 
+                        && !v10.IsUndergroundLayerPresent 
+                        && !v11.IsUndergroundLayerPresent)
                         block.Underground = BlockType.Empty;
+
+                    if (block.Underground == BlockType.Cave)
+                    {
+                        
+                        //Fix blocks with visible "underground" vertices - cave entrances
+                        if (v00.UndergroundHeight > v00.Layer1Height
+                            || v01.UndergroundHeight > v01.Layer1Height
+                            || v10.UndergroundHeight > v10.Layer1Height
+                            || v11.UndergroundHeight > v11.Layer1Height)
+                        {
+                            if(v00.UndergroundHeight < v00.Layer1Height)
+                            {
+                                var edgeHeight = (v00.UndergroundHeight + v00.Layer1Height) / 2;
+                                v00 = new Heights(v00.BaseHeight, edgeHeight, edgeHeight);
+                            }
+
+                            if (v01.UndergroundHeight < v01.Layer1Height)
+                            {
+                                var edgeHeight = (v01.UndergroundHeight + v01.Layer1Height) / 2;
+                                v01 = new Heights(v01.BaseHeight, edgeHeight, edgeHeight);
+                            }
+
+                            if (v10.UndergroundHeight < v10.Layer1Height)
+                            {
+                                var edgeHeight = (v10.UndergroundHeight + v10.Layer1Height) / 2;
+                                v10 = new Heights(v10.BaseHeight, edgeHeight, edgeHeight);
+                            }
+
+                            if (v11.UndergroundHeight < v11.Layer1Height)
+                            {
+                                var edgeHeight = (v11.UndergroundHeight + v11.Layer1Height) / 2;
+                                v11 = new Heights(v11.BaseHeight, edgeHeight, edgeHeight);
+                            }
+
+                            block.Layer1 = BlockType.Empty;
+                        }
+                        
+                    }
+
                     blocksBuffer.Add(block);
                 }
-
+                
                 outputMap.SetBlocks(microcell.BlockPositions, blocksBuffer);
+                */
             }
             
         }
@@ -212,14 +402,23 @@ namespace TerrainDemo.Macro
 
         private BaseZoneGenerator GetZoneGenerator(BiomeSettings biome, MacroMap map, IEnumerable<Cell> cells, int zoneId, TriRunner settings)
         {
-            if(biome.Type == BiomeType.Mountain)
-                return new MountainsGenerator(map, cells, zoneId, biome, settings);
-            else if(biome.Type >= BiomeType.TestBegin && biome.Type <= BiomeType.TestEnd)
-                return new TestZoneGenerator(map, cells, zoneId, biome, settings);
-            else if(biome.Type == BiomeType.Desert)
-                return new DesertGenerator(map, cells, zoneId, biome, settings);
-            else
-                return new BaseZoneGenerator(map, cells, zoneId, biome, settings);
+            switch (biome.Type)
+            {
+                case BiomeType.Mountain:
+                    return new MountainsGenerator(map, cells, zoneId, biome, settings);
+                case BiomeType.Desert:
+                    return new DesertGenerator(map, cells, zoneId, biome, settings);
+                case BiomeType.Caves:
+                    return new CavesGenerator(map, cells, zoneId, biome, settings);
+
+                default:
+                {
+                    if(biome.Type >= BiomeType.TestBegin && biome.Type <= BiomeType.TestEnd)
+                        return new TestZoneGenerator(map, cells, zoneId, biome, settings);
+                    else
+                        return new BaseZoneGenerator(map, cells, zoneId, biome, settings);
+                }
+            }
         }
 
         /*
@@ -300,7 +499,7 @@ namespace TerrainDemo.Macro
 
             //Fast pass
             if (heights.Length == 1)
-                return new Heights(heights[0].BaseHeight, heights[0].UndergroundHeight, heights[0].Layer1Height);      //Be sure to disable Additional layer flag
+                return new Heights(heights[0].Layer1Height, heights[0].UndergroundHeight, heights[0].BaseHeight);      //Be sure to disable Additional layer flag
 
             float baseResult = 0;
             float undergroundResult = 0;
@@ -319,7 +518,7 @@ namespace TerrainDemo.Macro
                 layer1Result += layer1Height;
             }
 
-            return new Heights(baseResult, undergroundResult, layer1Result);
+            return new Heights(layer1Result, undergroundResult, baseResult);
         }
 
         private void CheckMacroHeightFunctionQuality(MacroMap map)

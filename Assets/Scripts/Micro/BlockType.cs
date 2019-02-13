@@ -10,8 +10,10 @@
         Sand,
         Snow,
         Water,
+        Dirt,
 
-        //Undergrounds
-        GoldOre
+        //Undergrounds resources
+        GoldOre = 100,
+        Cave,
     }
 }

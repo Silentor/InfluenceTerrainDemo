@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using Vector2 = OpenTK.Vector2;
 
@@ -48,7 +49,7 @@ namespace TerrainDemo.Spatial
         /// <param name="point"></param>
         /// <param name="bounds"></param>
         /// <returns></returns>
-        public static bool ContainsInConvex(Vector2 point, params HalfPlane[] bounds)
+        public static bool ContainsInConvex(Vector2 point, IEnumerable<HalfPlane> bounds)       //todo make "CheckContains" internal class to store halfplanes?
         {
             foreach (var bound in bounds)
             {

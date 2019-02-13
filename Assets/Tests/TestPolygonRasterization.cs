@@ -56,7 +56,7 @@ namespace TerrainDemo.Tests
                 var isContains = new Predicate<Vector2>(delegate(Vector2 p)
                 {
                     containsCallCounter++;
-                    return HalfPlane.ContainsInConvex(p, h1, h2, h3, h4);
+                    return HalfPlane.ContainsInConvex(p, new []{h1, h2, h3, h4});
                 });
                 var bounds = new Box2(
                     Mathf.Min(_h1.position.x, _h2.position.x, _h3.position.x, _h4.position.x),
