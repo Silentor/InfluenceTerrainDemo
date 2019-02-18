@@ -24,13 +24,12 @@ namespace TerrainDemo.Visualization
         /// <summary>
         /// <see cref="Directions.Cardinal"/>
         /// </summary>
-        private static readonly (Vector2, Vector2)[] BlockSideFromDirection = new (Vector2, Vector2)[]
+        private static readonly (Vector2 pos1, Vector2 pos2)[] BlockSideFromDirection = 
         {
             (new Vector2(0, 1), new Vector2(1, 1)),    //Block side for Forward direction
             (new Vector2(1, 1), new Vector2(1, 0)),    //Block side for Right direction
             (new Vector2(1, 0), new Vector2(0, 0)),    //Block side for Back direction
             (new Vector2(0, 0), new Vector2(0, 1)),    //Block side for Left direction
-
         };
 
         public Mesher(MacroMap macroMap, TriRunner settings)
@@ -39,18 +38,12 @@ namespace TerrainDemo.Visualization
             _macroMap = macroMap;
 
             var blocksSettings = Resources.LoadAll<BlockSettings>("");
-            foreach (var biome in blocksSettings)
-            {
-                _defaultBlockColor[biome.Block] = biome.DefaultColor;
-            }
+            foreach (var blockSetting in blocksSettings)
+                _defaultBlockColor[blockSetting.Block] = blockSetting.DefaultColor;
         }
 
-        public (Mesh, Texture) CreateMesh(MicroMap map, Renderer.MicroRenderMode mode)
-        {
-            return CreateMesh(map, map.Bounds, mode);
-        }
-
-        public (Mesh, Texture) CreateMesh(MicroMap map, Bounds2i bounds, Renderer.MicroRenderMode mode)
+        /*
+        public (Mesh, Texture) CreateMesh(MicroMap map, Bounds2i bounds, TriRunner renderSettings)
         {
             bounds = bounds.Intersect(map.Bounds);
 
@@ -77,11 +70,11 @@ namespace TerrainDemo.Visualization
                     var chunkLocalX = worldX - bounds.Min.X;
                     var chunkLocalZ = worldZ - bounds.Min.Z;
 
-                    if(mode.RenderMainLayer)
+                    if(renderSettings.RenderLayer == Renderer.TerrainLayerToRender.Main)
                         vertices.Add(new Vector3(worldX, heights[mapLocalX, mapLocalZ].Nominal, worldZ));
-                    else if(mode.RenderUnderLayer)
+                    else if(renderSettings.RenderLayer == Renderer.TerrainLayerToRender.Underground)
                         vertices.Add(new Vector3(worldX, heights[mapLocalX, mapLocalZ].UndergroundHeight, worldZ));
-                    else
+                    else  //Base layer
                         vertices.Add(new Vector3(worldX, heights[mapLocalX, mapLocalZ].BaseHeight, worldZ));
 
                     uvs.Add(new Vector2(chunkLocalX / (float)bounds.Size.X, chunkLocalZ / (float)bounds.Size.Z));
@@ -102,7 +95,7 @@ namespace TerrainDemo.Visualization
                         continue;
 
                     float height00, height01, height11, height10;
-                    if (mode.RenderMainLayer)
+                    if (renderSettings.RenderLayer == Renderer.TerrainLayerToRender.Main)
                     {
                         height00 = heights[mapLocalX, mapLocalZ].Nominal;
                         height01 = heights[mapLocalX, mapLocalZ + 1].Nominal;
@@ -146,12 +139,33 @@ namespace TerrainDemo.Visualization
             resultMesh.RecalculateBounds();
             resultMesh.RecalculateNormals();
 
-            var resultTexture = CreateBlockTexture(map, bounds, mode);
+            var resultTexture = CreateBlockTexture(map, bounds, renderSettings);
 
             return (resultMesh, resultTexture);
         }
+        */
 
-        public ((Mesh, Texture) Base, (Mesh, Texture) Under, (Mesh, Texture) Main) CreateMesh2(MicroMap map, Bounds2i bounds, Renderer.MicroRenderMode mode)
+        public Mesh CreateMacroMesh(MacroMap mapMesh, Renderer.MacroCellInfluenceMode influence)
+        {
+            var result = new Mesh();
+            var vertices = new List<Vector3>();
+            var colors = new List<Color>();
+            var indices = new List<int>();
+
+            foreach (var cell in mapMesh.Cells)
+            {
+                CreateMacroCell(vertices, colors, indices, cell, influence);
+            }
+
+            result.SetVertices(vertices);
+            result.SetColors(colors);
+            result.SetIndices(indices.ToArray(), MeshTopology.Triangles, 0);
+            result.RecalculateNormals();
+
+            return result;
+        }
+
+        public ((Mesh, Texture) Base, (Mesh, Texture) Under, (Mesh, Texture) Main) CreateTerrainMesh(MicroMap map, Bounds2i bounds, TriRunner renderSettings)
         {
             bounds = bounds.Intersect(map.Bounds);
 
@@ -329,13 +343,13 @@ namespace TerrainDemo.Visualization
                 combinedMesh.SetUVs(0, baseUvs);
                 combinedMesh.RecalculateNormals();
 
-                var combinedTexture = CreateBlockTexture(map, bounds, mode);
+                var combinedTexture = CreateBlockTexture(map, bounds, renderSettings);
 
                 return ((null, null), (null, null), (combinedMesh, combinedTexture));
             }
         }
 
-        public ((Mesh, Texture) Base, (Mesh, Texture) Under, (Mesh, Texture) Main) CreateMesh2Minecraft(MicroMap map, Bounds2i bounds, Renderer.MicroRenderMode mode)
+        public ((Mesh, Texture) Base, (Mesh, Texture) Under, (Mesh, Texture) Main) CreateMinecraftMesh(MicroMap map, Bounds2i bounds)
         {
             bounds = bounds.Intersect(map.Bounds);
 
@@ -373,9 +387,8 @@ namespace TerrainDemo.Visualization
                     var block = blockMap[mapLocalX, mapLocalZ];
                     if (block.IsEmpty)
                         continue;
-
-                    var neighbors = map.GetNeighborBlocks(new Vector2i(worldX, worldZ));
                     
+                    //Draw block tops (or downs)
                     if (block.Underground == BlockType.Cave)
                     {
                         //Draw cave block (ground block must be)
@@ -399,35 +412,30 @@ namespace TerrainDemo.Visualization
                     }
 
                     //Draw block sides
+                    var neighbors = map.GetNeighborBlocks(new Vector2i(worldX, worldZ));
                     foreach (var dir in Directions.Cardinal)
                     {
                         var neigh = neighbors[dir];
                         if (!neigh.IsEmpty)
                         {
-                            var sidePosition = BlockSideFromDirection[(int)dir];
-
                             //Draw Ground part of block side
                             if (block.Ground != BlockType.Empty)
                             {
-                                //Fast pass - draw only part of Ground layer
-                                /*
-                                if (block.IsSimple && neigh.IsSimple &&
-                                    block.Heights.Layer1Height > neigh.Heights.Layer1Height)
-                                {
-                                    DrawBlockSide(mainVertices, mainIndices, mainUv, sidePosition, block.Heights.Layer1Height,
-                                        neigh.Heights.Layer1Height);
-                                    continue;
-                                }
-                                */
-
                                 //Calculate visible layer part and draw it in a simple way
                                 var visiblePart = CalculateVisiblePart(block.GetMainLayerWidth(), neigh);
 
-                                if(visiblePart.Lenght > 1000)
-                                    Debug.Log("Infinity");
-
                                 if(!visiblePart.IsEmpty)
-                                    DrawBlockSide(mainVertices, mainIndices, mainUv, sidePosition, visiblePart.Max, visiblePart.Min);
+                                    DrawBlockSide(mainVertices, mainIndices, mainUv, dir, visiblePart.Max, visiblePart.Min);
+                            }
+
+                            //Draw Underground part of block side (if solid)
+                            if (block.Underground != BlockType.Empty && block.Underground != BlockType.Cave)
+                            {
+                                //Calculate visible layer part and draw it in a simple way
+                                var visiblePart = CalculateVisiblePart(block.GetUnderLayerWidth(), neigh);
+
+                                if (!visiblePart.IsEmpty)
+                                    DrawBlockSide(underVertices, underIndices, underUv, dir, visiblePart.Max, visiblePart.Min);
                             }
 
                             //Draw Base part of block side
@@ -435,140 +443,13 @@ namespace TerrainDemo.Visualization
                                 //Calculate visible layer part and draw it in a simple way
                                 var visiblePart = CalculateVisiblePart(block.GetBaseLayerWidth(), neigh);
 
-                                if (visiblePart.Lenght > 1000)
-                                    Debug.Log("Infinity");
-
-
                                 if (!visiblePart.IsEmpty)
-                                    DrawBlockSide(baseVertices, baseIndices, baseUv, sidePosition, visiblePart.Max, visiblePart.Min);
+                                    DrawBlockSide(baseVertices, baseIndices, baseUv, dir, visiblePart.Max, visiblePart.Min);
 
                             }
                         }
 
-                        //if (block.Underground != BlockType.Empty && block.Underground != BlockType.Cave)
-                        //{
-                        //    var mainBlock = block.GetUnderLayerWidth();
-                        //    if (mainBlock.top > sideBlock)
-                        //    {
-                        //        DrawBlockSide(underVertices, underIndices, underUv, sidePosition,
-                        //            mainBlock.top, Mathf.Max(mainBlock.bottom, sideBlock));
-                        //    }
-                        //}
-
-                        ////Base block
-                        //{
-                        //    var mainBlock = block.Heights.BaseHeight;
-                        //    if (mainBlock > sideBlock)
-                        //    {
-                        //        DrawBlockSide(baseVertices, baseIndices, baseUv, sidePosition, mainBlock, sideBlock);
-                        //    }
-                        //}
                     }
-
-                    //if (!neighbors.right.IsEmpty)
-                    //{
-                    //    var sideBlock = neighbors.right.GetNominalHeight();
-                    //    var sidePosition = BlockSideFromDirection[1];
-
-                    //    if (block.Ground != BlockType.Empty)
-                    //    {
-                    //        var mainBlock = block.GetMainLayerWidth();
-                    //        if (mainBlock.top > sideBlock)
-                    //        {
-                    //            DrawBlockSide(mainVertices, mainIndices, mainUv, sidePosition,
-                    //                mainBlock.top, Mathf.Max(mainBlock.bottom, sideBlock));
-                    //        }
-                    //    }
-
-                    //    if (block.Underground != BlockType.Empty && block.Underground != BlockType.Cave)
-                    //    {
-                    //        var mainBlock = block.GetUnderLayerWidth();
-                    //        if (mainBlock.top > sideBlock)
-                    //        {
-                    //            DrawBlockSide(underVertices, underIndices, underUv, sidePosition,
-                    //                mainBlock.top, Mathf.Max(mainBlock.bottom, sideBlock));
-                    //        }
-                    //    }
-
-                    //    //Base block
-                    //    {
-                    //        var mainBlock = block.Heights.BaseHeight;
-                    //        if (mainBlock > sideBlock)
-                    //        {
-                    //            DrawBlockSide(baseVertices, baseIndices, baseUv, sidePosition, mainBlock, sideBlock);
-                    //        }
-                    //    }
-                    //}
-
-                    //if (!neighbors.back.IsEmpty)
-                    //{
-                    //    var sideBlock = neighbors.back.GetNominalHeight();
-                    //    var sidePosition = BlockSideFromDirection[2];
-
-                    //    if (block.Ground != BlockType.Empty)
-                    //    {
-                    //        var mainBlock = block.GetMainLayerWidth();
-                    //        if (mainBlock.top > sideBlock)
-                    //        {
-                    //            DrawBlockSide(mainVertices, mainIndices, mainUv, sidePosition,
-                    //                mainBlock.top, Mathf.Max(mainBlock.bottom, sideBlock));
-                    //        }
-                    //    }
-
-                    //    if (block.Underground != BlockType.Empty && block.Underground != BlockType.Cave)
-                    //    {
-                    //        var mainBlock = block.GetUnderLayerWidth();
-                    //        if (mainBlock.top > sideBlock)
-                    //        {
-                    //            DrawBlockSide(underVertices, underIndices, underUv, sidePosition,
-                    //                mainBlock.top, Mathf.Max(mainBlock.bottom, sideBlock));
-                    //        }
-                    //    }
-
-                    //    //Base block
-                    //    {
-                    //        var mainBlock = block.Heights.BaseHeight;
-                    //        if (mainBlock > sideBlock)
-                    //        {
-                    //            DrawBlockSide(baseVertices, baseIndices, baseUv, sidePosition, mainBlock, sideBlock);
-                    //        }
-                    //    }
-                    //}
-
-                    //if (!neighbors.left.IsEmpty)
-                    //{
-                    //    var sideBlock = neighbors.left.GetNominalHeight();
-                    //    var sidePosition = BlockSideFromDirection[3];
-
-                    //    if (block.Ground != BlockType.Empty)
-                    //    {
-                    //        var mainBlock = block.GetMainLayerWidth();
-                    //        if (mainBlock.top > sideBlock)
-                    //        {
-                    //            DrawBlockSide(mainVertices, mainIndices, mainUv, sidePosition,
-                    //                mainBlock.top, Mathf.Max(mainBlock.bottom, sideBlock));
-                    //        }
-                    //    }
-
-                    //    if (block.Underground != BlockType.Empty && block.Underground != BlockType.Cave)
-                    //    {
-                    //        var mainBlock = block.GetUnderLayerWidth();
-                    //        if (mainBlock.top > sideBlock)
-                    //        {
-                    //            DrawBlockSide(underVertices, underIndices, underUv, sidePosition,
-                    //                mainBlock.top, Mathf.Max(mainBlock.bottom, sideBlock));
-                    //        }
-                    //    }
-
-                    //    //Base block
-                    //    {
-                    //        var mainBlock = block.Heights.BaseHeight;
-                    //        if (mainBlock > sideBlock)
-                    //        {
-                    //            DrawBlockSide(baseVertices, baseIndices, baseUv, sidePosition, mainBlock, sideBlock);
-                    //        }
-                    //    }
-                    //}
 
                     void DrawFloor(List<Vector3> vertices, List<int> indices, List<Vector2> uv, float height)
                     {
@@ -606,7 +487,7 @@ namespace TerrainDemo.Visualization
                         uv.Add(new Vector2((chunkLocalX + 1) * uvXCoeff, chunkLocalZ * uvYCoeff));
                     }
 
-                    void DrawBlockSide(List<Vector3> vertices, List<int> indices, List<Vector2> uv, (Vector2 pos1, Vector2 pos2) sidePosition, float topHeight, float bottomHeight)
+                    void DrawBlockSide(List<Vector3> vertices, List<int> indices, List<Vector2> uv, Side2d direction, float topHeight, float bottomHeight)
                     {
                         indices.Add(vertices.Count);
                         indices.Add(vertices.Count + 1);
@@ -614,10 +495,15 @@ namespace TerrainDemo.Visualization
                         indices.Add(vertices.Count + 3);
 
                         //Normal outside
-                        vertices.Add(new Vector3(sidePosition.pos1.x + worldX, bottomHeight, sidePosition.pos1.y + worldZ));
-                        vertices.Add(new Vector3(sidePosition.pos2.x + worldX, bottomHeight, sidePosition.pos2.y + worldZ));
-                        vertices.Add(new Vector3(sidePosition.pos2.x + worldX, topHeight, sidePosition.pos2.y + worldZ));
-                        vertices.Add(new Vector3(sidePosition.pos1.x + worldX, topHeight, sidePosition.pos1.y + worldZ));
+                        var (pos1, pos2) = BlockSideFromDirection[(int)direction];
+                        pos1.x += worldX;
+                        pos1.y += worldZ;
+                        pos2.x += worldX;
+                        pos2.y += worldZ;
+                        vertices.Add(new Vector3(pos1.x, bottomHeight, pos1.y));
+                        vertices.Add(new Vector3(pos2.x, bottomHeight, pos2.y));
+                        vertices.Add(new Vector3(pos2.x, topHeight, pos2.y));
+                        vertices.Add(new Vector3(pos1.x, topHeight, pos1.y));
 
                         uv.Add(new Vector2(chunkLocalX * uvXCoeff, chunkLocalZ * uvYCoeff));
                         uv.Add(new Vector2(chunkLocalX * uvXCoeff, (chunkLocalZ + 1) * uvYCoeff));
@@ -630,7 +516,7 @@ namespace TerrainDemo.Visualization
                         if (otherBlock.IsSimple)
                             return input.Subtract(otherBlock.GetTotalWidth()).minPart;
 
-                        //Hide by Base layer (Under layer is Cave bcoz otherBlock is not simples)
+                        //Hide by Base layer (Under layer is Cave bcoz otherBlock is not simple)
                         var onlyMain = input.Subtract(otherBlock.GetBaseLayerWidth());
 
                         Assert.IsTrue(onlyMain.maxPart.IsEmpty, "Base layer cant divide other layer to 2 parts");
@@ -646,130 +532,6 @@ namespace TerrainDemo.Visualization
 
                         return complete.minPart;
                     }
-
-                    void DrawBlock(List<Vector3> vertices, List<int> indices, List<Vector2> uv, float blockHeight, bool isCaveBlock)
-                    {
-                        //Set indices for layer's block
-                        var startIndex = vertices.Count;
-
-                        if (isCaveBlock)
-                        {
-                            //Flipped block top (cave ceil)
-                            indices.Add(startIndex);
-                            indices.Add(startIndex + 3);
-                            indices.Add(startIndex + 2);
-                            indices.Add(startIndex + 1);
-                        }
-                        else
-                        {
-                            //Simple block top (ground)
-                            indices.Add(startIndex);
-                            indices.Add(startIndex + 1);
-                            indices.Add(startIndex + 2);
-                            indices.Add(startIndex + 3);
-                        }
-
-                        //Set verts for layer's block
-                        vertices.Add(new Vector3(worldX, blockHeight, worldZ));
-                        vertices.Add(new Vector3(worldX, blockHeight, worldZ + 1));
-                        vertices.Add(new Vector3(worldX + 1, blockHeight, worldZ + 1));
-                        vertices.Add(new Vector3(worldX + 1, blockHeight, worldZ));
-
-                        //Set UV for layer's block
-                        uv.Add(new Vector2(chunkLocalX * uvXCoeff, chunkLocalZ * uvYCoeff));
-                        uv.Add(new Vector2(chunkLocalX * uvXCoeff, (chunkLocalZ + 1) * uvYCoeff));
-                        uv.Add(new Vector2((chunkLocalX + 1) * uvXCoeff, (chunkLocalZ + 1) * uvYCoeff));
-                        uv.Add(new Vector2((chunkLocalX + 1) * uvXCoeff, chunkLocalZ * uvYCoeff));
-
-                        /*
-                        //Process sides
-                        var localPos = new Vector2i(mapLocalX, mapLocalZ);
-                        for (var i = 0; i < Vector2i.Directions.Length; i++)
-                        {
-                            var direction = Vector2i.Directions[i];
-                            var neighborPos = localPos + direction;
-
-                            //Discard out of map side blocks
-                            if (neighborPos.X < 0 || neighborPos.Z < 0
-                                                  || neighborPos.X >= blockMap.GetLength(0) ||
-                                                  neighborPos.Z >= blockMap.GetLength(1))
-                                continue;
-
-                            var neighbor = blockMap[neighborPos.X, neighborPos.Z];
-
-                            //Discard empty blocks
-                            if (neighbor.IsEmpty)
-                                continue;
-
-                            var neighborHeight = 0f;
-
-                            if (isCaveBlock)
-                            {
-                                neighborHeight = neighbor.Heights.UndergroundHeight;
-                                //Discard nrighbor blocks below current block, they will draw sides themselfes
-                                if (neighborHeight <= blockHeight)
-                                    continue;
-                            }
-                            else
-                            {
-                                neighborHeight = neighbor.GetNominalHeight();
-                                //Discard nrighbor blocks above current block, they will draw sides themselfes
-                                if (neighborHeight >= blockHeight)
-                                    continue;
-                            }
-
-                            //Draw block wall - quad from top of current block to top neighbor block
-                            var (localCorner1, localCorner2) = BlockSideFromDirection[i];
-                            DrawBlockSide(localCorner1 + new Vector2(worldX, worldZ),
-                                localCorner2 + new Vector2(worldX, worldZ),
-                                blockHeight, neighborHeight);
-                        }
-                        */
-
-                    }
-
-                    /*
-                    //Underground layer: its a cave ceil or resource layer
-                    if (block.Underground == BlockType.Cave) //Flipped quad, draw cave ceil
-                    {
-                        //Set indices for under layer's block
-                        var startIndex = underVertices.Count;
-                        underIndices.Add(startIndex);
-                        underIndices.Add(startIndex + 3);
-                        underIndices.Add(startIndex + 2);
-                        underIndices.Add(startIndex + 1);
-
-                        //Set verts for under layer's block
-                        underVertices.Add(new Vector3(worldX, block.Heights.UndergroundHeight, worldZ));
-                        underVertices.Add(new Vector3(worldX, block.Heights.UndergroundHeight, worldZ + 1));
-                        underVertices.Add(new Vector3(worldX + 1, block.Heights.UndergroundHeight, worldZ + 1));
-                        underVertices.Add(new Vector3(worldX + 1, block.Heights.UndergroundHeight, worldZ));
-
-                        //Set UV for underground layer's block
-                        underUv.Add(new Vector2(chunkLocalX / (float) bounds.Size.X,
-                            chunkLocalZ / (float) bounds.Size.Z));
-                        underUv.Add(new Vector2(chunkLocalX / (float) bounds.Size.X,
-                            chunkLocalZ + 1 / (float) bounds.Size.Z));
-                        underUv.Add(new Vector2(chunkLocalX + 1 / (float) bounds.Size.X,
-                            chunkLocalZ + 1 / (float) bounds.Size.Z));
-                        underUv.Add(new Vector2(chunkLocalX + 1 / (float) bounds.Size.X,
-                            chunkLocalZ / (float) bounds.Size.Z));
-
-                    }
-                    else
-                    {
-                        if (block.Ground == BlockType.Empty && block.Underground != BlockType.Empty) //Draw resource quad
-                        {
-                            DrawBlock(underVertices, underIndices, underUv, block.GetNominalHeight(), false);
-                        }
-                    }
-
-                    if (block.Underground == BlockType.Cave ||
-                        (block.Ground == BlockType.Empty && block.Underground == BlockType.Empty))
-                    {
-                        DrawBlock(baseVertices, baseIndices, baseUv, block.GetNominalHeight(), false);
-                    }
-                    */
                 }
 
             var baseMesh = new Mesh();
@@ -797,33 +559,13 @@ namespace TerrainDemo.Visualization
 
         }
 
-        public Mesh CreateMesh(MacroMap mapMesh, Renderer.MacroCellInfluenceMode influence)
-        {
-            var result = new Mesh();
-            var vertices = new List<Vector3>();
-            var colors = new List<Color>();
-            var indices = new List<int>();
-
-            foreach (var cell in mapMesh.Cells)
-            {
-                CreateMacroCell(vertices, colors, indices, cell, influence);
-            }
-
-            result.SetVertices(vertices);
-            result.SetColors(colors);
-            result.SetIndices(indices.ToArray(), MeshTopology.Triangles, 0);
-            result.RecalculateNormals();
-
-            return result;
-        }
-
-        private Texture CreateBlockTexture(MicroMap map, Bounds2i bounds, Renderer.MicroRenderMode mode)
+        private Texture CreateBlockTexture(MicroMap map, Bounds2i bounds, TriRunner mode)
         {
             bounds = bounds.Intersect(map.Bounds);
 
             Texture2D result;
             Color[] colors;
-            if (mode.BlockMode == Renderer.BlockRenderMode.InfluenceDither)
+            if (mode.TextureMode == Renderer.BlockTextureMode.InfluenceDither)
             {
                 //Dither mode texture more detailed (4 pixels for every block)
                 result = new Texture2D(bounds.Size.X * 2, bounds.Size.Z * 2, TextureFormat.RGBA32, true, true);
@@ -839,7 +581,7 @@ namespace TerrainDemo.Visualization
                 colors = new Color[bounds.Size.X * bounds.Size.Z];
             }
 
-            if (mode.BlockMode == Renderer.BlockRenderMode.InfluenceDither)
+            if (mode.TextureMode == Renderer.BlockTextureMode.InfluenceDither)
             {
                 for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
                     for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
@@ -870,24 +612,24 @@ namespace TerrainDemo.Visualization
                         var chunkLocalZ = worldZ - bounds.Min.Z;
                         var flatIndex = chunkLocalZ * bounds.Size.X + chunkLocalX;
 
-                        if (mode.BlockMode == Renderer.BlockRenderMode.InfluenceSmooth)
+                        if (mode.TextureMode == Renderer.BlockTextureMode.InfluenceSmooth)
                         {
                             var influence = _macroMap.GetInfluence(new Vector2i(worldX, worldZ));
                             var influenceColor = InfluenceToColorSmooth(influence);
                             colors[flatIndex] = influenceColor;
                         }
-                        else if (mode.BlockMode == Renderer.BlockRenderMode.InfluenceHard)
+                        else if (mode.TextureMode == Renderer.BlockTextureMode.InfluenceHard)
                         {
                             var influence = _macroMap.GetInfluence(new Vector2i(worldX, worldZ));
                             var influenceColor = InfluenceToColorHard(influence);
                             colors[flatIndex] = influenceColor;
                         }
-                        else if (mode.BlockMode == Renderer.BlockRenderMode.Blocks)
+                        else if (mode.TextureMode == Renderer.BlockTextureMode.Blocks)
                         {
                             BlockType block;
-                            if (mode.RenderMainLayer)
+                            if (mode.RenderLayer == Renderer.TerrainLayerToRender.Main)
                                 block = map.GetBlockMap()[mapLocalX, mapLocalZ].Top;
-                            else if (mode.RenderUnderLayer)
+                            else if (mode.RenderLayer == Renderer.TerrainLayerToRender.Underground)
                             {
                                 var blocks = map.GetBlockMap()[mapLocalX, mapLocalZ];
                                 if (blocks.Underground != BlockType.Empty)
@@ -1089,13 +831,13 @@ namespace TerrainDemo.Visualization
             }
         }
 
-        private Tuple<int, int> InfluenceToColorsIndex(Influence influence)
+        private (int, int) InfluenceToColorsIndex(Influence influence)
         {
             if (influence.IsEmpty)
-                return new Tuple<int, int>(Macro.Zone.InvalidId, Macro.Zone.InvalidId);
+                return (Macro.Zone.InvalidId, Macro.Zone.InvalidId);
 
             if (influence.Count == 1)
-                return new Tuple<int, int>(influence.Zone1Id, influence.Zone1Id);
+                return (influence.Zone1Id, influence.Zone1Id);
 
             var maxInfluenceIndex1 = -1;
             var maxInfluenceValue1 = float.MinValue;
@@ -1131,7 +873,7 @@ namespace TerrainDemo.Visualization
                     maxInfluenceIndex2 = maxInfluenceIndex1;
             }
 
-            return new Tuple<int, int>(maxInfluenceIndex1, maxInfluenceIndex2);
+            return (maxInfluenceIndex1, maxInfluenceIndex2);
         }
 
         private Color BlockToColor(BlockType block)

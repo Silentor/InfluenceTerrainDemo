@@ -6,6 +6,7 @@ using OpenTK;
 using TerrainDemo.Macro;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Vector2 = OpenTK.Vector2;
@@ -162,6 +163,20 @@ namespace TerrainDemo.Micro
             return _blocks;
         }
 
+        public BlockInfo GetBlock(Vector2i blockPos)
+        {
+            if (!Bounds.Contains(blockPos))
+                return null;
+
+            var localPos = blockPos - Bounds.Min;
+            var result = new BlockInfo(blockPos, _blocks[localPos.X, localPos.Z], 
+                _heightMap[localPos.X, localPos.Z],
+                _heightMap[localPos.X, localPos.Z + 1],
+                _heightMap[localPos.X + 1, localPos.Z + 1],
+                _heightMap[localPos.X + 1, localPos.Z]);
+            return result;
+        }
+
         public Blocks GetBlock2(Vector2i worldBlockPos)
         {
             if (!Bounds.Contains(worldBlockPos))
@@ -169,6 +184,15 @@ namespace TerrainDemo.Micro
 
             var localPos = worldBlockPos - Bounds.Min;
             return _blocks[localPos.X, localPos.Z];
+        }
+
+        public ref readonly Blocks GetBlock3(Vector2i worldBlockPos)
+        {
+            if (!Bounds.Contains(worldBlockPos))
+                return ref Blocks.Empty;
+
+            var localPos = worldBlockPos - Bounds.Min;
+            return ref _blocks[localPos.X, localPos.Z];
         }
 
         public NeighborBlocks GetNeighborBlocks(Vector2i worldBlockPos)
@@ -187,21 +211,21 @@ namespace TerrainDemo.Micro
             return new NeighborBlocks(forward, right, back, left);
         }
 
-        public BlockInfo GetBlock(Vector2i blockPos)
+        public (float distance, Vector2i hitBlock)? RaycastBlockmap(Ray ray)
         {
-            if (!Bounds.Contains(blockPos))
-                return null;
+            //Get raycasted blocks
+            var raycastedBlocks = Rasterization.DDA((Vector2)ray.origin, (Vector2)ray.GetPoint(300), true);
 
-            var localPos = blockPos - Bounds.Min;
-            var result = new BlockInfo(blockPos, _blocks[localPos.X, localPos.Z], 
-                _heightMap[localPos.X, localPos.Z],
-                _heightMap[localPos.X, localPos.Z + 1],
-                _heightMap[localPos.X + 1, localPos.Z + 1],
-                _heightMap[localPos.X + 1, localPos.Z]);
+            var blockVolumes = from blockPos in raycastedBlocks
+                          let block = GetBlock3(blockPos)
+                          where !block.IsEmpty
+                          select (blockPos, new Interval(block.Heights.BaseHeight - 10, block.Heights.Layer1Height));
+
+            var result = Intersections.RayBlockIntersection(ray, blockVolumes);
             return result;
         }
 
-        public (Vector3, Vector2i)? Raycast(Ray ray)
+        public (Vector3 hitPoint, Vector2i hitBlock)? RaycastHeightmap(Ray ray)
         {
             //Get raycasted blocks
             var rayBlocks = Rasterization.DDA((OpenTK.Vector2)ray.origin, (OpenTK.Vector2)ray.GetPoint(300), true);

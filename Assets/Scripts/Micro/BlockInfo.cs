@@ -37,6 +37,12 @@ namespace TerrainDemo.Micro
             return new Bounds2i(worldPosition, 1, 1);
         }
 
+        public static (Vector2 min, Vector2 max) GetWorldBounds(Vector2i worldPosition)
+        {
+            return (new Vector2(worldPosition.X, worldPosition.Z),
+                new Vector2(worldPosition.X + 1, worldPosition.Z + 1));
+        }
+
         public static Vector2 GetWorldCenter(Vector2i blockPosition)
         {
             return new Vector2(blockPosition.X + 0.5f, blockPosition.Z + 0.5f);

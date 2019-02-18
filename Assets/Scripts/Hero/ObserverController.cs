@@ -182,7 +182,7 @@ namespace TerrainDemo.Hero
             if (_microMap != null)
             {
                 var worldRay = _camera.ScreenPointToRay(UnityEngine.Input.mousePosition);
-                var hitPoint = _microMap.Raycast(worldRay);
+                var hitPoint = _microMap.RaycastHeightmap(worldRay);
 
                 if(hitPoint.HasValue)
                     _microMap.DigSphere(hitPoint.Value.Item1, 5);
@@ -194,7 +194,7 @@ namespace TerrainDemo.Hero
             if (_microMap != null)
             {
                 var worldRay = _camera.ScreenPointToRay(UnityEngine.Input.mousePosition);
-                var hitPoint = _microMap.Raycast(worldRay);
+                var hitPoint = _microMap.RaycastHeightmap(worldRay);
 
                 if (hitPoint.HasValue)
                     _microMap.Build(hitPoint.Value.Item1, 5);
@@ -233,7 +233,7 @@ namespace TerrainDemo.Hero
             else
             {
                 var worldRay = _camera.ScreenPointToRay(UnityEngine.Input.mousePosition);
-                var hitPoint = _microMap.Raycast(worldRay);
+                var hitPoint = _microMap.RaycastHeightmap(worldRay);
 
                 if (hitPoint.HasValue)
                 {

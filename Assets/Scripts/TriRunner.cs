@@ -14,6 +14,8 @@ namespace TerrainDemo
 {
     public class TriRunner : MonoBehaviour
     {
+#region Generator
+
         [Header("Generator settings")]
         public int Seed;
         public bool RandomizeSeed;
@@ -25,16 +27,31 @@ namespace TerrainDemo
         public float InfluencePerturbPower = 4;
         public BiomeSettings[] Biomes = new BiomeSettings[0];
 
+        #endregion
+
+#region Visualization
+
         [Header("Visualizer settings")]
-        public LandRenderMode LandRender_Mode;
+        public Renderer.TerrainRenderMode RenderMode = Renderer.TerrainRenderMode.Terrain;
+        public Renderer.TerrainLayerToRender RenderLayer = Renderer.TerrainLayerToRender.Main;
+
+        #endregion
+
+#region Macro
+
         [Header("Macro")]
         public Renderer.MacroCellInfluenceMode MacroCellInfluenceVisualization;
-        //[Obsolete]
-        //public Renderer.MacroCellReliefMode MacroCellReliefVisualization;
         public Material VertexColoredMat;
+
+        #endregion
+
+#region Micro
+
         [Header("Micro")]
+        public Renderer.BlockTextureMode TextureMode;
         public Material TexturedMat;
-        public BlockSettings BaseBlock;
+
+        #endregion
 
         public Box2 LandBounds { get; private set; }
 
@@ -49,18 +66,18 @@ namespace TerrainDemo
         private Renderer _renderer;
         private BlockSettings[] _allBlocks;
 
-        public void Render(Renderer.MicroRenderMode mode)
+        public void Render(TriRunner renderSettings)
         {
             var timer = Stopwatch.StartNew();
 
             _renderer.Clear();
 
             //Visualization
-            if (LandRender_Mode == LandRenderMode.Macro)
-                _renderer.Render(Macro, MacroCellInfluenceVisualization);
+            if (renderSettings.RenderMode == Renderer.TerrainRenderMode.Macro)
+                _renderer.Render(Macro, renderSettings);
             else
                 //_renderer.Render(Micro, mode);
-                _renderer.Render2(Micro, mode);               //Experimental renderer
+                _renderer.Render2(Micro, renderSettings);               //Experimental renderer
 
             timer.Stop();
 
@@ -96,7 +113,7 @@ namespace TerrainDemo
         private void MicroOnChanged()
         {
             //Visualization
-            Render(Renderer.MicroRenderMode.Default);
+            Render(this);
         }
 
         private void Prepare()
@@ -122,8 +139,8 @@ namespace TerrainDemo
         {
             Generate();
 
-            _renderer = new Renderer(this, new Mesher(Macro, this));
-            Render(Renderer.MicroRenderMode.Default);
+            _renderer = new Renderer(new Mesher(Macro, this), this);
+            Render(this);
         }
 
         private void OnValidate()
@@ -132,11 +149,5 @@ namespace TerrainDemo
         }
 
         #endregion
-
-        public enum LandRenderMode
-        {
-            Macro,
-            Micro
-        }
     }
 }

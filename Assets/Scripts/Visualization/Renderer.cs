@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
+using TerrainDemo.Settings;
 using TerrainDemo.Spatial;
 using UnityEngine;
 using Cell = TerrainDemo.Macro.Cell;
@@ -16,26 +17,28 @@ namespace TerrainDemo.Visualization
     {
         const ushort ChunkSize = 64;
 
-        public Renderer(TriRunner settings, Mesher mesher)
+        public Renderer(Mesher mesher, TriRunner settings)
         {
             _mesher = mesher;
+            _settings = settings;
             _vertexColor = settings.VertexColoredMat;
             _textured = settings.TexturedMat;
         }
 
-        public void Render(MacroMap map, MacroCellInfluenceMode influence)
+        public void Render(MacroMap map, TriRunner renderSettings)
         {
+            var mesh = _mesher.CreateMacroMesh(map, renderSettings.MacroCellInfluenceVisualization);
+
             var meshGO = new GameObject("MacroMap");
             var filter = meshGO.AddComponent<MeshFilter>();
-            var renderer = meshGO.AddComponent<MeshRenderer>();
-            meshGO.transform.SetParent(GetMeshRoot());
-
-            var mesh = _mesher.CreateMesh(map, influence);
             filter.mesh = mesh;
+            var renderer = meshGO.AddComponent<MeshRenderer>();
             renderer.sharedMaterial = _vertexColor;
+            meshGO.transform.SetParent(GetMeshRoot());
         }
 
-        public void Render(MicroMap map, MicroRenderMode mode)
+        /*
+        public void Render(MicroMap map, TriRunner renderSettings)
         {
             //Break map to visualization chunks (rounded to ChunkSize)
             var microBounds = map.Bounds;
@@ -52,7 +55,7 @@ namespace TerrainDemo.Visualization
                     meshGO.transform.SetParent(GetMeshRoot());
 
                     var chunkBound = new Bounds2i(new Vector2i(x, z), ChunkSize, ChunkSize );
-                    var chunkMesh = _mesher.CreateMesh(map, chunkBound, mode);
+                    var chunkMesh = _mesher.CreateMesh(map, chunkBound, renderSettings);
 
                     filter.mesh = chunkMesh.Item1;
                     var texturedMat = new Material(_textured);
@@ -61,14 +64,16 @@ namespace TerrainDemo.Visualization
                 }
             }
         }
+*/
 
-        public void Render2(MicroMap map, MicroRenderMode mode)
+        public void Render2(MicroMap map, TriRunner renderSettings)
         {
-            //Break map to visualization chunks (rounded to ChunkSize)
+            //Break map to render chunks (rounded to ChunkSize)
             var microBounds = map.Bounds;
             var chunkMin = new Vector2i(SnapDown(microBounds.Min.X, ChunkSize), SnapDown(microBounds.Min.Z, ChunkSize));
             var chunkMax = new Vector2i(SnapUp(microBounds.Max.X, ChunkSize), SnapUp(microBounds.Max.Z, ChunkSize));
 
+            //Iterate and generate render chunks
             for (int x = chunkMin.X; x < chunkMax.X; x += ChunkSize)
             {
                 for (int z = chunkMin.Z; z < chunkMax.Z; z += ChunkSize)
@@ -77,23 +82,11 @@ namespace TerrainDemo.Visualization
                     meshGO.transform.SetParent(GetMeshRoot());
 
                     var chunkBound = new Bounds2i(new Vector2i(x, z), ChunkSize, ChunkSize);
-                    var chunkMeshes = _mesher.CreateMesh2Minecraft(map, chunkBound, mode);
+                    var chunkMeshes = renderSettings.RenderMode == TerrainRenderMode.Blocks
+                        ? _mesher.CreateMinecraftMesh(map, chunkBound)
+                        : _mesher.CreateTerrainMesh(map, chunkBound, renderSettings);
 
-                    //Combined mesh mode
-                    if (chunkMeshes.Base.Item1 == null)
-                    {
-                        var combinedMeshGO = new GameObject("CombinedMesh");
-                        var combinedFilter = combinedMeshGO.AddComponent<MeshFilter>();
-                        var combinedRenderer = combinedMeshGO.AddComponent<MeshRenderer>();
-                        combinedMeshGO.transform.SetParent(meshGO.transform);
-
-                        combinedFilter.mesh = chunkMeshes.Main.Item1;
-                        var combinedTexturedMat = new Material(_textured);
-                        combinedTexturedMat.mainTexture = chunkMeshes.Main.Item2;
-                        combinedRenderer.material = combinedTexturedMat;
-
-                    }
-                    else
+                    //todo implement single mesh mode for simple chunk (no caves)
                     {
                         var baseMeshGO = new GameObject("BaseMesh");
                         var baseFilter = baseMeshGO.AddComponent<MeshFilter>();
@@ -158,6 +151,7 @@ namespace TerrainDemo.Visualization
         }
 
         private readonly Mesher _mesher;
+        private readonly TriRunner _settings;
 
         private readonly List<Tuple<Cell, GameObject>> _meshFilters = new List<Tuple<Cell, GameObject>>();
         private Transform _meshRoot;
@@ -192,14 +186,14 @@ namespace TerrainDemo.Visualization
         [Serializable]
         public struct MicroRenderMode
         {
-            public BlockRenderMode BlockMode;
+            public BlockTextureMode BlockMode;
             public bool RenderMainLayer;
             public bool RenderUnderLayer;
 
-            public static readonly MicroRenderMode Default = new MicroRenderMode(){BlockMode = BlockRenderMode.Blocks, RenderMainLayer = true, RenderUnderLayer = true};
+            public static readonly MicroRenderMode Default = new MicroRenderMode(){BlockMode = BlockTextureMode.Blocks, RenderMainLayer = true, RenderUnderLayer = true};
         }
 
-        public enum BlockRenderMode
+        public enum BlockTextureMode
         {
             InfluenceHard,
             InfluenceDither,
@@ -217,6 +211,20 @@ namespace TerrainDemo.Visualization
         {
             Flat,
             Rude
+        }
+
+        public enum TerrainRenderMode
+        {
+            Terrain,
+            Blocks,
+            Macro,
+        }
+
+        public enum TerrainLayerToRender
+        {
+            Base,
+            Underground,
+            Main,
         }
     }
 }
