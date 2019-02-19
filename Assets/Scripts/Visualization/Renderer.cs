@@ -5,6 +5,7 @@ using TerrainDemo.Micro;
 using TerrainDemo.Settings;
 using TerrainDemo.Spatial;
 using UnityEngine;
+using UnityEngine.Assertions;
 using Cell = TerrainDemo.Macro.Cell;
 using Object = UnityEngine.Object;
 
@@ -68,6 +69,8 @@ namespace TerrainDemo.Visualization
 
         public void Render2(MicroMap map, TriRunner renderSettings)
         {
+            Assert.IsTrue(renderSettings.RenderMode != TerrainRenderMode.Macro);
+
             //Break map to render chunks (rounded to ChunkSize)
             var microBounds = map.Bounds;
             var chunkMin = new Vector2i(SnapDown(microBounds.Min.X, ChunkSize), SnapDown(microBounds.Min.Z, ChunkSize));
@@ -83,10 +86,10 @@ namespace TerrainDemo.Visualization
 
                     var chunkBound = new Bounds2i(new Vector2i(x, z), ChunkSize, ChunkSize);
                     var chunkMeshes = renderSettings.RenderMode == TerrainRenderMode.Blocks
-                        ? _mesher.CreateMinecraftMesh(map, chunkBound)
+                        ? _mesher.CreateMinecraftMesh(map, chunkBound, renderSettings)
                         : _mesher.CreateTerrainMesh(map, chunkBound, renderSettings);
 
-                    //todo implement single mesh mode for simple chunk (no caves)
+                    //optimize todo implement single mesh mode for simple chunk (no caves)
                     {
                         var baseMeshGO = new GameObject("BaseMesh");
                         var baseFilter = baseMeshGO.AddComponent<MeshFilter>();

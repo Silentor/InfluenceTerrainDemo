@@ -13,7 +13,7 @@ namespace TerrainDemo.Micro
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct Blocks : IEquatable<Blocks>
     {
-        public readonly Heights Heights;
+        public readonly Heights Height;
         public readonly BlockType Base;
         public readonly BlockType Underground;
         public readonly BlockType Ground;
@@ -31,48 +31,51 @@ namespace TerrainDemo.Micro
         public Blocks(BlockType ground, BlockType underground, in Heights heights)
         {
             //Fix heights if needed todo write unit test for block autofixes
-            float underHeight = heights.UndergroundHeight, groundHeight = heights.Layer1Height;
+            float underHeight = heights.Underground, groundHeight = heights.Main;
             var heightFixed = false;
-            if (underground == BlockType.Empty && heights.UndergroundHeight > heights.BaseHeight)
+
+            if (underground == BlockType.Cave && ground == BlockType.Empty)
+                underground = BlockType.Empty;
+
+            if (underground != BlockType.Empty && underHeight == heights.Base)
+                underground = BlockType.Empty;
+
+            if (underground == BlockType.Empty && underHeight > heights.Base)
             {
-                underHeight = heights.BaseHeight;
+                underHeight = heights.Base;
                 heightFixed = true;
             }
 
-            if (ground == BlockType.Empty && heights.Layer1Height > underHeight)
+            if (ground != BlockType.Empty && groundHeight == underHeight)
+            {
+                ground = BlockType.Empty;
+
+                if (underground == BlockType.Cave)
+                {
+                    underground = BlockType.Empty;
+                    underHeight = heights.Base;
+                    heightFixed = true;
+                }
+            }
+
+            if (ground == BlockType.Empty && groundHeight > underHeight)
             {
                 groundHeight = underHeight;
                 heightFixed = true;
             }
 
-            //Fix blocks type if needed
-            if (!heightFixed)
-            {
-                if (ground != BlockType.Empty && groundHeight == underHeight)
-                    ground = BlockType.Empty;
-
-                if (underground != BlockType.Empty && underHeight == heights.BaseHeight)
-                    underground = BlockType.Empty;
-
-                if (underground == BlockType.Cave && ground == BlockType.Empty)
-                {
-                    underground = BlockType.Empty;
-                    groundHeight = underHeight = heights.BaseHeight;
-                    heightFixed = true;
-                }
-            }
 
             Base = BlockType.Bedrock;
             Underground = underground;
             Ground = ground;
 
             if (heightFixed)
-                Heights = new Heights(groundHeight, underHeight, heights.BaseHeight);
+                Height = new Heights(groundHeight, underHeight, heights.Base);
             else
-                Heights = heights;
+                Height = heights;
 
-            Assert.IsTrue(Ground != BlockType.Empty || Heights.Layer1Height - Heights.UndergroundHeight == 0, $"Block is wrong");
-            Assert.IsTrue(Underground != BlockType.Empty || Heights.UndergroundHeight - Heights.BaseHeight == 0, $"Block is wrong");
+            Assert.IsTrue(Ground != BlockType.Empty || Height.Main - Height.Underground == 0, $"Block is wrong");
+            Assert.IsTrue(Underground != BlockType.Empty || Height.Underground - Height.Base == 0, $"Block is wrong");
 
         }
 
@@ -86,7 +89,7 @@ namespace TerrainDemo.Micro
         public float GetNominalHeight()
         {
             //Simplified after strict layers ordering
-            return Heights.Layer1Height;
+            return Height.Main;
             /*
             if (Ground != BlockType.Empty)
                 return Heights.Layer1Height;
@@ -100,25 +103,25 @@ namespace TerrainDemo.Micro
         [Pure]
         public Interval GetMainLayerWidth()
         {
-            return new Interval(Heights.UndergroundHeight, Heights.Layer1Height);
+            return new Interval(Height.Underground, Height.Main);
         }
 
         [Pure]
         public Interval GetUnderLayerWidth()
         {
-            return new Interval(Heights.BaseHeight, Heights.UndergroundHeight);
+            return new Interval(Height.Base, Height.Underground);
         }
 
         [Pure]
         public Interval GetBaseLayerWidth()
         {
-            return new Interval(float.MinValue, Heights.BaseHeight);
+            return new Interval(float.MinValue, Height.Base);
         }
 
         [Pure]
         public Interval GetTotalWidth()
         {
-            return new Interval(float.MinValue, Heights.Layer1Height);
+            return new Interval(float.MinValue, Height.Main);
         }
 
 
@@ -154,7 +157,7 @@ namespace TerrainDemo.Micro
 
         public bool Equals(Blocks other)
         {
-            return Base == other.Base && Underground == other.Underground && Ground == other.Ground && Heights.Equals(other.Heights);
+            return Base == other.Base && Underground == other.Underground && Ground == other.Ground && Height.Equals(other.Height);
         }
 
         public static bool operator ==(Blocks left, Blocks right)

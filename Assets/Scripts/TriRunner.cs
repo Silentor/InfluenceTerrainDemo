@@ -147,7 +147,6 @@ namespace TerrainDemo
         {
             LandBounds = new Box2(-LandSize / 2, LandSize / 2, LandSize / 2, -LandSize / 2);
         }
-
-        #endregion
+#endregion
     }
 }

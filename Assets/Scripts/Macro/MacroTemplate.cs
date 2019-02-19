@@ -156,7 +156,7 @@ namespace TerrainDemo.Macro
                             var accum = Vector3d.Zero;
                             for (int i = 0; i < influence.Count; i++)
                             {
-                                accum = accum + ((Vector3d) blockMixBuffer[i].Heights) * influence.GetWeight(i);
+                                accum = accum + ((Vector3d) blockMixBuffer[i].Height) * influence.GetWeight(i);
                             }
 
                             var resultHeights = (Heights) accum;
@@ -499,7 +499,7 @@ namespace TerrainDemo.Macro
 
             //Fast pass
             if (heights.Length == 1)
-                return new Heights(heights[0].Layer1Height, heights[0].UndergroundHeight, heights[0].BaseHeight);      //Be sure to disable Additional layer flag
+                return new Heights(heights[0].Main, heights[0].Underground, heights[0].Base);      //Be sure to disable Additional layer flag
 
             float baseResult = 0;
             float undergroundResult = 0;
@@ -509,9 +509,9 @@ namespace TerrainDemo.Macro
                 //Assert.IsTrue(heights[i].ZoneId == influnce.GetZone(i));
 
                 var weight = influnce.GetWeight(i);
-                var baseHeight = heights[i].BaseHeight * weight;
-                var undergroundHeight = heights[i].UndergroundHeight * weight;
-                var layer1Height = heights[i].Layer1Height * weight;
+                var baseHeight = heights[i].Base * weight;
+                var undergroundHeight = heights[i].Underground * weight;
+                var layer1Height = heights[i].Main * weight;
 
                 baseResult += baseHeight;
                 undergroundResult += undergroundHeight;

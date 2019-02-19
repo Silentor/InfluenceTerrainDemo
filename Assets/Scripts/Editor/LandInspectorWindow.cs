@@ -273,10 +273,10 @@ namespace TerrainDemo.Editor
 
             //Draw only top of base layer
             DrawRectangle.ForHandle(
-                new Vector3(bounds2d.min.X, block.Heights.BaseHeight, bounds2d.min.Y),
-                new Vector3(bounds2d.min.X, block.Heights.BaseHeight, bounds2d.max.Y),
-                new Vector3(bounds2d.max.X, block.Heights.BaseHeight, bounds2d.max.Y),
-                new Vector3(bounds2d.max.X, block.Heights.BaseHeight, bounds2d.min.Y),
+                new Vector3(bounds2d.min.X, block.Height.Base, bounds2d.min.Y),
+                new Vector3(bounds2d.min.X, block.Height.Base, bounds2d.max.Y),
+                new Vector3(bounds2d.max.X, block.Height.Base, bounds2d.max.Y),
+                new Vector3(bounds2d.max.X, block.Height.Base, bounds2d.min.Y),
                 overrideColor ?? _defaultBlockColor[block.Base]);
 
             //Draw underground layer
@@ -320,7 +320,7 @@ namespace TerrainDemo.Editor
         private void ShowBlockModeControls(Input input)
         {
             if(input.IsBlockSelected)
-                ShowBlockInfo(input.BlockPosition);
+                ShowBlockInfo(input.BlockPosition, false);
         }
 
         private void ShowMacroZoneInfo(Macro.Zone zone)
@@ -358,29 +358,45 @@ namespace TerrainDemo.Editor
             }
         }
 
-        private void ShowBlockInfo(Vector2i blockPos)
+        private void ShowBlockInfo(Vector2i blockPos, bool showHeightmap)
         {
             GUILayout.Label($"Block {blockPos}", EditorStyles.boldLabel);
 
             var block = MicroMap.GetBlock(blockPos);
             if (block.Block.Top != BlockType.Empty)
             {
-                //GUILayout.Label($"Influence: {InfluenceToString(block.Influence)}");
-                GUILayout.Label($"Height: {block.Block.Heights}");
-                GUILayout.Label($"Type: {block.Block}");
+                GUILayout.Label("Type                   Height");
 
-                //Show block vertices info
-                var vertices = MicroMap.GetBlock(blockPos);
-                GUILayout.BeginVertical();
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(vertices.Corner01.ToString());
-                GUILayout.Label(vertices.Corner11.ToString());
+                GUILayout.Label($"{block.Block.Ground}", GUILayout.Width(100));
+                GUILayout.Label(block.Block.Ground != BlockType.Empty ? $"{block.Block.Height.Main:N1}" : "-");
                 GUILayout.EndHorizontal();
+
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(vertices.Corner00.ToString());
-                GUILayout.Label(vertices.Corner10.ToString());
+                GUILayout.Label($"{block.Block.Underground}", GUILayout.Width(100));
+                GUILayout.Label(block.Block.Underground != BlockType.Empty ? $"{block.Block.Height.Underground:N1}" : "-");
                 GUILayout.EndHorizontal();
-                GUILayout.EndVertical();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label($"{block.Block.Base}", GUILayout.Width(100));
+                GUILayout.Label($"{block.Block.Height.Base:N1}");
+                GUILayout.EndHorizontal();
+
+                if (showHeightmap)
+                {
+                    //Show block vertices info
+                    var vertices = MicroMap.GetBlock(blockPos);
+                    GUILayout.BeginVertical();
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label(vertices.Corner01.ToString());
+                    GUILayout.Label(vertices.Corner11.ToString());
+                    GUILayout.EndHorizontal();
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label(vertices.Corner00.ToString());
+                    GUILayout.Label(vertices.Corner10.ToString());
+                    GUILayout.EndHorizontal();
+                    GUILayout.EndVertical();
+                }
             }
             else
                 GUILayout.Label("Empty block");
@@ -434,7 +450,7 @@ namespace TerrainDemo.Editor
 
         private string MicroHeightToString(Heights heights)
         {
-            return $"{heights.Layer1Height:F1}, {heights.BaseHeight:F1}";
+            return $"{heights.Main:F1}, {heights.Base:F1}";
         }
 
         #region Unity
@@ -570,12 +586,8 @@ namespace TerrainDemo.Editor
             }
             else
             {
-
-
                 _drawLayout = GUILayout.Toggle(_drawLayout, "Draw layout");
                 _drawMicro = GUILayout.Toggle(_drawMicro, "Draw micro");
-
-                
 
                 if (GUILayout.Button("Generate"))
                     _runner.Generate();
@@ -588,7 +600,7 @@ namespace TerrainDemo.Editor
 
                 if (_input.IsBlockSelected)
                 {
-                    ShowBlockInfo(_input.BlockPosition);
+                    ShowBlockInfo(_input.BlockPosition, true);
                 }
 
                 if (_input.SelectedMacroCell != null)

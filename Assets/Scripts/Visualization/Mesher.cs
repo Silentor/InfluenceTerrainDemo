@@ -289,9 +289,9 @@ namespace TerrainDemo.Visualization
                         var chunkLocalX = worldX - bounds.Min.X;
                         var chunkLocalZ = worldZ - bounds.Min.Z;
 
-                        mainVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Layer1Height, worldZ));
-                        underVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].UndergroundHeight, worldZ));
-                        baseVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].BaseHeight, worldZ));
+                        mainVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Main, worldZ));
+                        underVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Underground, worldZ));
+                        baseVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Base, worldZ));
 
                         baseUvs.Add(new Vector2(chunkLocalX / (float)bounds.Size.X, chunkLocalZ / (float)bounds.Size.Z));
                     }
@@ -349,7 +349,7 @@ namespace TerrainDemo.Visualization
             }
         }
 
-        public ((Mesh, Texture) Base, (Mesh, Texture) Under, (Mesh, Texture) Main) CreateMinecraftMesh(MicroMap map, Bounds2i bounds)
+        public ((Mesh, Texture) Base, (Mesh, Texture) Under, (Mesh, Texture) Main) CreateMinecraftMesh(MicroMap map, Bounds2i bounds, TriRunner renderSettings)
         {
             bounds = bounds.Intersect(map.Bounds);
 
@@ -359,6 +359,20 @@ namespace TerrainDemo.Visualization
                 return ((emptyMesh, Texture2D.blackTexture), (emptyMesh, Texture2D.blackTexture), (emptyMesh, Texture2D.blackTexture));
             }
 
+            /*
+            Blocks[,] chunk;
+            if (renderSettings.RenderLayer == Renderer.TerrainLayerToRender.Main)
+            {
+                chunk = map.GetBlockMapRegion(bounds);
+            }
+            else
+            {
+                if(renderSettings.RenderLayer == Renderer.TerrainLayerToRender.Underground)
+                    chunk = map.GetBlockMapRegion(bounds, b => new Blocks(BlockType.Empty, b.Underground, b.Heights));
+                else
+                    chunk = map.GetBlockMapRegion(bounds, b => new Blocks(BlockType.Empty, BlockType.Empty, b.Heights));
+            }
+            */
             var blockMap = map.GetBlockMap();
 
             var baseVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1));
@@ -385,30 +399,33 @@ namespace TerrainDemo.Visualization
                     var chunkLocalZ = worldZ - bounds.Min.Z;
 
                     var block = blockMap[mapLocalX, mapLocalZ];
+                    //var block = chunk[chunkLocalX, chunkLocalZ];
                     if (block.IsEmpty)
                         continue;
-                    
+
+                    block = Filter(block, renderSettings.RenderLayer);
+
                     //Draw block tops (or downs)
                     if (block.Underground == BlockType.Cave)
                     {
                         //Draw cave block (ground block must be)
-                        DrawFloor(mainVertices, mainIndices, mainUv, block.Heights.Layer1Height);
-                        DrawCeil(underVertices, underIndices, underUv, block.Heights.UndergroundHeight);
-                        DrawFloor(baseVertices, baseIndices, baseUv, block.Heights.BaseHeight);
+                        DrawFloor(mainVertices, mainIndices, mainUv, block.Height.Main);
+                        DrawCeil(underVertices, underIndices, underUv, block.Height.Underground);
+                        DrawFloor(baseVertices, baseIndices, baseUv, block.Height.Base);
                     }
                     else
                     {
                         //Draw block top
                         if (block.Ground != BlockType.Empty)
                         {
-                            DrawFloor(mainVertices, mainIndices, mainUv, block.Heights.Layer1Height);
+                            DrawFloor(mainVertices, mainIndices, mainUv, block.Height.Main);
                         }
                         else if (block.Underground != BlockType.Empty)
                         {
-                            DrawFloor(underVertices, underIndices, underUv, block.Heights.UndergroundHeight);
+                            DrawFloor(underVertices, underIndices, underUv, block.Height.Underground);
                         }
                         else
-                            DrawFloor(baseVertices, baseIndices, baseUv, block.Heights.BaseHeight);
+                            DrawFloor(baseVertices, baseIndices, baseUv, block.Height.Base);
                     }
 
                     //Draw block sides
@@ -418,6 +435,8 @@ namespace TerrainDemo.Visualization
                         var neigh = neighbors[dir];
                         if (!neigh.IsEmpty)
                         {
+                            neigh = Filter(neigh, renderSettings.RenderLayer);
+
                             //Draw Ground part of block side
                             if (block.Ground != BlockType.Empty)
                             {
@@ -445,7 +464,6 @@ namespace TerrainDemo.Visualization
 
                                 if (!visiblePart.IsEmpty)
                                     DrawBlockSide(baseVertices, baseIndices, baseUv, dir, visiblePart.Max, visiblePart.Min);
-
                             }
                         }
 
@@ -511,7 +529,7 @@ namespace TerrainDemo.Visualization
                         uv.Add(new Vector2((chunkLocalX + 1) * uvXCoeff, chunkLocalZ * uvYCoeff));
                     }
 
-                    Interval CalculateVisiblePart(Interval input, Blocks otherBlock)
+                    Interval CalculateVisiblePart(Interval input, in Blocks otherBlock)
                     {
                         if (otherBlock.IsSimple)
                             return input.Subtract(otherBlock.GetTotalWidth()).minPart;
@@ -531,6 +549,16 @@ namespace TerrainDemo.Visualization
                             return onlyMain.minPart;
 
                         return complete.minPart;
+                    }
+
+                    Blocks Filter(in Blocks input, Renderer.TerrainLayerToRender layer)
+                    {
+                        if(layer == Renderer.TerrainLayerToRender.Base)
+                            return new Blocks(BlockType.Empty, BlockType.Empty, input.Height);
+                        else if(layer == Renderer.TerrainLayerToRender.Underground)
+                            return new Blocks(BlockType.Empty, input.Underground, input.Height);
+                        else
+                            return input;
                     }
                 }
 

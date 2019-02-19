@@ -77,15 +77,15 @@ namespace TerrainDemo.Generators
             if (Zone.Biome.Type == BiomeType.TestWaves)
             {
                 var height = Mathf.Sin(position.X / 5f) * 5;
-                var heights = new Heights(macroHeight.Layer1Height + height, macroHeight.UndergroundHeight + height, macroHeight.BaseHeight + height);
+                var heights = new Heights(macroHeight.Main + height, macroHeight.Underground + height, macroHeight.Base + height);
                 blocks = blocks.MutateHeight(heights);
             }
             else if (Zone.Biome.Type == BiomeType.TestBaseOreAndGround)
             {
-                var baseHeight = _generator.GetSimplex(position.X / 20f, position.Z / 20f) * 3 + macroHeight.BaseHeight;
-                var resourcesHeight = Interpolation.SmoothestStep(Mathf.Clamp01((float)_generator.GetSimplex(position.X / 10f, position.Z / 10f))) * 10 + macroHeight.UndergroundHeight - 1;
+                var baseHeight = _generator.GetSimplex(position.X / 20f, position.Z / 20f) * 3 + macroHeight.Base;
+                var resourcesHeight = Interpolation.SmoothestStep(Mathf.Clamp01((float)_generator.GetSimplex(position.X / 10f, position.Z / 10f))) * 10 + macroHeight.Underground - 1;
                 var groundHeight = Interpolation.SmoothestStep((_generator.GetSimplex(position.Z / 40f, position.X / 40f) + 1) / 2)
-                                   * 10 - 12 + macroHeight.Layer1Height;
+                                   * 10 - 12 + macroHeight.Main;
 
                 var underground = resourcesHeight > baseHeight ? BlockType.GoldOre : BlockType.Empty;
                 BlockType ground;
@@ -146,7 +146,6 @@ namespace TerrainDemo.Generators
 
                     blocks = new Blocks(BlockType.Grass, BlockType.Cave, 
                         new Heights(groundHeight, underHeight, baseHeight));
-
                 }
                 else
                 {

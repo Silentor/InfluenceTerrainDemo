@@ -54,7 +54,7 @@ namespace TerrainDemo.Micro
 
         public Vector3 GetCenter()
         {
-            return new Vector3(Position.X + 0.5f, Block.Heights.Nominal, Position.Z + 0.5f);
+            return new Vector3(Position.X + 0.5f, Block.Height.Nominal, Position.Z + 0.5f);
         }
 
         //based on http://www.flipcode.com/archives/Calculating_Vertex_Normals_for_Height_Maps.shtml

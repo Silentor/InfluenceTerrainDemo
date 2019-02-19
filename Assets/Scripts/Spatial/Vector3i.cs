@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace TerrainDemo.Spatial
 {
-    public struct Vector3i
+    public readonly struct Vector3i
     {
         public readonly int X;
         public readonly int Y;

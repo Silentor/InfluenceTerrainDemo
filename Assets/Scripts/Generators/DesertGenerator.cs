@@ -42,7 +42,7 @@ namespace TerrainDemo.Generators
             var rotatedPos = Vector2.Transform((Vector2)position, Quaternion.FromEulerAngles(0, 0, _hillsOrientation));
 
             return new Blocks(BlockType.Sand, BlockType.GoldOre,
-                new Heights((float)(_dunesNoise.GetSimplex(rotatedPos.X / 10f, rotatedPos.Y / 30f)) * 2 + macroHeight.Layer1Height, macroHeight.UndergroundHeight, macroHeight.BaseHeight)); //Вытянутые дюны
+                new Heights((float)(_dunesNoise.GetSimplex(rotatedPos.X / 10f, rotatedPos.Y / 30f)) * 2 + macroHeight.Main, macroHeight.Underground, macroHeight.Base)); //Вытянутые дюны
         }
 
         private float NormalToSlope(Vector3 normal)

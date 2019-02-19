@@ -11,50 +11,48 @@ namespace TerrainDemo.Macro
     {
         public const int LayersCount = 3;
 
-        public readonly float BaseHeight;
-        public readonly float UndergroundHeight;
-        public readonly float Layer1Height;
-        public readonly bool IsCreated;
+        public readonly float Base;
+        public readonly float Underground;
+        public readonly float Main;
 
-        public float Nominal => Math.Max(Math.Max(BaseHeight, Layer1Height), UndergroundHeight);
+        public float Nominal => Main;
 
-        public bool IsLayer1Present => Layer1Height > UndergroundHeight;
+        public bool IsMainLayerPresent => Main > Underground;
 
-        public bool IsUndergroundLayerPresent => UndergroundHeight > BaseHeight;
+        public bool IsUndergroundLayerPresent => Underground > Base;
 
-        public Heights(float layer1Height, float undergroundHeight, float baseHeight)
+        public Heights(float mainHeight, float undergroundHeight, float baseHeight)
         {
             if (undergroundHeight < baseHeight)
                 undergroundHeight = baseHeight;
 
-            if (layer1Height < baseHeight)
-                layer1Height = baseHeight;
+            if (mainHeight < baseHeight)
+                mainHeight = baseHeight;
 
-            if (layer1Height < undergroundHeight)
-                layer1Height = undergroundHeight;
+            if (mainHeight < undergroundHeight)
+                mainHeight = undergroundHeight;
 
-            BaseHeight = baseHeight;
-            UndergroundHeight = undergroundHeight;
-            Layer1Height = layer1Height;
-            IsCreated = true;
+            Base = baseHeight;
+            Underground = undergroundHeight;
+            Main = mainHeight;
         }
 
-        public Heights(Heights copyFrom) : this(copyFrom.Layer1Height, copyFrom.UndergroundHeight, copyFrom.BaseHeight)
+        public Heights(Heights copyFrom) : this(copyFrom.Main, copyFrom.Underground, copyFrom.Base)
         {
         }
 
         [Pure]
         public Heights Dig(float deep)
         {
-            var newHeight = Layer1Height - deep;
-            var newHeightForOre = Layer1Height - deep / 2;
-            return new Heights(newHeight, Math.Min(UndergroundHeight, newHeightForOre), BaseHeight);
+            var newHeight = Main - deep;
+            var newHeightForOre = Main - deep / 2;
+            return new Heights(newHeight, Math.Min(Underground, newHeightForOre), Base);
         }
 
         [Pure]
         public Heights Build(float pileHeight)
         {
-            return new Heights(Layer1Height + pileHeight, UndergroundHeight, BaseHeight);
+            return new Heights(Main + pileHeight, Underground, Base);
         }
 
         /*
@@ -71,7 +69,7 @@ namespace TerrainDemo.Macro
 
         public static explicit operator Vector3d(Heights h)
         {
-            return new Vector3d(h.BaseHeight, h.UndergroundHeight, h.Layer1Height);
+            return new Vector3d(h.Base, h.Underground, h.Main);
         }
 
         public static explicit operator Heights(Vector3d v)
@@ -81,16 +79,16 @@ namespace TerrainDemo.Macro
 
         public override string ToString()
         {
-            var noMainLayer = IsLayer1Present ? "" : "*";
+            var noMainLayer = IsMainLayerPresent ? "" : "*";
             var noUnderLayer = IsUndergroundLayerPresent ? "" : "*";
-            return $"({Layer1Height:N1}{noMainLayer}, {UndergroundHeight:N1}{noUnderLayer}, {BaseHeight:N1})";
+            return $"({Main:N1}{noMainLayer}, {Underground:N1}{noUnderLayer}, {Base:N1})";
         }
 
         public bool Equals(Heights other)
         {
-            return BaseHeight.Equals(other.BaseHeight) 
-                   && UndergroundHeight.Equals(other.UndergroundHeight) 
-                   && Layer1Height.Equals(other.Layer1Height);
+            return Base.Equals(other.Base) 
+                   && Underground.Equals(other.Underground) 
+                   && Main.Equals(other.Main);
         }
 
         public override bool Equals(object obj)
@@ -103,9 +101,9 @@ namespace TerrainDemo.Macro
         {
             unchecked
             {
-                var hashCode = BaseHeight.GetHashCode();
-                hashCode = (hashCode * 397) ^ UndergroundHeight.GetHashCode();
-                hashCode = (hashCode * 397) ^ Layer1Height.GetHashCode();
+                var hashCode = Base.GetHashCode();
+                hashCode = (hashCode * 397) ^ Underground.GetHashCode();
+                hashCode = (hashCode * 397) ^ Main.GetHashCode();
                 return hashCode;
             }
         }

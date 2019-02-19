@@ -177,9 +177,9 @@ MonoBehaviour:
   InfluencePerturbFreq: 0.08
   InfluencePerturbPower: 3
   Biomes:
-  - {fileID: 11400000, guid: 87afadb4c47209941a3896912619da73, type: 2}
+  - {fileID: 11400000, guid: f868bf8dd7859c64486c3d9538e45f2b, type: 2}
   RenderMode: 1
-  RenderLayer: 0
+  RenderLayer: 2
   MacroCellInfluenceVisualization: 0
   VertexColoredMat: {fileID: 2100000, guid: 5ae6f60a03e107e4d9e469815a34517d, type: 2}
   TextureMode: 0

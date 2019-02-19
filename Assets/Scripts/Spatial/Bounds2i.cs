@@ -10,7 +10,7 @@ using Vector3 = UnityEngine.Vector3;
 
 namespace TerrainDemo.Spatial
 {
-    public struct Bounds2i : IEnumerable<Vector2i>, IEquatable<Bounds2i>
+    public readonly struct Bounds2i : IEnumerable<Vector2i>, IEquatable<Bounds2i>
     {
         public readonly Vector2i Min;
         public readonly Vector2i Max;
@@ -61,6 +61,7 @@ namespace TerrainDemo.Spatial
             return this.Where(v => !b.Contains(v));
         }
 
+        [Pure]
         public Bounds2i Intersect(Bounds2i b)
         {
             int x = Math.Max(Min.X, b.Min.X);

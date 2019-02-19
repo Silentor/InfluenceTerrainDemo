@@ -62,10 +62,10 @@ namespace TerrainDemo.Generators
             var mainLayer =
                 +(float)System.Math.Pow(_microReliefNoise.GetSimplex(position.X / 10f, position.Z / 10f) + 1, 2) - 2 //Вытянутые пики средней частоты
                 + (float)_microReliefNoise.GetSimplex(position.X / 2f, position.Z / 2f) //Высокочастотные неровности
-                + macroHeight.Layer1Height;
+                + macroHeight.Main;
 
             return new Blocks(BlockType.Stone, BlockType.GoldOre,
-                new Heights(mainLayer, UnityEngine.Random.Range(macroHeight.BaseHeight, macroHeight.UndergroundHeight), macroHeight.BaseHeight));
+                new Heights(mainLayer, UnityEngine.Random.Range(macroHeight.Base, macroHeight.Underground), macroHeight.Base));
         }
 
         private readonly FastNoise _microReliefNoise;

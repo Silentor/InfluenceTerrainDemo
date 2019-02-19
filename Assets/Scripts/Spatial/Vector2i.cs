@@ -5,7 +5,7 @@ using Vector2 = OpenTK.Vector2;
 namespace TerrainDemo.Spatial
 {
     //todo Comparable должен быть не вектор, а position в гриде
-    public struct Vector2i : /*IComparable<Vector2i>, */IEquatable<Vector2i>
+    public readonly struct Vector2i : /*IComparable<Vector2i>, */IEquatable<Vector2i>
     {
         public readonly int X, Z;
 
