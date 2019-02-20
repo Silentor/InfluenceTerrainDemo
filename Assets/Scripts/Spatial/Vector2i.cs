@@ -138,6 +138,16 @@ namespace TerrainDemo.Spatial
             return new Vector2(v.X, v.Z);
         }
 
+        public static implicit operator (int x, int z)(Vector2i v)
+        {
+            return (v.X, v.Z);
+        }
+
+        public static implicit operator Vector2i ((int, int) v)
+        {
+            return new Vector2i(v.Item1, v.Item2);
+        }
+
         public static implicit operator UnityEngine.Vector2(Vector2i v)
         {
             return new UnityEngine.Vector2(v.X, v.Z);

@@ -84,11 +84,8 @@ namespace TerrainDemo.Generators
             {
                 var baseHeight = _generator.GetSimplex(position.X / 20f, position.Z / 20f) * 3 + macroHeight.Base;
                 var resourcesHeight = Interpolation.SmoothestStep(Mathf.Clamp01((float)_generator.GetSimplex(position.X / 10f, position.Z / 10f))) * 10 + macroHeight.Underground - 1;
-                //var groundHeight = Interpolation.SmoothestStep((_generator.GetSimplex(position.Z / 40f, position.X / 40f) + 1) / 2) * 10 - 12 + macroHeight.Main;
-                var groundHeight = -1;
-
-                if(position == new Vector2i(-11, 26))
-                    Debug.Log($"Break in zone {Zone}");
+                var groundHeight = Interpolation.SmoothestStep((_generator.GetSimplex(position.Z / 40f, position.X / 40f) + 1) / 2) * 10 - 12 + macroHeight.Main;
+                //var groundHeight = -1;
 
                 //var underground = resourcesHeight > baseHeight ? BlockType.GoldOre : BlockType.Empty;
                 var underground = BlockType.GoldOre;
@@ -168,6 +165,31 @@ namespace TerrainDemo.Generators
             {
                 if (Zone.Biome.Type == BiomeType.TestBaseOrePyramidGround)
                 {
+                    //Special test case
+                    if(position == (3, -21))
+                    {
+                        return new Blocks(Zone.Biome.DefaultMainBlock.Block, Zone.Biome.DefaultUndergroundBlock.Block,
+                            new Heights(0, 1, -5));
+                    }
+
+                    if (position == (-15, -13) || position == (-15, -14))
+                    {
+                        return new Blocks(Zone.Biome.DefaultMainBlock.Block, Zone.Biome.DefaultUndergroundBlock.Block,
+                            new Heights(0, 1, -5));
+                    }
+
+                    if (position == (-18, 12) || position == (-18, 13) || position == (-17, 13))
+                    {
+                        return new Blocks(Zone.Biome.DefaultMainBlock.Block, Zone.Biome.DefaultUndergroundBlock.Block,
+                            new Heights(0, 1, -5));
+                    }
+
+                    if (position == (13, 14) || position == (13, 15) || position == (12, 14) || position == (12, 15))
+                    {
+                        return new Blocks(Zone.Biome.DefaultMainBlock.Block, Zone.Biome.DefaultUndergroundBlock.Block,
+                            new Heights(0, 1, -5));
+                    }
+
                     var distance = Vector2.Distance(Vector2.Zero, position);
 
                     var baseHeight = -5f;

@@ -273,6 +273,7 @@ namespace TerrainDemo.Editor
             Handles.color = Color.white;
             Handles.DrawWireDisc(new Vector3(vert.Position.X, vert.Height.Nominal, vert.Position.Y), _input.View.direction, 1);
         }
+        
 
         private void DrawBlock(Vector2i position, Color color, uint width = 0, Vector3? normal = null)
         {
@@ -378,6 +379,16 @@ namespace TerrainDemo.Editor
                 ShowBlockInfo(input.BlockPosition, false);
         }
 
+        private void ShowTerrainModeContent(Input input)
+        {
+            if (input.IsBlockSelected)
+                ShowBlockInfo(input.BlockPosition, true);
+
+            if(input.SelectedHeightVertex.HasValue)
+                ShowHeightVertexInfo(input.SelectedHeightVertex.Value.position);
+        }
+
+
         private void ShowMacroZoneInfo(Macro.Zone zone)
         {
             GUILayout.Label($"Macro.Zone {zone.Id}", EditorStyles.boldLabel);
@@ -422,6 +433,7 @@ namespace TerrainDemo.Editor
             {
                 GUILayout.Label("Type                   Height");
 
+                GUILayout.BeginVertical("box", GUILayout.Width(150));
                 GUILayout.BeginHorizontal();
                 GUILayout.Label($"{block.Block.Ground}", GUILayout.Width(100));
                 GUILayout.Label(block.Block.Ground != BlockType.Empty ? $"{block.Block.Height.Main:N1}" : "-");
@@ -436,25 +448,36 @@ namespace TerrainDemo.Editor
                 GUILayout.Label($"{block.Block.Base}", GUILayout.Width(100));
                 GUILayout.Label($"{block.Block.Height.Base:N1}");
                 GUILayout.EndHorizontal();
+                GUILayout.EndVertical();
 
                 if (showHeightmap)
                 {
+                    GUILayout.Label("Vertices:");
                     //Show block vertices info
                     var vertices = MicroMap.GetBlock(blockPos);
                     GUILayout.BeginVertical();
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label(vertices.Corner01.ToString());
-                    GUILayout.Label(vertices.Corner11.ToString());
+                    HeightToGUI("┌", vertices.Corner01);
+                    HeightToGUI("┐", vertices.Corner11);
                     GUILayout.EndHorizontal();
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label(vertices.Corner00.ToString());
-                    GUILayout.Label(vertices.Corner10.ToString());
+                    HeightToGUI("└", vertices.Corner00);
+                    HeightToGUI("┘", vertices.Corner10);
                     GUILayout.EndHorizontal();
                     GUILayout.EndVertical();
                 }
             }
             else
                 GUILayout.Label("Empty block");
+        }
+
+        private void ShowHeightVertexInfo(Vector2i position)
+        {
+            GUILayout.Label($"Height vertex {position}", EditorStyles.boldLabel);
+
+            ref readonly var v = ref MicroMap.GetHeightRef(position);
+
+            HeightToGUI(string.Empty, v);
         }
 
 
@@ -506,6 +529,16 @@ namespace TerrainDemo.Editor
         private string MicroHeightToString(Heights heights)
         {
             return $"{heights.Main:F1}, {heights.Base:F1}";
+        }
+
+        private void HeightToGUI(string header, in Heights height)
+        {
+            GUILayout.BeginVertical("box", GUILayout.Width(100));
+            GUILayout.Label(header, EditorStyles.centeredGreyMiniLabel);
+            GUILayout.Label(height.IsMainLayerPresent ? height.Main.ToString("N1") : "-");
+            GUILayout.Label(height.IsUndergroundLayerPresent ? height.Underground.ToString("N1") : "-");
+            GUILayout.Label(height.Base.ToString("N1"));
+            GUILayout.EndVertical();
         }
 
         private void EditorApplicationOnPlayModeStateChanged(PlayModeStateChange state)
@@ -643,6 +676,10 @@ namespace TerrainDemo.Editor
             if (_runner.RenderMode == Renderer.TerrainRenderMode.Blocks)
             {
                 ShowBlockModeContent(_input);
+            }
+            else if (_runner.RenderMode == Renderer.TerrainRenderMode.Terrain)
+            {
+                ShowTerrainModeContent(_input);
             }
             else
             {

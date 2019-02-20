@@ -24,7 +24,7 @@ namespace TerrainDemo.Micro
 
         public MicroMap(MacroMap macromap, TriRunner settings)
         {
-            Bounds = (Bounds2i) macromap.Bounds;
+            Bounds = (Bounds2i)macromap.Bounds;
 
             _macromap = macromap;
             _settings = settings;
@@ -46,7 +46,7 @@ namespace TerrainDemo.Micro
         public Cell GetCell([NotNull] Macro.Cell cell)
         {
             if (cell == null) throw new ArgumentNullException(nameof(cell));
-            if(cell.Map != _macromap) throw new ArgumentException();
+            if (cell.Map != _macromap) throw new ArgumentException();
 
             return Cells[_macromap.Cells.IndexOf(cell)];
         }
@@ -78,7 +78,6 @@ namespace TerrainDemo.Micro
         {
             for (int z = 0; z < _heightMap.GetLength(1); z++)
                 for (int x = 0; x < _heightMap.GetLength(0); x++)
-            {
                 {
                     var neighborBlockX0 = x - 1;
                     var neighborBlockX1 = x;
@@ -94,41 +93,16 @@ namespace TerrainDemo.Micro
                     if (neighborBlockZ1 >= _blocks.GetLength(1))
                         neighborBlockZ1 = _blocks.GetLength(1) - 1;
 
-                    ref var b00 = ref _blocks[neighborBlockX0, neighborBlockZ0];
-                    ref var b10 = ref _blocks[neighborBlockX1, neighborBlockZ0];
-                    ref var b01 = ref _blocks[neighborBlockX0, neighborBlockZ1];
-                    ref var b11 = ref _blocks[neighborBlockX1, neighborBlockZ1];
+                    ref readonly var b00 = ref _blocks[neighborBlockX0, neighborBlockZ0];
+                    ref readonly var b10 = ref _blocks[neighborBlockX1, neighborBlockZ0];
+                    ref readonly var b01 = ref _blocks[neighborBlockX0, neighborBlockZ1];
+                    ref readonly var b11 = ref _blocks[neighborBlockX1, neighborBlockZ1];
 
-                    var baseHeight = (b00.Height.Base + b10.Height.Base + b01.Height.Base + b11.Height.Base) / 4;
-
-                    float undergroundHeight;
-                    
-                    if (b00.Underground == BlockType.Empty || b10.Underground == BlockType.Empty || b01.Underground == BlockType.Empty
-                        || b11.Underground == BlockType.Empty)
-                        undergroundHeight = baseHeight;
-                    else
-                    {
-                        undergroundHeight = (b00.Height.Underground + b10.Height.Underground + b01.Height.Underground + b11.Height.Underground) / 4;
-                    }
-
-                    float mainHeight;
-
-                    if (b00.Ground == BlockType.Empty || b10.Ground == BlockType.Empty || b01.Ground == BlockType.Empty
-                        || b11.Ground == BlockType.Empty)
-                    {
-                        mainHeight = (b00.Height.Main + b10.Height.Main + b01.Height.Main + b11.Height.Main) / 4;
-                            //mainHeight = undergroundHeight;
-                            undergroundHeight = mainHeight;
-                    }
-                    else
-                    {
-                        mainHeight = (b00.Height.Main + b10.Height.Main + b01.Height.Main + b11.Height.Main) / 4;
-                    }
-                    
-                    _heightMap[x, z] = new Heights(mainHeight, undergroundHeight, baseHeight);
-
+                    //Simplest vertex height calculation
+                    var testHeight = (b00.GetNominalHeight() + b01.GetNominalHeight() + b10.GetNominalHeight() +
+                                      b11.GetNominalHeight()) / 4;
+                    _heightMap[x, z] = new Heights(testHeight, testHeight, testHeight);
                 }
-            }
         }
 
         public void SetBlocks(IEnumerable<Vector2i> positions, IEnumerable<Blocks> blocks)
@@ -160,7 +134,7 @@ namespace TerrainDemo.Micro
         {
             var localPos = worldPos - Bounds.Min;
 
-            if(localPos.X >= 0 && localPos.X <_heightMap.GetLength(0) 
+            if (localPos.X >= 0 && localPos.X < _heightMap.GetLength(0)
                && localPos.Z >= 0 && localPos.Z < _heightMap.GetLength(1))
                 return ref _heightMap[localPos.X, localPos.Z];
 
@@ -212,7 +186,7 @@ namespace TerrainDemo.Micro
                 return null;
 
             var localPos = blockPos - Bounds.Min;
-            var result = new BlockInfo(blockPos, _blocks[localPos.X, localPos.Z], 
+            var result = new BlockInfo(blockPos, _blocks[localPos.X, localPos.Z],
                 _heightMap[localPos.X, localPos.Z],
                 _heightMap[localPos.X, localPos.Z + 1],
                 _heightMap[localPos.X + 1, localPos.Z + 1],
@@ -256,9 +230,9 @@ namespace TerrainDemo.Micro
             var raycastedBlocks = Rasterization.DDA((Vector2)ray.origin, (Vector2)ray.GetPoint(300), true);
 
             var blockVolumes = from blockPos in raycastedBlocks
-                          let block = GetBlockRef(blockPos)   //todo use ref
-                          where !block.IsEmpty
-                          select (blockPos, new Interval(block.Height.Base - 10, block.Height.Main));
+                               let block = GetBlockRef(blockPos)   //todo use ref
+                               where !block.IsEmpty
+                               select (blockPos, new Interval(block.Height.Base - 10, block.Height.Main));
 
             var result = Intersections.RayBlockIntersection(ray, blockVolumes);
             return result;
@@ -300,7 +274,7 @@ namespace TerrainDemo.Micro
                         if (Intersections.LineTriangleIntersection(ray, v00, v01, v10, out hit) == 1
                             || Intersections.LineTriangleIntersection(ray, v01, v11, v10, out hit) == 1)
                         {
-                            return (hit, blockPos); 
+                            return (hit, blockPos);
                         }
                     }
                 }
@@ -317,7 +291,7 @@ namespace TerrainDemo.Micro
         public void DigSphere(Vector3 position, float radius)
         {
             //Get influenced vertices
-            var flatPosition = (OpenTK.Vector2) position;
+            var flatPosition = (OpenTK.Vector2)position;
             var flatBound = new Box2(flatPosition.X - radius, flatPosition.Y + radius, flatPosition.X + radius, flatPosition.Y - radius);
             var sqrRadius = radius * radius;
             var flatVertices = Rasterization.ConvexToVertices(v => OpenTK.Vector2.DistanceSquared(v, flatPosition) < sqrRadius, flatBound);
@@ -340,7 +314,7 @@ namespace TerrainDemo.Micro
                     vertexCounter++;
                 }
             }
-            
+
             //Update adjoined blocks
             var changedBlocks = new HashSet<Vector2i>(flatVertices);
             foreach (var vertex in flatVertices)
@@ -358,7 +332,7 @@ namespace TerrainDemo.Micro
                 var localPos = blockPosition - Bounds.Min;
                 var block = _blocks[localPos.X, localPos.Z];
 
-                if (block.Ground!= BlockType.Empty 
+                if (block.Ground != BlockType.Empty
                     && !_heightMap[localPos.X, localPos.Z].IsMainLayerPresent
                     && !_heightMap[localPos.X, localPos.Z + 1].IsMainLayerPresent
                     && !_heightMap[localPos.X + 1, localPos.Z].IsMainLayerPresent
@@ -368,7 +342,7 @@ namespace TerrainDemo.Micro
                     blockWasModified = true;
                 }
 
-                if (block.Underground != BlockType.Empty 
+                if (block.Underground != BlockType.Empty
                     && !_heightMap[localPos.X, localPos.Z].IsUndergroundLayerPresent
                     && !_heightMap[localPos.X, localPos.Z + 1].IsUndergroundLayerPresent
                     && !_heightMap[localPos.X + 1, localPos.Z].IsUndergroundLayerPresent
@@ -387,7 +361,7 @@ namespace TerrainDemo.Micro
 
             Debug.LogFormat("Dig, modified {0} vertices and {1} blocks", vertexCounter, modifiedBlocksCounter);
             DebugExtension.DebugWireSphere(position, radius, 1);
-            
+
             Changed();
         }
 
@@ -432,7 +406,7 @@ namespace TerrainDemo.Micro
             foreach (var blockPosition in changedBlocks)
             {
                 var localPos = blockPosition - Bounds.Min;
-                
+
                 if (_heightMap[localPos.X, localPos.Z].IsMainLayerPresent
                     || _heightMap[localPos.X, localPos.Z + 1].IsMainLayerPresent
                     || _heightMap[localPos.X + 1, localPos.Z].IsMainLayerPresent
@@ -475,7 +449,6 @@ namespace TerrainDemo.Micro
         private readonly TriRunner _settings;
         private readonly Heights[,] _heightMap;
         private readonly Blocks[,] _blocks;
-        //private readonly double[,][] _influences;
     }
 
     public readonly struct NeighborBlocks
