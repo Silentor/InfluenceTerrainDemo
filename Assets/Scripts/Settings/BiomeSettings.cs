@@ -21,7 +21,13 @@ namespace TerrainDemo.Settings
         public Vector2Int SizeRange = new Vector2Int(5, 20);
 
         //Add some settings about general biome look and feel
-        public BlockSettings DefaultBlock;
+        public BlockSettings DefaultMainBlock;
+        public BlockSettings DefaultUndergroundBlock;
+
+        public override string ToString()
+        {
+            return $"Biome {name}";
+        }
     }
 
     public enum BiomeType
@@ -45,6 +51,7 @@ namespace TerrainDemo.Settings
         TestBaseOreAndGround,
         TestBaseCavesAndGround,
         TestBaseOreGroundColumn,
-        TestEnd = TestBaseOreGroundColumn,
+        TestBaseOrePyramidGround,
+        TestEnd = TestBaseOrePyramidGround,
     }
 }

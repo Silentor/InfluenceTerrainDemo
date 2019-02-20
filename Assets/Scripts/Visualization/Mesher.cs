@@ -180,7 +180,7 @@ namespace TerrainDemo.Visualization
 
             var baseVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1));
             var baseIndices = new List<int>(baseVertices.Count * 2);
-            var baseUvs = new List<UnityEngine.Vector2>(baseVertices.Count);
+            var commonUv = new List<Vector2>(baseVertices.Count);
 
             var underVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1));
             var underIndices = new List<int>(underVertices.Count * 2);
@@ -194,7 +194,6 @@ namespace TerrainDemo.Visualization
             var vertCountZ = bounds.Size.Z + 1;
 
             //Set quads
-            bool isCaveMode = true;
             for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
                 for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
                 {
@@ -204,149 +203,101 @@ namespace TerrainDemo.Visualization
                     var chunkLocalZ = worldZ - bounds.Min.Z;
                     var startIndex = chunkLocalZ * (bounds.Size.X + 1) + chunkLocalX;
                     
-                    var block = blockMap[mapLocalX, mapLocalZ];
+                    ref readonly var block = ref blockMap[mapLocalX, mapLocalZ];
                     if (block.IsEmpty)
                         continue;
 
-                    //Cave mode, draw base layer (cave floor), flipped underground layer (cave ceil) amd main layer
-                    //if (block.Underground == BlockType.Cave)
-                    {
-                        isCaveMode = true;
-
-                        //Main layer
-                        if (block.Ground != BlockType.Empty)
-                        {
-                            mainIndices.Add(startIndex);
-                            mainIndices.Add(startIndex + vertCountX);
-                            mainIndices.Add(startIndex + vertCountX + 1);
-
-                            mainIndices.Add(startIndex);
-                            mainIndices.Add(startIndex + vertCountX + 1);
-                            mainIndices.Add(startIndex + 1);
-                        }
-
-                        if (block.Underground == BlockType.Cave)
-                        {
-                            //Flipped triangles, draw cave ceil
-                            underIndices.Add(startIndex);
-                            underIndices.Add(startIndex + vertCountX + 1);
-                            underIndices.Add(startIndex + vertCountX);
-
-                            underIndices.Add(startIndex);
-                            underIndices.Add(startIndex + 1);
-                            underIndices.Add(startIndex + vertCountX + 1);
-                        }
-                        else
-                        {
-                            if (block.Ground == BlockType.Empty && block.Underground != BlockType.Empty)
-                            {
-                                underIndices.Add(startIndex);
-                                underIndices.Add(startIndex + vertCountX);
-                                underIndices.Add(startIndex + vertCountX + 1);
-
-                                underIndices.Add(startIndex);
-                                underIndices.Add(startIndex + vertCountX + 1);
-                                underIndices.Add(startIndex + 1);
-                            }
-                        }
-
-                        if (block.Underground == BlockType.Cave ||
-                            (block.Ground == BlockType.Empty && block.Underground == BlockType.Empty))
-                        {
-
-                            //Cave floor
-                            baseIndices.Add(startIndex);
-                            baseIndices.Add(startIndex + vertCountX);
-                            baseIndices.Add(startIndex + vertCountX + 1);
-
-                            baseIndices.Add(startIndex);
-                            baseIndices.Add(startIndex + vertCountX + 1);
-                            baseIndices.Add(startIndex + 1);
-                        }
-
-                    }
-                    /*
-                    else     //Simple case - combined layers to one 
-                    {
-                        mainIndices.Add(startIndex);
+                    //Main layer
+                    if (block.Ground != BlockType.Empty)
+                    {       
+                        mainIndices.Add(startIndex);                    //bug fix generate proper triangles
                         mainIndices.Add(startIndex + vertCountX);
                         mainIndices.Add(startIndex + vertCountX + 1);
 
                         mainIndices.Add(startIndex);
                         mainIndices.Add(startIndex + vertCountX + 1);
                         mainIndices.Add(startIndex + 1);
-                    }*/
+                    }
+
+                    if (block.Underground == BlockType.Cave)
+                    {
+                        //Flipped triangles, draw cave ceil
+                        underIndices.Add(startIndex);                               //bug fix generate proper triangles
+                        underIndices.Add(startIndex + vertCountX + 1);
+                        underIndices.Add(startIndex + vertCountX);
+
+                        underIndices.Add(startIndex);
+                        underIndices.Add(startIndex + 1);
+                        underIndices.Add(startIndex + vertCountX + 1);
+                    }
+                    else
+                    {
+                        if (block.Ground == BlockType.Empty && block.Underground != BlockType.Empty)
+                        {
+                            underIndices.Add(startIndex);                                   //bug fix generate proper triangles
+                            underIndices.Add(startIndex + vertCountX);
+                            underIndices.Add(startIndex + vertCountX + 1);
+
+                            underIndices.Add(startIndex);
+                            underIndices.Add(startIndex + vertCountX + 1);
+                            underIndices.Add(startIndex + 1);
+                        }
+                    }
+
+                    if (block.Underground == BlockType.Cave ||
+                        (block.Ground == BlockType.Empty && block.Underground == BlockType.Empty))
+                    {
+
+                        //Cave floor
+                        baseIndices.Add(startIndex);                                    //bug fix generate proper triangles
+                        baseIndices.Add(startIndex + vertCountX);
+                        baseIndices.Add(startIndex + vertCountX + 1);
+
+                        baseIndices.Add(startIndex);
+                        baseIndices.Add(startIndex + vertCountX + 1);
+                        baseIndices.Add(startIndex + 1);
+                    }
                 }
 
             //Set vertices
-            if (isCaveMode)
-            {
-                for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z + 1; worldZ++)
-                    for (int worldX = bounds.Min.X; worldX <= bounds.Max.X + 1; worldX++)
-                    {
-                        var mapLocalX = worldX - map.Bounds.Min.X;
-                        var mapLocalZ = worldZ - map.Bounds.Min.Z;
-                        var chunkLocalX = worldX - bounds.Min.X;
-                        var chunkLocalZ = worldZ - bounds.Min.Z;
+            for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z + 1; worldZ++)
+                for (int worldX = bounds.Min.X; worldX <= bounds.Max.X + 1; worldX++)
+                {
+                    var mapLocalX = worldX - map.Bounds.Min.X;
+                    var mapLocalZ = worldZ - map.Bounds.Min.Z;
+                    var chunkLocalX = worldX - bounds.Min.X;
+                    var chunkLocalZ = worldZ - bounds.Min.Z;
 
-                        mainVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Main, worldZ));
-                        underVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Underground, worldZ));
-                        baseVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Base, worldZ));
+                    //todo generate only necessary vertices
+                    mainVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Main, worldZ));
+                    underVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Underground, worldZ));
+                    baseVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Base, worldZ));
 
-                        baseUvs.Add(new Vector2(chunkLocalX / (float)bounds.Size.X, chunkLocalZ / (float)bounds.Size.Z));
-                    }
-            }
-            else
-            {
-                for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z + 1; worldZ++)
-                    for (int worldX = bounds.Min.X; worldX <= bounds.Max.X + 1; worldX++)
-                    {
-                        var mapLocalX = worldX - map.Bounds.Min.X;
-                        var mapLocalZ = worldZ - map.Bounds.Min.Z;
-                        var chunkLocalX = worldX - bounds.Min.X;
-                        var chunkLocalZ = worldZ - bounds.Min.Z;
+                    commonUv.Add(new Vector2(chunkLocalX / (float) bounds.Size.X, chunkLocalZ / (float) bounds.Size.Z));
+                }
 
-                        mainVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Nominal, worldZ));
-                        baseUvs.Add(new Vector2(chunkLocalX / (float) bounds.Size.X, chunkLocalZ / (float) bounds.Size.Z));
-                    }
-            }
 
-            if (isCaveMode)
-            {
-                var baseMesh = new Mesh();
-                baseMesh.SetVertices(baseVertices);
-                baseMesh.SetTriangles(baseIndices, 0);
-                baseMesh.SetUVs(0, baseUvs);
-                baseMesh.RecalculateNormals();
+            var baseMesh = new Mesh();
+            baseMesh.SetVertices(baseVertices);
+            baseMesh.SetTriangles(baseIndices, 0);
+            baseMesh.SetUVs(0, commonUv);
+            baseMesh.RecalculateNormals();
 
-                var underMesh = new Mesh();
-                underMesh.SetVertices(underVertices);
-                underMesh.SetTriangles(underIndices, 0);
-                underMesh.SetUVs(0, baseUvs);
-                underMesh.RecalculateNormals();
+            var underMesh = new Mesh();
+            underMesh.SetVertices(underVertices);
+            underMesh.SetTriangles(underIndices, 0);
+            underMesh.SetUVs(0, commonUv);
+            underMesh.RecalculateNormals();
 
-                var mainMesh = new Mesh();
-                mainMesh.SetVertices(mainVertices);
-                mainMesh.SetTriangles(mainIndices, 0);
-                mainMesh.SetUVs(0, baseUvs);
-                mainMesh.RecalculateNormals();
+            var mainMesh = new Mesh();
+            mainMesh.SetVertices(mainVertices);
+            mainMesh.SetTriangles(mainIndices, 0);
+            mainMesh.SetUVs(0, commonUv);
+            mainMesh.RecalculateNormals();
 
-                var (baseTexture, underTexture, mainTexture) = CreateBlockTexture2(map, bounds);
+            var (baseTexture, underTexture, mainTexture) = CreateBlockTexture2(map, bounds);
 
-                return ((baseMesh, baseTexture), (underMesh, underTexture), (mainMesh, mainTexture));
-            }
-            else
-            {
-                var combinedMesh = new Mesh();
-                combinedMesh.SetVertices(mainVertices);
-                combinedMesh.SetTriangles(mainIndices, 0);
-                combinedMesh.SetUVs(0, baseUvs);
-                combinedMesh.RecalculateNormals();
-
-                var combinedTexture = CreateBlockTexture(map, bounds, renderSettings);
-
-                return ((null, null), (null, null), (combinedMesh, combinedTexture));
-            }
+            return ((baseMesh, baseTexture), (underMesh, underTexture), (mainMesh, mainTexture));
         }
 
         public ((Mesh, Texture) Base, (Mesh, Texture) Under, (Mesh, Texture) Main) CreateMinecraftMesh(MicroMap map, Bounds2i bounds, TriRunner renderSettings)
@@ -711,18 +662,16 @@ namespace TerrainDemo.Visualization
                     var chunkLocalZ = worldZ - bounds.Min.Z;
                     var flatIndex = chunkLocalZ * bounds.Size.X + chunkLocalX;
 
-                    var blocks = map.GetBlockMap()[mapLocalX, mapLocalZ];
-                    var block = blocks.Base;
-                    baseColors[flatIndex] = BlockToColor(block);
+                    ref readonly var blocks = ref map.GetBlockMap()[mapLocalX, mapLocalZ];
+                    baseColors[flatIndex] = BlockToColor(blocks.Base);
 
-                    block = blocks.Underground;
+                    var block = blocks.Underground;
                     if (block == BlockType.Cave)
-                        block = blocks.Ground;
-                    //underColors[flatIndex] = BlockToColor(block);
-                    underColors[flatIndex] = Color.cyan;
+                        underColors[flatIndex] = Color.magenta;         //debug, for visibility
+                    else
+                        underColors[flatIndex] = BlockToColor(block);
 
-                    block = blocks.Ground;
-                    mainColors[flatIndex] = BlockToColor(block);
+                    mainColors[flatIndex] = BlockToColor(blocks.Ground);
                 }
 
             baseTexture.SetPixels(baseColors);

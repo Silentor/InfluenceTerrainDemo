@@ -35,6 +35,11 @@ namespace TerrainDemo.Macro
             Influence = new Influence(id);
         }
 
+        public override string ToString()
+        {
+            return $"Zone {Id}({Biome})";
+        }
+
         private readonly MacroMap _mesh;
     }
 }

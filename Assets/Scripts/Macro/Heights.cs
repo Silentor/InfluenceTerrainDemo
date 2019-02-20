@@ -21,6 +21,8 @@ namespace TerrainDemo.Macro
 
         public bool IsUndergroundLayerPresent => Underground > Base;
 
+        public static readonly Heights Zero = new Heights(0, 0, 0);
+
         public Heights(float mainHeight, float undergroundHeight, float baseHeight)
         {
             if (undergroundHeight < baseHeight)

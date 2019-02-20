@@ -15,4 +15,6 @@ MonoBehaviour:
   Type: 108
   LayoutColor: {r: 1, g: 0.04654569, b: 0, a: 1}
   SizeRange: {x: 10, y: 20}
-  DefaultBlock: {fileID: 11400000, guid: ea38fa3041cdf754cac03d16c05485e0, type: 2}
+  DefaultMainBlock: {fileID: 11400000, guid: ea38fa3041cdf754cac03d16c05485e0, type: 2}
+  DefaultUndergroundBlock: {fileID: 11400000, guid: 600732b90a5a1d540bd6537c72e76bd1,
+    type: 2}

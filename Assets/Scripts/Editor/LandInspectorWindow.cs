@@ -122,8 +122,16 @@ namespace TerrainDemo.Editor
             {
                 input.BlockPosition = selectedBlock.Value.hitBlock;
                 input.Distance = Vector3.Distance(input.Cursor.origin, selectedBlock.Value.hitPoint);
-                input.CursorPosition = selectedBlock.Value.hitBlock;
+                input.CursorPosition = selectedBlock.Value.hitPoint;
                 input.IsBlockSelected = true;
+
+                var roundedCursorPosition = new Vector3(Mathf.Round(input.CursorPosition.x), input.CursorPosition.y,
+                    Mathf.Round(input.CursorPosition.z));
+                if (Vector3.Distance(input.CursorPosition, roundedCursorPosition) < 0.1f)
+                {
+                    var position = new Vector2i(roundedCursorPosition.x, roundedCursorPosition.z);
+                    input.SelectedHeightVertex = (position, MicroMap.GetHeightRef(position));
+                }
             }
 
             return input;
@@ -131,14 +139,41 @@ namespace TerrainDemo.Editor
 
         #endregion
 
+        #region Scene drawing
+
         private void DrawBlockModeHandles(Input input)
         {
             if (input.IsBlockSelected)
             {
                 DrawCursor(input.CursorPosition);
-                DrawBlock(input.BlockPosition, MicroMap.GetBlock3(input.BlockPosition));
+                DrawBlock(input.BlockPosition, MicroMap.GetBlockRef(input.BlockPosition));
             }
         }
+
+        private void DrawTerrainModeHandles(Input input)
+        {
+            if (input.IsBlockSelected)
+            {
+                DrawCursor(input.CursorPosition);
+
+                ref readonly var block = ref MicroMap.GetBlockRef(input.BlockPosition);
+                ref readonly var c00 = ref MicroMap.GetHeightRef(input.BlockPosition);
+                ref readonly var c01 = ref MicroMap.GetHeightRef(input.BlockPosition + Vector2i.Forward);
+                ref readonly var c11 = ref MicroMap.GetHeightRef(input.BlockPosition + Vector2i.One);
+                ref readonly var c10 = ref MicroMap.GetHeightRef(input.BlockPosition + Vector2i.Right);
+                DrawBlock(input.BlockPosition, block, c00, c01, c11, c10);
+
+                if (input.SelectedHeightVertex.HasValue)
+                {
+                    DebugExtension.DebugPoint(new Vector3(
+                        input.SelectedHeightVertex.Value.position.X,
+                        input.SelectedHeightVertex.Value.vertex.Nominal,
+                        input.SelectedHeightVertex.Value.position.Z
+                        ), Color.yellow,0.1f, 0, true);
+                }
+            }
+        }
+
 
         private void DrawCursor(Vector3 position)
         {
@@ -264,7 +299,7 @@ namespace TerrainDemo.Editor
                 DrawArrow.ForDebug(block.GetCenter(), block.Normal);
         }
 
-        private void DrawBlock(Vector2i position, Blocks block, Color? overrideColor = null)
+        private void DrawBlock(Vector2i position, in Blocks block, Color? overrideColor = null)
         {
             if (block.IsEmpty)
                 return;
@@ -302,6 +337,24 @@ namespace TerrainDemo.Editor
             }
         }
 
+        private void DrawBlock(Vector2i position, in Blocks block, in Heights c00, in Heights c01, in Heights c11, in Heights c10)
+        {
+            if (block.IsEmpty)
+                return;
+
+            var (min, max) = BlockInfo.GetWorldBounds(position);
+
+            //Draw top terrain block
+            Handles.color = Color.white;
+            Handles.DrawPolyLine(
+                new Vector3(min.X, c00.Nominal, min.Y),
+                new Vector3(min.X, c01.Nominal, max.Y),
+                new Vector3(max.X, c11.Nominal, max.Y),
+                new Vector3(max.X, c10.Nominal, min.Y),
+                new Vector3(min.X, c00.Nominal, min.Y)
+                );
+        }
+
         /// <summary>
         /// Draw zone border
         /// </summary>
@@ -315,9 +368,11 @@ namespace TerrainDemo.Editor
                 Handles.DrawLine(VertexToPosition(edge.Vertex1), VertexToPosition(edge.Vertex2));
         }
 
-        #region Window content
+        #endregion
 
-        private void ShowBlockModeControls(Input input)
+#region Window content
+
+        private void ShowBlockModeContent(Input input)
         {
             if(input.IsBlockSelected)
                 ShowBlockInfo(input.BlockPosition, false);
@@ -453,17 +508,6 @@ namespace TerrainDemo.Editor
             return $"{heights.Main:F1}, {heights.Base:F1}";
         }
 
-        #region Unity
-
-        private void OnEnable()
-        {
-            SceneView.onSceneGUIDelegate -= OnSceneGuiDelegate;
-            SceneView.onSceneGUIDelegate += OnSceneGuiDelegate;
-
-            EditorApplication.playModeStateChanged -= EditorApplicationOnPlayModeStateChanged;
-            EditorApplication.playModeStateChanged += EditorApplicationOnPlayModeStateChanged;
-        }
-
         private void EditorApplicationOnPlayModeStateChanged(PlayModeStateChange state)
         {
             if (state == PlayModeStateChange.EnteredPlayMode)
@@ -484,6 +528,17 @@ namespace TerrainDemo.Editor
             }
         }
 
+#region Unity
+
+        private void OnEnable()
+        {
+            SceneView.onSceneGUIDelegate -= OnSceneGuiDelegate;
+            SceneView.onSceneGUIDelegate += OnSceneGuiDelegate;
+
+            EditorApplication.playModeStateChanged -= EditorApplicationOnPlayModeStateChanged;
+            EditorApplication.playModeStateChanged += EditorApplicationOnPlayModeStateChanged;
+        }
+
         /// <summary>
         /// Process scene view handles
         /// </summary>
@@ -499,6 +554,11 @@ namespace TerrainDemo.Editor
             if (_runner.RenderMode == Renderer.TerrainRenderMode.Blocks)
             {
                 DrawBlockModeHandles(_input);
+                return;
+            }
+            else if(_runner.RenderMode == Renderer.TerrainRenderMode.Terrain)
+            {
+                DrawTerrainModeHandles(_input);
                 return;
             }
             else
@@ -567,7 +627,7 @@ namespace TerrainDemo.Editor
             if (!_enabled)
                 return;
 
-            if (!Application.isPlaying || _runner == null || !_enabled)
+            if (!Application.isPlaying || _runner == null || !_enabled || _input == null)
                 return;
 
             if (_oldRenderLayer != _runner.RenderLayer || _oldRenderMode != _runner.RenderMode)
@@ -582,7 +642,7 @@ namespace TerrainDemo.Editor
 
             if (_runner.RenderMode == Renderer.TerrainRenderMode.Blocks)
             {
-                ShowBlockModeControls(_input);
+                ShowBlockModeContent(_input);
             }
             else
             {
@@ -683,6 +743,8 @@ namespace TerrainDemo.Editor
             public Micro.Cell SelectedMicroCell;
 
             public MacroVert SelectedVert;
+
+            public (Vector2i position, Heights vertex)?  SelectedHeightVertex;
         }
     }
 }

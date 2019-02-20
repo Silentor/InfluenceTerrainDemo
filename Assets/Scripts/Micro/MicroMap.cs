@@ -76,9 +76,9 @@ namespace TerrainDemo.Micro
         /// </summary>
         public void GenerateHeightmap()
         {
-            for (int x = 0; x < _heightMap.GetLength(0); x++)
+            for (int z = 0; z < _heightMap.GetLength(1); z++)
+                for (int x = 0; x < _heightMap.GetLength(0); x++)
             {
-                for (int z = 0; z < _heightMap.GetLength(1); z++)
                 {
                     var neighborBlockX0 = x - 1;
                     var neighborBlockX1 = x;
@@ -94,37 +94,35 @@ namespace TerrainDemo.Micro
                     if (neighborBlockZ1 >= _blocks.GetLength(1))
                         neighborBlockZ1 = _blocks.GetLength(1) - 1;
 
-                    var baseHeight = (_blocks[neighborBlockX0, neighborBlockZ0].Height.Base
-                                     + _blocks[neighborBlockX1, neighborBlockZ0].Height.Base
-                                     + _blocks[neighborBlockX0, neighborBlockZ1].Height.Base
-                                     + _blocks[neighborBlockX1, neighborBlockZ1].Height.Base) / 4;
+                    ref var b00 = ref _blocks[neighborBlockX0, neighborBlockZ0];
+                    ref var b10 = ref _blocks[neighborBlockX1, neighborBlockZ0];
+                    ref var b01 = ref _blocks[neighborBlockX0, neighborBlockZ1];
+                    ref var b11 = ref _blocks[neighborBlockX1, neighborBlockZ1];
+
+                    var baseHeight = (b00.Height.Base + b10.Height.Base + b01.Height.Base + b11.Height.Base) / 4;
 
                     float undergroundHeight;
-                    if (_blocks[neighborBlockX0, neighborBlockZ0].Underground == BlockType.Empty
-                        || _blocks[neighborBlockX1, neighborBlockZ0].Underground == BlockType.Empty
-                        || _blocks[neighborBlockX0, neighborBlockZ1].Underground == BlockType.Empty
-                        || _blocks[neighborBlockX1, neighborBlockZ1].Underground == BlockType.Empty)
+                    
+                    if (b00.Underground == BlockType.Empty || b10.Underground == BlockType.Empty || b01.Underground == BlockType.Empty
+                        || b11.Underground == BlockType.Empty)
                         undergroundHeight = baseHeight;
                     else
                     {
-                        undergroundHeight = (_blocks[neighborBlockX0, neighborBlockZ0].Height.Underground
-                                          + _blocks[neighborBlockX1, neighborBlockZ0].Height.Underground
-                                          + _blocks[neighborBlockX0, neighborBlockZ1].Height.Underground
-                                          + _blocks[neighborBlockX1, neighborBlockZ1].Height.Underground) / 4;
+                        undergroundHeight = (b00.Height.Underground + b10.Height.Underground + b01.Height.Underground + b11.Height.Underground) / 4;
                     }
 
                     float mainHeight;
-                    if (_blocks[neighborBlockX0, neighborBlockZ0].Ground == BlockType.Empty
-                        || _blocks[neighborBlockX1, neighborBlockZ0].Ground == BlockType.Empty
-                        || _blocks[neighborBlockX0, neighborBlockZ1].Ground == BlockType.Empty
-                        || _blocks[neighborBlockX1, neighborBlockZ1].Ground == BlockType.Empty)
-                        mainHeight = undergroundHeight;
+
+                    if (b00.Ground == BlockType.Empty || b10.Ground == BlockType.Empty || b01.Ground == BlockType.Empty
+                        || b11.Ground == BlockType.Empty)
+                    {
+                        mainHeight = (b00.Height.Main + b10.Height.Main + b01.Height.Main + b11.Height.Main) / 4;
+                            //mainHeight = undergroundHeight;
+                            undergroundHeight = mainHeight;
+                    }
                     else
                     {
-                        mainHeight = (_blocks[neighborBlockX0, neighborBlockZ0].Height.Main
-                                             + _blocks[neighborBlockX1, neighborBlockZ0].Height.Main
-                                             + _blocks[neighborBlockX0, neighborBlockZ1].Height.Main
-                                             + _blocks[neighborBlockX1, neighborBlockZ1].Height.Main) / 4;
+                        mainHeight = (b00.Height.Main + b10.Height.Main + b01.Height.Main + b11.Height.Main) / 4;
                     }
                     
                     _heightMap[x, z] = new Heights(mainHeight, undergroundHeight, baseHeight);
@@ -156,6 +154,17 @@ namespace TerrainDemo.Micro
         public Heights[,] GetHeightMap()
         {
             return _heightMap;
+        }
+
+        public ref readonly Heights GetHeightRef(Vector2i worldPos)
+        {
+            var localPos = worldPos - Bounds.Min;
+
+            if(localPos.X >= 0 && localPos.X <_heightMap.GetLength(0) 
+               && localPos.Z >= 0 && localPos.Z < _heightMap.GetLength(1))
+                return ref _heightMap[localPos.X, localPos.Z];
+
+            return ref Heights.Zero;
         }
 
         public Blocks[,] GetBlockMap()
@@ -211,7 +220,7 @@ namespace TerrainDemo.Micro
             return result;
         }
 
-        public ref readonly Blocks GetBlock3(Vector2i worldBlockPos)
+        public ref readonly Blocks GetBlockRef(Vector2i worldBlockPos)
         {
             if (!Bounds.Contains(worldBlockPos))
                 return ref Blocks.Empty;
@@ -247,7 +256,7 @@ namespace TerrainDemo.Micro
             var raycastedBlocks = Rasterization.DDA((Vector2)ray.origin, (Vector2)ray.GetPoint(300), true);
 
             var blockVolumes = from blockPos in raycastedBlocks
-                          let block = GetBlock3(blockPos)
+                          let block = GetBlockRef(blockPos)   //todo use ref
                           where !block.IsEmpty
                           select (blockPos, new Interval(block.Height.Base - 10, block.Height.Main));
 

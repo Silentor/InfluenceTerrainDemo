@@ -72,29 +72,36 @@ namespace TerrainDemo.Generators
 
         public override Blocks GenerateBlock2(Vector2i position, Heights macroHeight)
         {
-            var blocks = base.GenerateBlock2(position, macroHeight);
+            var block = base.GenerateBlock2(position, macroHeight);
 
             if (Zone.Biome.Type == BiomeType.TestWaves)
             {
                 var height = Mathf.Sin(position.X / 5f) * 5;
                 var heights = new Heights(macroHeight.Main + height, macroHeight.Underground + height, macroHeight.Base + height);
-                blocks = blocks.MutateHeight(heights);
+                block = block.MutateHeight(heights);
             }
             else if (Zone.Biome.Type == BiomeType.TestBaseOreAndGround)
             {
                 var baseHeight = _generator.GetSimplex(position.X / 20f, position.Z / 20f) * 3 + macroHeight.Base;
                 var resourcesHeight = Interpolation.SmoothestStep(Mathf.Clamp01((float)_generator.GetSimplex(position.X / 10f, position.Z / 10f))) * 10 + macroHeight.Underground - 1;
-                var groundHeight = Interpolation.SmoothestStep((_generator.GetSimplex(position.Z / 40f, position.X / 40f) + 1) / 2)
-                                   * 10 - 12 + macroHeight.Main;
+                //var groundHeight = Interpolation.SmoothestStep((_generator.GetSimplex(position.Z / 40f, position.X / 40f) + 1) / 2) * 10 - 12 + macroHeight.Main;
+                var groundHeight = -1;
 
-                var underground = resourcesHeight > baseHeight ? BlockType.GoldOre : BlockType.Empty;
+                if(position == new Vector2i(-11, 26))
+                    Debug.Log($"Break in zone {Zone}");
+
+                //var underground = resourcesHeight > baseHeight ? BlockType.GoldOre : BlockType.Empty;
+                var underground = BlockType.GoldOre;
                 BlockType ground;
+                /*
                 if (groundHeight > resourcesHeight && groundHeight > baseHeight)
                     ground = BlockType.Grass;
                 else
                     ground = BlockType.Empty;
+                    */
+                ground = BlockType.Grass;
 
-                blocks = new Blocks(ground, underground, new Heights((float)groundHeight, resourcesHeight, (float)baseHeight));
+                block = new Blocks(ground, underground, new Heights((float)groundHeight, resourcesHeight, (float)baseHeight));
             }
             else if(Zone.Biome.Type == BiomeType.TestBaseCavesAndGround)
             {
@@ -107,27 +114,32 @@ namespace TerrainDemo.Generators
                 //  /      \
                 //-/--------\--
                 var distance = Vector2.Distance(Vector2.Zero, position);
-                var baseHeight = -10;
-                var underHeight = distance < 10 ? -10 + (10 - distance) : -10;
-                var groundHeight = distance < 10 ? -10 + distance : 0;
 
+                if (distance < 15)
+                {
+                    var baseHeight = -10;
+                    var underHeight = distance < 10 ? -10 + (10 - distance) : -10;
+                    var groundHeight = distance < 10 ? -10 + distance : 0;
 
-                /*
-                var baseHeight = _generator.GetSimplex(position.X / 30f, position.Z / 30f) * 3 + macroHeight.BaseHeight;
-                var undergroundHeight = (_generator.GetSimplex(position.X / 20f, position.Z / 20f) + 1);
-                undergroundHeight = Math.Pow(undergroundHeight, 4) + macroHeight.UndergroundHeight;
-                var groundHeight = _generator.GetSimplex(position.X / 5f, position.Z / 5f) + macroHeight.Layer1Height;
-                */
+                    /*
+                    var baseHeight = _generator.GetSimplex(position.X / 30f, position.Z / 30f) * 3 + macroHeight.BaseHeight;
+                    var undergroundHeight = (_generator.GetSimplex(position.X / 20f, position.Z / 20f) + 1);
+                    undergroundHeight = Math.Pow(undergroundHeight, 4) + macroHeight.UndergroundHeight;
+                    var groundHeight = _generator.GetSimplex(position.X / 5f, position.Z / 5f) + macroHeight.Layer1Height;
+                    */
 
-                BlockType underground;
-                if (underHeight > groundHeight || underHeight <= baseHeight)
-                    underground = BlockType.Empty;
+                    BlockType underground;
+                    if (underHeight > groundHeight || underHeight <= baseHeight)
+                        underground = BlockType.Empty;
+                    else
+                        underground = BlockType.Cave;
+
+                    BlockType ground = groundHeight >= underHeight ? BlockType.Grass : BlockType.Empty;
+
+                    block = new Blocks(ground, underground, new Heights(groundHeight, underHeight, baseHeight));
+                }
                 else
-                    underground = BlockType.Cave;
-
-                BlockType ground = groundHeight >= underHeight ? BlockType.Grass : BlockType.Empty;
-
-                blocks = new Blocks(ground, underground, new Heights(groundHeight, underHeight, baseHeight));
+                    block = Blocks.Empty;
             }
             else if (Zone.Biome.Type == BiomeType.TestBaseOreGroundColumn)
             {
@@ -144,16 +156,30 @@ namespace TerrainDemo.Generators
                     var underHeight = baseHeight + _random.Range(0, 5);
                     var groundHeight = underHeight + _random.Range(0, 5);
 
-                    blocks = new Blocks(BlockType.Grass, BlockType.Cave, 
+                    block = new Blocks(BlockType.Grass, BlockType.GoldOre, 
                         new Heights(groundHeight, underHeight, baseHeight));
                 }
                 else
                 {
-                    blocks = new Blocks(BlockType.Empty, BlockType.Empty, new Heights(-10, -10, -10));
+                    block = new Blocks(BlockType.Empty, BlockType.Empty, new Heights(-10, -10, -10));
+                }
+            }
+            else
+            {
+                if (Zone.Biome.Type == BiomeType.TestBaseOrePyramidGround)
+                {
+                    var distance = Vector2.Distance(Vector2.Zero, position);
+
+                    var baseHeight = -5f;
+                    var oreHeight = 7 - distance;
+                    var grassHeight = 0;
+
+                    block = new Blocks(Zone.Biome.DefaultMainBlock.Block, Zone.Biome.DefaultUndergroundBlock.Block, 
+                        new Heights(grassHeight, oreHeight, baseHeight));
                 }
             }
 
-            return blocks;
+            return block;
         }
 
         private readonly FastNoise _generator;

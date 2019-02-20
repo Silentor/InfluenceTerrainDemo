@@ -126,8 +126,6 @@ namespace TerrainDemo.Macro
 
         private void GenerateGrid()
         {
-            Debug.LogFormat("Generating grid of macrocells");
-
             var gridPerturbator = new FastNoise(unchecked (_settings.Seed + 10));
             gridPerturbator.SetFrequency(_settings.GridPerturbFreq);
 

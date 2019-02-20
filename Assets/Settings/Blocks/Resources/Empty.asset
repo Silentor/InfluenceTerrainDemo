@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ba61192dc09d7ae4881cc29d5cdcf1e9, type: 3}
-  m_Name: Water
+  m_Name: Empty
   m_EditorClassIdentifier: 
-  Block: 7
-  DefaultColor: {r: 0, g: 0.8830581, b: 1, a: 1}
+  Block: 0
+  DefaultColor: {r: 0, g: 0, b: 0, a: 1}

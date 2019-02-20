@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 31bbfb5f9b0940779bb88583280197fe, type: 3}
-  m_Name: TestWaves
+  m_Name: TestOrePyramid
   m_EditorClassIdentifier: 
-  Type: 105
-  LayoutColor: {r: 1, g: 0.03915456, b: 0, a: 1}
-  SizeRange: {x: 7, y: 7}
+  Type: 109
+  LayoutColor: {r: 1, g: 0.04654569, b: 0, a: 1}
+  SizeRange: {x: 10, y: 20}
   DefaultMainBlock: {fileID: 11400000, guid: ea38fa3041cdf754cac03d16c05485e0, type: 2}
-  DefaultUndergroundBlock: {fileID: 11400000, guid: 600732b90a5a1d540bd6537c72e76bd1,
+  DefaultUndergroundBlock: {fileID: 11400000, guid: 3418cdd379cd0164a84e645aa04e5009,
     type: 2}
