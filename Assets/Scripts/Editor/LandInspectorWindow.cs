@@ -10,6 +10,7 @@ using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 using Cell = TerrainDemo.Macro.Cell;
 using Renderer = TerrainDemo.Visualization.Renderer;
 using Vector2 = UnityEngine.Vector2;
@@ -343,17 +344,50 @@ namespace TerrainDemo.Editor
             if (block.IsEmpty)
                 return;
 
-            var (min, max) = BlockInfo.GetWorldBounds(position);
+            if (block.Ground != BlockType.Empty)
+            {
+                DrawQuad(position, _defaultBlockColor[block.Ground], c00.Main, c01.Main, c11.Main, c10.Main);
 
-            //Draw top terrain block
-            Handles.color = Color.white;
-            Handles.DrawPolyLine(
-                new Vector3(min.X, c00.Nominal, min.Y),
-                new Vector3(min.X, c01.Nominal, max.Y),
-                new Vector3(max.X, c11.Nominal, max.Y),
-                new Vector3(max.X, c10.Nominal, min.Y),
-                new Vector3(min.X, c00.Nominal, min.Y)
+                if (block.Underground == BlockType.Cave)
+                {
+                    DrawQuad(position, _defaultBlockColor[block.Ground], c00.Underground, c01.Underground, c11.Underground, c10.Underground);
+                    DrawQuad(position, _defaultBlockColor[block.Base], c00.Base, c01.Base, c11.Base, c10.Base);
+                }
+            }
+            else if (block.Underground != BlockType.Empty)
+            {
+                DrawQuad(position, _defaultBlockColor[block.Underground], c00.Underground, c01.Underground, c11.Underground, c10.Underground);
+            }
+            else
+            {
+                DrawQuad(position, _defaultBlockColor[block.Base], c00.Base, c01.Base, c11.Base, c10.Base);
+            }
+
+            void DrawQuad(Vector2i pos, Color32 color, float h00, float h01, float h11, float h10)
+            {
+                var (min, max) = BlockInfo.GetWorldBounds(pos);
+
+                Handles.color = color;
+                Handles.zTest = CompareFunction.LessEqual;
+                Handles.DrawPolyLine(
+                    new Vector3(min.X, h00, min.Y),
+                    new Vector3(min.X, h01, max.Y),
+                    new Vector3(max.X, h11, max.Y),
+                    new Vector3(max.X, h10, min.Y),
+                    new Vector3(min.X, h00, min.Y)
                 );
+
+                Handles.color = ((Color)color) / 2;
+                Handles.zTest = CompareFunction.Greater;
+                Handles.DrawPolyLine(
+                    new Vector3(min.X, h00, min.Y),
+                    new Vector3(min.X, h01, max.Y),
+                    new Vector3(max.X, h11, max.Y),
+                    new Vector3(max.X, h10, min.Y),
+                    new Vector3(min.X, h00, min.Y)
+                );
+
+            }
         }
 
         /// <summary>
