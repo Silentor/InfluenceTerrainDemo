@@ -20,7 +20,7 @@ RenderSettings:
   m_FogDensity: 0.01
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
+  m_AmbientSkyColor: {r: 0.84705883, g: 0.9098039, b: 1.0352942, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1
@@ -170,14 +170,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Seed: 1914769332
   RandomizeSeed: 0
-  LandSize: 60
+  LandSize: 120
   CellSide: 10
   GridPerturbFreq: 0.01
   GridPerturbPower: 10
   InfluencePerturbFreq: 0.08
   InfluencePerturbPower: 3
   Biomes:
-  - {fileID: 11400000, guid: 6a07eb003f0abf54889d8f52acc3c8f1, type: 2}
+  - {fileID: 11400000, guid: 732f670cdb9563043b848f46f4e3ccfa, type: 2}
   RenderMode: 0
   RenderLayer: 2
   MacroCellInfluenceVisualization: 0

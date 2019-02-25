@@ -73,7 +73,7 @@ namespace TerrainDemo.Generators
 
         public virtual Blocks GenerateBlock2(Vector2i position, Heights macroHeight)
         {
-            return new Blocks(Zone.Biome.DefaultMainBlock.Block, BlockType.GoldOre, macroHeight);
+            return new Blocks(Zone.Biome.DefaultMainBlock.Block, Zone.Biome.DefaultUndergroundBlock.Block, macroHeight);
         }
 
         /// <summary>

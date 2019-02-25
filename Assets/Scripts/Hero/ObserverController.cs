@@ -252,7 +252,7 @@ namespace TerrainDemo.Hero
             {
 #if UNITY_EDITOR
                 if (Camera == CameraType.SceneCamera)
-                    _camera = SceneView.currentDrawingSceneView.camera;
+                    _camera = SceneView.lastActiveSceneView.camera;
                 else
 #endif
                     _camera = UnityEngine.Camera.main;
