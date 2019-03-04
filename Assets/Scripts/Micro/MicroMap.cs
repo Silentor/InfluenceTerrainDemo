@@ -79,6 +79,7 @@ namespace TerrainDemo.Micro
             for (int z = 0; z < _heightMap.GetLength(1); z++)
                 for (int x = 0; x < _heightMap.GetLength(0); x++)
                 {
+                    //Get neighbor blocks for given vertex
                     var neighborBlockX0 = x - 1;
                     var neighborBlockX1 = x;
                     var neighborBlockZ0 = z - 1;
@@ -98,6 +99,10 @@ namespace TerrainDemo.Micro
                     ref readonly var b01 = ref _blocks[neighborBlockX0, neighborBlockZ1];
                     ref readonly var b11 = ref _blocks[neighborBlockX1, neighborBlockZ1];
 
+                    if (b00.IsEmpty && b10.IsEmpty && b01.IsEmpty && b11.IsEmpty)
+                        continue;
+
+                    //Analyze neighbor blocks
                     var caveBlocksCounter = 0;
                     if (b00.Underground == BlockType.Cave)
                         caveBlocksCounter++;
@@ -111,11 +116,33 @@ namespace TerrainDemo.Micro
                     if (caveBlocksCounter == 0)
                     {
                         //Trivial vertex height calculation
-                        var topmostHeight = (b00.GetNominalHeight() + b01.GetNominalHeight() + b10.GetNominalHeight() +
-                                          b11.GetNominalHeight()) / 4;
+                        float topmostHeight = 0f;
+                        int blockCounter = 0;
+                        if (!b00.IsEmpty)
+                        {
+                            topmostHeight += b00.GetNominalHeight();
+                            blockCounter++;
+                        }
+                        if (!b01.IsEmpty)
+                        {
+                            topmostHeight += b01.GetNominalHeight();
+                            blockCounter++;
+                        }
+                        if (!b10.IsEmpty)
+                        {
+                            topmostHeight += b10.GetNominalHeight();
+                            blockCounter++;
+                        }
+                        if (!b11.IsEmpty)
+                        {
+                            topmostHeight += b11.GetNominalHeight();
+                            blockCounter++;
+                        }
+
+                        topmostHeight = topmostHeight / blockCounter;
                         _heightMap[x, z] = new Heights(topmostHeight, topmostHeight, topmostHeight);
                     }
-                    else if(caveBlocksCounter == 4)
+                    else if(caveBlocksCounter == 4)  //Completely underground
                     {
                         //Just average heights of every layer
                         var groundHeight = (b00.Height.Main + b01.Height.Main + b10.Height.Main + b11.Height.Main) / 4;
@@ -125,67 +152,111 @@ namespace TerrainDemo.Micro
                     }
                     else
                     {
-                        //Hard case - cave joined open air or solid underground/ground block
+                        //Hard cases - some blocks are cave entrance (under == empty && ground == empty) or dead end (under != cave && ground != empty)
+                        //So we need join ground-under or under-base heights (or ground-under-base in mixed case)
                         var groundHeight = 0f;
                         var caveHeight = 0f;
 
-                        //Check cave entrance case
+                        //Check cave entrance and dead end cases
                         var openAirBlocksCounter = 0;
+                        var deadEndBlocksCounter = 0;
                         var groundHeightAccum = 0f;
                         var caveHeightAccum = 0f;
-                        var groundBlocksCounter = 0;
+                        var baseHeightAccum = 0f;
 
-                        if (b00.Ground == BlockType.Empty)
+                        if (b00.Ground == BlockType.Empty && b00.Underground == BlockType.Empty)
                             openAirBlocksCounter++;
+                        else if (b00.Ground != BlockType.Empty && b00.Underground != BlockType.Cave)
+                        {
+                            deadEndBlocksCounter++;
+                            groundHeightAccum += b00.Height.Main;
+                        }
                         else
                         {
-                            groundBlocksCounter++;
                             groundHeightAccum += b00.Height.Main;
                             caveHeightAccum += b00.Height.Underground;
                         }
 
                         if (b01.Ground == BlockType.Empty)
                             openAirBlocksCounter++;
+                        else if (b01.Ground != BlockType.Empty && b01.Underground != BlockType.Cave)
+                        {
+                            deadEndBlocksCounter++;
+                            groundHeightAccum += b01.Height.Main;
+                        }
                         else
                         {
-                            groundBlocksCounter++;
                             groundHeightAccum += b01.Height.Main;
                             caveHeightAccum += b01.Height.Underground;
                         }
 
                         if (b10.Ground == BlockType.Empty)
                             openAirBlocksCounter++;
+                        else if (b10.Ground != BlockType.Empty && b10.Underground != BlockType.Cave)
+                        {
+                            deadEndBlocksCounter++;
+                            groundHeightAccum += b10.Height.Main;
+                        }
                         else
                         {
-                            groundBlocksCounter++;
                             groundHeightAccum += b10.Height.Main;
                             caveHeightAccum += b10.Height.Underground;
                         }
 
                         if (b11.Ground == BlockType.Empty)
                             openAirBlocksCounter++;
+                        else if (b11.Ground != BlockType.Empty && b11.Underground != BlockType.Cave)
+                        {
+                            deadEndBlocksCounter++;
+                            groundHeightAccum += b11.Height.Main;
+                        }
                         else
                         {
-                            groundBlocksCounter++;
                             groundHeightAccum += b11.Height.Main;
                             caveHeightAccum += b11.Height.Underground;
                         }
 
-                        Assert.IsTrue(openAirBlocksCounter < 4);
-
-                        if (openAirBlocksCounter > 0 && openAirBlocksCounter < 4 && groundBlocksCounter > 0)
-                        {
-                            //Cave entrance case
-                            groundHeightAccum = groundHeightAccum / groundBlocksCounter;
-                            caveHeightAccum = caveHeightAccum / groundBlocksCounter;
-
-                            caveHeight = Mathf.Lerp(caveHeightAccum, groundHeightAccum, openAirBlocksCounter / 4f);     //Not all range
-                            groundHeight = caveHeight;
-
-                        }
-
+                        Assert.IsTrue(openAirBlocksCounter < 4 && deadEndBlocksCounter < 4);
+                        Assert.IsTrue(openAirBlocksCounter > 0 || deadEndBlocksCounter > 0);
 
                         var baseHeight = (b00.Height.Base + b01.Height.Base + b10.Height.Base + b11.Height.Base) / 4;
+
+                        //Catch rare mixed case
+                        if (openAirBlocksCounter > 0 && deadEndBlocksCounter > 0)
+                        {
+                            var worldPos = new Vector2i(x, z) + Bounds.Min;
+                            Debug.Log($"Vertex {worldPos} is a complex case, {openAirBlocksCounter} open blocks, {deadEndBlocksCounter} dead ends");
+
+                            groundHeightAccum = groundHeightAccum / (openAirBlocksCounter - 4);
+                            caveHeightAccum = caveHeightAccum / (openAirBlocksCounter + deadEndBlocksCounter - 4);
+
+                            groundHeight = groundHeightAccum;
+                            caveHeight = caveHeightAccum;
+
+                            var commonHeight = (baseHeight + caveHeight + groundHeight) / 3;
+                            groundHeight = caveHeight = baseHeight = commonHeight;
+                        }
+
+                        //Cave entrance case
+                        if (openAirBlocksCounter > 0 && deadEndBlocksCounter == 0)
+                        {
+                            groundHeightAccum = groundHeightAccum / caveBlocksCounter;
+                            caveHeightAccum = caveHeightAccum / caveBlocksCounter;
+
+                            caveHeight = Mathf.Lerp(groundHeightAccum, caveHeightAccum, caveBlocksCounter / 4f);     //Lerp on part of range (1/4..3/4)
+                            groundHeight = caveHeight;
+                        }
+
+                        //Dead end case
+                        if (deadEndBlocksCounter > 0 && openAirBlocksCounter == 0)
+                        {
+                            groundHeightAccum = groundHeightAccum / 4;
+                            caveHeightAccum = caveHeightAccum / caveBlocksCounter;
+                            caveHeight = Mathf.Lerp(baseHeight, caveHeightAccum, caveBlocksCounter / 4f);
+                            baseHeight = caveHeight;
+                            groundHeight = groundHeightAccum;
+                        }
+                        
                         _heightMap[x, z] = new Heights(groundHeight, caveHeight, baseHeight);
 
                     }
@@ -225,7 +296,7 @@ namespace TerrainDemo.Micro
                && localPos.Z >= 0 && localPos.Z < _heightMap.GetLength(1))
                 return ref _heightMap[localPos.X, localPos.Z];
 
-            return ref Heights.Zero;
+            return ref Heights.Empty;
         }
 
         public Blocks[,] GetBlockMap()

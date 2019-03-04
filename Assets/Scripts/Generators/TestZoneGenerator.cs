@@ -226,7 +226,7 @@ namespace TerrainDemo.Generators
                     if(distanceToTunnel < tunnelWidth)
                         underHeight += tunnelCenterHeight + Mathf.Sqrt(tunnelWidth * tunnelWidth - distanceToTunnel * distanceToTunnel) + tunnelTurbulence;
 
-                    var groundHeight = 5f;
+                    var groundHeight = 6f;
                     if (distanceToMount < mountSize)
                         groundHeight += mountSize - distanceToMount;
                     block = new Blocks(Zone.Biome.DefaultMainBlock.Block, Zone.Biome.DefaultUndergroundBlock.Block, 
