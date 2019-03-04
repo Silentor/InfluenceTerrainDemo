@@ -12,6 +12,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Cell = TerrainDemo.Macro.Cell;
+using Quaternion = UnityEngine.Quaternion;
 using Renderer = TerrainDemo.Visualization.Renderer;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
@@ -39,6 +40,7 @@ namespace TerrainDemo.Editor
         private Renderer.TerrainLayerToRender _oldRenderLayer;
         private readonly Dictionary<BlockType, Color> _defaultBlockColor = new Dictionary<BlockType, Color>();
         private Vector2i? _selectedBlock = null;
+        private Vector2i? _selectedVertex = null;
 
         [MenuItem("Land/Inspector")]
         static void Init()
@@ -106,15 +108,33 @@ namespace TerrainDemo.Editor
 
                     if (isSelected)
                     {
-                        if (_selectedBlock == result.HoveredBlock)
-                            _selectedBlock = null;
-                        else
-                            _selectedBlock = result.HoveredBlock;
-
-                        if (_selectedBlock.HasValue)
-                            Debug.Log($"Selected block {_selectedBlock.Value}");
+                        //Process vertex selection
+                        if (result.HoveredHeightVertex.HasValue)
+                        {
+                            
+                            if (_selectedVertex.HasValue && result.HoveredHeightVertex.Value.position ==
+                                _selectedVertex.Value)
+                                _selectedVertex = null;    //Deselect
+                            else 
+                            {
+                                _selectedVertex = result.HoveredHeightVertex.Value.position;   //Select
+                                Debug.Log($"Selected vertex {_selectedVertex.Value}");
+                            }
+                        }
+                        //Process block selection
+                        else if (result.HoveredBlock.HasValue)
+                        {
+                            if (_selectedBlock == result.HoveredBlock)
+                                _selectedBlock = null;           //Deselect
+                            else
+                            {
+                                _selectedBlock = result.HoveredBlock;      //Select
+                                Debug.Log($"Selected block {_selectedBlock.Value}");
+                            }
+                        }
                     }
                     result.SelectedBlock = _selectedBlock;
+                    result.SelectedHeightVertex = _selectedVertex;
 
                     break;
                 //Macro mode
@@ -215,17 +235,6 @@ namespace TerrainDemo.Editor
                 ref readonly var c11 = ref MicroMap.GetHeightRef(input.HoveredBlock.Value + Vector2i.One);
                 ref readonly var c10 = ref MicroMap.GetHeightRef(input.HoveredBlock.Value + Vector2i.Right);
                 DrawBlock(input.HoveredBlock.Value, block, c00, c01, c11, c10);
-
-                if (input.HoveredHeightVertex.HasValue)
-                {
-                    var position = new Vector3(input.HoveredHeightVertex.Value.position.X,
-                        input.HoveredHeightVertex.Value.vertex.Main, input.HoveredHeightVertex.Value.position.Z);
-                    DebugExtension.DebugPoint(position, Color.yellow, 0.1f, 0, true);
-                    position.y = input.HoveredHeightVertex.Value.vertex.Underground;
-                    DebugExtension.DebugPoint(position, Color.yellow, 0.1f, 0, true);
-                    position.y = input.HoveredHeightVertex.Value.vertex.Base;
-                    DebugExtension.DebugPoint(position, Color.yellow, 0.1f, 0, true);
-                }
             }
 
             if (input.SelectedBlock.HasValue)
@@ -236,6 +245,16 @@ namespace TerrainDemo.Editor
                 ref readonly var c11 = ref MicroMap.GetHeightRef(input.SelectedBlock.Value + Vector2i.One);
                 ref readonly var c10 = ref MicroMap.GetHeightRef(input.SelectedBlock.Value + Vector2i.Right);
                 DrawBlock(input.SelectedBlock.Value, block, c00, c01, c11, c10, Color.white);
+            }
+
+            if (input.HoveredHeightVertex.HasValue)
+            {
+                DrawHeightVertex(input.HoveredHeightVertex.Value.position);
+            }
+
+            if (input.SelectedHeightVertex.HasValue)
+            {
+                DrawHeightVertex(input.SelectedHeightVertex.Value, Color.white);
             }
         }
 
@@ -460,6 +479,48 @@ namespace TerrainDemo.Editor
             }
         }
 
+        private void DrawHeightVertex(Vector2i position, Color32? overrideColor = null)
+        {
+            if (Event.current.type == EventType.Repaint)
+            {
+                ref readonly var vertex = ref MicroMap.GetHeightRef(position);
+
+                var pos = new Vector3(position.X, vertex.Base, position.Z);
+
+                Handles.zTest = CompareFunction.LessEqual;
+                Handles.color = overrideColor ?? Color.black;
+                Handles.SphereHandleCap(0, pos, Quaternion.identity, 0.2f, EventType.Repaint);
+
+                Handles.zTest = CompareFunction.Greater;
+                Handles.color = Color.black / 2;
+                Handles.SphereHandleCap(0, pos, Quaternion.identity, 0.2f, EventType.Repaint);
+
+                if (vertex.Underground > vertex.Base)
+                {
+                    pos.y = vertex.Underground;
+                    Handles.zTest = CompareFunction.LessEqual;
+                    Handles.color = overrideColor ?? Color.magenta;
+                    Handles.SphereHandleCap(0, pos, Quaternion.identity, 0.2f, EventType.Repaint);
+
+                    Handles.zTest = CompareFunction.Greater;
+                    Handles.color = Color.magenta / 2;
+                    Handles.SphereHandleCap(0, pos, Quaternion.identity, 0.2f, EventType.Repaint);
+                }
+
+                if (vertex.Main > vertex.Base && vertex.Main > vertex.Underground)
+                {
+                    pos.y = vertex.Main;
+                    Handles.zTest = CompareFunction.LessEqual;
+                    Handles.color = overrideColor ?? Color.green;
+                    Handles.SphereHandleCap(0, pos, Quaternion.identity, 0.2f, EventType.Repaint);
+
+                    Handles.zTest = CompareFunction.Greater;
+                    Handles.color = Color.green / 2;
+                    Handles.SphereHandleCap(0, pos, Quaternion.identity, 0.2f, EventType.Repaint);
+                }
+            }
+        }
+
         /// <summary>
         /// Draw zone border
         /// </summary>
@@ -480,28 +541,25 @@ namespace TerrainDemo.Editor
         private void ShowBlockModeContent(Input input)
         {
             if (input.SelectedBlock.HasValue)
-            {
                 ShowBlockInfo(input.SelectedBlock.Value, true, false);
-            }
 
-             if (input.HoveredBlock.HasValue)
-            {
+            if (input.HoveredBlock.HasValue && input.HoveredBlock != input.SelectedBlock)
                 ShowBlockInfo(input.HoveredBlock.Value, false, false);
-            }
         }
 
         private void ShowTerrainModeContent(Input input)
         {
             if (input.SelectedBlock.HasValue)
-            {
                 ShowBlockInfo(input.SelectedBlock.Value, true, true);
-            }
 
-            if (input.HoveredBlock.HasValue)
+            if (input.HoveredBlock.HasValue && input.HoveredBlock != input.SelectedBlock)
                 ShowBlockInfo(input.HoveredBlock.Value, false, true);
 
-            if(input.HoveredHeightVertex.HasValue)
-                ShowHeightVertexInfo(input.HoveredHeightVertex.Value.position);
+            if (input.SelectedHeightVertex.HasValue)
+                ShowHeightVertexInfo(input.SelectedHeightVertex.Value, true);
+
+            if (input.HoveredHeightVertex.HasValue && input.HoveredHeightVertex.Value.position != input.SelectedHeightVertex)
+                ShowHeightVertexInfo(input.HoveredHeightVertex.Value.position, false);
         }
 
 
@@ -587,9 +645,12 @@ namespace TerrainDemo.Editor
                 GUILayout.Label("Empty block");
         }
 
-        private void ShowHeightVertexInfo(Vector2i position)
+        private void ShowHeightVertexInfo(Vector2i position, bool isSelected)
         {
-            GUILayout.Label($"Height vertex {position}", EditorStyles.boldLabel);
+            if(isSelected)
+                GUILayout.Label($"Selected height {position}", EditorStyles.boldLabel);
+            else
+                GUILayout.Label($"Hovered height {position}", EditorStyles.boldLabel);
 
             ref readonly var v = ref MicroMap.GetHeightRef(position);
 
@@ -649,12 +710,14 @@ namespace TerrainDemo.Editor
 
         private void HeightToGUI(string header, in Heights height)
         {
+            //GUILayout.BeginHorizontal();
             GUILayout.BeginVertical("box", GUILayout.Width(100));
             GUILayout.Label(header, EditorStyles.centeredGreyMiniLabel);
             GUILayout.Label(height.IsMainLayerPresent ? height.Main.ToString("N1") : "-");
             GUILayout.Label(height.IsUndergroundLayerPresent ? height.Underground.ToString("N1") : "-");
             GUILayout.Label(height.Base.ToString("N1"));
             GUILayout.EndVertical();
+            //GUILayout.EndHorizontal();
         }
 
         private void EditorApplicationOnPlayModeStateChanged(PlayModeStateChange state)
@@ -899,6 +962,8 @@ namespace TerrainDemo.Editor
             public MacroVert SelectedVert;
 
             public (Vector2i position, Heights vertex)?  HoveredHeightVertex;
+
+            public Vector2i? SelectedHeightVertex;
         }
     }
 }
