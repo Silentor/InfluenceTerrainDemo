@@ -631,12 +631,12 @@ namespace TerrainDemo.Editor
                     var vertices = MicroMap.GetBlock(blockPos);
                     GUILayout.BeginVertical();
                     GUILayout.BeginHorizontal();
-                    HeightToGUI("┌", vertices.Corner01);
-                    HeightToGUI("┐", vertices.Corner11);
+                    HeightToGUI("┌", vertices.Corner01, false);
+                    HeightToGUI("┐", vertices.Corner11, false);
                     GUILayout.EndHorizontal();
                     GUILayout.BeginHorizontal();
-                    HeightToGUI("└", vertices.Corner00);
-                    HeightToGUI("┘", vertices.Corner10);
+                    HeightToGUI("└", vertices.Corner00, false);
+                    HeightToGUI("┘", vertices.Corner10,false);
                     GUILayout.EndHorizontal();
                     GUILayout.EndVertical();
                 }
@@ -654,7 +654,12 @@ namespace TerrainDemo.Editor
 
             ref readonly var v = ref MicroMap.GetHeightRef(position);
 
-            HeightToGUI(string.Empty, v);
+            var newHeight = HeightToGUI(string.Empty, v, true);
+            if (newHeight.HasValue)
+            {
+                MicroMap.SetHeights(new[]{position}, new[]{newHeight.Value});
+                Debug.Log($"Changed height {position} to {newHeight.Value}");
+            }
         }
 
 
@@ -708,16 +713,35 @@ namespace TerrainDemo.Editor
             return $"{heights.Main:F1}, {heights.Base:F1}";
         }
 
-        private void HeightToGUI(string header, in Heights height)
+        private Heights? HeightToGUI(string header, in Heights height, bool showEditor)
         {
-            //GUILayout.BeginHorizontal();
+            Heights? result = null;
+            GUILayout.BeginHorizontal();
+
             GUILayout.BeginVertical("box", GUILayout.Width(100));
             GUILayout.Label(header, EditorStyles.centeredGreyMiniLabel);
             GUILayout.Label(height.IsMainLayerPresent ? height.Main.ToString("N1") : "-");
             GUILayout.Label(height.IsUndergroundLayerPresent ? height.Underground.ToString("N1") : "-");
             GUILayout.Label(height.Base.ToString("N1"));
             GUILayout.EndVertical();
-            //GUILayout.EndHorizontal();
+
+            if (showEditor)
+            {
+                GUILayout.BeginVertical();
+                EditorGUI.BeginChangeCheck();
+                var newMain = EditorGUILayout.DelayedFloatField(height.Main, GUILayout.Width(50));
+                var newUnderground = EditorGUILayout.DelayedFloatField(height.Underground, GUILayout.Width(50));
+                var newBase = EditorGUILayout.DelayedFloatField(height.Base, GUILayout.Width(50));
+                if (EditorGUI.EndChangeCheck())
+                {
+                    result = new Heights(newMain, newUnderground, newBase);
+                }
+                GUILayout.EndVertical();
+            }
+
+            GUILayout.EndHorizontal();
+
+            return result;
         }
 
         private void EditorApplicationOnPlayModeStateChanged(PlayModeStateChange state)

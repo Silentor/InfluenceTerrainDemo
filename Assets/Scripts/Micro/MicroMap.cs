@@ -102,6 +102,28 @@ namespace TerrainDemo.Micro
                     if (b00.IsEmpty && b10.IsEmpty && b01.IsEmpty && b11.IsEmpty)
                         continue;
 
+                    /*
+                    //DEBUG
+                    var groundHeights = new List<float>(4);
+                    var underHeights = new List<float>(4);
+                    //var baseHeights = new List<float>(4);
+                    if(b00.Ground != BlockType.Empty) groundHeights.Add(b00.Height.Main);
+                    if (b01.Ground != BlockType.Empty) groundHeights.Add(b01.Height.Main);
+                    if (b10.Ground != BlockType.Empty) groundHeights.Add(b10.Height.Main);
+                    if (b11.Ground != BlockType.Empty) groundHeights.Add(b11.Height.Main);
+                    if (b00.Underground != BlockType.Empty) underHeights.Add(b00.Height.Underground);
+                    if (b01.Underground != BlockType.Empty) underHeights.Add(b01.Height.Underground);
+                    if (b10.Underground != BlockType.Empty) underHeights.Add(b10.Height.Underground);
+                    if (b11.Underground != BlockType.Empty) underHeights.Add(b11.Height.Underground);
+
+                    var baseHeight2 = (b00.Height.Base + b01.Height.Base + b10.Height.Base + b11.Height.Base) / 4;
+                    var groundHeight2 = groundHeights.Any() ? groundHeights.Average() : baseHeight2;
+                    var caveHeight2 = underHeights.Any() ? underHeights.Average() : baseHeight2;
+                    _heightMap[x, z] = new Heights(groundHeight2, caveHeight2, baseHeight2);
+                    continue;
+                    */
+
+
                     //Analyze neighbor blocks
                     var caveBlocksCounter = 0;
                     if (b00.Underground == BlockType.Cave)
@@ -233,8 +255,8 @@ namespace TerrainDemo.Micro
                             groundHeight = groundHeightAccum;
                             caveHeight = caveHeightAccum;
 
-                            var commonHeight = (baseHeight + caveHeight + groundHeight) / 3;
-                            groundHeight = caveHeight = baseHeight = commonHeight;
+                            //var commonHeight = (baseHeight + caveHeight + groundHeight) / 3;
+                            //groundHeight = caveHeight = baseHeight = commonHeight;
                         }
 
                         //Cave entrance case

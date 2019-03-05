@@ -204,7 +204,7 @@ namespace TerrainDemo.Generators
                 {
                     //Tunnel is line defined by ax + by + c = 0
                     const float a = 2f, b = -1f, c = 5f;
-                    const float tunnelWidth = 10;
+                    const float tunnelWidth = 15;
                     const float tunnelCenterHeight = 0;
 
                     //Mountain defined as cone
@@ -215,7 +215,7 @@ namespace TerrainDemo.Generators
                     var distanceToTunnel = Mathf.Abs(a * position.X + b * position.Z + c) / Mathf.Sqrt(a * a + b * b);
                     var distanceToMount = Vector2.Distance(position, mountCenter);
                     var tunnelTurbulence = (float)(_generator.GetSimplex(position.X / 10d, position.Z / 10d) * 2 
-                                           + _generator.GetSimplex(position.Z / 70d, position.X / 70d) * 10) ;
+                                           + _generator.GetSimplex(position.Z / 70d, position.X / 70d) * 5) ;
 
                     //Make tunnel floor
                     var baseHeight = 0f;
@@ -226,7 +226,7 @@ namespace TerrainDemo.Generators
                     if(distanceToTunnel < tunnelWidth)
                         underHeight += tunnelCenterHeight + Mathf.Sqrt(tunnelWidth * tunnelWidth - distanceToTunnel * distanceToTunnel) + tunnelTurbulence;
 
-                    var groundHeight = 6f;
+                    var groundHeight = 5f;
                     if (distanceToMount < mountSize)
                         groundHeight += mountSize - distanceToMount;
                     block = new Blocks(Zone.Biome.DefaultMainBlock.Block, Zone.Biome.DefaultUndergroundBlock.Block, 

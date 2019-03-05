@@ -123,6 +123,7 @@ GameObject:
   - component: {fileID: 214652176}
   - component: {fileID: 214652180}
   - component: {fileID: 214652179}
+  - component: {fileID: 214652175}
   m_Layer: 0
   m_Name: Main
   m_TagString: Untagged
@@ -130,6 +131,25 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!95 &214652175
+Animator:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 214652174}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 4ba9f5b861269944bbfcfa314acb38d6, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorControllerStateOnDisable: 0
 --- !u!4 &214652176
 Transform:
   m_ObjectHideFlags: 0
@@ -178,7 +198,7 @@ MonoBehaviour:
   InfluencePerturbPower: 3
   Biomes:
   - {fileID: 11400000, guid: 732f670cdb9563043b848f46f4e3ccfa, type: 2}
-  RenderMode: 0
+  RenderMode: 1
   RenderLayer: 2
   MacroCellInfluenceVisualization: 0
   VertexColoredMat: {fileID: 2100000, guid: 5ae6f60a03e107e4d9e469815a34517d, type: 2}
@@ -241,6 +261,7 @@ GameObject:
   - component: {fileID: 1293065051}
   - component: {fileID: 1293065047}
   - component: {fileID: 1293065048}
+  - component: {fileID: 1293065052}
   m_Layer: 0
   m_Name: Observer
   m_TagString: MainCamera
@@ -288,11 +309,11 @@ Light:
   m_Type: 2
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 1
-  m_Range: 30
+  m_Range: 60
   m_SpotAngle: 30
   m_CookieSize: 10
   m_Shadows:
-    m_Type: 0
+    m_Type: 2
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -363,8 +384,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1293065045}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -5.5, y: 28, z: -64.4}
+  m_LocalRotation: {x: -0.105168626, y: 0.25010067, z: 0.027338808, w: 0.96210283}
+  m_LocalPosition: {x: -32.173424, y: -3.3060055, z: -65.19532}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -382,6 +403,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e15a2ed909ed5d543aa24db8a94a62ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!95 &1293065052
+Animator:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1293065045}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 3652930eed24e8146befec8b29e267c2, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorControllerStateOnDisable: 0
 --- !u!1 &1594440345
 GameObject:
   m_ObjectHideFlags: 0
