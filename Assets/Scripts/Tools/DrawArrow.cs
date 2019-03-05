@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Assets.Code.Tools
+namespace TerrainDemo.Tools
 {
     public static class DrawArrow
     {

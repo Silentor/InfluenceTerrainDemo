@@ -1,0 +1,8 @@
+{
+    "name": "OpenTK.Math",
+    "references": [],
+    "optionalUnityReferences": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true
+}

@@ -1,63 +1,73 @@
-﻿using System;
-using TerrainDemo.Layout;
+﻿using System.Collections.Generic;
+using System.Linq;
+using TerrainDemo.Macro;
+using TerrainDemo.Micro;
 using TerrainDemo.Settings;
-using UnityEngine;
+using TerrainDemo.Spatial;
+using UnityEngine.Assertions;
+using Cell = TerrainDemo.Macro.Cell;
+using Vector2 = OpenTK.Vector2;
 
 namespace TerrainDemo.Generators
 {
-    public class MountainsGenerator : ZoneGenerator
+    public class MountainsGenerator : BaseZoneGenerator
     {
-        public MountainsGenerator(ZoneLayout zone, LandLayout land, ILandSettings landSettings) : base(zone, land, landSettings)
+        public MountainsGenerator(MacroMap macroMap, IEnumerable<Cell> zoneCells, int id, BiomeSettings biome, TriRunner settings) : base(macroMap, zoneCells, id, biome, settings)
         {
+            Assert.IsTrue(biome.Type == BiomeType.Mountain);
+
+            _microReliefNoise = new FastNoise(_random.Seed);
+            _microReliefNoise.SetFrequency(1);
         }
 
-        public override BlockType DefaultBlock { get {return BlockType.Grass;} }
-
-        protected override float GenerateBaseHeight(float worldX, float worldZ, IZoneNoiseSettings settings)
+        public override Macro.Zone GenerateMacroZone()
         {
-            var height = base.GenerateBaseHeight(worldX, worldZ, settings);
-            var mountInfluence = Land.GetInfluence(new Vector2(worldX, worldZ))[ZoneType.Mountains];
-
-            //Slightly raise up heightmap of Mountain zone
-            if (mountInfluence > 0.7f)
+            //Select some center zone as mountain top
+            
+            Vector2 zoneAverageCenterPoint = Vector2.Zero;
+            foreach (var cell in Zone.Cells)
             {
-                var additional = (mountInfluence + 0.3f);
-                height *= additional;
+                zoneAverageCenterPoint += cell.Center;
             }
 
-            return height;
+            zoneAverageCenterPoint /= Zone.Cells.Count;
+
+            var peak = Zone.Submesh.GetNearestFace(zoneAverageCenterPoint);
+            var cellsInDistanceOrder = Zone.Submesh.FloodFill(peak).ToArray();
+
+            //Make one-peak conus mountain
+            var height = 5 * cellsInDistanceOrder.Length;
+            foreach (var cell in cellsInDistanceOrder)
+            {
+                var baseHeight = (height - 12f) / 3;
+                cell.DesiredHeight = new Heights(height, UnityEngine.Random.Range(baseHeight - 5, baseHeight + 1), baseHeight);
+                height -= 5;
+            }
+
+            /*
+            foreach (var cell in Zone.Cells)
+            {
+                //Make one great mountain with peak at map's center (height = 20 m)
+                var mountRadius = Vector2.Distance(Vector2.Zero,
+                    new Vector2(_macroMap.Bounds.Left, _macroMap.Bounds.Bottom));
+                cell.Height = Mathf.Lerp(20, 1, Vector2.Distance(Vector2.Zero, cell.Center) / mountRadius);
+            }
+            */
+
+            return Zone;
         }
 
-        protected override BlockType GenerateBlock(Vector2i worldPosition, Vector2i turbulence, Vector3 normal, ZoneRatio influence)
+        public override Blocks GenerateBlock2(Vector2i position, Heights macroHeight)
         {
-            var mountInfluence = influence[ZoneType.Mountains];
+            var mainLayer =
+                +(float)System.Math.Pow(_microReliefNoise.GetSimplex(position.X / 10f, position.Z / 10f) + 1, 2) - 2 //Вытянутые пики средней частоты
+                + (float)_microReliefNoise.GetSimplex(position.X / 2f, position.Z / 2f) //Высокочастотные неровности
+                + macroHeight.Main;
 
-            if (mountInfluence > 0.85f && Vector3.Angle(Vector3.up, normal) < 45)
-                return BlockType.Snow;
-
-            if (mountInfluence < 0.6f && Vector3.Angle(Vector3.up, normal) < 45)
-                return BlockType.Grass;
-            
-            return base.GenerateBlock(worldPosition, turbulence, normal, influence);
+            return new Blocks(BlockType.Stone, BlockType.GoldOre,
+                new Heights(mainLayer, UnityEngine.Random.Range(macroHeight.Base, macroHeight.Underground), macroHeight.Base));
         }
 
-        //protected override void DecorateZone(Chunk chunk)
-        //{
-        //    base.DecorateZone(chunk);
-
-        //    var stones = new List<Vector3>();
-        //    for (int x = 0; x < chunk.GridSize; x++)
-        //        for (int z = 0; z < chunk.GridSize; z++)
-        //        {
-        //            var mountInfluence = chunk.Influence[x, z][ZoneType.Mountains];
-        //            if (mountInfluence < 0.8f)
-        //                if (UnityEngine.Random.value < 0.05f * mountInfluence)
-        //                    stones.Add(new Vector3(x, chunk.HeightMap[x, z], z));
-        //        }
-
-        //    chunk.Stones = stones.ToArray();
-        //}
-
+        private readonly FastNoise _microReliefNoise;
     }
-
 }

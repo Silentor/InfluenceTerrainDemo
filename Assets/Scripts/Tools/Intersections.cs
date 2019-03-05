@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using TerrainDemo.Micro;
+using TerrainDemo.Spatial;
 using UnityEngine;
 
 namespace TerrainDemo.Tools
@@ -80,6 +83,28 @@ namespace TerrainDemo.Tools
         //    return new Vector3(point.x, height, point.z);
         //}
 
+        /// <summary>
+        /// Calculate 2D barycentric coord of point in triangle
+        /// </summary>
+        /// <param name="point"></param>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <param name="c"></param>
+        /// <returns>3 coords packed in vector in a, b, c order</returns>
+        public static Vector3 Barycentric2DCoords(Vector2 point, Vector2 a, Vector2 b, Vector2 c)
+        {
+            //Based on http://gamedev.stackexchange.com/a/63203
+            Vector2 v0 = b - a;
+            Vector2 v1 = c - a;
+            Vector2 v2 = point - a;
+            var den = v0.x * v1.y - v1.x * v0.y;
+            var v = (v2.x * v1.y - v1.x * v2.y) / den;
+            var w = (v0.x * v2.y - v2.x * v0.y) / den;
+            var u = 1.0f - v - w;
+
+            return new Vector3(u, v, w);
+        }
+
         private static float GetPseudoDotProduct(Vector3 p1, Vector3 p2)
         {
             return p1.x*p2.z - p2.x*p1.z;
@@ -147,6 +172,88 @@ namespace TerrainDemo.Tools
                 return 0;
 
             return 1;                       // I is in T
+        }
+
+        /// <summary>
+        /// Unity source https://gist.github.com/unitycoder/8d1c2905f2e9be693c78db7d9d03a102
+        /// More info and C (GPU compatible) source https://gamedev.stackexchange.com/a/18459
+        /// </summary>
+        /// <param name="origin">ray</param>
+        /// <param name="direction">ray</param>
+        /// <param name="vmin"></param>
+        /// <param name="vmax"></param>
+        /// <returns></returns>
+        public static float RayAABBIntersection(Vector3 origin, Vector3 direction, Vector3 vmin, Vector3 vmax)
+        {
+            float t1 = (vmin.x - origin.x) / direction.x;
+            float t2 = (vmax.x - origin.x) / direction.x;
+            float t3 = (vmin.y - origin.y) / direction.y;
+            float t4 = (vmax.y - origin.y) / direction.y;
+            float t5 = (vmin.z - origin.z) / direction.z;
+            float t6 = (vmax.z - origin.z) / direction.z;
+
+            float aMin = t1 < t2 ? t1 : t2;
+            float bMin = t3 < t4 ? t3 : t4;
+            float cMin = t5 < t6 ? t5 : t6;
+
+            float aMax = t1 > t2 ? t1 : t2;
+            float bMax = t3 > t4 ? t3 : t4;
+            float cMax = t5 > t6 ? t5 : t6;
+
+            float fMax = aMin > bMin ? aMin : bMin;
+            float fMin = aMax < bMax ? aMax : bMax;
+
+            float t7 = fMax > cMin ? fMax : cMin;
+            float t8 = fMin < cMax ? fMin : cMax;
+
+            float t9 = (t8 < 0 || t7 > t8) ? -1 : t7;
+
+            return t9;
+        }
+
+        /// <summary>
+        /// Unity source https://gist.github.com/unitycoder/8d1c2905f2e9be693c78db7d9d03a102
+        /// More info and C (GPU compatible) source https://gamedev.stackexchange.com/a/18459
+        /// Some internal knowledge
+        /// </summary>
+        /// <returns></returns>
+        public static (float distance, Vector2i position)? RayBlockIntersection(Ray ray, IEnumerable<(Vector2i positon, Interval heights)> blocks)  //todo consider use IEnumerable parameters, its not neccessary to produce complete volumes array
+        {
+            var dirFracX = 1 / ray.direction.x;
+            var dirFracY = 1 / ray.direction.y;
+            var dirFracZ = 1 / ray.direction.z;
+
+            foreach (var block in blocks)
+            {
+                var blockBounds = BlockInfo.GetWorldBounds(block.positon);          //todo optimization inline?
+                float t1 = (blockBounds.min.X - ray.origin.x) * dirFracX;
+                float t2 = (blockBounds.max.X - ray.origin.x) * dirFracX;
+                float t3 = (block.heights.Min - ray.origin.y) * dirFracY;
+                float t4 = (block.heights.Max - ray.origin.y) * dirFracY;
+                float t5 = (blockBounds.min.Y - ray.origin.z) * dirFracZ;
+                float t6 = (blockBounds.max.Y - ray.origin.z) * dirFracZ;
+
+                float aMin = t1 < t2 ? t1 : t2;
+                float bMin = t3 < t4 ? t3 : t4;
+                float cMin = t5 < t6 ? t5 : t6;
+
+                float aMax = t1 > t2 ? t1 : t2;
+                float bMax = t3 > t4 ? t3 : t4;
+                float cMax = t5 > t6 ? t5 : t6;
+
+                float fMax = aMin > bMin ? aMin : bMin;
+                float fMin = aMax < bMax ? aMax : bMax;
+
+                float t7 = fMax > cMin ? fMax : cMin;
+                float t8 = fMin < cMax ? fMin : cMax;
+
+                float t9 = (t8 < 0 || t7 > t8) ? -1 : t7;
+
+                if (t9 > 0)
+                    return (t9, block.positon);
+            }
+
+            return null;
         }
     }
 }
