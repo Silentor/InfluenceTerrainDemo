@@ -1,61 +1,90 @@
-# InfluenceTerrainDemo v0.5.0 "Great refactor"
+# InfluenceTerrainDemo v0.5 "Multiheightmap + empty layer"
+
 Some experiments with zone-based terrain generation. The idea is to generate large scale land like in http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/ and then produce small scale heightmap and blockmap to explore it on fееt like in http://www.shamusyoung.com/twentysidedtale/?p=141
 
 Currently I used hexagonal mesh for divide large scale map (Macromap) on regions (Zones) which implements some Bioms. Then Zones rasterized to 1x1 meter quads and heightmap and blockmap produced (Micromap). And Micromap converted to meshes and textures for viualization in Unity. I'v commented out texturization logic to focus on zone generation and zone mixings algorithms, so block just filled up by solid color. Also I want to research multilayered heightmaps, so I can hide some surprises below land surface :)
 
-<details>
- <summary>
-  Previous iterations
-  </summary>
- <p>
-v0.2 reading:
-Inverse Distance Weighting http://www.gitta.info/ContiSpatVar/en/html/Interpolatio_learningObject2.xhtml
+### Concepts to test
+#### Multiheightmap
+An idea is to store several heights in one heightmap element, instead of only one "dirt" layer
 
-v0.3 reading:
-Rasterization http://www.sunshine2k.de/coding/java/Bresenham/RasterisingLinesCircles.pdf
+```
+     5
+          4
+3      
+               2
+```
 
-v0.4 reading:
-Compute shaders in Unity 
-https://scrawkblog.com/2014/06/24/directcompute-tutorial-for-unity-introduction/ 
-http://forum.unity3d.com/threads/compute-shaders.148874/#post-1021130 
-https://software.intel.com/en-us/blogs/2014/07/15/an-investigation-of-fast-real-time-gpu-based-image-blur-algorithms
-http://www.gamasutra.com/blogs/AndreyMishkinis/20130716/196339/Advanced_Terrain_Texture_Splatting.php
-http://gamedevelopment.tutsplus.com/articles/use-tri-planar-texture-mapping-for-better-terrain--gamedev-13821
+I can have several different layers, like "dirt" and "inpenetrable granite"
 
-This milestone is about texture generation. I prefer pregenerate textures for all chunks at start. Some solved tasks of this milestone:
+```
+     5
+          4
+3      
+          2    2
+1    1    
+               0
+```               
 
-* Span textures across neighbour chunks border:
+So you can dig dirt for some depth, but no forever. Imagine another types of ground layers, like underground "ores" layer and upper "snow" or "sand" layers.
 
-| Before  | After |
-| ------------- | ------------- |
-| <img src="/Screenshots/No cross-chunk filtering.jpg?raw=true" width="350">  | <img src="/Screenshots/Cross-chunk filtering.jpg?raw=true" width="350">  |
+#### Empty layer
+What if one of the underground layers in multiheightmap is considered as empty? For proper visualization I need render a top of a layer below "empty" one and bottom of a layer above "empty" layer. And voila, this is a cave in heightmap!
 
-* Noise-blend texture with rotated and scaled itself to hide repeating pattern:
+```
 
-| Before  | After |
-| ------------- | ------------- |
-| <img src="/Screenshots/NoMix.jpg?raw=true" width="350">  | <img src="/Screenshots/Mix.jpg?raw=true" width="350">  |
- 
-* Noise-tint texture at large scale to achieve more organic look:
+                          <-- fresh air
+                              
+           ----------------   ground layer
+---------/                  
+                          <-- dirt
+   
+\           ---------------   empty layer
+ ----------/
+                          <-- cave 
 
-| Before  | After |
-| ------------- | ------------- |
-| <img src="/Screenshots/No tint.jpg?raw=true" width="350">  | <img src="/Screenshots/Tint.jpg?raw=true" width="350">  |
+         ------------------   base granite layer
+-------/
+```
 
-* Use of a well-known triplanar texturing to prevent stretching on steep sides:
+### Results
 
-| Before  | After |
-| ------------- | ------------- |
-| <img src="/Screenshots/No triplanar.jpg?raw=true" width="350">  | <img src="/Screenshots/Triplanar.jpg?raw=true" width="350">  |
+So I decides generate multiheighmap as a array of terrain blocks. Terrain block incorporates a row of terrain types and row of heights like a 
 
-* It was a some challenge to calculate texel world position to implement triplanar texturing. Bilinear world height approximation was no good. See a height isolines:
+```
+dirt      10
+gold ore  5
+base      1
+```
 
-| Bilinear | Barycentric |
-| ------------- | ------------- |
-| <img src="/Screenshots/Bilinear height calculation.jpg?raw=true" width="350">  | <img src="/Screenshots/Barycentric height calculation.jpg?raw=true" width="350">  |
+Then from blockmap I generate heightmap to produce a mesh for visualization and raycasting. Each layer for each terrain block drawed as a quad. Some screenshots in block visualization and heightmap visualization modes. Topmost "dirt" layer is greencolored, middle "empty" layer visible quads is purple, base layer is brown.
 
-And an example of result texturing (relief and biomes generation is still completely dumb, bump mapping/specular is left for future work also):
+###### Block mode
+<img src="https://github.com/Silentor/InfluenceTerrainDemo/blob/5376590b89edaffc2dd90d1746905ade045c82ea/Screenshots/Block%20multiheightmap1.jpg" width="900">
 
-<img src="/Screenshots/SimpleTextured.jpg?raw=true">
-</p>
-</details>
+###### Heightmap mode
+<img src="https://github.com/Silentor/InfluenceTerrainDemo/blob/5376590b89edaffc2dd90d1746905ade045c82ea/Screenshots/Mesh%20multiheightmap1.jpg" width="900">
+
+Another view
+
+###### Block mode
+<img src="https://github.com/Silentor/InfluenceTerrainDemo/blob/5376590b89edaffc2dd90d1746905ade045c82ea/Screenshots/Block%20multiheightmap2.jpg" width="900">
+
+###### Heightmap mode
+<img src="https://github.com/Silentor/InfluenceTerrainDemo/blob/5376590b89edaffc2dd90d1746905ade045c82ea/Screenshots/Mesh%20multiheightmap2.jpg" width="900">
+
+Same terrain divided layer by layer. Every visible layer per block meshed as one quad
+<img src="https://github.com/Silentor/InfluenceTerrainDemo/blob/5376590b89edaffc2dd90d1746905ade045c82ea/Screenshots/Mesh%20multiheightmap3.jpg" width="900">
+
+Flyby video of same terrain
+https://youtu.be/u0FRNAkJ65A
+
+Looking good, but the code for proper cave mesh generation and raycasting is not fine. A code of thousand If's :smile: And not every block combination is possible to mesh with only one quad per layer without ugly mesh stretching. Is concerns base + cave + ground blocks combination.
+
+###### Failed heightmap mesh cases
+<img src="https://github.com/Silentor/InfluenceTerrainDemo/blob/5376590b89edaffc2dd90d1746905ade045c82ea/Screenshots/Comparison%20block%20and%20mesh%20multilayer%20heightmap.gif" width="900">
+
+### Conclusion
+Multiheightmap is a good tool for support some digging and terramorfing in games, its a fast, simple and compact representation of some underground terrain features. "Empty" layer concept for full-scale underworld based on heightmap has difficulties in mesh generation to properly interact with other "ordinary" layers. Perhaps it just need completely different mesh generstion logic from ordinary layers.
+
+Previous iterations - https://github.com/Silentor/InfluenceTerrainDemo/blob/6f7dc1fc92776888853434af4d4b05485a1bba57/README.md
