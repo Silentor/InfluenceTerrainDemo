@@ -22,20 +22,15 @@ namespace TerrainDemo.Micro
                                 != BlockType.Empty ? Ground : Underground 
                                                               != BlockType.Empty ? Underground : Base;
 
-        public bool IsSimple => Underground != BlockType.Cave;
-
         public bool IsEmpty => Ground == BlockType.Empty && Underground == BlockType.Empty && Base == BlockType.Empty;
 
         public static readonly Blocks Empty;
 
         public Blocks(BlockType ground, BlockType underground, in Heights heights)
         {
-            //Fix heights if needed todo write unit test for block autofixes
+            //Fix heights if needed
             float underHeight = heights.Underground, groundHeight = heights.Main;
             var heightFixed = false;
-
-            if (underground == BlockType.Cave && ground == BlockType.Empty)
-                underground = BlockType.Empty;
 
             if (underground != BlockType.Empty && underHeight == heights.Base)
                 underground = BlockType.Empty;
@@ -49,13 +44,6 @@ namespace TerrainDemo.Micro
             if (ground != BlockType.Empty && groundHeight == underHeight)
             {
                 ground = BlockType.Empty;
-
-                if (underground == BlockType.Cave)
-                {
-                    underground = BlockType.Empty;
-                    underHeight = heights.Base;
-                    heightFixed = true;
-                }
             }
 
             if (ground == BlockType.Empty && groundHeight > underHeight)

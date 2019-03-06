@@ -102,186 +102,36 @@ namespace TerrainDemo.Micro
                     if (b00.IsEmpty && b10.IsEmpty && b01.IsEmpty && b11.IsEmpty)
                         continue;
 
-                    /*
-                    //DEBUG
-                    var groundHeights = new List<float>(4);
-                    var underHeights = new List<float>(4);
-                    //var baseHeights = new List<float>(4);
-                    if(b00.Ground != BlockType.Empty) groundHeights.Add(b00.Height.Main);
-                    if (b01.Ground != BlockType.Empty) groundHeights.Add(b01.Height.Main);
-                    if (b10.Ground != BlockType.Empty) groundHeights.Add(b10.Height.Main);
-                    if (b11.Ground != BlockType.Empty) groundHeights.Add(b11.Height.Main);
-                    if (b00.Underground != BlockType.Empty) underHeights.Add(b00.Height.Underground);
-                    if (b01.Underground != BlockType.Empty) underHeights.Add(b01.Height.Underground);
-                    if (b10.Underground != BlockType.Empty) underHeights.Add(b10.Height.Underground);
-                    if (b11.Underground != BlockType.Empty) underHeights.Add(b11.Height.Underground);
-
-                    var baseHeight2 = (b00.Height.Base + b01.Height.Base + b10.Height.Base + b11.Height.Base) / 4;
-                    var groundHeight2 = groundHeights.Any() ? groundHeights.Average() : baseHeight2;
-                    var caveHeight2 = underHeights.Any() ? underHeights.Average() : baseHeight2;
-                    _heightMap[x, z] = new Heights(groundHeight2, caveHeight2, baseHeight2);
-                    continue;
-                    */
-
-
-                    //Analyze neighbor blocks
-                    var caveBlocksCounter = 0;
-                    if (b00.Underground == BlockType.Cave)
-                        caveBlocksCounter++;
-                    if (b10.Underground == BlockType.Cave)
-                        caveBlocksCounter++;
-                    if (b01.Underground == BlockType.Cave)
-                        caveBlocksCounter++;
-                    if (b11.Underground == BlockType.Cave)
-                        caveBlocksCounter++;
-
-                    if (caveBlocksCounter == 0)
+                    //Trivial vertex height calculation
+                    float topmostHeight = 0f;
+                    int blockCounter = 0;
+                    if (!b00.IsEmpty)
                     {
-                        //Trivial vertex height calculation
-                        float topmostHeight = 0f;
-                        int blockCounter = 0;
-                        if (!b00.IsEmpty)
-                        {
-                            topmostHeight += b00.GetNominalHeight();
-                            blockCounter++;
-                        }
-                        if (!b01.IsEmpty)
-                        {
-                            topmostHeight += b01.GetNominalHeight();
-                            blockCounter++;
-                        }
-                        if (!b10.IsEmpty)
-                        {
-                            topmostHeight += b10.GetNominalHeight();
-                            blockCounter++;
-                        }
-                        if (!b11.IsEmpty)
-                        {
-                            topmostHeight += b11.GetNominalHeight();
-                            blockCounter++;
-                        }
-
-                        topmostHeight = topmostHeight / blockCounter;
-                        _heightMap[x, z] = new Heights(topmostHeight, topmostHeight, topmostHeight);
+                        topmostHeight += b00.GetNominalHeight();
+                        blockCounter++;
                     }
-                    else if(caveBlocksCounter == 4)  //Completely underground
+
+                    if (!b01.IsEmpty)
                     {
-                        //Just average heights of every layer
-                        var groundHeight = (b00.Height.Main + b01.Height.Main + b10.Height.Main + b11.Height.Main) / 4;
-                        var caveHeight = (b00.Height.Underground + b01.Height.Underground + b10.Height.Underground + b11.Height.Underground) / 4;
-                        var baseHeight = (b00.Height.Base + b01.Height.Base + b10.Height.Base + b11.Height.Base) / 4;
-                        _heightMap[x, z] = new Heights(groundHeight, caveHeight, baseHeight);
+                        topmostHeight += b01.GetNominalHeight();
+                        blockCounter++;
                     }
-                    else
+
+                    if (!b10.IsEmpty)
                     {
-                        //Hard cases - some blocks are cave entrance (under == empty && ground == empty) or dead end (under != cave && ground != empty)
-                        //So we need join ground-under or under-base heights (or ground-under-base in mixed case)
-                        var groundHeight = 0f;
-                        var caveHeight = 0f;
-
-                        //Check cave entrance and dead end cases
-                        var openAirBlocksCounter = 0;
-                        var deadEndBlocksCounter = 0;
-                        var groundHeightAccum = 0f;
-                        var caveHeightAccum = 0f;
-                        var baseHeightAccum = 0f;
-
-                        if (b00.Ground == BlockType.Empty && b00.Underground == BlockType.Empty)
-                            openAirBlocksCounter++;
-                        else if (b00.Ground != BlockType.Empty && b00.Underground != BlockType.Cave)
-                        {
-                            deadEndBlocksCounter++;
-                            groundHeightAccum += b00.Height.Main;
-                        }
-                        else
-                        {
-                            groundHeightAccum += b00.Height.Main;
-                            caveHeightAccum += b00.Height.Underground;
-                        }
-
-                        if (b01.Ground == BlockType.Empty)
-                            openAirBlocksCounter++;
-                        else if (b01.Ground != BlockType.Empty && b01.Underground != BlockType.Cave)
-                        {
-                            deadEndBlocksCounter++;
-                            groundHeightAccum += b01.Height.Main;
-                        }
-                        else
-                        {
-                            groundHeightAccum += b01.Height.Main;
-                            caveHeightAccum += b01.Height.Underground;
-                        }
-
-                        if (b10.Ground == BlockType.Empty)
-                            openAirBlocksCounter++;
-                        else if (b10.Ground != BlockType.Empty && b10.Underground != BlockType.Cave)
-                        {
-                            deadEndBlocksCounter++;
-                            groundHeightAccum += b10.Height.Main;
-                        }
-                        else
-                        {
-                            groundHeightAccum += b10.Height.Main;
-                            caveHeightAccum += b10.Height.Underground;
-                        }
-
-                        if (b11.Ground == BlockType.Empty)
-                            openAirBlocksCounter++;
-                        else if (b11.Ground != BlockType.Empty && b11.Underground != BlockType.Cave)
-                        {
-                            deadEndBlocksCounter++;
-                            groundHeightAccum += b11.Height.Main;
-                        }
-                        else
-                        {
-                            groundHeightAccum += b11.Height.Main;
-                            caveHeightAccum += b11.Height.Underground;
-                        }
-
-                        Assert.IsTrue(openAirBlocksCounter < 4 && deadEndBlocksCounter < 4);
-                        Assert.IsTrue(openAirBlocksCounter > 0 || deadEndBlocksCounter > 0);
-
-                        var baseHeight = (b00.Height.Base + b01.Height.Base + b10.Height.Base + b11.Height.Base) / 4;
-
-                        //Catch rare mixed case
-                        if (openAirBlocksCounter > 0 && deadEndBlocksCounter > 0)
-                        {
-                            var worldPos = new Vector2i(x, z) + Bounds.Min;
-                            Debug.Log($"Vertex {worldPos} is a complex case, {openAirBlocksCounter} open blocks, {deadEndBlocksCounter} dead ends");
-
-                            groundHeightAccum = groundHeightAccum / (openAirBlocksCounter - 4);
-                            caveHeightAccum = caveHeightAccum / (openAirBlocksCounter + deadEndBlocksCounter - 4);
-
-                            groundHeight = groundHeightAccum;
-                            caveHeight = caveHeightAccum;
-
-                            //var commonHeight = (baseHeight + caveHeight + groundHeight) / 3;
-                            //groundHeight = caveHeight = baseHeight = commonHeight;
-                        }
-
-                        //Cave entrance case
-                        if (openAirBlocksCounter > 0 && deadEndBlocksCounter == 0)
-                        {
-                            groundHeightAccum = groundHeightAccum / caveBlocksCounter;
-                            caveHeightAccum = caveHeightAccum / caveBlocksCounter;
-
-                            caveHeight = Mathf.Lerp(groundHeightAccum, caveHeightAccum, caveBlocksCounter / 4f);     //Lerp on part of range (1/4..3/4)
-                            groundHeight = caveHeight;
-                        }
-
-                        //Dead end case
-                        if (deadEndBlocksCounter > 0 && openAirBlocksCounter == 0)
-                        {
-                            groundHeightAccum = groundHeightAccum / 4;
-                            caveHeightAccum = caveHeightAccum / caveBlocksCounter;
-                            caveHeight = Mathf.Lerp(baseHeight, caveHeightAccum, caveBlocksCounter / 4f);
-                            baseHeight = caveHeight;
-                            groundHeight = groundHeightAccum;
-                        }
-                        
-                        _heightMap[x, z] = new Heights(groundHeight, caveHeight, baseHeight);
-
+                        topmostHeight += b10.GetNominalHeight();
+                        blockCounter++;
                     }
+
+                    if (!b11.IsEmpty)
+                    {
+                        topmostHeight += b11.GetNominalHeight();
+                        blockCounter++;
+                    }
+
+                    topmostHeight = topmostHeight / blockCounter;
+                    _heightMap[x, z] = new Heights(topmostHeight, topmostHeight, topmostHeight);
+
                 }
         }
 
@@ -433,165 +283,50 @@ namespace TerrainDemo.Micro
                     var localPos = blockPos - Bounds.Min;
                     ref readonly var block = ref _blocks[localPos.X, localPos.Z];
 
-                    if (block.Underground != BlockType.Cave)
+                    float c00, c01, c10, c11;
+                    if (block.Ground != BlockType.Empty)
                     {
-                        float c00, c01, c10, c11;
-                        if (block.Ground != BlockType.Empty)
-                        {
-                            c00 = _heightMap[localPos.X, localPos.Z].Main;
-                            c01 = _heightMap[localPos.X, localPos.Z + 1].Main;
-                            c11 = _heightMap[localPos.X + 1, localPos.Z + 1].Main;
-                            c10 = _heightMap[localPos.X + 1, localPos.Z].Main;
-                        }
-                        else if (block.Underground != BlockType.Empty)
-                        {
-                            c00 = _heightMap[localPos.X, localPos.Z].Underground;
-                            c01 = _heightMap[localPos.X, localPos.Z + 1].Underground;
-                            c11 = _heightMap[localPos.X + 1, localPos.Z + 1].Underground;
-                            c10 = _heightMap[localPos.X + 1, localPos.Z].Underground;
-                        }
-                        else
-                        {
-                            c00 = _heightMap[localPos.X, localPos.Z].Base;
-                            c01 = _heightMap[localPos.X, localPos.Z + 1].Base;
-                            c11 = _heightMap[localPos.X + 1, localPos.Z + 1].Base;
-                            c10 = _heightMap[localPos.X + 1, localPos.Z].Base;
-                        }
+                        c00 = _heightMap[localPos.X, localPos.Z].Main;
+                        c01 = _heightMap[localPos.X, localPos.Z + 1].Main;
+                        c11 = _heightMap[localPos.X + 1, localPos.Z + 1].Main;
+                        c10 = _heightMap[localPos.X + 1, localPos.Z].Main;
+                    }
+                    else if (block.Underground != BlockType.Empty)
+                    {
+                        c00 = _heightMap[localPos.X, localPos.Z].Underground;
+                        c01 = _heightMap[localPos.X, localPos.Z + 1].Underground;
+                        c11 = _heightMap[localPos.X + 1, localPos.Z + 1].Underground;
+                        c10 = _heightMap[localPos.X + 1, localPos.Z].Underground;
+                    }
+                    else
+                    {
+                        c00 = _heightMap[localPos.X, localPos.Z].Base;
+                        c01 = _heightMap[localPos.X, localPos.Z + 1].Base;
+                        c11 = _heightMap[localPos.X + 1, localPos.Z + 1].Base;
+                        c10 = _heightMap[localPos.X + 1, localPos.Z].Base;
+                    }
 
-                        var v00 = new Vector3(blockPos.X, c00, blockPos.Z);
-                        var v01 = new Vector3(blockPos.X, c01, blockPos.Z + 1);
-                        var v11 = new Vector3(blockPos.X + 1, c11, blockPos.Z + 1);
-                        var v10 = new Vector3(blockPos.X + 1, c10, blockPos.Z);
+                    var v00 = new Vector3(blockPos.X, c00, blockPos.Z);
+                    var v01 = new Vector3(blockPos.X, c01, blockPos.Z + 1);
+                    var v11 = new Vector3(blockPos.X + 1, c11, blockPos.Z + 1);
+                    var v10 = new Vector3(blockPos.X + 1, c10, blockPos.Z);
 
-                        //Check block's triangles for intersection
-                        Vector3 hit;
-                        if (Math.Abs(c00 - c11) < Math.Abs(c01 - c10))
+                    //Check block's triangles for intersection
+                    Vector3 hit;
+                    if (Math.Abs(c00 - c11) < Math.Abs(c01 - c10))
+                    {
+                        if (Intersections.LineTriangleIntersection(ray, v00, v01, v11, out hit) == 1
+                            || Intersections.LineTriangleIntersection(ray, v00, v11, v10, out hit) == 1)
                         {
-                            if (Intersections.LineTriangleIntersection(ray, v00, v01, v11, out hit) == 1
-                                || Intersections.LineTriangleIntersection(ray, v00, v11, v10, out hit) == 1)
-                            {
-                                return (hit, blockPos);
-                            }
-                        }
-                        else
-                        {
-                            if (Intersections.LineTriangleIntersection(ray, v00, v01, v10, out hit) == 1
-                                || Intersections.LineTriangleIntersection(ray, v01, v11, v10, out hit) == 1)
-                            {
-                                return (hit, blockPos);
-                            }
+                            return (hit, blockPos);
                         }
                     }
                     else
                     {
-                        //Cave block, need check 3 layers
-                        ref readonly var c00 = ref _heightMap[localPos.X, localPos.Z];
-                        ref readonly var c01 = ref _heightMap[localPos.X, localPos.Z + 1];
-                        ref readonly var c11 = ref _heightMap[localPos.X + 1, localPos.Z + 1];
-                        ref readonly var c10 = ref _heightMap[localPos.X + 1, localPos.Z];
-
-                        //Naive ground
-                        var v00 = new Vector3(blockPos.X, c00.Main, blockPos.Z);
-                        var v01 = new Vector3(blockPos.X, c01.Main, blockPos.Z + 1);
-                        var v11 = new Vector3(blockPos.X + 1, c11.Main, blockPos.Z + 1);
-                        var v10 = new Vector3(blockPos.X + 1, c10.Main, blockPos.Z);
-
-                        //Check block's triangles for intersection
-                        Vector3 hit;
-                        var distance = float.MaxValue;
-                        Vector3 resultHit = Vector3.zero;
-                        if (Math.Abs(c00.Main - c11.Main) < Math.Abs(c01.Main - c10.Main))
+                        if (Intersections.LineTriangleIntersection(ray, v00, v01, v10, out hit) == 1
+                            || Intersections.LineTriangleIntersection(ray, v01, v11, v10, out hit) == 1)
                         {
-                            if (Intersections.LineTriangleIntersection(ray, v00, v01, v11, out hit) == 1
-                                || Intersections.LineTriangleIntersection(ray, v00, v11, v10, out hit) == 1)
-                            {
-                                if (Vector3.SqrMagnitude(hit - ray.origin) < distance)
-                                {
-                                    distance = Vector3.SqrMagnitude(hit - ray.origin);
-                                    resultHit = hit;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            if (Intersections.LineTriangleIntersection(ray, v00, v01, v10, out hit) == 1
-                                || Intersections.LineTriangleIntersection(ray, v01, v11, v10, out hit) == 1)
-                            {
-                                if (Vector3.SqrMagnitude(hit - ray.origin) < distance)
-                                {
-                                    distance = Vector3.SqrMagnitude(hit - ray.origin);
-                                    resultHit = hit;
-                                }
-                            }
-                        }
-
-                        //Naive cave
-                        v00.y = c00.Underground;
-                        v01.y = c01.Underground;
-                        v11.y = c11.Underground;
-                        v10.y = c10.Underground;
-
-                        //Check block's triangles for intersection
-                        if (Math.Abs(c00.Underground - c11.Underground) < Math.Abs(c01.Underground - c10.Underground))
-                        {
-                            if (Intersections.LineTriangleIntersection(ray, v00, v01, v11, out hit) == 1
-                                || Intersections.LineTriangleIntersection(ray, v00, v11, v10, out hit) == 1)
-                            {
-                                if (Vector3.SqrMagnitude(hit - ray.origin) < distance)
-                                {
-                                    distance = Vector3.SqrMagnitude(hit - ray.origin);
-                                    resultHit = hit;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            if (Intersections.LineTriangleIntersection(ray, v00, v01, v10, out hit) == 1
-                                || Intersections.LineTriangleIntersection(ray, v01, v11, v10, out hit) == 1)
-                            {
-                                if (Vector3.SqrMagnitude(hit - ray.origin) < distance)
-                                {
-                                    distance = Vector3.SqrMagnitude(hit - ray.origin);
-                                    resultHit = hit;
-                                }
-                            }
-                        }
-
-                        //Naive base
-                        v00.y = c00.Base;
-                        v01.y = c01.Base;
-                        v11.y = c11.Base;
-                        v10.y = c10.Base;
-
-                        //Check block's triangles for intersection
-                        if (Math.Abs(c00.Base - c11.Base) < Math.Abs(c01.Base - c10.Base))
-                        {
-                            if (Intersections.LineTriangleIntersection(ray, v00, v01, v11, out hit) == 1
-                                || Intersections.LineTriangleIntersection(ray, v00, v11, v10, out hit) == 1)
-                            {
-                                if (Vector3.SqrMagnitude(hit - ray.origin) < distance)
-                                {
-                                    distance = Vector3.SqrMagnitude(hit - ray.origin);
-                                    resultHit = hit;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            if (Intersections.LineTriangleIntersection(ray, v00, v01, v10, out hit) == 1
-                                || Intersections.LineTriangleIntersection(ray, v01, v11, v10, out hit) == 1)
-                            {
-                                if (Vector3.SqrMagnitude(hit - ray.origin) < distance)
-                                {
-                                    distance = Vector3.SqrMagnitude(hit - ray.origin);
-                                    resultHit = hit;
-                                }
-                            }
-                        }
-
-                        if (distance < float.MaxValue)
-                        {
-                            return (resultHit, blockPos);
+                            return (hit, blockPos);
                         }
                     }
                 }

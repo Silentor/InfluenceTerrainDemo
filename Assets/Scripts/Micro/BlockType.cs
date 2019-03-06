@@ -14,6 +14,5 @@
 
         //Undergrounds resources
         GoldOre = 100,
-        Cave,
     }
 }

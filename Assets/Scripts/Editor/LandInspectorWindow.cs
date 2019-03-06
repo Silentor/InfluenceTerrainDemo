@@ -400,7 +400,7 @@ namespace TerrainDemo.Editor
                 overrideColor ?? _defaultBlockColor[block.Base]);
 
             //Draw underground layer
-            if (block.Underground != BlockType.Empty && block.Underground != BlockType.Cave)
+            if (block.Underground != BlockType.Empty)
             {
                 var underBounds = IntervalToBounds(block.GetUnderLayerWidth());
                 DebugExtension.DebugBounds(underBounds, overrideColor ?? _defaultBlockColor[block.Underground]);
@@ -431,15 +431,6 @@ namespace TerrainDemo.Editor
             {
                 var color = overrideColor ?? _defaultBlockColor[block.Ground];
                 DrawQuad(position, color, c00.Main, c01.Main, c11.Main, c10.Main);
-
-                if (block.Underground == BlockType.Cave)
-                {
-                    color = overrideColor ?? _defaultBlockColor[block.Ground];
-                    DrawQuad(position, color, c00.Underground, c01.Underground, c11.Underground, c10.Underground);
-
-                    color = overrideColor ?? _defaultBlockColor[block.Base];
-                    DrawQuad(position, color, c00.Base, c01.Base, c11.Base, c10.Base);
-                }
             }
             else if (block.Underground != BlockType.Empty)
             {

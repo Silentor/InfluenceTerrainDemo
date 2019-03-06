@@ -130,7 +130,7 @@ namespace TerrainDemo.Generators
                     if (underHeight > groundHeight || underHeight <= baseHeight)
                         underground = BlockType.Empty;
                     else
-                        underground = BlockType.Cave;
+                        underground = BlockType.GoldOre;
 
                     BlockType ground = groundHeight >= underHeight ? BlockType.Grass : BlockType.Empty;
 

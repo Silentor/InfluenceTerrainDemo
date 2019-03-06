@@ -85,12 +85,10 @@ namespace TerrainDemo.Visualization
                     meshGO.transform.SetParent(GetMeshRoot());
 
                     var chunkBound = new Bounds2i(new Vector2i(x, z), ChunkSize, ChunkSize);
-                    var chunkMeshes = renderSettings.RenderMode == TerrainRenderMode.Blocks
-                        ? _mesher.CreateMinecraftMesh(map, chunkBound, renderSettings)
-                        : _mesher.CreateTerrainMesh(map, chunkBound, renderSettings);
-
-                    //optimize todo implement single mesh mode for simple chunk (no caves)
+                    if (renderSettings.RenderMode == TerrainRenderMode.Blocks)
                     {
+                        var chunkMeshes = _mesher.CreateMinecraftMesh(map, chunkBound, renderSettings);
+
                         var baseMeshGO = new GameObject("BaseMesh");
                         var baseFilter = baseMeshGO.AddComponent<MeshFilter>();
                         var baseRenderer = baseMeshGO.AddComponent<MeshRenderer>();
@@ -119,6 +117,20 @@ namespace TerrainDemo.Visualization
                         mainFilter.mesh = chunkMeshes.Main.Item1;
                         var mainTexturedMat = new Material(_textured);
                         mainTexturedMat.mainTexture = chunkMeshes.Main.Item2;
+                        mainRenderer.material = mainTexturedMat;
+                    }
+                    else
+                    {
+                        var chunkMesh = _mesher.CreateTerrainMesh(map, chunkBound, renderSettings);
+
+                        var mainMeshGO = new GameObject("MainMesh");
+                        var mainFilter = mainMeshGO.AddComponent<MeshFilter>();
+                        var mainRenderer = mainMeshGO.AddComponent<MeshRenderer>();
+                        mainMeshGO.transform.SetParent(meshGO.transform);
+
+                        mainFilter.mesh = chunkMesh.mesh;
+                        var mainTexturedMat = new Material(_textured);
+                        mainTexturedMat.mainTexture = chunkMesh.texture;
                         mainRenderer.material = mainTexturedMat;
                     }
                 }
