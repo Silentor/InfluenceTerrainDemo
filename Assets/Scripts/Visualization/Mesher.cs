@@ -304,20 +304,6 @@ namespace TerrainDemo.Visualization
                 return ((emptyMesh, Texture2D.blackTexture), (emptyMesh, Texture2D.blackTexture), (emptyMesh, Texture2D.blackTexture));
             }
 
-            /*
-            Blocks[,] chunk;
-            if (renderSettings.RenderLayer == Renderer.TerrainLayerToRender.Main)
-            {
-                chunk = map.GetBlockMapRegion(bounds);
-            }
-            else
-            {
-                if(renderSettings.RenderLayer == Renderer.TerrainLayerToRender.Underground)
-                    chunk = map.GetBlockMapRegion(bounds, b => new Blocks(BlockType.Empty, b.Underground, b.Heights));
-                else
-                    chunk = map.GetBlockMapRegion(bounds, b => new Blocks(BlockType.Empty, BlockType.Empty, b.Heights));
-            }
-            */
             var blockMap = map.GetBlockMap();
 
             var baseVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1));
@@ -485,6 +471,18 @@ namespace TerrainDemo.Visualization
 
 
         }
+
+        /*
+        public (Mesh, Texture) CreateObjectMesh(MicroMap @object)
+        {
+            for (var z = @object.Bounds.Min.Z; z < @object.Bounds.Max.Z; z++)
+                for (var x = @object.Bounds.Min.X; x < @object.Bounds.Max.X; x++)
+                {
+                    ref readonly var block = ref @object.GetBlockRef((x, z));
+
+                }
+        }
+        */
 
         private Texture CreateBlockTexture(MicroMap map, Bounds2i bounds, TriRunner mode)
         {

@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using OpenTK;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Settings;
+using TerrainDemo.Spatial;
 using TerrainDemo.Visualization;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -77,7 +79,7 @@ namespace TerrainDemo
                 _renderer.Render(Macro, renderSettings);
             else
                 //_renderer.Render(Micro, mode);
-                _renderer.Render2(Micro, renderSettings);               //Experimental renderer
+                _renderer.Render(Micro, renderSettings);               //Experimental renderer
 
             timer.Stop();
 
@@ -104,6 +106,25 @@ namespace TerrainDemo
             Micro.GenerateHeightmap();
 
             microtimer.Stop();
+
+            //DEBUG
+            var positions = new List<Vector2i>();
+            var blocks = new List<Blocks>();
+
+            for (int x = 0; x < 10; x++)
+            {
+                for (int z = 0; z < 5; z++)
+                {
+                    positions.Add(new Vector2i(x, z));
+                    blocks.Add(new Blocks(BlockType.Stone, BlockType.Empty, new Heights(x + UnityEngine.Random.value / 3, x - 1, x - 1)));
+                }
+            }
+
+            var testObj = new MicroMap(new Bounds2i((positions.Select(p => p.X).Min(), positions.Select(p => p.Z).Min()), (positions.Select(p => p.X).Max(), positions.Select(p => p.Z).Max())));
+            testObj.SetBlocks( positions, blocks);
+            testObj.GenerateHeightmap();
+            Micro.AddChild(testObj);
+            //DEBUG end
 
             Micro.Changed += MicroOnChanged;
 

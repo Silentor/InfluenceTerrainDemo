@@ -38,36 +38,7 @@ namespace TerrainDemo.Visualization
             meshGO.transform.SetParent(GetMeshRoot());
         }
 
-        /*
         public void Render(MicroMap map, TriRunner renderSettings)
-        {
-            //Break map to visualization chunks (rounded to ChunkSize)
-            var microBounds = map.Bounds;
-            var chunkMin = new Vector2i(SnapDown(microBounds.Min.X, ChunkSize), SnapDown(microBounds.Min.Z, ChunkSize)); 
-            var chunkMax = new Vector2i(SnapUp(microBounds.Max.X, ChunkSize), SnapUp(microBounds.Max.Z, ChunkSize));
-
-            for (int x = chunkMin.X; x < chunkMax.X; x += ChunkSize)
-            {
-                for (int z = chunkMin.Z; z < chunkMax.Z; z += ChunkSize)
-                {
-                    var meshGO = new GameObject("MicroMapChunk");
-                    var filter = meshGO.AddComponent<MeshFilter>();
-                    var renderer = meshGO.AddComponent<MeshRenderer>();
-                    meshGO.transform.SetParent(GetMeshRoot());
-
-                    var chunkBound = new Bounds2i(new Vector2i(x, z), ChunkSize, ChunkSize );
-                    var chunkMesh = _mesher.CreateMesh(map, chunkBound, renderSettings);
-
-                    filter.mesh = chunkMesh.Item1;
-                    var texturedMat = new Material(_textured);
-                    texturedMat.mainTexture = chunkMesh.Item2;
-                    renderer.material = texturedMat;
-                }
-            }
-        }
-*/
-
-        public void Render2(MicroMap map, TriRunner renderSettings)
         {
             Assert.IsTrue(renderSettings.RenderMode != TerrainRenderMode.Macro);
 
@@ -88,51 +59,36 @@ namespace TerrainDemo.Visualization
                     if (renderSettings.RenderMode == TerrainRenderMode.Blocks)
                     {
                         var chunkMeshes = _mesher.CreateMinecraftMesh(map, chunkBound, renderSettings);
-
-                        var baseMeshGO = new GameObject("BaseMesh");
-                        var baseFilter = baseMeshGO.AddComponent<MeshFilter>();
-                        var baseRenderer = baseMeshGO.AddComponent<MeshRenderer>();
-                        baseMeshGO.transform.SetParent(meshGO.transform);
-
-                        var underMeshGO = new GameObject("UnderMesh");
-                        var underFilter = underMeshGO.AddComponent<MeshFilter>();
-                        var underRenderer = underMeshGO.AddComponent<MeshRenderer>();
-                        underMeshGO.transform.SetParent(meshGO.transform);
-
-                        var mainMeshGO = new GameObject("MainMesh");
-                        var mainFilter = mainMeshGO.AddComponent<MeshFilter>();
-                        var mainRenderer = mainMeshGO.AddComponent<MeshRenderer>();
-                        mainMeshGO.transform.SetParent(meshGO.transform);
-
-                        baseFilter.mesh = chunkMeshes.Base.Item1;
-                        var baseTexturedMat = new Material(_textured);
-                        baseTexturedMat.mainTexture = chunkMeshes.Base.Item2;
-                        baseRenderer.material = baseTexturedMat;
-
-                        underFilter.mesh = chunkMeshes.Under.Item1;
-                        var underTexturedMat = new Material(_textured);
-                        underTexturedMat.mainTexture = chunkMeshes.Under.Item2;
-                        underRenderer.material = underTexturedMat;
-
-                        mainFilter.mesh = chunkMeshes.Main.Item1;
-                        var mainTexturedMat = new Material(_textured);
-                        mainTexturedMat.mainTexture = chunkMeshes.Main.Item2;
-                        mainRenderer.material = mainTexturedMat;
+                        CreateGameObject(chunkMeshes.Base.Item1, chunkMeshes.Base.Item2, "BaseMesh", meshGO.transform);
+                        CreateGameObject(chunkMeshes.Under.Item1, chunkMeshes.Under.Item2, "UnderMesh", meshGO.transform);
+                        CreateGameObject(chunkMeshes.Main.Item1, chunkMeshes.Main.Item2, "MainMesh", meshGO.transform);
                     }
                     else
                     {
                         var chunkMesh = _mesher.CreateTerrainMesh(map, chunkBound, renderSettings);
-
-                        var mainMeshGO = new GameObject("MainMesh");
-                        var mainFilter = mainMeshGO.AddComponent<MeshFilter>();
-                        var mainRenderer = mainMeshGO.AddComponent<MeshRenderer>();
-                        mainMeshGO.transform.SetParent(meshGO.transform);
-
-                        mainFilter.mesh = chunkMesh.mesh;
-                        var mainTexturedMat = new Material(_textured);
-                        mainTexturedMat.mainTexture = chunkMesh.texture;
-                        mainRenderer.material = mainTexturedMat;
+                        CreateGameObject(chunkMesh.mesh, chunkMesh.texture, "MainMesh", meshGO.transform);
                     }
+                }
+            }
+
+            //Render map objects
+            foreach (var mapChild in map.Childs)
+            {
+                if (renderSettings.RenderMode == TerrainRenderMode.Blocks)
+                {
+                    var objectMesh = _mesher.CreateMinecraftMesh(mapChild, mapChild.Bounds, _settings);
+                    var objectRoot = new GameObject("Object");
+                    objectRoot.transform.SetParent(GetMeshRoot());
+                    CreateGameObject(objectMesh.Base.Item1, objectMesh.Base.Item2, "BaseMesh", objectRoot.transform);
+                    CreateGameObject(objectMesh.Under.Item1, objectMesh.Under.Item2, "UnderMesh", objectRoot.transform);
+                    CreateGameObject(objectMesh.Main.Item1, objectMesh.Main.Item2, "MainMesh", objectRoot.transform);
+                }
+                else
+                {
+                    var objectMesh = _mesher.CreateTerrainMesh(mapChild, mapChild.Bounds, _settings);
+                    var objectRoot = new GameObject("Object");
+                    objectRoot.transform.SetParent(GetMeshRoot());
+                    CreateGameObject(objectMesh.mesh, objectMesh.texture, "MainMesh", objectRoot.transform);
                 }
             }
         }
@@ -198,14 +154,17 @@ namespace TerrainDemo.Visualization
             return ((int)Math.Ceiling((double)value / floorStep)) * floorStep;
         }
 
-        [Serializable]
-        public struct MicroRenderMode
+        private void CreateGameObject(Mesh mesh, Texture texture, string name, Transform parent)
         {
-            public BlockTextureMode BlockMode;
-            public bool RenderMainLayer;
-            public bool RenderUnderLayer;
+            var go = new GameObject(name);
+            var filter = go.AddComponent<MeshFilter>();
+            var renderer = go.AddComponent<MeshRenderer>();
+            go.transform.SetParent(parent);
 
-            public static readonly MicroRenderMode Default = new MicroRenderMode(){BlockMode = BlockTextureMode.Blocks, RenderMainLayer = true, RenderUnderLayer = true};
+            filter.mesh = mesh;
+            var baseTexturedMat = new Material(_textured);
+            baseTexturedMat.mainTexture = texture;
+            renderer.material = baseTexturedMat;
         }
 
         public enum BlockTextureMode

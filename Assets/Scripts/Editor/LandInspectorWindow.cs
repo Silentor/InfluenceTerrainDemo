@@ -62,7 +62,7 @@ namespace TerrainDemo.Editor
             };
 
             var userInputRay = HandleUtility.GUIPointToWorldRay(@event.mousePosition);
-            result.Cursor = userInputRay;
+            result.CursorRay = userInputRay;
 
             if (@event.isKey)
             {
@@ -173,12 +173,15 @@ namespace TerrainDemo.Editor
 
         private Input PrepareBlockModeInput(Input input)
         {
-            var selectedBlock = MicroMap?.RaycastBlockmap(input.Cursor);
-            if (selectedBlock.HasValue)
+            //var selectedBlock = MicroMap?.RaycastBlockmap(input.Cursor);
+            var hoveredBlock = MicroMap?.RaycastBlockmap2(input.CursorRay);
+            if (hoveredBlock.HasValue)
             {
-                input.HoveredBlock = selectedBlock.Value.hitBlock;
-                input.Distance = selectedBlock.Value.distance;
-                input.CursorPosition = input.Cursor.GetPoint(input.Distance);
+                input.HoveredBlock = hoveredBlock.Value.position;
+                input.Distance = hoveredBlock.Value.distance;
+                input.CursorPosition = input.CursorRay.GetPoint(input.Distance);
+
+                input.HoveredBlock2 = (hoveredBlock.Value.position, hoveredBlock.Value.source.GetBlockRef(hoveredBlock.Value.position), hoveredBlock.Value.source);
             }
 
             return input;
@@ -186,16 +189,19 @@ namespace TerrainDemo.Editor
 
         private Input PrepareTerrainModeInput(Input input)
         {
-            var selectedBlock = MicroMap?.RaycastHeightmap(input.Cursor);
-            if (selectedBlock.HasValue)
+            //var selectedBlock = MicroMap?.RaycastHeightmap(input.CursorRay);
+            var hoveredBlock = MicroMap?.RaycastHeightmap2(input.CursorRay);
+            if (hoveredBlock.HasValue)
             {
-                input.HoveredBlock = selectedBlock.Value.hitBlock;
-                input.Distance = Vector3.Distance(input.Cursor.origin, selectedBlock.Value.hitPoint);
-                input.CursorPosition = selectedBlock.Value.hitPoint;
+                input.HoveredBlock = hoveredBlock.Value.position;
+                input.Distance = Vector3.Distance(input.CursorRay.origin, hoveredBlock.Value.hitPoint);
+                input.CursorPosition = hoveredBlock.Value.hitPoint;
+
+                input.HoveredBlock2 = (hoveredBlock.Value.position, hoveredBlock.Value.source.GetBlockRef(hoveredBlock.Value.position), hoveredBlock.Value.source);
 
                 var roundedCursorPosition = new Vector3(Mathf.Round(input.CursorPosition.x), input.CursorPosition.y,
                     Mathf.Round(input.CursorPosition.z));
-                if (Vector3.Distance(input.CursorPosition, roundedCursorPosition) < 0.1f)
+                if (Vector3.Distance(input.CursorPosition, roundedCursorPosition) < 0.2f)
                 {
                     var position = new Vector2i(roundedCursorPosition.x, roundedCursorPosition.z);
                     input.HoveredHeightVertex = (position, MicroMap.GetHeightRef(position));
@@ -211,10 +217,11 @@ namespace TerrainDemo.Editor
 
         private void DrawBlockModeHandles(Input input)
         {
-            if (input.HoveredBlock.HasValue)
+            if (input.HoveredBlock2.HasValue)
             {
                 DrawCursor(input.CursorPosition);
-                DrawBlock(input.HoveredBlock.Value, MicroMap.GetBlockRef(input.HoveredBlock.Value));
+                //DrawBlock(input.HoveredBlock.Value, MicroMap.GetBlockRef(input.HoveredBlock.Value));
+                DrawBlock(input.HoveredBlock2.Value.position, input.HoveredBlock2.Value.block);
             }
 
             if (input.SelectedBlock.HasValue)
@@ -225,16 +232,18 @@ namespace TerrainDemo.Editor
 
         private void DrawTerrainModeHandles(Input input)
         {
-            if (input.HoveredBlock.HasValue)
+            if (input.HoveredBlock2.HasValue)
             {
                 DrawCursor(input.CursorPosition);
 
-                ref readonly var block = ref MicroMap.GetBlockRef(input.HoveredBlock.Value);
-                ref readonly var c00 = ref MicroMap.GetHeightRef(input.HoveredBlock.Value);
-                ref readonly var c01 = ref MicroMap.GetHeightRef(input.HoveredBlock.Value + Vector2i.Forward);
-                ref readonly var c11 = ref MicroMap.GetHeightRef(input.HoveredBlock.Value + Vector2i.One);
-                ref readonly var c10 = ref MicroMap.GetHeightRef(input.HoveredBlock.Value + Vector2i.Right);
-                DrawBlock(input.HoveredBlock.Value, block, c00, c01, c11, c10);
+                //ref readonly var block = ref MicroMap.GetBlockRef(input.HoveredBlock.Value);
+                var block = input.HoveredBlock2.Value.block;
+                var mapSource = input.HoveredBlock2.Value.source;
+                ref readonly var c00 = ref mapSource.GetHeightRef(input.HoveredBlock2.Value.position);
+                ref readonly var c01 = ref mapSource.GetHeightRef(input.HoveredBlock2.Value.position + Vector2i.Forward);
+                ref readonly var c11 = ref mapSource.GetHeightRef(input.HoveredBlock2.Value.position + Vector2i.One);
+                ref readonly var c10 = ref mapSource.GetHeightRef(input.HoveredBlock2.Value.position + Vector2i.Right);
+                DrawBlock(input.HoveredBlock2.Value.position, block, c00, c01, c11, c10);
             }
 
             if (input.SelectedBlock.HasValue)
@@ -941,7 +950,7 @@ namespace TerrainDemo.Editor
             /// <summary>
             /// User cursor ray
             /// </summary>
-            public Ray Cursor;
+            public Ray CursorRay;
 
             /// <summary>
             /// Is some point of map selected? Cursor position contains point
@@ -958,6 +967,12 @@ namespace TerrainDemo.Editor
             /// Mouse hovered block position
             /// </summary>
             public Vector2i? HoveredBlock;
+
+            /// <summary>
+            /// Mouse hovered block
+            /// </summary>
+            public (Vector2i position, Blocks block, MicroMap source)? HoveredBlock2;
+
 
             /// <summary>
             /// Selected block position

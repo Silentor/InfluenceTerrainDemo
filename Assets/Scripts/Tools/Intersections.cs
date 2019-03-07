@@ -225,13 +225,13 @@ namespace TerrainDemo.Tools
 
             foreach (var block in blocks)
             {
-                var blockBounds = BlockInfo.GetWorldBounds(block.positon);          //todo optimization inline?
-                float t1 = (blockBounds.min.X - ray.origin.x) * dirFracX;
-                float t2 = (blockBounds.max.X - ray.origin.x) * dirFracX;
+                var (min, max) = BlockInfo.GetWorldBounds(block.positon);
+                float t1 = (min.X - ray.origin.x) * dirFracX;
+                float t2 = (max.X - ray.origin.x) * dirFracX;
                 float t3 = (block.heights.Min - ray.origin.y) * dirFracY;
                 float t4 = (block.heights.Max - ray.origin.y) * dirFracY;
-                float t5 = (blockBounds.min.Y - ray.origin.z) * dirFracZ;
-                float t6 = (blockBounds.max.Y - ray.origin.z) * dirFracZ;
+                float t5 = (min.Y - ray.origin.z) * dirFracZ;
+                float t6 = (max.Y - ray.origin.z) * dirFracZ;
 
                 float aMin = t1 < t2 ? t1 : t2;
                 float bMin = t3 < t4 ? t3 : t4;
@@ -254,6 +254,43 @@ namespace TerrainDemo.Tools
             }
 
             return null;
+        }
+
+        public static float RayBlockIntersection(Ray ray, in Vector2i positon, in Blocks block)
+        {
+            var dirFracX = 1 / ray.direction.x;
+            var dirFracY = 1 / ray.direction.y;
+            var dirFracZ = 1 / ray.direction.z;
+
+
+            var (min, max) = BlockInfo.GetWorldBounds(positon);
+            float t1 = (min.X - ray.origin.x) * dirFracX;
+            float t2 = (max.X - ray.origin.x) * dirFracX;
+            float t3 = (block.Height.Base - ray.origin.y) * dirFracY;
+            float t4 = (block.Height.Nominal - ray.origin.y) * dirFracY;
+            float t5 = (min.Y - ray.origin.z) * dirFracZ;
+            float t6 = (max.Y - ray.origin.z) * dirFracZ;
+
+            float aMin = t1 < t2 ? t1 : t2;
+            float bMin = t3 < t4 ? t3 : t4;
+            float cMin = t5 < t6 ? t5 : t6;
+
+            float aMax = t1 > t2 ? t1 : t2;
+            float bMax = t3 > t4 ? t3 : t4;
+            float cMax = t5 > t6 ? t5 : t6;
+
+            float fMax = aMin > bMin ? aMin : bMin;
+            float fMin = aMax < bMax ? aMax : bMax;
+
+            float t7 = fMax > cMin ? fMax : cMin;
+            float t8 = fMin < cMax ? fMin : cMax;
+
+            float t9 = (t8 < 0 || t7 > t8) ? -1 : t7;
+
+            if (t9 > 0)
+                return t9;
+
+            return -1;
         }
     }
 }

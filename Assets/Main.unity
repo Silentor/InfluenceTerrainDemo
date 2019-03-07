@@ -170,15 +170,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Seed: 1914769332
   RandomizeSeed: 0
-  LandSize: 120
+  LandSize: 50
   CellSide: 10
   GridPerturbFreq: 0.01
   GridPerturbPower: 10
   InfluencePerturbFreq: 0.08
   InfluencePerturbPower: 3
   Biomes:
-  - {fileID: 11400000, guid: 732f670cdb9563043b848f46f4e3ccfa, type: 2}
-  RenderMode: 0
+  - {fileID: 11400000, guid: 4757fe4311966e740b7ceb0d4952327a, type: 2}
+  RenderMode: 1
   RenderLayer: 2
   MacroCellInfluenceVisualization: 0
   VertexColoredMat: {fileID: 2100000, guid: 5ae6f60a03e107e4d9e469815a34517d, type: 2}

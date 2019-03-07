@@ -21,6 +21,7 @@ namespace TerrainDemo.Micro
     {
         public readonly Bounds2i Bounds;
         public readonly Cell[] Cells;
+        public IEnumerable<MicroMap> Childs => _childs;
 
         public MicroMap(MacroMap macromap, TriRunner settings)
         {
@@ -43,12 +44,28 @@ namespace TerrainDemo.Micro
             Debug.LogFormat("Generated micromap {0} x {1} = {2} blocks", Bounds.Size.X, Bounds.Size.Z, Bounds.Size.X * Bounds.Size.Z);
         }
 
+        public MicroMap(Bounds2i bounds)
+        {
+            Bounds = bounds;
+
+            _heightMap = new Heights[Bounds.Size.X + 1, Bounds.Size.Z + 1];
+            _blocks = new Blocks[Bounds.Size.X, Bounds.Size.Z];
+
+            Debug.LogFormat("Generated micromap {0} x {1} = {2} blocks", Bounds.Size.X, Bounds.Size.Z, Bounds.Size.X * Bounds.Size.Z);
+        }
+
+        public void AddChild(MicroMap childMap)
+        {
+            if(childMap == this) throw new ArgumentException();
+
+            _childs.Add(childMap);
+        }
+
         public Cell GetCell([NotNull] Macro.Cell cell)
         {
             if (cell == null) throw new ArgumentNullException(nameof(cell));
-            if (cell.Map != _macromap) throw new ArgumentException();
 
-            return Cells[_macromap.Cells.IndexOf(cell)];
+            return Cells.First(c => c.Macro == cell);
         }
 
         public void SetHeights(IEnumerable<Vector2i> positions, IEnumerable<Heights> heights)
@@ -254,7 +271,7 @@ namespace TerrainDemo.Micro
                 );
         }
 
-        public (float distance, Vector2i hitBlock)? RaycastBlockmap(Ray ray)
+        public (float distance, Vector2i position)? RaycastBlockmap(Ray ray)
         {
             //Get raycasted blocks
             var raycastedBlocks = Rasterization.DDA((Vector2)ray.origin, (Vector2)ray.GetPoint(300), true);
@@ -268,7 +285,49 @@ namespace TerrainDemo.Micro
             return result;
         }
 
-        public (Vector3 hitPoint, Vector2i hitBlock)? RaycastHeightmap(Ray ray)
+        public (float distance, Vector2i position, MicroMap source)? RaycastBlockmap2(Ray ray)
+        {
+            //Get raycasted blocks
+            var raycastedBlocks = Rasterization.DDA((Vector2)ray.origin, (Vector2)ray.GetPoint(300), true);
+
+            MicroMap source = null;
+            float resultDistance = -1;
+            foreach (var position in raycastedBlocks)
+            {
+                ref readonly var testedBlock = ref GetBlockRef(position);
+                if(testedBlock.IsEmpty) continue;
+
+                var distance = Intersections.RayBlockIntersection(ray, in position, in testedBlock);
+                if (distance > 0)
+                {
+                    resultDistance = distance;
+                    source = this;
+                }
+
+                //Check map objects
+                foreach (var childMap in _childs)
+                {
+                    testedBlock = ref childMap.GetBlockRef(position);
+                    if(testedBlock.IsEmpty) continue;
+
+                    var childDistance = Intersections.RayBlockIntersection(ray, in position, in testedBlock);
+                    if (childDistance > 0 && (resultDistance < 0 || childDistance < resultDistance))
+                    {
+                        resultDistance = childDistance;
+                        source = childMap;
+                    }
+                }
+
+                if (resultDistance > 0)
+                {
+                    return (resultDistance, position, source);
+                }
+            }
+
+            return null;
+        }
+
+        public (Vector3 hitPoint, Vector2i position)? RaycastHeightmap(Ray ray)
         {
             //Get raycasted blocks
             var rayBlocks = Rasterization.DDA((OpenTK.Vector2)ray.origin, (OpenTK.Vector2)ray.GetPoint(300), true);
@@ -283,28 +342,10 @@ namespace TerrainDemo.Micro
                     var localPos = blockPos - Bounds.Min;
                     ref readonly var block = ref _blocks[localPos.X, localPos.Z];
 
-                    float c00, c01, c10, c11;
-                    if (block.Ground != BlockType.Empty)
-                    {
-                        c00 = _heightMap[localPos.X, localPos.Z].Main;
-                        c01 = _heightMap[localPos.X, localPos.Z + 1].Main;
-                        c11 = _heightMap[localPos.X + 1, localPos.Z + 1].Main;
-                        c10 = _heightMap[localPos.X + 1, localPos.Z].Main;
-                    }
-                    else if (block.Underground != BlockType.Empty)
-                    {
-                        c00 = _heightMap[localPos.X, localPos.Z].Underground;
-                        c01 = _heightMap[localPos.X, localPos.Z + 1].Underground;
-                        c11 = _heightMap[localPos.X + 1, localPos.Z + 1].Underground;
-                        c10 = _heightMap[localPos.X + 1, localPos.Z].Underground;
-                    }
-                    else
-                    {
-                        c00 = _heightMap[localPos.X, localPos.Z].Base;
-                        c01 = _heightMap[localPos.X, localPos.Z + 1].Base;
-                        c11 = _heightMap[localPos.X + 1, localPos.Z + 1].Base;
-                        c10 = _heightMap[localPos.X + 1, localPos.Z].Base;
-                    }
+                    var c00 = _heightMap[localPos.X, localPos.Z].Nominal;
+                    var c01 = _heightMap[localPos.X, localPos.Z + 1].Nominal;
+                    var c11 = _heightMap[localPos.X + 1, localPos.Z + 1].Nominal;
+                    var c10 = _heightMap[localPos.X + 1, localPos.Z].Nominal;
 
                     var v00 = new Vector3(blockPos.X, c00, blockPos.Z);
                     var v01 = new Vector3(blockPos.X, c01, blockPos.Z + 1);
@@ -333,6 +374,89 @@ namespace TerrainDemo.Micro
             }
 
             return null;
+        }
+
+        public (Vector3 hitPoint, Vector2i position, MicroMap source)? RaycastHeightmap2(Ray ray)
+        {
+            //Get raycasted blocks
+            var rayBlocks = Rasterization.DDA((OpenTK.Vector2)ray.origin, (OpenTK.Vector2)ray.GetPoint(300), true);
+
+            float distance = float.MaxValue;
+            MicroMap source = null;
+
+            //Test each block for ray intersection
+            //todo Implement some more culling
+            //todo Early discard block based on block height (blocks AABB?)
+            foreach (var blockPos in rayBlocks)
+            {
+                var result = CheckBlockIntersection(this, blockPos);
+                if (result.HasValue)
+                {
+                    distance = Vector3.SqrMagnitude(result.Value);
+                    source = this;
+                }
+
+                foreach (var child in _childs)
+                {
+                    var childResult = CheckBlockIntersection(child, blockPos);
+                    if (childResult.HasValue)
+                    {
+                        if (Vector3.SqrMagnitude(childResult.Value) < distance)
+                        {
+                            distance = Vector3.SqrMagnitude(childResult.Value);
+                            result = childResult;
+                            source = child;
+                        }
+                    }
+                }
+
+                if (result.HasValue)
+                {
+                    return (result.Value, blockPos, source);
+                }
+            }
+
+            return null;
+
+            Vector3? CheckBlockIntersection(MicroMap map, in Vector2i position)
+            {
+                if (map.Bounds.Contains(position))
+                {
+                    var localPos = position - map.Bounds.Min;
+                    //ref readonly var block = ref map._blocks[localPos.X, localPos.Z];
+
+                    var c00 = map._heightMap[localPos.X, localPos.Z].Nominal;
+                    var c01 = map._heightMap[localPos.X, localPos.Z + 1].Nominal;
+                    var c11 = map._heightMap[localPos.X + 1, localPos.Z + 1].Nominal;
+                    var c10 = map._heightMap[localPos.X + 1, localPos.Z].Nominal;
+
+                    var v00 = new Vector3(position.X, c00, position.Z);
+                    var v01 = new Vector3(position.X, c01, position.Z + 1);
+                    var v11 = new Vector3(position.X + 1, c11, position.Z + 1);
+                    var v10 = new Vector3(position.X + 1, c10, position.Z);
+
+                    //Check block's triangles for intersection
+                    Vector3 hit;
+                    if (Math.Abs(c00 - c11) < Math.Abs(c01 - c10))
+                    {
+                        if (Intersections.LineTriangleIntersection(ray, v00, v01, v11, out hit) == 1
+                            || Intersections.LineTriangleIntersection(ray, v00, v11, v10, out hit) == 1)
+                        {
+                            return hit;
+                        }
+                    }
+                    else
+                    {
+                        if (Intersections.LineTriangleIntersection(ray, v00, v01, v10, out hit) == 1
+                            || Intersections.LineTriangleIntersection(ray, v01, v11, v10, out hit) == 1)
+                        {
+                            return hit;
+                        }
+                    }
+                }
+
+                return null;
+            }
         }
 
         /// <summary>
@@ -501,6 +625,7 @@ namespace TerrainDemo.Micro
         private readonly TriRunner _settings;
         private readonly Heights[,] _heightMap;
         private readonly Blocks[,] _blocks;
+        private readonly List<MicroMap> _childs = new List<MicroMap>();
     }
 
     public readonly struct NeighborBlocks
