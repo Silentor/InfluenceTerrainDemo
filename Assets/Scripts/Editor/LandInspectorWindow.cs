@@ -39,7 +39,7 @@ namespace TerrainDemo.Editor
         private Renderer.TerrainRenderMode _oldRenderMode;
         private Renderer.TerrainLayerToRender _oldRenderLayer;
         private readonly Dictionary<BlockType, Color> _defaultBlockColor = new Dictionary<BlockType, Color>();
-        private Vector2i? _selectedBlock = null;
+        private (Vector2i position, Blocks block, MicroMap source)? _selectedBlock = null;
         private Vector2i? _selectedVertex = null;
 
         [MenuItem("Land/Inspector")]
@@ -92,10 +92,10 @@ namespace TerrainDemo.Editor
 
                     if (isSelected)
                     {
-                        if (_selectedBlock == result.HoveredBlock)
+                        if (_selectedBlock == result.HoveredBlock2)
                             _selectedBlock = null;
                         else
-                            _selectedBlock = result.HoveredBlock;
+                            _selectedBlock = result.HoveredBlock2;
 
                         if(_selectedBlock.HasValue)
                             Debug.Log($"Selected block {_selectedBlock.Value}");
@@ -122,13 +122,13 @@ namespace TerrainDemo.Editor
                             }
                         }
                         //Process block selection
-                        else if (result.HoveredBlock.HasValue)
+                        else if (result.HoveredBlock2.HasValue)
                         {
-                            if (_selectedBlock == result.HoveredBlock)
+                            if (_selectedBlock == result.HoveredBlock2)
                                 _selectedBlock = null;           //Deselect
                             else
                             {
-                                _selectedBlock = result.HoveredBlock;      //Select
+                                _selectedBlock = result.HoveredBlock2;      //Select
                                 Debug.Log($"Selected block {_selectedBlock.Value}");
                             }
                         }
@@ -152,15 +152,17 @@ namespace TerrainDemo.Editor
                             result.SelectedVert = MacroMap.Vertices.FirstOrDefault(v => Vector3.Distance(
                                                                                             new Vector3(v.Position.X, v.Height.Nominal, v.Position.Y), result.CursorPosition) < 1);
 
+                            /*
                             if (MicroMap != null)
                             {
                                 result.SelectedMicroCell = MicroMap.GetCell(result.SelectedMacroCell);
                                 var blockPos = (Vector2i)result.CursorPosition;
                                 if (MicroMap.Bounds.Contains(blockPos))
                                 {
-                                    result.HoveredBlock = blockPos;
+                                    result.HoveredBlock2 = blockPos;
                                 }
                             }
+                            */
                         }
                     }
 
@@ -177,10 +179,8 @@ namespace TerrainDemo.Editor
             var hoveredBlock = MicroMap?.RaycastBlockmap2(input.CursorRay);
             if (hoveredBlock.HasValue)
             {
-                input.HoveredBlock = hoveredBlock.Value.position;
                 input.Distance = hoveredBlock.Value.distance;
                 input.CursorPosition = input.CursorRay.GetPoint(input.Distance);
-
                 input.HoveredBlock2 = (hoveredBlock.Value.position, hoveredBlock.Value.source.GetBlockRef(hoveredBlock.Value.position), hoveredBlock.Value.source);
             }
 
@@ -193,10 +193,8 @@ namespace TerrainDemo.Editor
             var hoveredBlock = MicroMap?.RaycastHeightmap2(input.CursorRay);
             if (hoveredBlock.HasValue)
             {
-                input.HoveredBlock = hoveredBlock.Value.position;
                 input.Distance = Vector3.Distance(input.CursorRay.origin, hoveredBlock.Value.hitPoint);
                 input.CursorPosition = hoveredBlock.Value.hitPoint;
-
                 input.HoveredBlock2 = (hoveredBlock.Value.position, hoveredBlock.Value.source.GetBlockRef(hoveredBlock.Value.position), hoveredBlock.Value.source);
 
                 var roundedCursorPosition = new Vector3(Mathf.Round(input.CursorPosition.x), input.CursorPosition.y,
@@ -226,7 +224,7 @@ namespace TerrainDemo.Editor
 
             if (input.SelectedBlock.HasValue)
             {
-                DrawBlock(input.SelectedBlock.Value, MicroMap.GetBlockRef(input.SelectedBlock.Value), Color.white);
+                DrawBlock(input.SelectedBlock.Value.position, input.SelectedBlock.Value.block, Color.white);
             }
         }
 
@@ -248,12 +246,13 @@ namespace TerrainDemo.Editor
 
             if (input.SelectedBlock.HasValue)
             {
-                ref readonly var block = ref MicroMap.GetBlockRef(input.SelectedBlock.Value);
-                ref readonly var c00 = ref MicroMap.GetHeightRef(input.SelectedBlock.Value);
-                ref readonly var c01 = ref MicroMap.GetHeightRef(input.SelectedBlock.Value + Vector2i.Forward);
-                ref readonly var c11 = ref MicroMap.GetHeightRef(input.SelectedBlock.Value + Vector2i.One);
-                ref readonly var c10 = ref MicroMap.GetHeightRef(input.SelectedBlock.Value + Vector2i.Right);
-                DrawBlock(input.SelectedBlock.Value, block, c00, c01, c11, c10, Color.white);
+                var block = input.SelectedBlock.Value.block;
+                var mapSource = input.SelectedBlock.Value.source;
+                ref readonly var c00 = ref mapSource.GetHeightRef(input.SelectedBlock.Value.position);
+                ref readonly var c01 = ref mapSource.GetHeightRef(input.SelectedBlock.Value.position + Vector2i.Forward);
+                ref readonly var c11 = ref mapSource.GetHeightRef(input.SelectedBlock.Value.position + Vector2i.One);
+                ref readonly var c10 = ref mapSource.GetHeightRef(input.SelectedBlock.Value.position + Vector2i.Right);
+                DrawBlock(input.SelectedBlock.Value.position, block, c00, c01, c11, c10, Color.white);
             }
 
             if (input.HoveredHeightVertex.HasValue)
@@ -543,8 +542,10 @@ namespace TerrainDemo.Editor
             if (input.SelectedBlock.HasValue)
                 ShowBlockInfo(input.SelectedBlock.Value, true, false);
 
-            if (input.HoveredBlock.HasValue && input.HoveredBlock != input.SelectedBlock)
-                ShowBlockInfo(input.HoveredBlock.Value, false, false);
+            if (input.HoveredBlock2.HasValue && input.HoveredBlock2 != input.SelectedBlock)
+            {
+                ShowBlockInfo(input.HoveredBlock2.Value, false, false);
+            }
         }
 
         private void ShowTerrainModeContent(Input input)
@@ -552,8 +553,8 @@ namespace TerrainDemo.Editor
             if (input.SelectedBlock.HasValue)
                 ShowBlockInfo(input.SelectedBlock.Value, true, true);
 
-            if (input.HoveredBlock.HasValue && input.HoveredBlock != input.SelectedBlock)
-                ShowBlockInfo(input.HoveredBlock.Value, false, true);
+            if (input.HoveredBlock2.HasValue && input.HoveredBlock2 != input.SelectedBlock)
+                ShowBlockInfo(input.HoveredBlock2.Value, false, true);
 
             if (input.SelectedHeightVertex.HasValue)
                 ShowHeightVertexInfo(input.SelectedHeightVertex.Value, true);
@@ -590,7 +591,7 @@ namespace TerrainDemo.Editor
             GUILayout.Label("Cursor", EditorStyles.boldLabel);
             GUILayout.Label($"World pos: {VectorToString(input.CursorPosition, GetZoomLevel(input.Distance))}");
             GUILayout.Label($"Camera dist: {Vector3.Distance(input.CursorPosition, input.View.origin):N0} m");
-            if (input.HoveredBlock.HasValue)
+            if (input.HoveredBlock2.HasValue)
             {
                 GUILayout.Label(
                     $"Influence: {MacroMap.GetInfluence((OpenTK.Vector2) input.CursorPosition)}");
@@ -598,29 +599,29 @@ namespace TerrainDemo.Editor
             }
         }
 
-        private void ShowBlockInfo(Vector2i blockPos, bool isSelected, bool showHeightmap)
+        private void ShowBlockInfo((Vector2i position, Blocks block, MicroMap source) block2, bool isSelected, bool showHeightmap)
         {
-            GUILayout.Label(isSelected ? $"Selected block {blockPos}" : $"Hovered block {blockPos}", EditorStyles.boldLabel);
+            var (position, block, source) = block2;
+            GUILayout.Label(isSelected ? $"Selected block {position}" : $"Hovered block {position}", EditorStyles.boldLabel);
 
-            var block = MicroMap.GetBlock(blockPos);
-            if (block.Block.Top != BlockType.Empty)
+            if (!block.IsEmpty)
             {
                 GUILayout.Label("Type                   Height");
 
                 GUILayout.BeginVertical("box", GUILayout.Width(150));
                 GUILayout.BeginHorizontal();
-                GUILayout.Label($"{block.Block.Ground}", GUILayout.Width(100));
-                GUILayout.Label(block.Block.Ground != BlockType.Empty ? $"{block.Block.Height.Main:N1}" : "-");
+                GUILayout.Label($"{block.Ground}", GUILayout.Width(100));
+                GUILayout.Label(block.Ground != BlockType.Empty ? $"{block.Height.Main:N1}" : "-");
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
-                GUILayout.Label($"{block.Block.Underground}", GUILayout.Width(100));
-                GUILayout.Label(block.Block.Underground != BlockType.Empty ? $"{block.Block.Height.Underground:N1}" : "-");
+                GUILayout.Label($"{block.Underground}", GUILayout.Width(100));
+                GUILayout.Label(block.Underground != BlockType.Empty ? $"{block.Height.Underground:N1}" : "-");
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
-                GUILayout.Label($"{block.Block.Base}", GUILayout.Width(100));
-                GUILayout.Label($"{block.Block.Height.Base:N1}");
+                GUILayout.Label($"{block.Base}", GUILayout.Width(100));
+                GUILayout.Label($"{block.Height.Base:N1}");
                 GUILayout.EndHorizontal();
                 GUILayout.EndVertical();
 
@@ -628,7 +629,7 @@ namespace TerrainDemo.Editor
                 {
                     GUILayout.Label("Vertices:");
                     //Show block vertices info
-                    var vertices = MicroMap.GetBlock(blockPos);
+                    var vertices = source.GetBlock(position);
                     GUILayout.BeginVertical();
                     GUILayout.BeginHorizontal();
                     HeightToGUI("┌", vertices.Corner01, false);
@@ -838,6 +839,7 @@ namespace TerrainDemo.Editor
                 DrawMicroCell(_input.SelectedMicroCell, Color.white);
 
             //Draw selected block
+            /*
             if (_drawMicro)
             {
                 if (MicroMap != null)
@@ -850,6 +852,7 @@ namespace TerrainDemo.Editor
                 else
                     DrawBlock((Vector2i) _input.HoveredBlock, Color.white, 3);
             }
+            */
 
         }
 
@@ -897,9 +900,9 @@ namespace TerrainDemo.Editor
                     ShowCursorInfo(_input);
                 }
 
-                if (_input.HoveredBlock.HasValue)
+                if (_input.HoveredBlock2.HasValue)
                 {
-                    ShowBlockInfo(_input.HoveredBlock.Value, false, true);
+                    ShowBlockInfo(_input.HoveredBlock2.Value, false, true);
                 }
 
                 if (_input.SelectedMacroCell != null)
@@ -964,11 +967,6 @@ namespace TerrainDemo.Editor
             public Vector3 CursorPosition;
 
             /// <summary>
-            /// Mouse hovered block position
-            /// </summary>
-            public Vector2i? HoveredBlock;
-
-            /// <summary>
             /// Mouse hovered block
             /// </summary>
             public (Vector2i position, Blocks block, MicroMap source)? HoveredBlock2;
@@ -977,7 +975,7 @@ namespace TerrainDemo.Editor
             /// <summary>
             /// Selected block position
             /// </summary>
-            public Vector2i? SelectedBlock;
+            public (Vector2i position, Blocks block, MicroMap source)? SelectedBlock;
 
 
             /// <summary>
