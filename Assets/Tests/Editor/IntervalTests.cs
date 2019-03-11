@@ -36,7 +36,7 @@ namespace TerrainDemo.Tests.Editor
         }
 
         [Test]
-        public void TestIntersect()
+        public void TestSubstract()
         {
             var interval1 = new Interval(0, 5);
             var interval2 = new Interval(-5, -1);

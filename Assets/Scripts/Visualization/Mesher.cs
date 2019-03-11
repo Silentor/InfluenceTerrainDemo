@@ -348,12 +348,14 @@ namespace TerrainDemo.Visualization
                     else
                         DrawFloor(baseVertices, baseIndices, baseUv, block.Height.Base);
 
+                    DrawCeil(baseVertices, baseIndices, baseUv, block.GetBaseLayerWidth().Min);
+
                     //Draw block sides
                     var neighbors = map.GetNeighborBlocks(new Vector2i(worldX, worldZ));
                     foreach (var dir in Directions.Cardinal)
                     {
                         var neigh = neighbors[dir];
-                        if (!neigh.IsEmpty)
+                        //if (!neigh.IsEmpty)
                         {
                             neigh = Filter(neigh, renderSettings.RenderLayer);
 
@@ -386,7 +388,6 @@ namespace TerrainDemo.Visualization
                                     DrawBlockSide(baseVertices, baseIndices, baseUv, dir, visiblePart.Max, visiblePart.Min);
                             }
                         }
-
                     }
 
                     void DrawFloor(List<Vector3> vertices, List<int> indices, List<Vector2> uv, float height)
@@ -400,6 +401,24 @@ namespace TerrainDemo.Visualization
                         vertices.Add(new Vector3(worldX, height, worldZ + 1));
                         vertices.Add(new Vector3(worldX + 1, height, worldZ + 1));
                         vertices.Add(new Vector3(worldX + 1, height, worldZ));
+
+                        uv.Add(new Vector2(chunkLocalX * uvXCoeff, chunkLocalZ * uvYCoeff));
+                        uv.Add(new Vector2(chunkLocalX * uvXCoeff, (chunkLocalZ + 1) * uvYCoeff));
+                        uv.Add(new Vector2((chunkLocalX + 1) * uvXCoeff, (chunkLocalZ + 1) * uvYCoeff));
+                        uv.Add(new Vector2((chunkLocalX + 1) * uvXCoeff, chunkLocalZ * uvYCoeff));
+                    }
+
+                    void DrawCeil(List<Vector3> vertices, List<int> indices, List<Vector2> uv, float height)
+                    {
+                        indices.Add(vertices.Count);
+                        indices.Add(vertices.Count + 1);
+                        indices.Add(vertices.Count + 2);
+                        indices.Add(vertices.Count + 3);
+
+                        vertices.Add(new Vector3(worldX, height, worldZ));
+                        vertices.Add(new Vector3(worldX + 1, height, worldZ));
+                        vertices.Add(new Vector3(worldX + 1, height, worldZ + 1));
+                        vertices.Add(new Vector3(worldX, height, worldZ + 1));
 
                         uv.Add(new Vector2(chunkLocalX * uvXCoeff, chunkLocalZ * uvYCoeff));
                         uv.Add(new Vector2(chunkLocalX * uvXCoeff, (chunkLocalZ + 1) * uvYCoeff));

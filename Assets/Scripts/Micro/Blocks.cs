@@ -52,7 +52,6 @@ namespace TerrainDemo.Micro
                 heightFixed = true;
             }
 
-
             Base = BlockType.Bedrock;
             Underground = underground;
             Ground = ground;
@@ -91,31 +90,36 @@ namespace TerrainDemo.Micro
         [Pure]
         public Interval GetMainLayerWidth()
         {
-            return new Interval(Height.Underground, Height.Main);
+            return IsEmpty ? Interval.Empty : new Interval(Height.Underground, Height.Main);
         }
 
         [Pure]
         public Interval GetUnderLayerWidth()
         {
-            return new Interval(Height.Base, Height.Underground);
+            return IsEmpty ? Interval.Empty : new Interval(Height.Base, Height.Underground);
         }
 
         [Pure]
         public Interval GetBaseLayerWidth()
         {
-            return new Interval(float.MinValue, Height.Base);
+            return IsEmpty ? Interval.Empty : new Interval(Height.Base - 1, Height.Base);
         }
 
         [Pure]
         public Interval GetTotalWidth()
         {
-            return new Interval(float.MinValue, Height.Main);
+            return IsEmpty ? Interval.Empty : new Interval(Height.Base - 1, Height.Main);
         }
 
 
         public override string ToString()
         {
-            return $"({Ground}, {Underground}, {Base})";
+            if (IsEmpty) return "(Empty)";
+            return string.Format("({0} {1} {2})",
+                Ground != BlockType.Empty ? Ground + ":" + Height.Main.ToString("N1") : "Empty",
+                Underground != BlockType.Empty ? Underground + ":" + Height.Underground.ToString("N1") : "Empty",
+                Base + ":" + Height.Base.ToString("N1"));
+
         }
 
         public override bool Equals(object obj)

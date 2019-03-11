@@ -81,9 +81,11 @@ namespace TerrainDemo.Macro
 
         public override string ToString()
         {
+            if (this == Empty)
+                return "(Empty)";
             var noMainLayer = IsMainLayerPresent ? "" : "*";
             var noUnderLayer = IsUndergroundLayerPresent ? "" : "*";
-            return $"({Main:N1}{noMainLayer}, {Underground:N1}{noUnderLayer}, {Base:N1})";
+            return $"({Main:N1}{noMainLayer} {Underground:N1}{noUnderLayer} {Base:N1})";
         }
 
         public bool Equals(Heights other)

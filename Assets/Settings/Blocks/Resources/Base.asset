@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Base
   m_EditorClassIdentifier: 
   Block: 1
-  DefaultColor: {r: 0.4245283, g: 0.2092387, b: 0, a: 1}
+  DefaultColor: {r: 0.16981131, g: 0.16981131, b: 0.16981131, a: 1}
