@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using JetBrains.Annotations;
 using OpenTK;
 using TerrainDemo.Macro;
@@ -120,34 +121,34 @@ namespace TerrainDemo.Micro
                         continue;
 
                     //Trivial vertex height calculation
-                    float topmostHeight = 0f;
+                    Vector3d heightAcc = Vector3d.Zero;
                     int blockCounter = 0;
                     if (!b00.IsEmpty)
                     {
-                        topmostHeight += b00.GetNominalHeight();
+                        heightAcc += (Vector3d)b00.Height;
                         blockCounter++;
                     }
 
                     if (!b01.IsEmpty)
                     {
-                        topmostHeight += b01.GetNominalHeight();
+                        heightAcc += (Vector3d)b01.Height;
                         blockCounter++;
                     }
 
                     if (!b10.IsEmpty)
                     {
-                        topmostHeight += b10.GetNominalHeight();
+                        heightAcc += (Vector3d)b10.Height;
                         blockCounter++;
                     }
 
                     if (!b11.IsEmpty)
                     {
-                        topmostHeight += b11.GetNominalHeight();
+                        heightAcc += (Vector3d)b11.Height;
                         blockCounter++;
                     }
 
-                    topmostHeight = topmostHeight / blockCounter;
-                    _heightMap[x, z] = new Heights(topmostHeight, topmostHeight, topmostHeight);
+                    heightAcc = heightAcc / blockCounter;
+                    _heightMap[x, z] = new Heights((float)heightAcc.Z, (float)heightAcc.Y, (float)heightAcc.X);
 
                 }
         }

@@ -979,7 +979,7 @@ namespace TerrainDemo.Editor
 
 
             /// <summary>
-            /// Distance between <see cref="ViewPoint"/> and <see cref="CursorPosition"/>
+            /// Distance between <see cref="View"/> and <see cref="CursorPosition"/>
             /// </summary>
             public float Distance;
 

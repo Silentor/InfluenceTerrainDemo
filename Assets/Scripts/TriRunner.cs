@@ -6,10 +6,12 @@ using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Settings;
 using TerrainDemo.Spatial;
+using TerrainDemo.Tools;
 using TerrainDemo.Visualization;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Debug = UnityEngine.Debug;
+using Random = UnityEngine.Random;
 using Renderer = TerrainDemo.Visualization.Renderer;
 
 namespace TerrainDemo
@@ -107,16 +109,37 @@ namespace TerrainDemo
 
             microtimer.Stop();
 
-            //DEBUG
+            //DEBUG build bridge
             var positions = new List<Vector2i>();
             var blocks = new List<Blocks>();
 
-            for (int x = 0; x < 10; x++)
+            const int xStart = -10, xFinish = 10, width = 5;
+            const int xCenter = (xStart + xFinish) / 2;
+            const int length = xFinish - xStart;
+            for (int x = xStart; x <= xFinish; x++)   //length
             {
-                for (int z = 0; z < 5; z++)
+                for (int z = 0; z <= width; z++)  //width
                 {
+                    //Create pulse from two smoothsteps
+                    var stairwayBlockHeight =
+                        (Interpolation.SmoothStep(Mathf.InverseLerp(xStart, xCenter, x))
+                        - Interpolation.SmoothStep(Mathf.InverseLerp(xCenter, xFinish, x))) * 10;
+
+                    if (z == 0 || z == width)
+                        stairwayBlockHeight -= 0.5f;
+
+                    //To smoothly blend with ground
+                    if (x <= xStart + 1 || x >= xFinish - 1)
+                        stairwayBlockHeight = Micro.GetBlockRef((x, z)).Height.Nominal;
+                    else
+                        stairwayBlockHeight = Mathf.Max(stairwayBlockHeight, Micro.GetBlockRef((x, z)).Height.Nominal);
+
+                    var baseBlockHeight = stairwayBlockHeight - 2;
+                    if (z == 0 || z == width)
+                        baseBlockHeight += 0.5f;
+
+                    blocks.Add(new Blocks(BlockType.Stone, BlockType.Empty, new Heights(stairwayBlockHeight, baseBlockHeight, baseBlockHeight)));
                     positions.Add(new Vector2i(x, z));
-                    blocks.Add(new Blocks(BlockType.Stone, BlockType.Empty, new Heights(x + UnityEngine.Random.value / 3, x - 1, x - 1)));
                 }
             }
 

@@ -308,15 +308,15 @@ namespace TerrainDemo.Visualization
 
             var baseVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1));
             var baseIndices = new List<int>(baseVertices.Count * 2);
-            var baseUv = new List<UnityEngine.Vector2>(baseVertices.Count);
+            var baseUv = new List<Vector2>(baseVertices.Count);
 
             var underVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1));
             var underIndices = new List<int>(underVertices.Count * 2);
-            var underUv = new List<UnityEngine.Vector2>(underVertices.Count);
+            var underUv = new List<Vector2>(underVertices.Count);
 
             var mainVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1));
             var mainIndices = new List<int>(mainVertices.Count * 2);
-            var mainUv = new List<UnityEngine.Vector2>(mainVertices.Count);
+            var mainUv = new List<Vector2>(mainVertices.Count);
 
             var uvXCoeff = 1f / bounds.Size.X;
             var uvYCoeff = 1f / bounds.Size.Z;
@@ -502,6 +502,214 @@ namespace TerrainDemo.Visualization
                 }
         }
         */
+
+        public (Mesh mesh, Texture texture) CreateObjectMesh(MicroMap mapObject, TriRunner renderSettings)
+        {
+            var bounds = mapObject.Bounds;
+            var heightMap = mapObject.GetHeightMap();
+            var blockMap = mapObject.GetBlockMap();
+
+            var groundVertIndexBuffer = new int[bounds.Size.X + 1, bounds.Size.Z + 1];
+            var groundVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1))
+                { Vector3.zero};        //Dummy value to make default 0 values of baseVertIndexBuffer a invalid
+            var groundIndices = new List<int>(groundVertices.Count * 2);
+            var commonUv = new List<Vector2>(groundVertices.Count) { Vector2.zero };
+
+            //Set quads
+            for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
+                for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
+                {
+                    var mapLocalX = worldX - bounds.Min.X;
+                    var mapLocalZ = worldZ - bounds.Min.Z;
+                    var chunkLocalX = mapLocalX;
+                    var chunkLocalZ = mapLocalZ;
+
+                    ref readonly var block = ref blockMap[mapLocalX, mapLocalZ];
+                    if (block.IsEmpty)
+                        continue;
+
+                    //Prepare block vertices
+                    int index00, index01, index10, index11;
+                    int startIndexCounter = groundVertices.Count;
+                    if (groundVertIndexBuffer[chunkLocalX, chunkLocalZ] == 0)
+                    {
+                        index00 = startIndexCounter++;
+                        groundVertIndexBuffer[chunkLocalX, chunkLocalZ] = index00;
+                        groundVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Nominal, worldZ));
+                        commonUv.Add(new Vector2(chunkLocalX / (float) bounds.Size.X,
+                            chunkLocalZ / (float) bounds.Size.Z));
+
+                        startIndexCounter++;
+                        groundVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Base, worldZ));
+                        commonUv.Add(new Vector2(chunkLocalX / (float) bounds.Size.X,
+                            chunkLocalZ / (float) bounds.Size.Z));
+                    }
+                    else
+                    {
+                        index00 = groundVertIndexBuffer[chunkLocalX, chunkLocalZ];
+                    }
+
+                    if (groundVertIndexBuffer[chunkLocalX, chunkLocalZ + 1] == 0)
+                    {
+                        index01 = startIndexCounter++;
+                        groundVertIndexBuffer[chunkLocalX, chunkLocalZ + 1] = index01;
+                        groundVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ + 1].Nominal,
+                            worldZ + 1));
+                        commonUv.Add(new Vector2(chunkLocalX / (float) bounds.Size.X,
+                            (chunkLocalZ + 1) / (float) bounds.Size.Z));
+
+                        startIndexCounter++;
+                        groundVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ + 1].Base,
+                            worldZ + 1));
+                        commonUv.Add(new Vector2(chunkLocalX / (float) bounds.Size.X,
+                            (chunkLocalZ + 1) / (float) bounds.Size.Z));
+                    }
+                    else
+                    {
+                        index01 = groundVertIndexBuffer[chunkLocalX, chunkLocalZ + 1];
+                    }
+
+                    if (groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ] == 0)
+                    {
+                        index10 = startIndexCounter++;
+                        groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ] = index10;
+                        groundVertices.Add(new Vector3(worldX + 1, heightMap[mapLocalX + 1, mapLocalZ].Nominal,
+                            worldZ));
+                        commonUv.Add(new Vector2((chunkLocalX + 1) / (float) bounds.Size.X,
+                            (chunkLocalZ) / (float) bounds.Size.Z));
+
+                        startIndexCounter++;
+                        groundVertices.Add(new Vector3(worldX + 1, heightMap[mapLocalX + 1, mapLocalZ].Base,
+                            worldZ));
+                        commonUv.Add(new Vector2((chunkLocalX + 1) / (float) bounds.Size.X,
+                            (chunkLocalZ) / (float) bounds.Size.Z));
+                    }
+                    else
+                    {
+                        index10 = groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ];
+                    }
+
+                    if (groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1] == 0)
+                    {
+                        index11 = startIndexCounter++;
+                        groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1] = index11;
+                        groundVertices.Add(new Vector3(worldX + 1, heightMap[mapLocalX + 1, mapLocalZ + 1].Nominal,
+                            worldZ + 1));
+                        commonUv.Add(new Vector2((chunkLocalX + 1) / (float) bounds.Size.X,
+                            (chunkLocalZ + 1) / (float) bounds.Size.Z));
+
+                        startIndexCounter++;
+                        groundVertices.Add(new Vector3(worldX + 1, heightMap[mapLocalX + 1, mapLocalZ + 1].Base,
+                            worldZ + 1));
+                        commonUv.Add(new Vector2((chunkLocalX + 1) / (float) bounds.Size.X,
+                            (chunkLocalZ + 1) / (float) bounds.Size.Z));
+                    }
+                    else
+                    {
+                        index11 = groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1];
+                    }
+
+                    //Make proper top quad
+                    if (Mathf.Abs(heightMap[mapLocalX, mapLocalZ].Nominal -
+                                  heightMap[mapLocalX + 1, mapLocalZ + 1].Nominal) <
+                        Mathf.Abs(heightMap[mapLocalX + 1, mapLocalZ].Nominal -
+                                  heightMap[mapLocalX, mapLocalZ + 1].Nominal))
+                    {
+                        groundIndices.Add(index00);
+                        groundIndices.Add(index01);
+                        groundIndices.Add(index11);
+
+                        groundIndices.Add(index00);
+                        groundIndices.Add(index11);
+                        groundIndices.Add(index10);
+                    }
+                    else
+                    {
+                        groundIndices.Add(index00);
+                        groundIndices.Add(index01);
+                        groundIndices.Add(index10);
+
+                        groundIndices.Add(index10);
+                        groundIndices.Add(index01);
+                        groundIndices.Add(index11);
+                    }
+
+                    //Make proper bottom quad
+                    if (Mathf.Abs(heightMap[mapLocalX, mapLocalZ].Base -
+                                  heightMap[mapLocalX + 1, mapLocalZ + 1].Base) <
+                        Mathf.Abs(heightMap[mapLocalX + 1, mapLocalZ].Base -
+                                  heightMap[mapLocalX, mapLocalZ + 1].Base))
+                    {
+                        groundIndices.Add(index00 + 1);
+                        groundIndices.Add(index11 + 1);
+                        groundIndices.Add(index01 + 1);
+
+                        groundIndices.Add(index00 + 1);
+                        groundIndices.Add(index10 + 1);
+                        groundIndices.Add(index11 + 1);
+                    }
+                    else
+                    {
+                        groundIndices.Add(index00 + 1);
+                        groundIndices.Add(index10 + 1);
+                        groundIndices.Add(index01 + 1);
+
+                        groundIndices.Add(index10 + 1);
+                        groundIndices.Add(index11 + 1);
+                        groundIndices.Add(index01 + 1);
+                    }
+
+                    //Draw sides if needed
+                    var neighbors = mapObject.GetNeighborBlocks(new Vector2i(worldX, worldZ));
+                    foreach (var dir in Directions.Cardinal)
+                    {
+                        if (neighbors[dir].IsEmpty)
+                        {
+                            switch (dir)
+                            {
+                                case Side2d.Forward:
+                                    DrawObjectSide(index01, index11);
+                                    break;
+                                case Side2d.Right:
+                                    DrawObjectSide(index11, index10);
+                                    break;
+                                case Side2d.Back:
+                                    DrawObjectSide(index10, index00);
+                                    break;
+                                case Side2d.Left:
+                                    DrawObjectSide(index00, index01);
+                                    break;
+                            }
+                        }
+                    }
+                }
+
+
+            var groundMesh = new Mesh();
+            groundMesh.SetVertices(groundVertices);
+            groundMesh.SetTriangles(groundIndices, 0);
+            groundMesh.SetUVs(0, commonUv);
+            groundMesh.RecalculateNormals();
+
+            var mainTexture = CreateBlockTexture(mapObject, bounds, renderSettings);
+
+            return (groundMesh, mainTexture);
+
+            //Draw side of object block. Parameters: top and bottom point indices
+            void DrawObjectSide(int topPoint1, int topPoint2)
+            {
+                var bottomPoint1 = topPoint1 + 1;
+                var bottomPoint2 = topPoint2 + 1;
+
+                groundIndices.Add(bottomPoint1);
+                groundIndices.Add(bottomPoint2);
+                groundIndices.Add(topPoint2);
+
+                groundIndices.Add(bottomPoint1);
+                groundIndices.Add(topPoint2);
+                groundIndices.Add(topPoint1);
+            }
+        }
 
         private Texture CreateBlockTexture(MicroMap map, Bounds2i bounds, TriRunner mode)
         {
@@ -773,7 +981,7 @@ namespace TerrainDemo.Visualization
         private (int, int) InfluenceToColorsIndex(Influence influence)
         {
             if (influence.IsEmpty)
-                return (Macro.Zone.InvalidId, Macro.Zone.InvalidId);
+                return (Zone.InvalidId, Zone.InvalidId);
 
             if (influence.Count == 1)
                 return (influence.Zone1Id, influence.Zone1Id);

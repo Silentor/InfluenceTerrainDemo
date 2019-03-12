@@ -178,7 +178,7 @@ MonoBehaviour:
   InfluencePerturbPower: 3
   Biomes:
   - {fileID: 11400000, guid: d189b4f8006ca0b489a82c5f5ddbe6e0, type: 2}
-  RenderMode: 1
+  RenderMode: 0
   RenderLayer: 2
   MacroCellInfluenceVisualization: 0
   VertexColoredMat: {fileID: 2100000, guid: 5ae6f60a03e107e4d9e469815a34517d, type: 2}

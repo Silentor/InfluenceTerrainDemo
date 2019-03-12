@@ -79,6 +79,11 @@ namespace TerrainDemo.Macro
             return new Heights((float)v.Z, (float)v.Y, (float)v.X);
         }
 
+        public static explicit operator UnityEngine.Vector3(Heights h)
+        {
+            return new UnityEngine.Vector3(h.Base, h.Underground, h.Main);
+        }
+
         public override string ToString()
         {
             if (this == Empty)
