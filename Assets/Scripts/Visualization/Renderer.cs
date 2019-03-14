@@ -85,7 +85,7 @@ namespace TerrainDemo.Visualization
                 }
                 else
                 {
-                    var objectMesh = _mesher.CreateObjectMesh(mapChild, _settings);
+                    var objectMesh = _mesher.CreateObjectMesh((ObjectMap)mapChild, _settings);
                     var objectRoot = new GameObject("Object");
                     objectRoot.transform.SetParent(GetMeshRoot());
                     CreateGameObject(objectMesh.mesh, objectMesh.texture, "MainMesh", objectRoot.transform);

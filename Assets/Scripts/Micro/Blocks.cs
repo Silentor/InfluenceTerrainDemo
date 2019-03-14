@@ -100,15 +100,9 @@ namespace TerrainDemo.Micro
         }
 
         [Pure]
-        public Interval GetBaseLayerWidth()
-        {
-            return IsEmpty ? Interval.Empty : new Interval(Height.Base - 1, Height.Base);
-        }
-
-        [Pure]
         public Interval GetTotalWidth()
         {
-            return IsEmpty ? Interval.Empty : new Interval(Height.Base - 1, Height.Main);
+            return IsEmpty ? Interval.Empty : new Interval(Height.Base, Height.Main);
         }
 
 

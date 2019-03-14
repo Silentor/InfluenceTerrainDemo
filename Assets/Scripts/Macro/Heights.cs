@@ -39,6 +39,10 @@ namespace TerrainDemo.Macro
             Main = mainHeight;
         }
 
+        public Heights(float mainHeight, float baseHeight) : this(mainHeight, baseHeight, baseHeight)
+        {
+        }
+
         public Heights(Heights copyFrom) : this(copyFrom.Main, copyFrom.Underground, copyFrom.Base)
         {
         }
@@ -79,9 +83,9 @@ namespace TerrainDemo.Macro
             return new Heights((float)v.Z, (float)v.Y, (float)v.X);
         }
 
-        public static explicit operator UnityEngine.Vector3(Heights h)
+        public static explicit operator OpenTK.Vector3(Heights h)
         {
-            return new UnityEngine.Vector3(h.Base, h.Underground, h.Main);
+            return new OpenTK.Vector3(h.Base, h.Underground, h.Main);
         }
 
         public override string ToString()

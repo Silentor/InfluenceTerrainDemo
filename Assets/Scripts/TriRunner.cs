@@ -13,6 +13,7 @@ using UnityEngine.Assertions;
 using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
 using Renderer = TerrainDemo.Visualization.Renderer;
+using Vector2 = OpenTK.Vector2;
 
 namespace TerrainDemo
 {
@@ -128,11 +129,17 @@ namespace TerrainDemo
                     if (z == 0 || z == width)
                         stairwayBlockHeight -= 0.5f;
 
+                    
                     //To smoothly blend with ground
                     if (x <= xStart + 1 || x >= xFinish - 1)
                         stairwayBlockHeight = Micro.GetBlockRef((x, z)).Height.Nominal;
                     else
                         stairwayBlockHeight = Mathf.Max(stairwayBlockHeight, Micro.GetBlockRef((x, z)).Height.Nominal);
+                        
+
+                    //Do not generate hidden blocks
+                    //if(stairwayBlockHeight < Micro.GetBlockRef(x, z).Height.Nominal)
+                       // continue;
 
                     var baseBlockHeight = stairwayBlockHeight - 2;
                     if (z == 0 || z == width)
@@ -143,10 +150,38 @@ namespace TerrainDemo
                 }
             }
 
-            var testObj = new MicroMap(new Bounds2i((positions.Select(p => p.X).Min(), positions.Select(p => p.Z).Min()), (positions.Select(p => p.X).Max(), positions.Select(p => p.Z).Max())));
-            testObj.SetBlocks( positions, blocks);
-            testObj.GenerateHeightmap();
-            Micro.AddChild(testObj);
+            var bridgeObj = new ObjectMap(new Bounds2i((positions.Select(p => p.X).Min(), positions.Select(p => p.Z).Min()), (positions.Select(p => p.X).Max(), positions.Select(p => p.Z).Max())), Micro);
+            bridgeObj.SetBlocks( positions, blocks);
+            bridgeObj.GenerateHeightmap();
+            Micro.AddChild(bridgeObj);
+            //DEBUG end
+
+            //DEBUG build Laputa
+            positions.Clear();
+            blocks.Clear();
+
+            Vector2i laputaCenter = (-11, -14);
+            float laputaHeight = 10f;
+            int laputaRadius = 4;
+            for (int x = laputaCenter.X - laputaRadius - 1; x < laputaCenter.X + laputaRadius + 1; x++)
+                for (int z = laputaCenter.Z - laputaRadius - 1; z < laputaCenter.Z + laputaRadius + 1; z++)
+                {
+                    var pos = new Vector2i(x, z);
+                    if (Vector2.Distance(pos, laputaCenter) < laputaRadius)
+                    {
+                        positions.Add(pos);
+
+                        var mainHeight = Mathf.Sqrt(laputaRadius * laputaRadius - Vector2.DistanceSquared(laputaCenter, pos));
+
+                        blocks.Add(new Blocks(BlockType.Grass, BlockType.Empty, 
+                            new Heights(laputaHeight + mainHeight / 2, laputaHeight - mainHeight)));
+                    }
+                }
+
+            var laputaObj = new ObjectMap(new Bounds2i((positions.Select(p => p.X).Min(), positions.Select(p => p.Z).Min()), (positions.Select(p => p.X).Max(), positions.Select(p => p.Z).Max())), Micro);
+            laputaObj.SetBlocks(positions, blocks);
+            laputaObj.GenerateHeightmap();
+            Micro.AddChild(laputaObj);
             //DEBUG end
 
             Micro.Changed += MicroOnChanged;

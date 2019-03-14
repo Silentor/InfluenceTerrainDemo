@@ -294,8 +294,10 @@ namespace TerrainDemo.Visualization
             return (groundMesh, mainTexture);
         }
 
-        public ((Mesh, Texture) Base, (Mesh, Texture) Under, (Mesh, Texture) Main) CreateMinecraftMesh(MicroMap map, Bounds2i bounds, TriRunner renderSettings)
+        public ((Mesh, Texture) Base, (Mesh, Texture) Under, (Mesh, Texture) Main) CreateMinecraftMesh(BaseBlockMap map, Bounds2i bounds, TriRunner renderSettings)
         {
+            const float baseLayerVisibleWidth = 0.1f;
+
             bounds = bounds.Intersect(map.Bounds);
 
             if (bounds.IsEmpty)
@@ -321,8 +323,8 @@ namespace TerrainDemo.Visualization
             var uvXCoeff = 1f / bounds.Size.X;
             var uvYCoeff = 1f / bounds.Size.Z;
 
-            for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
-                for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
+            for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
+                for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
                 {
                     var mapLocalX = worldX - map.Bounds.Min.X;
                     var mapLocalZ = worldZ - map.Bounds.Min.Z;
@@ -348,7 +350,7 @@ namespace TerrainDemo.Visualization
                     else
                         DrawFloor(baseVertices, baseIndices, baseUv, block.Height.Base);
 
-                    DrawCeil(baseVertices, baseIndices, baseUv, block.GetBaseLayerWidth().Min);
+                    DrawCeil(baseVertices, baseIndices, baseUv, block.Height.Base - baseLayerVisibleWidth);
 
                     //Draw block sides
                     var neighbors = map.GetNeighborBlocks(new Vector2i(worldX, worldZ));
@@ -362,30 +364,42 @@ namespace TerrainDemo.Visualization
                             //Draw Ground part of block side
                             if (block.Ground != BlockType.Empty)
                             {
-                                //Calculate visible layer part and draw it in a simple way
-                                var visiblePart = CalculateVisiblePart(block.GetMainLayerWidth(), neigh);
+                                //Calculate visible layer part
+                                var mainLayerWidth = block.GetMainLayerWidth();
+                                var visiblePart = CalculateVisiblePart(mainLayerWidth, neigh);
 
-                                if(!visiblePart.IsEmpty)
-                                    DrawBlockSide(mainVertices, mainIndices, mainUv, dir, visiblePart.Max, visiblePart.Min);
+                                if(!visiblePart.Item1.IsEmpty && !visiblePart.Item2.IsEmpty)   //Visible side was splitted - just draw entire side, dont bother with two quads
+                                    DrawBlockSide(mainVertices, mainIndices, mainUv, dir, mainLayerWidth.Max, mainLayerWidth.Min);
+                                else if(!visiblePart.Item1.IsEmpty)
+                                    DrawBlockSide(mainVertices, mainIndices, mainUv, dir, visiblePart.Item1.Max, visiblePart.Item1.Min);
+                                //else - side completetly hided by neighbor
                             }
 
                             //Draw Underground part of block side (if solid)
                             if (block.Underground != BlockType.Empty)
                             {
-                                //Calculate visible layer part and draw it in a simple way
-                                var visiblePart = CalculateVisiblePart(block.GetUnderLayerWidth(), neigh);
+                                //Calculate visible layer part
+                                var underLayerWidth = block.GetUnderLayerWidth();
+                                var visiblePart = CalculateVisiblePart(underLayerWidth, neigh);
 
-                                if (!visiblePart.IsEmpty)
-                                    DrawBlockSide(underVertices, underIndices, underUv, dir, visiblePart.Max, visiblePart.Min);
+                                if (!visiblePart.Item1.IsEmpty && !visiblePart.Item2.IsEmpty)   //Visible side was splitted - just draw entire side, dont bother with two quads
+                                    DrawBlockSide(underVertices, underIndices, underUv, dir, underLayerWidth.Max, underLayerWidth.Min);
+                                else if (!visiblePart.Item1.IsEmpty)
+                                    DrawBlockSide(underVertices, underIndices, underUv, dir, visiblePart.Item1.Max, visiblePart.Item1.Min);
+                                //else - side completetly hided by neighbor
                             }
 
                             //Draw Base part of block side
                             {
-                                //Calculate visible layer part and draw it in a simple way
-                                var visiblePart = CalculateVisiblePart(block.GetBaseLayerWidth(), neigh);
+                                //Calculate visible layer part
+                                var baseLayerWidth = new Interval(block.Height.Base - baseLayerVisibleWidth, block.Height.Base);           //Base layer width is fictional, just for BLock mode visualization
+                                var visiblePart = CalculateVisiblePart(baseLayerWidth, neigh);
 
-                                if (!visiblePart.IsEmpty)
-                                    DrawBlockSide(baseVertices, baseIndices, baseUv, dir, visiblePart.Max, visiblePart.Min);
+                                if (!visiblePart.Item1.IsEmpty && !visiblePart.Item2.IsEmpty)   //Visible side was splitted - just draw entire side, dont bother with two quads
+                                    DrawBlockSide(baseVertices, baseIndices, baseUv, dir, baseLayerWidth.Max, baseLayerWidth.Min);
+                                else if (!visiblePart.Item1.IsEmpty)
+                                    DrawBlockSide(baseVertices, baseIndices, baseUv, dir, visiblePart.Item1.Max, visiblePart.Item1.Min);
+                                //else - side completetly hided by neighbor
                             }
                         }
                     }
@@ -450,9 +464,9 @@ namespace TerrainDemo.Visualization
                         uv.Add(new Vector2((chunkLocalX + 1) * uvXCoeff, chunkLocalZ * uvYCoeff));
                     }
 
-                    Interval CalculateVisiblePart(Interval input, in Blocks otherBlock)
+                    (Interval, Interval) CalculateVisiblePart(in Interval input, in Blocks otherBlock)
                     {
-                        return input.Subtract(otherBlock.GetTotalWidth()).minPart;
+                        return input.Subtract(new Interval(otherBlock.Height.Base - baseLayerVisibleWidth, otherBlock.Height.Main));
                     }
 
                     Blocks Filter(in Blocks input, Renderer.TerrainLayerToRender layer)
@@ -503,7 +517,7 @@ namespace TerrainDemo.Visualization
         }
         */
 
-        public (Mesh mesh, Texture texture) CreateObjectMesh(MicroMap mapObject, TriRunner renderSettings)
+        public (Mesh mesh, Texture texture) CreateObjectMesh(ObjectMap mapObject, TriRunner renderSettings)
         {
             var bounds = mapObject.Bounds;
             var heightMap = mapObject.GetHeightMap();
@@ -711,7 +725,7 @@ namespace TerrainDemo.Visualization
             }
         }
 
-        private Texture CreateBlockTexture(MicroMap map, Bounds2i bounds, TriRunner mode)
+        private Texture CreateBlockTexture(BaseBlockMap map, Bounds2i bounds, TriRunner mode)
         {
             bounds = bounds.Intersect(map.Bounds);
 
@@ -803,7 +817,7 @@ namespace TerrainDemo.Visualization
             return result;
         }
 
-        private (Texture Base, Texture Under, Texture Main) CreateBlockTexture2(MicroMap map, Bounds2i bounds)
+        private (Texture Base, Texture Under, Texture Main) CreateBlockTexture2(BaseBlockMap map, Bounds2i bounds)
         {
             bounds = bounds.Intersect(map.Bounds);
 
