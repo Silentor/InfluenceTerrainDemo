@@ -601,9 +601,8 @@ namespace TerrainDemo.Editor
 
         private void ShowBlockInfo((Vector2i position, Blocks block, BaseBlockMap source) block2, bool isSelected, bool showHeightmap)
         {
-            var sourceName = block2.source == MicroMap ? "Map" : "Object";
             var (position, block, source) = block2;
-            GUILayout.Label(isSelected ? $"Selected block {position} - {sourceName}" : $"Hovered block {position} - {sourceName}", EditorStyles.boldLabel);
+            GUILayout.Label(isSelected ? $"Selected block {position} - {source.Name}" : $"Hovered block {position} - {source.Name}", EditorStyles.boldLabel);
 
             if (!block.IsEmpty)
             {
@@ -649,11 +648,10 @@ namespace TerrainDemo.Editor
 
         private void ShowHeightVertexInfo((Vector2i position, Heights vertex, BaseBlockMap source) vertex, bool isSelected)
         {
-            var sourceName = vertex.source == MicroMap ? "Map" : "Object";
             if(isSelected)
-                GUILayout.Label($"Selected height {vertex.position} - {sourceName}", EditorStyles.boldLabel);
+                GUILayout.Label($"Selected height {vertex.position} - {vertex.source.Name}", EditorStyles.boldLabel);
             else
-                GUILayout.Label($"Hovered height {vertex.position} - {sourceName}", EditorStyles.boldLabel);
+                GUILayout.Label($"Hovered height {vertex.position} - {vertex.source.Name}", EditorStyles.boldLabel);
 
             ref readonly var v = ref vertex.source.GetHeightRef(vertex.position);
 

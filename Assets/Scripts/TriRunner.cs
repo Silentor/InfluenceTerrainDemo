@@ -150,7 +150,7 @@ namespace TerrainDemo
                 }
             }
 
-            var bridgeObj = new ObjectMap(new Bounds2i((positions.Select(p => p.X).Min(), positions.Select(p => p.Z).Min()), (positions.Select(p => p.X).Max(), positions.Select(p => p.Z).Max())), Micro);
+            var bridgeObj = new ObjectMap("Bridge", new Bounds2i((positions.Select(p => p.X).Min(), positions.Select(p => p.Z).Min()), (positions.Select(p => p.X).Max(), positions.Select(p => p.Z).Max())), Micro);
             bridgeObj.SetBlocks( positions, blocks);
             bridgeObj.GenerateHeightmap();
             Micro.AddChild(bridgeObj);
@@ -160,7 +160,7 @@ namespace TerrainDemo
             positions.Clear();
             blocks.Clear();
 
-            Vector2i laputaCenter = (-11, -14);
+            Vector2i laputaCenter = (-14, -14);
             float laputaHeight = 10f;
             int laputaRadius = 4;
             for (int x = laputaCenter.X - laputaRadius - 1; x < laputaCenter.X + laputaRadius + 1; x++)
@@ -172,13 +172,14 @@ namespace TerrainDemo
                         positions.Add(pos);
 
                         var mainHeight = Mathf.Sqrt(laputaRadius * laputaRadius - Vector2.DistanceSquared(laputaCenter, pos));
+                        mainHeight = Mathf.Max(mainHeight - 2, 0.25f);
 
                         blocks.Add(new Blocks(BlockType.Grass, BlockType.Empty, 
                             new Heights(laputaHeight + mainHeight / 2, laputaHeight - mainHeight)));
                     }
                 }
 
-            var laputaObj = new ObjectMap(new Bounds2i((positions.Select(p => p.X).Min(), positions.Select(p => p.Z).Min()), (positions.Select(p => p.X).Max(), positions.Select(p => p.Z).Max())), Micro);
+            var laputaObj = new ObjectMap("Laputa", new Bounds2i((positions.Select(p => p.X).Min(), positions.Select(p => p.Z).Min()), (positions.Select(p => p.X).Max(), positions.Select(p => p.Z).Max())), Micro);
             laputaObj.SetBlocks(positions, blocks);
             laputaObj.GenerateHeightmap();
             Micro.AddChild(laputaObj);

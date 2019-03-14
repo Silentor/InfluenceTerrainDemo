@@ -13,7 +13,19 @@ namespace TerrainDemo.Micro
 {
     public abstract class BaseBlockMap
     {
-        public Bounds2i Bounds;
+        public readonly string Name;
+        public readonly Bounds2i Bounds;
+
+        protected BaseBlockMap(string name, Bounds2i bounds)
+        {
+            Name = name;
+            Bounds = bounds;
+
+            _heightMap = new Heights[Bounds.Size.X + 1, Bounds.Size.Z + 1];
+            _blocks = new Blocks[Bounds.Size.X, Bounds.Size.Z];
+
+            Debug.Log($"Created {Name} blockmap {Bounds.Size.X} x {Bounds.Size.Z} = {Bounds.Size.X * Bounds.Size.Z} blocks");
+        }
 
         public void SetHeights(IEnumerable<Vector2i> positions, IEnumerable<Heights> heights)
         {
@@ -419,8 +431,8 @@ namespace TerrainDemo.Micro
 
         public event Action Changed;
 
-        protected Heights[,] _heightMap;
-        protected Blocks[,] _blocks;
+        protected readonly Heights[,] _heightMap;           //todo Optimize as vector array
+        protected readonly Blocks[,] _blocks;                   //todo Optimize as vector array
         protected readonly List<BaseBlockMap> _childs = new List<BaseBlockMap>();
 
         protected void DoChanged()

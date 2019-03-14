@@ -9,15 +9,9 @@ namespace TerrainDemo.Micro
     {
         private readonly MicroMap _parentMap;
 
-        public ObjectMap(Bounds2i bounds, MicroMap parentMap)
+        public ObjectMap(string name, Bounds2i bounds, MicroMap parentMap) : base(name, bounds)
         {
             _parentMap = parentMap;
-            Bounds = bounds;
-
-            _heightMap = new Heights[Bounds.Size.X + 1, Bounds.Size.Z + 1];
-            _blocks = new Blocks[Bounds.Size.X, Bounds.Size.Z];
-
-            Debug.LogFormat("Generated micromap {0} x {1} = {2} blocks", Bounds.Size.X, Bounds.Size.Z, Bounds.Size.X * Bounds.Size.Z);
         }
 
         /// <summary>

@@ -23,10 +23,8 @@ namespace TerrainDemo.Micro
         public readonly Cell[] Cells;
         public IEnumerable<BaseBlockMap> Childs => _childs;
 
-        public MicroMap(MacroMap macromap, TriRunner settings)
+        public MicroMap(MacroMap macromap, TriRunner settings) : base("MicroMap", (Bounds2i)macromap.Bounds)
         {
-            Bounds = (Bounds2i)macromap.Bounds;
-
             _macromap = macromap;
             _settings = settings;
 
@@ -37,14 +35,7 @@ namespace TerrainDemo.Micro
                 var microCell = new Cell(macroCell, this);
                 Cells[i] = microCell;
             }
-
-            _heightMap = new Heights[Bounds.Size.X + 1, Bounds.Size.Z + 1];
-            _blocks = new Blocks[Bounds.Size.X, Bounds.Size.Z];
-
-            Debug.LogFormat("Generated micromap {0} x {1} = {2} blocks", Bounds.Size.X, Bounds.Size.Z, Bounds.Size.X * Bounds.Size.Z);
         }
-
-        
 
         public void AddChild(ObjectMap childMap)
         {
