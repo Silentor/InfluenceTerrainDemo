@@ -61,8 +61,19 @@ namespace TerrainDemo.Editor
                 View = new Ray(SceneView.currentDrawingSceneView.camera.transform.position, SceneView.currentDrawingSceneView.camera.transform.forward),
             };
 
-            var userInputRay = HandleUtility.GUIPointToWorldRay(@event.mousePosition);
-            result.CursorRay = userInputRay;
+            //Validate cursor position
+            var screenSpacePos = HandleUtility.GUIPointToScreenPixelCoordinate(@event.mousePosition);
+            if (_input != null && (screenSpacePos.x < 0 || screenSpacePos.y < 0 ||
+                                   screenSpacePos.x > SceneView.currentDrawingSceneView.camera.pixelWidth ||
+                                   screenSpacePos.y > SceneView.currentDrawingSceneView.camera.pixelHeight
+                ))
+            {
+                result.CursorRay = _input.CursorRay;
+            }
+            else
+            {
+                result.CursorRay = HandleUtility.GUIPointToWorldRay(@event.mousePosition);
+            }
 
             if (@event.isKey)
             {
@@ -142,7 +153,7 @@ namespace TerrainDemo.Editor
                 {
                     if (MacroMap != null)
                     {
-                        var selectedCell = MacroMap.Raycast(userInputRay);
+                        var selectedCell = MacroMap.Raycast(result.CursorRay);
                         if (selectedCell.Item1 != null)
                         {
                             result.IsMapSelected = true;
