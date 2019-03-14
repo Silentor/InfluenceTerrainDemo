@@ -77,7 +77,7 @@ namespace TerrainDemo.Visualization
                 if (renderSettings.RenderMode == TerrainRenderMode.Blocks)
                 {
                     var objectMesh = _mesher.CreateMinecraftMesh(mapChild, mapChild.Bounds, _settings);
-                    var objectRoot = new GameObject("Object");
+                    var objectRoot = new GameObject(mapChild.Name);
                     objectRoot.transform.SetParent(GetMeshRoot());
                     CreateGameObject(objectMesh.Base.Item1, objectMesh.Base.Item2, "BaseMesh", objectRoot.transform);
                     CreateGameObject(objectMesh.Under.Item1, objectMesh.Under.Item2, "UnderMesh", objectRoot.transform);
@@ -86,7 +86,7 @@ namespace TerrainDemo.Visualization
                 else
                 {
                     var objectMesh = _mesher.CreateObjectMesh((ObjectMap)mapChild, _settings);
-                    var objectRoot = new GameObject("Object");
+                    var objectRoot = new GameObject(mapChild.Name);
                     objectRoot.transform.SetParent(GetMeshRoot());
                     CreateGameObject(objectMesh.mesh, objectMesh.texture, "MainMesh", objectRoot.transform);
                 }
