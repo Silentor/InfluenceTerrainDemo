@@ -162,6 +162,7 @@ namespace TerrainDemo
             bridgeObj.SetBlocks( positions, blocks);
             bridgeObj.GenerateHeightmap();
             Micro.AddChild(bridgeObj);
+            bridgeObj.Changed += MicroOnChanged;
             //DEBUG end
 
             //DEBUG build Laputa
@@ -191,6 +192,7 @@ namespace TerrainDemo
             laputaObj.SetBlocks(positions, blocks);
             laputaObj.GenerateHeightmap();
             Micro.AddChild(laputaObj);
+            laputaObj.Changed += MicroOnChanged;
             //DEBUG end
 
             Micro.Changed += MicroOnChanged;

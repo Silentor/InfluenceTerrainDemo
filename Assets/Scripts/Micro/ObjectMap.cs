@@ -143,6 +143,7 @@ namespace TerrainDemo.Micro
 
                     heightAcc = heightAcc / blockCounter;
 
+                    /*
                     if (isCommonVertex && isBorderVertex)
                     {
                         ref readonly var parentHeight = ref _parentMap.GetHeightRef(Local2World(new Vector2i(x, z)));
@@ -151,7 +152,7 @@ namespace TerrainDemo.Micro
                         else
                             _heightMap[x, z] = new Heights(heightAcc.Z, heightAcc.Y, heightAcc.X);
                     }
-                    else
+                    else*/
                     {
                         _heightMap[x, z] = new Heights(heightAcc.Z, heightAcc.Y, heightAcc.X);
                     }

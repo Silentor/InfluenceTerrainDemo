@@ -484,38 +484,45 @@ namespace TerrainDemo.Editor
             {
                 ref readonly var height = ref vertex.source.GetHeightRef(vertex.position);
 
-                var pos = new Vector3(vertex.position.X, height.Base, vertex.position.Z);
+                var basePos = new Vector3(vertex.position.X, height.Base, vertex.position.Z);
+                var underPos = new Vector3(vertex.position.X, height.Underground, vertex.position.Z);
+                var mainPos = new Vector3(vertex.position.X, height.Main, vertex.position.Z);
 
+                //Draw base
                 Handles.zTest = CompareFunction.LessEqual;
                 Handles.color = overrideColor ?? Color.black;
-                Handles.SphereHandleCap(0, pos, Quaternion.identity, 0.2f, EventType.Repaint);
+                Handles.SphereHandleCap(0, basePos, Quaternion.identity, 0.2f, EventType.Repaint);
 
                 Handles.zTest = CompareFunction.Greater;
-                Handles.color = Color.black / 2;
-                Handles.SphereHandleCap(0, pos, Quaternion.identity, 0.2f, EventType.Repaint);
+                Handles.color /= 2;
+                Handles.SphereHandleCap(0, basePos, Quaternion.identity, 0.2f, EventType.Repaint);
 
+                //Draw under
                 if (height.Underground > height.Base)
                 {
-                    pos.y = height.Underground;
                     Handles.zTest = CompareFunction.LessEqual;
                     Handles.color = overrideColor ?? Color.magenta;
-                    Handles.SphereHandleCap(0, pos, Quaternion.identity, 0.2f, EventType.Repaint);
+                    Handles.SphereHandleCap(0, underPos, Quaternion.identity, 0.2f, EventType.Repaint);
+                    Handles.DrawLine(basePos, underPos);
 
                     Handles.zTest = CompareFunction.Greater;
-                    Handles.color = Color.magenta / 2;
-                    Handles.SphereHandleCap(0, pos, Quaternion.identity, 0.2f, EventType.Repaint);
+                    Handles.color /= 2;
+                    Handles.SphereHandleCap(0, underPos, Quaternion.identity, 0.2f, EventType.Repaint);
+                    Handles.DrawLine(basePos, underPos);
                 }
 
+                //Draw main
                 if (height.Main > height.Base && height.Main > height.Underground)
                 {
-                    pos.y = height.Main;
                     Handles.zTest = CompareFunction.LessEqual;
                     Handles.color = overrideColor ?? Color.green;
-                    Handles.SphereHandleCap(0, pos, Quaternion.identity, 0.2f, EventType.Repaint);
+                    Handles.SphereHandleCap(0, mainPos, Quaternion.identity, 0.2f, EventType.Repaint);
+                    Handles.DrawLine(underPos, mainPos);
 
                     Handles.zTest = CompareFunction.Greater;
-                    Handles.color = Color.green / 2;
-                    Handles.SphereHandleCap(0, pos, Quaternion.identity, 0.2f, EventType.Repaint);
+                    Handles.color /= 2;
+                    Handles.SphereHandleCap(0, mainPos, Quaternion.identity, 0.2f, EventType.Repaint);
+                    Handles.DrawLine(underPos, mainPos);
                 }
             }
         }
@@ -959,7 +966,6 @@ namespace TerrainDemo.Editor
             /// Is some point of map selected? Cursor position contains point
             /// </summary>
             public bool IsMapSelected;
-            
 
             /// <summary>
             /// World cursor position
@@ -970,7 +976,6 @@ namespace TerrainDemo.Editor
             /// Mouse hovered block
             /// </summary>
             public (Vector2i position, Blocks block, BaseBlockMap source)? HoveredBlock2;
-
 
             /// <summary>
             /// Selected block position
@@ -991,6 +996,8 @@ namespace TerrainDemo.Editor
             public (Vector2i position, Heights vertex, BaseBlockMap source)?  HoveredHeightVertex;
 
             public (Vector2i position, Heights vertex, BaseBlockMap source)? SelectedHeightVertex;
+
+            public int FrameCount;
         }
     }
 }
