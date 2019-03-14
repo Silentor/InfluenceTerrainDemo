@@ -11,9 +11,9 @@ using TerrainDemo.Visualization;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Debug = UnityEngine.Debug;
-using Random = UnityEngine.Random;
 using Renderer = TerrainDemo.Visualization.Renderer;
 using Vector2 = OpenTK.Vector2;
+using Vector3 = OpenTK.Vector3;
 
 namespace TerrainDemo
 {
@@ -117,6 +117,9 @@ namespace TerrainDemo
             const int xStart = -10, xFinish = 10, width = 5;
             const int xCenter = (xStart + xFinish) / 2;
             const int length = xFinish - xStart;
+
+            var transMatrix = OpenTK.Matrix4.CreateRotationY(MathHelper.DegreesToRadians(0));
+
             for (int x = xStart; x <= xFinish; x++)   //length
             {
                 for (int z = 0; z <= width; z++)  //width
@@ -129,12 +132,14 @@ namespace TerrainDemo
                     if (z == 0 || z == width)
                         stairwayBlockHeight -= 0.5f;
 
+                    /*
                     
                     //To smoothly blend with ground
                     if (x <= xStart + 1 || x >= xFinish - 1)
                         stairwayBlockHeight = Micro.GetBlockRef((x, z)).Height.Nominal;
                     else
                         stairwayBlockHeight = Mathf.Max(stairwayBlockHeight, Micro.GetBlockRef((x, z)).Height.Nominal);
+                        */
                         
 
                     //Do not generate hidden blocks
@@ -146,7 +151,10 @@ namespace TerrainDemo
                         baseBlockHeight += 0.5f;
 
                     blocks.Add(new Blocks(BlockType.Stone, BlockType.Empty, new Heights(stairwayBlockHeight, baseBlockHeight, baseBlockHeight)));
-                    positions.Add(new Vector2i(x, z));
+
+                    var transPos = new OpenTK.Vector4(x, 1, z, 1);
+                    transPos = transPos * transMatrix;
+                    positions.Add(new Vector2i(Mathf.RoundToInt(transPos.X), Mathf.RoundToInt(transPos.Z)));
                 }
             }
 

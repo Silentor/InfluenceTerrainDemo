@@ -117,14 +117,15 @@ namespace TerrainDemo.Tools
         //             0 =  disjoint (no intersect)
         //             1 =  intersect in unique point I1
         //             2 =  are in the same plane
-        public static int LineTriangleIntersection(Ray ray, Vector3 v0, Vector3 v1, Vector3 v2, out Vector3 inter)    //todo needs testing
+        public static int LineTriangleIntersection(Ray ray, Vector3 v0, Vector3 v1, Vector3 v2, /*out Vector3 inter*/ out float distance)    //todo needs testing
         {
             //Translated from http://geomalgorithms.com/a06-_intersect-2.html#intersect3D_RayTriangle()
 
             Vector3 u, v, n;              // triangle vectors
             Vector3 dir, w0, w;           // ray vectors
-            float r, a, b;              // params to calc ray-plane intersect
-            inter = Vector3.zero;
+            float a, b;              // params to calc ray-plane intersect
+            Vector3 inter;
+            distance = -1;
 
             // get triangle edge vectors and plane normal
             u = v1 - v0;
@@ -145,12 +146,12 @@ namespace TerrainDemo.Tools
             }
 
             // get intersect point of ray with triangle plane
-            r = a / b;
-            if (r < 0.0)                    // ray goes away from triangle
+            distance = a / b;
+            if (distance < 0.0)                    // ray goes away from triangle
                 return 0;                   // => no intersect
                                             // for a segment, also test if (r > 1.0) => no intersect
 
-            inter = ray.origin + r * dir;            // intersect point of ray and plane
+            inter = ray.origin + distance * dir;            // intersect point of ray and plane
 
             // is I inside T?
             float uu, uv, vv, wu, wv, D;

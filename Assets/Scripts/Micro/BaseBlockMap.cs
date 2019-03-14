@@ -312,21 +312,21 @@ namespace TerrainDemo.Micro
                     var v10 = new Vector3(blockPos.X + 1, c10, blockPos.Z);
 
                     //Check block's triangles for intersection
-                    Vector3 hit;
+                    float distance;
                     if (Math.Abs((float) (c00 - c11)) < Math.Abs((float) (c01 - c10)))
                     {
-                        if (Intersections.LineTriangleIntersection(ray, v00, v01, v11, out hit) == 1
-                            || Intersections.LineTriangleIntersection(ray, v00, v11, v10, out hit) == 1)
+                        if (Intersections.LineTriangleIntersection(ray, v00, v01, v11, out distance) == 1
+                            || Intersections.LineTriangleIntersection(ray, v00, v11, v10, out distance) == 1)
                         {
-                            return (hit, blockPos);
+                            return (ray.GetPoint(distance), blockPos);
                         }
                     }
                     else
                     {
-                        if (Intersections.LineTriangleIntersection(ray, v00, v01, v10, out hit) == 1
-                            || Intersections.LineTriangleIntersection(ray, v01, v11, v10, out hit) == 1)
+                        if (Intersections.LineTriangleIntersection(ray, v00, v01, v10, out distance) == 1
+                            || Intersections.LineTriangleIntersection(ray, v01, v11, v10, out distance) == 1)
                         {
-                            return (hit, blockPos);
+                            return (ray.GetPoint(distance), blockPos);
                         }
                     }
                 }
@@ -348,36 +348,35 @@ namespace TerrainDemo.Micro
             //todo Early discard block based on block height (blocks AABB?)
             foreach (var blockPos in rayBlocks)
             {
-                var result = CheckBlockIntersection(this, blockPos);
-                if (result.HasValue)
+                var blockHitDistance= CheckBlockIntersection(this, blockPos);
+                if (blockHitDistance > 0)
                 {
-                    distance = Vector3.SqrMagnitude(result.Value);
+                    distance = blockHitDistance;
                     source = this;
                 }
 
                 foreach (var child in _childs)
                 {
-                    var childResult = CheckBlockIntersection(child, blockPos);
-                    if (childResult.HasValue)
+                    var childBlockHitDistance = CheckBlockIntersection(child, blockPos);
+                    if (childBlockHitDistance > 0)
                     {
-                        if (Vector3.SqrMagnitude(childResult.Value) < distance)
+                        if (childBlockHitDistance < distance)
                         {
-                            distance = Vector3.SqrMagnitude(childResult.Value);
-                            result = childResult;
+                            distance = childBlockHitDistance;
                             source = child;
                         }
                     }
                 }
 
-                if (result.HasValue)
+                if (source != null)
                 {
-                    return (result.Value, blockPos, source);
+                    return (ray.GetPoint(distance), blockPos, source);
                 }
             }
 
             return null;
 
-            Vector3? CheckBlockIntersection(BaseBlockMap map, in Vector2i position)
+            float CheckBlockIntersection(BaseBlockMap map, in Vector2i position)
             {
                 if (map.Bounds.Contains(position))
                 {
@@ -395,26 +394,26 @@ namespace TerrainDemo.Micro
                     var v10 = new Vector3(position.X + 1, c10, position.Z);
 
                     //Check block's triangles for intersection
-                    Vector3 hit;
+                    float resultDistance;
                     if (Math.Abs((float) (c00 - c11)) < Math.Abs((float) (c01 - c10)))
                     {
-                        if (Intersections.LineTriangleIntersection(ray, v00, v01, v11, out hit) == 1
-                            || Intersections.LineTriangleIntersection(ray, v00, v11, v10, out hit) == 1)
+                        if (Intersections.LineTriangleIntersection(ray, v00, v01, v11, out resultDistance) == 1
+                            || Intersections.LineTriangleIntersection(ray, v00, v11, v10, out resultDistance) == 1)
                         {
-                            return hit;
+                            return resultDistance;
                         }
                     }
                     else
                     {
-                        if (Intersections.LineTriangleIntersection(ray, v00, v01, v10, out hit) == 1
-                            || Intersections.LineTriangleIntersection(ray, v01, v11, v10, out hit) == 1)
+                        if (Intersections.LineTriangleIntersection(ray, v00, v01, v10, out resultDistance) == 1
+                            || Intersections.LineTriangleIntersection(ray, v01, v11, v10, out resultDistance) == 1)
                         {
-                            return hit;
+                            return resultDistance;
                         }
                     }
                 }
 
-                return null;
+                return -1;
             }
         }
 

@@ -164,8 +164,8 @@ namespace TerrainDemo.Macro
                 var v1 = corners[i];
                 var v2 = corners[(i + 1) % corners.Count];
 
-                if (Intersections.LineTriangleIntersection(ray, v1, v2, CenterPoint, out var intersectionPoint) == 1)
-                    return intersectionPoint;
+                if (Intersections.LineTriangleIntersection(ray, v1, v2, CenterPoint, out var distance) == 1)
+                    return ray.GetPoint(distance);
             }
 
             return null;
