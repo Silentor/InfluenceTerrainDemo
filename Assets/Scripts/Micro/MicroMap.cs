@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using JetBrains.Annotations;
@@ -10,6 +11,7 @@ using TerrainDemo.Tools;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Assertions;
+using Debug = UnityEngine.Debug;
 using Vector2 = OpenTK.Vector2;
 using Vector3 = UnityEngine.Vector3;
 
@@ -191,57 +193,89 @@ namespace TerrainDemo.Micro
             DoChanged();
         }
 
-        /*
         /// <summary>
-        /// Clockwise
+        /// Generate heightmap from blockmap
         /// </summary>
-        /// <param name="blockPos"></param>
-        /// <returns></returns>
-        public ValueTuple<MicroHeight, MicroHeight, MicroHeight, MicroHeight> GetBlockVertices(Vector2i blockPos)
+        public override void GenerateHeightmap()
         {
-            var localPos = blockPos - Bounds.Min;
+            var timer = Stopwatch.StartNew();
 
-            return new ValueTuple<MicroHeight, MicroHeight, MicroHeight, MicroHeight>(
-                _heightMap[localPos.X, localPos.Z],
-                _heightMap[localPos.X, localPos.Z + 1],
-                _heightMap[localPos.X + 1, localPos.Z + 1],
-                _heightMap[localPos.X + 1, localPos.Z]);
+            //Local space iteration
+            for (int x = 0; x < Bounds.Size.X + 1; x++)
+                for (int z = 0; z < Bounds.Size.Z + 1; z++)
+                {
+                    //Get neighbor blocks for given vertex
+                    var neighborBlockX0 = Math.Max(x - 1, 0);
+                    var neighborBlockX1 = Math.Min(x, Bounds.Size.X - 1);
+                    var neighborBlockZ0 = Math.Max(z - 1, 0);
+                    var neighborBlockZ1 = Math.Min(z, Bounds.Size.Z - 1);
+
+                    ref readonly var b00 = ref _blocks[neighborBlockX0, neighborBlockZ0];
+                    ref readonly var b10 = ref _blocks[neighborBlockX1, neighborBlockZ0];
+                    ref readonly var b01 = ref _blocks[neighborBlockX0, neighborBlockZ1];
+                    ref readonly var b11 = ref _blocks[neighborBlockX1, neighborBlockZ1];
+
+                    //Trivial vertex height calculation
+                    var heightAcc = OpenTK.Vector3.Zero;
+                    int blockCounter = 0;
+                    if (!b00.IsEmpty)
+                    {
+                        heightAcc += (OpenTK.Vector3)b00.Height;
+                        blockCounter++;
+                    }
+
+                    if (!b01.IsEmpty)
+                    {
+                        heightAcc += (OpenTK.Vector3)b01.Height;
+                        blockCounter++;
+                    }
+
+                    if (!b10.IsEmpty)
+                    {
+                        heightAcc += (OpenTK.Vector3)b10.Height;
+                        blockCounter++;
+                    }
+
+                    if (!b11.IsEmpty)
+                    {
+                        heightAcc += (OpenTK.Vector3)b11.Height;
+                        blockCounter++;
+                    }
+
+                    if (blockCounter > 0)
+                    {
+                        heightAcc = heightAcc / blockCounter;
+                        _heightMap[x, z] = new Heights(heightAcc.Z, heightAcc.Y, heightAcc.X);
+                    }
+
+                }
+
+            timer.Stop();
+            UnityEngine.Debug.Log($"Heightmap of {Name} generated in {timer.ElapsedMilliseconds}");
         }
-        */
+
+        public void SetOcclusionState(Vector2i worldPosition, BlockOcclusionState state)
+        {
+            _occlusion[worldPosition] = state;
+        }
+
+        public override BlockOcclusionState GetOcclusionState(Vector2i worldPosition)
+        {
+            if (_occlusion.TryGetValue(worldPosition, out var state))
+                return state;
+            return BlockOcclusionState.None;
+        }
 
         private readonly MacroMap _macromap;
         private readonly TriRunner _settings;
+        private readonly Dictionary<Vector2i, BlockOcclusionState> _occlusion = new Dictionary<Vector2i, BlockOcclusionState>();
         
     }
 
-    public readonly struct NeighborBlocks
+    public enum BlockOcclusionState
     {
-        public readonly Blocks Forward;
-        public readonly Blocks Right;
-        public readonly Blocks Back;
-        public readonly Blocks Left;
-
-        public Blocks this[Side2d dir]
-        {
-            get
-            {
-                switch (dir)
-                {
-                    case Side2d.Forward: return Forward;
-                    case Side2d.Right: return Right;
-                    case Side2d.Back: return Back;
-                    case Side2d.Left: return Left;
-                    default: throw new ArgumentOutOfRangeException(nameof(dir));
-                }
-            }
-        }
-
-        public NeighborBlocks(in Blocks forward, in Blocks right, in Blocks back, in Blocks left)
-        {
-            Forward = forward;
-            Right = right;
-            Back = back;
-            Left = left;
-        }
+        None,
+        MapOccluded,
+        ObjectOccluded
     }
 }

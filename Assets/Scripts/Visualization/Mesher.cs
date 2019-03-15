@@ -42,109 +42,6 @@ namespace TerrainDemo.Visualization
                 _defaultBlockColor[blockSetting.Block] = blockSetting.DefaultColor;
         }
 
-        /*
-        public (Mesh, Texture) CreateMesh(MicroMap map, Bounds2i bounds, TriRunner renderSettings)
-        {
-            bounds = bounds.Intersect(map.Bounds);
-
-            var resultMesh = new Mesh();
-
-            if (bounds.IsEmpty)
-                return (resultMesh, Texture2D.blackTexture);
-
-            var heights = map.GetHeightMap();
-            var blocks = map.GetBlockMap();
-            var vertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z +1));
-            var indices = new List<int>(vertices.Count * 2);
-            var uvs = new List<UnityEngine.Vector2>(vertices.Count);
-
-            var vertCountX = bounds.Size.X + 1;
-            var vertCountZ = bounds.Size.Z + 1;
-
-            //Set vertices
-            for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z + 1; worldZ++)
-                for (int worldX = bounds.Min.X; worldX <= bounds.Max.X + 1; worldX++)
-                {
-                    var mapLocalX = worldX - map.Bounds.Min.X;
-                    var mapLocalZ = worldZ - map.Bounds.Min.Z;
-                    var chunkLocalX = worldX - bounds.Min.X;
-                    var chunkLocalZ = worldZ - bounds.Min.Z;
-
-                    if(renderSettings.RenderLayer == Renderer.TerrainLayerToRender.Main)
-                        vertices.Add(new Vector3(worldX, heights[mapLocalX, mapLocalZ].Nominal, worldZ));
-                    else if(renderSettings.RenderLayer == Renderer.TerrainLayerToRender.Underground)
-                        vertices.Add(new Vector3(worldX, heights[mapLocalX, mapLocalZ].UndergroundHeight, worldZ));
-                    else  //Base layer
-                        vertices.Add(new Vector3(worldX, heights[mapLocalX, mapLocalZ].BaseHeight, worldZ));
-
-                    uvs.Add(new Vector2(chunkLocalX / (float)bounds.Size.X, chunkLocalZ / (float)bounds.Size.Z));
-                }
-
-
-            //Set quads
-            for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
-                for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
-                {
-                    var mapLocalX = worldX - map.Bounds.Min.X;
-                    var mapLocalZ = worldZ - map.Bounds.Min.Z;
-                    var chunkLocalX = worldX - bounds.Min.X;
-                    var chunkLocalZ = worldZ - bounds.Min.Z;
-                    var startIndex = chunkLocalZ * (bounds.Size.X + 1) + chunkLocalX;
-
-                    if( blocks[mapLocalX, mapLocalZ].IsEmpty)
-                        continue;
-
-                    float height00, height01, height11, height10;
-                    if (renderSettings.RenderLayer == Renderer.TerrainLayerToRender.Main)
-                    {
-                        height00 = heights[mapLocalX, mapLocalZ].Nominal;
-                        height01 = heights[mapLocalX, mapLocalZ + 1].Nominal;
-                        height11 = heights[mapLocalX + 1, mapLocalZ + 1].Nominal;
-                        height10 = heights[mapLocalX + 1, mapLocalZ].Nominal;
-                    }
-                    else
-                    {
-                        height00 = heights[mapLocalX, mapLocalZ].UndergroundHeight;
-                        height01 = heights[mapLocalX, mapLocalZ + 1].UndergroundHeight;
-                        height11 = heights[mapLocalX + 1, mapLocalZ + 1].UndergroundHeight;
-                        height10 = heights[mapLocalX + 1, mapLocalZ].UndergroundHeight;
-                    }
-
-                    if (Mathf.Abs(height00 - height11) < Mathf.Abs(height10 - height01))
-                    {
-                        indices.Add(startIndex);
-                        indices.Add(startIndex + vertCountX);
-                        indices.Add(startIndex + vertCountX + 1);
-
-                        indices.Add(startIndex);
-                        indices.Add(startIndex + vertCountX + 1);
-                        indices.Add(startIndex + 1);
-                    }
-                    else
-                    {
-                        indices.Add(startIndex);
-                        indices.Add(startIndex + vertCountX);
-                        indices.Add(startIndex + 1);
-
-                        indices.Add(startIndex + vertCountX);
-                        indices.Add(startIndex + vertCountX + 1);
-                        indices.Add(startIndex + 1);
-                    }
-                }
-
-            resultMesh.SetVertices(vertices);
-
-            resultMesh.SetIndices(indices.ToArray(), MeshTopology.Triangles, 0);
-            resultMesh.SetUVs(0, uvs);
-            resultMesh.RecalculateBounds();
-            resultMesh.RecalculateNormals();
-
-            var resultTexture = CreateBlockTexture(map, bounds, renderSettings);
-
-            return (resultMesh, resultTexture);
-        }
-        */
-
         public Mesh CreateMacroMesh(MacroMap mapMesh, Renderer.MacroCellInfluenceMode influence)
         {
             var result = new Mesh();
@@ -195,6 +92,11 @@ namespace TerrainDemo.Visualization
                     
                     ref readonly var block = ref blockMap[mapLocalX, mapLocalZ];
                     if (block.IsEmpty)
+                        continue;
+
+                    //Block culling
+                    //todo Do not check every main map block for culling! Only blocks shared with map objects. Need fast way to check if block is shared with map object. Consider store a flag in Block struct.
+                    if (map.GetOcclusionState(new Vector2i(worldX, worldZ)) == BlockOcclusionState.MapOccluded)
                         continue;
 
                     //Prepare block vertices
@@ -500,21 +402,7 @@ namespace TerrainDemo.Visualization
             var (baseTexture, underTexture, mainTexture) = CreateBlockTexture2(map, bounds);
 
             return ((baseMesh, baseTexture), (underMesh, underTexture), (mainMesh, mainTexture));
-
-
         }
-
-        /*
-        public (Mesh, Texture) CreateObjectMesh(MicroMap @object)
-        {
-            for (var z = @object.Bounds.Min.Z; z < @object.Bounds.Max.Z; z++)
-                for (var x = @object.Bounds.Min.X; x < @object.Bounds.Max.X; x++)
-                {
-                    ref readonly var block = ref @object.GetBlockRef((x, z));
-
-                }
-        }
-        */
 
         public (Mesh mesh, Texture texture) CreateObjectMesh(ObjectMap mapObject, TriRunner renderSettings)
         {
@@ -539,6 +427,10 @@ namespace TerrainDemo.Visualization
 
                     ref readonly var block = ref blockMap[mapLocalX, mapLocalZ];
                     if (block.IsEmpty)
+                        continue;
+
+                    //Block culling
+                    if (mapObject.GetOcclusionState(new Vector2i(worldX, worldZ)) == BlockOcclusionState.ObjectOccluded)
                         continue;
 
                     //Prepare block vertices

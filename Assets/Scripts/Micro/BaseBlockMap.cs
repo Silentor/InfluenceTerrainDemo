@@ -50,58 +50,7 @@ namespace TerrainDemo.Micro
         /// <summary>
         /// Generate heightmap from blockmap
         /// </summary>
-        public virtual void GenerateHeightmap()
-        {
-            //Local space iteration
-            for (int x = 0; x < Bounds.Size.X + 1; x++)
-                for (int z = 0; z < Bounds.Size.Z + 1; z++)
-                {
-                    //Get neighbor blocks for given vertex
-                    var neighborBlockX0 = Math.Max(x - 1, 0);
-                    var neighborBlockX1 = Math.Min(x, Bounds.Size.X - 1);
-                    var neighborBlockZ0 = Math.Max(z - 1, 0);
-                    var neighborBlockZ1 = Math.Min(z, Bounds.Size.Z - 1);
-
-                    ref readonly var b00 = ref _blocks[neighborBlockX0, neighborBlockZ0];
-                    ref readonly var b10 = ref _blocks[neighborBlockX1, neighborBlockZ0];
-                    ref readonly var b01 = ref _blocks[neighborBlockX0, neighborBlockZ1];
-                    ref readonly var b11 = ref _blocks[neighborBlockX1, neighborBlockZ1];
-
-                    //Trivial vertex height calculation
-                    var heightAcc = OpenTK.Vector3.Zero;
-                    int blockCounter = 0;
-                    if (!b00.IsEmpty)
-                    {
-                        heightAcc += (OpenTK.Vector3)b00.Height;
-                        blockCounter++;
-                    }
-
-                    if (!b01.IsEmpty)
-                    {
-                        heightAcc += (OpenTK.Vector3)b01.Height;
-                        blockCounter++;
-                    }
-
-                    if (!b10.IsEmpty)
-                    {
-                        heightAcc += (OpenTK.Vector3)b10.Height;
-                        blockCounter++;
-                    }
-
-                    if (!b11.IsEmpty)
-                    {
-                        heightAcc += (OpenTK.Vector3)b11.Height;
-                        blockCounter++;
-                    }
-
-                    if (blockCounter > 0)
-                    {
-                        heightAcc = heightAcc / blockCounter;
-                        _heightMap[x, z] = new Heights(heightAcc.Z, heightAcc.Y, heightAcc.X);
-                    }
-
-                }
-        }
+        public abstract void GenerateHeightmap();
 
         public void SetBlocks(IEnumerable<Vector2i> positions, IEnumerable<Blocks> blocks, bool regenerateHeightmap)
         {
@@ -133,13 +82,42 @@ namespace TerrainDemo.Micro
 
         public ref readonly Heights GetHeightRef(Vector2i worldPos)
         {
-            var localPos = worldPos - Bounds.Min;
-
-            if (localPos.X >= 0 && localPos.X < Bounds.Size.X + 1
-                                && localPos.Z >= 0 && localPos.Z < Bounds.Size.Z + 1)
+            if (worldPos.X >= Bounds.Min.X && worldPos.X <= Bounds.Max.X + 1
+                                           && worldPos.Z >= Bounds.Min.Z && worldPos.Z <= Bounds.Max.Z + 1)
+            {
+                var localPos = worldPos - Bounds.Min;
                 return ref _heightMap[localPos.X, localPos.Z];
+            }
 
             return ref Heights.Empty;
+        }
+
+        public BlockHeights? GetBlockHeights(Vector2i worldPos)
+        {
+            if (!Bounds.Contains(worldPos))
+                return null;
+
+            var localPos = World2Local(worldPos);
+            return new BlockHeights(
+                _heightMap[localPos.X, localPos.Z],
+                _heightMap[localPos.X, localPos.Z + 1],
+                _heightMap[localPos.X + 1, localPos.Z],
+                _heightMap[localPos.X + 1, localPos.Z + 1]
+                );
+        }
+
+        public BlockNominalHeights? GetBlockNominalHeights(Vector2i worldPos)
+        {
+            if (!Bounds.Contains(worldPos))
+                return null;
+
+            var localPos = World2Local(worldPos);
+            return new BlockNominalHeights(
+                _heightMap[localPos.X, localPos.Z].Nominal,
+                _heightMap[localPos.X, localPos.Z + 1].Nominal,
+                _heightMap[localPos.X + 1, localPos.Z].Nominal,
+                _heightMap[localPos.X + 1, localPos.Z + 1].Nominal
+            );
         }
 
         public Blocks[,] GetBlockMap()
@@ -216,18 +194,19 @@ namespace TerrainDemo.Micro
         {
             //Blocks forward = Blocks.Empty, right = Blocks.Empty, back = Blocks.Empty, left = Blocks.Empty;
             var localPos = worldBlockPos - Bounds.Min;
+            var blocksSize = Bounds.Size;
 
             return new NeighborBlocks(
-                Bounds.Contains(worldBlockPos + Vector2i.Forward)
+                localPos.Z + 1 < blocksSize.Z
                     ? _blocks[localPos.X, localPos.Z + 1]
                     : Blocks.Empty,
-                Bounds.Contains(worldBlockPos + Vector2i.Right)
+                localPos.X + 1 < blocksSize.X
                     ? _blocks[localPos.X + 1, localPos.Z]
                     : Blocks.Empty,
-                Bounds.Contains(worldBlockPos + Vector2i.Back)
+                localPos.Z - 1 >= 0
                     ? _blocks[localPos.X, localPos.Z - 1]
                     : Blocks.Empty,
-                Bounds.Contains(worldBlockPos + Vector2i.Left)
+                localPos.X - 1 >= 0
                     ? _blocks[localPos.X - 1, localPos.Z]
                     : Blocks.Empty
             );
@@ -436,6 +415,8 @@ namespace TerrainDemo.Micro
             return worldPosition - Bounds.Min;
         }
 
+        public abstract BlockOcclusionState GetOcclusionState(Vector2i worldPosition);
+
 
         public event Action Changed;
 
@@ -446,6 +427,77 @@ namespace TerrainDemo.Micro
         protected void DoChanged()
         {
             Changed?.Invoke();
+        }
+    }
+
+    public readonly struct NeighborBlocks
+    {
+        public readonly Blocks Forward;
+        public readonly Blocks Right;
+        public readonly Blocks Back;
+        public readonly Blocks Left;
+
+        public Blocks this[Side2d dir]
+        {
+            get
+            {
+                switch (dir)
+                {
+                    case Side2d.Forward: return Forward;
+                    case Side2d.Right: return Right;
+                    case Side2d.Back: return Back;
+                    case Side2d.Left: return Left;
+                    default: throw new ArgumentOutOfRangeException(nameof(dir));
+                }
+            }
+        }
+
+        public NeighborBlocks(in Blocks forward, in Blocks right, in Blocks back, in Blocks left)
+        {
+            Forward = forward;
+            Right = right;
+            Back = back;
+            Left = left;
+        }
+    }
+
+    public readonly struct BlockHeights
+    {
+        public readonly Heights H00;
+        public readonly Heights H01;
+        public readonly Heights H10;
+        public readonly Heights H11;
+
+        public BlockHeights(in Heights h00, in Heights h01, in Heights h10, in Heights h11)
+        {
+            H00 = h00;
+            H01 = h01;
+            H10 = h10;
+            H11 = h11;
+        }
+    }
+
+    public readonly struct BlockNominalHeights
+    {
+        public readonly float H00;
+        public readonly float H01;
+        public readonly float H10;
+        public readonly float H11;
+
+        public BlockNominalHeights(float h00, float h01, float h10, float h11)
+        {
+            H00 = h00;
+            H01 = h01;
+            H10 = h10;
+            H11 = h11;
+        }
+
+        public void Deconstruct(out float height00, out float height01, out float height10, out float height11)
+        {
+            height00 = H00;
+            height01 = H01;
+            height10 = H10;
+            height11 = H11;
         }
     }
 }

@@ -133,7 +133,7 @@ namespace TerrainDemo.Micro
         {
             unchecked
             {
-                var hashCode = -862721379;
+                var hashCode = Height.GetHashCode();
                 hashCode = hashCode * -1521134295 + Base.GetHashCode();
                 hashCode = hashCode * -1521134295 + Underground.GetHashCode();
                 hashCode = hashCode * -1521134295 + Ground.GetHashCode();

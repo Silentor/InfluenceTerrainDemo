@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using TerrainDemo.Macro;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using UnityEngine;
+using Debug = System.Diagnostics.Debug;
 
 namespace TerrainDemo.Micro
 {
@@ -38,6 +40,8 @@ namespace TerrainDemo.Micro
         /// </summary>
         public override void GenerateHeightmap()
         {
+            var timer = Stopwatch.StartNew();
+
             //Local space iteration
             for (int x = 0; x < Bounds.Size.X + 1; x++)
                 for (int z = 0; z < Bounds.Size.Z + 1; z++)
@@ -73,7 +77,7 @@ namespace TerrainDemo.Micro
 
                         if (!b10.IsEmpty)
                         {
-                            heightAcc += (OpenTK.Vector3) b10.Height;
+                            heightAcc += (OpenTK.Vector3)b10.Height;
                             blockCounter++;
                         }
                     }
@@ -84,11 +88,11 @@ namespace TerrainDemo.Micro
 
                         if (!b01.IsEmpty)
                         {
-                            heightAcc += (OpenTK.Vector3) b01.Height;
+                            heightAcc += (OpenTK.Vector3)b01.Height;
                             blockCounter++;
                         }
                     }
-                    
+
 
                     if (neighborBlockX1 <= Bounds.Size.X - 1 && neighborBlockZ1 <= Bounds.Size.Z - 1)
                     {
@@ -96,7 +100,7 @@ namespace TerrainDemo.Micro
 
                         if (!b11.IsEmpty)
                         {
-                            heightAcc += (OpenTK.Vector3) b11.Height;
+                            heightAcc += (OpenTK.Vector3)b11.Height;
                             blockCounter++;
                         }
                     }
@@ -105,46 +109,111 @@ namespace TerrainDemo.Micro
 
                     _heightMap[x, z] = new Heights(heightAcc.Z, heightAcc.Y, heightAcc.X);
                 }
-            
+
             //Modify heightmap to proper blend with parent map
             //Naive approach - iterate each block side
-             //For each block that intersects main map - check its sides
+            //For each block that intersects main map - check its sides
             for (int x = 0; x < Bounds.Size.X; x++)
                 for (int z = 0; z < Bounds.Size.Z; z++)
                 {
                     var worldBlockPos = Local2World((x, z));
                     ref readonly var parentBlock = ref _parentMap.GetBlockRef(worldBlockPos);
 
-                    if (!parentBlock.IsEmpty && !_blocks[x, z].IsEmpty/*&& _blocks[x, z].GetTotalWidth().Contains(parentBlock.GetNominalHeight())*/)
+                    if (!parentBlock.IsEmpty && !_blocks[x, z].IsEmpty)
                     {
                         //Need check thats block edges
                         ref var height00 = ref _heightMap[x, z];
-                        ref var height10 = ref _heightMap[x + 1, z];
                         ref var height01 = ref _heightMap[x, z + 1];
+                        ref var height10 = ref _heightMap[x + 1, z];
                         ref var height11 = ref _heightMap[x + 1, z + 1];
 
-                        //Check parent block planes
-                        var parentData = _parentMap.GetBlock(worldBlockPos);
-
-                        if (parentData.HasValue)
+                        //Snap object's block to main map block. No intersections allowed!
+                        var parentHeights = _parentMap.GetBlockNominalHeights(worldBlockPos);
+                        if (parentHeights.HasValue)
                         {
-                            var parentTopHeight00 = parentData.Value.Corner00.Nominal;
-                            var parentTopHeight10 = parentData.Value.Corner10.Nominal;
-                            var parentTopHeight01 = parentData.Value.Corner01.Nominal;
-                            var parentTopHeight11 = parentData.Value.Corner11.Nominal;
+                            var (parentHeight00, parentHeight01, parentHeight10, parentHeight11) = parentHeights.Value;
+                            SnapHeight(ref height00, ref height01, parentHeight00, parentHeight01);
+                            SnapHeight(ref height00, ref height10, parentHeight00, parentHeight10);
+                            SnapHeight(ref height01, ref height11, parentHeight01, parentHeight11);
+                            SnapHeight(ref height10, ref height11, parentHeight10, parentHeight11);
+                            SnapHeight(ref height00, ref height11, parentHeight00, parentHeight11);
+                            SnapHeight(ref height10, ref height01, parentHeight10, parentHeight01);
 
-                            SnapHeight(ref height00, ref height01, parentTopHeight00, parentTopHeight01);
-                            SnapHeight(ref height00, ref height10, parentTopHeight00, parentTopHeight10);
-                            SnapHeight(ref height01, ref height11, parentTopHeight01, parentTopHeight11);
-                            SnapHeight(ref height10, ref height11, parentTopHeight10, parentTopHeight11);
-                            SnapHeight(ref height00, ref height11, parentTopHeight00, parentTopHeight11);
-                            SnapHeight(ref height10, ref height01, parentTopHeight10, parentTopHeight01);
+                            //todo occlusion culling of block (either main map or object) to prevent Z-fighting of near placed blocks
+                            //Check occlusion
+                            BlockOcclusionState state = BlockOcclusionState.MapOccluded;
 
+                            if (height00.Base > parentHeight00)
+                            {
+                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.None);
+                                continue;
+                            }
+                            else if (height00.Main < parentHeight00)
+                            {
+                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.ObjectOccluded);
+                                continue;
+                            }
+                            else if (height00.Main > parentHeight00 && height00.Base < parentHeight00)
+                            {
+                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.MapOccluded);
+                                continue;
+                            }
+
+                            if (height01.Base > parentHeight01)
+                            {
+                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.None);
+                                continue;
+                            }
+                            else if (height01.Main < parentHeight01)
+                            {
+                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.ObjectOccluded);
+                                continue;
+                            }
+                            else if (height01.Main > parentHeight01 && height01.Base < parentHeight01)
+                            {
+                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.MapOccluded);
+                                continue;
+                            }
+
+                            if (height10.Base > parentHeight10)
+                            {
+                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.None);
+                                continue;
+                            }
+                            else if (height10.Main < parentHeight10)
+                            {
+                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.ObjectOccluded);
+                                continue;
+                            }
+                            else if (height10.Main > parentHeight10 && height10.Base < parentHeight10)
+                            {
+                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.MapOccluded);
+                                continue;
+                            }
+
+                            if (height11.Base > parentHeight11)
+                            {
+                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.None);
+                                continue;
+                            }
+                            else if (height11.Main < parentHeight11)
+                            {
+                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.ObjectOccluded);
+                                continue;
+                            }
+                            else if (height11.Main > parentHeight11 && height11.Base < parentHeight11)
+                            {
+                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.MapOccluded);
+                                continue;
+                            }
+
+                            _parentMap.SetOcclusionState(worldBlockPos, state);
                         }
                     }
 
                 }
 
+            //Snap intersecting sides of object to main map
             void SnapHeight(ref Heights height1, ref Heights height2, float parentHeight1, float parentHeight2)
             {
                 var diff1 = parentHeight1 - height1.Main;
@@ -169,6 +238,20 @@ namespace TerrainDemo.Micro
                         height2 = new Heights(height2.Main, parentHeight2);
                 }
             }
+
+            timer.Stop();
+
+            UnityEngine.Debug.Log($"Heightmap of {Name} generated in {timer.ElapsedMilliseconds}");
+        }
+
+        public override BlockOcclusionState GetOcclusionState(Vector2i worldPosition)
+        {
+            return _parentMap.GetOcclusionState(worldPosition);
+        }
+
+        public override string ToString()
+        {
+            return $"{Name} at {Bounds}";
         }
     }
 }
