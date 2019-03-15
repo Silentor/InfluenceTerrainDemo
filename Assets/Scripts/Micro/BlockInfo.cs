@@ -10,7 +10,7 @@ namespace TerrainDemo.Micro
     /// <summary>
     /// Helper block structure, combine all block properties
     /// </summary>
-    public class BlockInfo
+    public readonly struct BlockInfo
     {
         public readonly Vector2i Position;
         public readonly Blocks Block;

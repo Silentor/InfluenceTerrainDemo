@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using OpenTK;
@@ -70,6 +71,7 @@ namespace TerrainDemo
         private Tools.Random _random;
         private Renderer _renderer;
         private BlockSettings[] _allBlocks;
+        private ObjectMap _bridge;
 
         public void Render(TriRunner renderSettings)
         {
@@ -127,30 +129,16 @@ namespace TerrainDemo
                     //Create pulse from two smoothsteps
                     var stairwayBlockHeight =
                         (Interpolation.SmoothStep(Mathf.InverseLerp(xStart, xCenter, x))
-                        - Interpolation.SmoothStep(Mathf.InverseLerp(xCenter, xFinish, x))) * 10;
+                        - Interpolation.SmoothStep(Mathf.InverseLerp(xCenter, xFinish, x))) * 10 + 2;
 
                     if (z == 0 || z == width)
                         stairwayBlockHeight -= 0.5f;
-
-                    /*
-                    
-                    //To smoothly blend with ground
-                    if (x <= xStart + 1 || x >= xFinish - 1)
-                        stairwayBlockHeight = Micro.GetBlockRef((x, z)).Height.Nominal;
-                    else
-                        stairwayBlockHeight = Mathf.Max(stairwayBlockHeight, Micro.GetBlockRef((x, z)).Height.Nominal);
-                        */
-                        
-
-                    //Do not generate hidden blocks
-                    //if(stairwayBlockHeight < Micro.GetBlockRef(x, z).Height.Nominal)
-                       // continue;
 
                     var baseBlockHeight = stairwayBlockHeight - 2;
                     if (z == 0 || z == width)
                         baseBlockHeight += 0.5f;
 
-                    blocks.Add(new Blocks(BlockType.Stone, BlockType.Empty, new Heights(stairwayBlockHeight, baseBlockHeight, baseBlockHeight)));
+                    blocks.Add(new Blocks(BlockType.Sand, BlockType.Empty, new Heights(stairwayBlockHeight, baseBlockHeight, baseBlockHeight)));
 
                     var transPos = new OpenTK.Vector4(x, 1, z, 1);
                     transPos = transPos * transMatrix;
@@ -159,10 +147,10 @@ namespace TerrainDemo
             }
 
             var bridgeObj = new ObjectMap("Bridge", new Bounds2i((positions.Select(p => p.X).Min(), positions.Select(p => p.Z).Min()), (positions.Select(p => p.X).Max(), positions.Select(p => p.Z).Max())), Micro);
-            bridgeObj.SetBlocks( positions, blocks);
-            bridgeObj.GenerateHeightmap();
+            bridgeObj.SetBlocks( positions, blocks, true);
             Micro.AddChild(bridgeObj);
             bridgeObj.Changed += MicroOnChanged;
+            _bridge = bridgeObj;
             //DEBUG end
 
             //DEBUG build Laputa
@@ -189,7 +177,7 @@ namespace TerrainDemo
                 }
 
             var laputaObj = new ObjectMap("Laputa", new Bounds2i((positions.Select(p => p.X).Min(), positions.Select(p => p.Z).Min()), (positions.Select(p => p.X).Max(), positions.Select(p => p.Z).Max())), Micro);
-            laputaObj.SetBlocks(positions, blocks);
+            laputaObj.SetBlocks(positions, blocks, true);
             laputaObj.GenerateHeightmap();
             Micro.AddChild(laputaObj);
             laputaObj.Changed += MicroOnChanged;
@@ -231,6 +219,20 @@ namespace TerrainDemo
 
             _renderer = new Renderer(new Mesher(Macro, this), this);
             Render(this);
+
+            //StartCoroutine(AnimateTest());
+        }
+
+        private IEnumerator AnimateTest()
+        {
+            yield return new WaitForSeconds(1);
+           
+            while (Time.time < 15)
+            {
+                _bridge.Translate(-Time.deltaTime);                
+                //yield return new WaitForSeconds(0.1f);
+                yield return null;
+            }
         }
 
         private void OnValidate()

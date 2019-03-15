@@ -648,16 +648,19 @@ namespace TerrainDemo.Editor
                     GUILayout.Label("Vertices:");
                     //Show block vertices info
                     var vertices = source.GetBlock(position);
-                    GUILayout.BeginVertical();
-                    GUILayout.BeginHorizontal();
-                    HeightToGUI("┌", vertices.Corner01, false);
-                    HeightToGUI("┐", vertices.Corner11, false);
-                    GUILayout.EndHorizontal();
-                    GUILayout.BeginHorizontal();
-                    HeightToGUI("└", vertices.Corner00, false);
-                    HeightToGUI("┘", vertices.Corner10,false);
-                    GUILayout.EndHorizontal();
-                    GUILayout.EndVertical();
+                    if (vertices.HasValue)
+                    {
+                        GUILayout.BeginVertical();
+                        GUILayout.BeginHorizontal();
+                        HeightToGUI("┌", vertices.Value.Corner01, false);
+                        HeightToGUI("┐", vertices.Value.Corner11, false);
+                        GUILayout.EndHorizontal();
+                        GUILayout.BeginHorizontal();
+                        HeightToGUI("└", vertices.Value.Corner00, false);
+                        HeightToGUI("┘", vertices.Value.Corner10, false);
+                        GUILayout.EndHorizontal();
+                        GUILayout.EndVertical();
+                    }
                 }
             }
             else

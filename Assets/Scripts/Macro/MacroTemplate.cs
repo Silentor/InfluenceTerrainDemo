@@ -167,7 +167,7 @@ namespace TerrainDemo.Macro
                     blockBuffer2.Add(resultBlock);
                 }
 
-                outputMap.SetBlocks(microcell.BlockPositions, blockBuffer2);
+                outputMap.SetBlocks(microcell.BlockPositions, blockBuffer2, false);
 
                 /*
                 //Prepare cell mix buffer

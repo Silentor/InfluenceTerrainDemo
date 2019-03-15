@@ -103,7 +103,7 @@ namespace TerrainDemo.Micro
                 }
         }
 
-        public void SetBlocks(IEnumerable<Vector2i> positions, IEnumerable<Blocks> blocks)
+        public void SetBlocks(IEnumerable<Vector2i> positions, IEnumerable<Blocks> blocks, bool regenerateHeightmap)
         {
             var posEnumerator = positions.GetEnumerator();
             var blockEnumerator = blocks.GetEnumerator();
@@ -119,6 +119,9 @@ namespace TerrainDemo.Micro
                     }
                 }
             }
+
+            if(regenerateHeightmap)
+                GenerateHeightmap();
 
             DoChanged();
         }
@@ -178,7 +181,7 @@ namespace TerrainDemo.Micro
             return result;
         }
 
-        public BlockInfo GetBlock(Vector2i blockPos)
+        public BlockInfo? GetBlock(Vector2i blockPos)
         {
             if (!Bounds.Contains(blockPos))
                 return null;
@@ -421,6 +424,12 @@ namespace TerrainDemo.Micro
         {
             return localPosition + Bounds.Min;
         }
+
+        protected Vector2i Local2World(int x, int z)
+        {
+            return new Vector2i(x, z) + Bounds.Min;
+        }
+
 
         protected Vector2i World2Local(Vector2i worldPosition)
         {

@@ -185,8 +185,8 @@ namespace TerrainDemo.Visualization
             var groundUv = new List<Vector2>(groundVertices.Count){Vector2.zero};
 
             //Set quads
-            for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
-                for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
+            for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
+                for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
                 {
                     var mapLocalX = worldX - map.Bounds.Min.X;
                     var mapLocalZ = worldZ - map.Bounds.Min.Z;
@@ -196,7 +196,7 @@ namespace TerrainDemo.Visualization
                     ref readonly var block = ref blockMap[mapLocalX, mapLocalZ];
                     if (block.IsEmpty)
                         continue;
-                    
+
                     //Prepare block vertices
                     int v00, v01, v10, v11;
                     int startIndexCounter = groundVertices.Count;
@@ -368,11 +368,10 @@ namespace TerrainDemo.Visualization
                                 var mainLayerWidth = block.GetMainLayerWidth();
                                 var visiblePart = CalculateVisiblePart(mainLayerWidth, neigh);
 
-                                if(!visiblePart.Item1.IsEmpty && !visiblePart.Item2.IsEmpty)   //Visible side was splitted - just draw entire side, dont bother with two quads
-                                    DrawBlockSide(mainVertices, mainIndices, mainUv, dir, mainLayerWidth.Max, mainLayerWidth.Min);
-                                else if(!visiblePart.Item1.IsEmpty)
+                                if(!visiblePart.Item1.IsEmpty)   
                                     DrawBlockSide(mainVertices, mainIndices, mainUv, dir, visiblePart.Item1.Max, visiblePart.Item1.Min);
-                                //else - side completetly hided by neighbor
+                                if(!visiblePart.Item2.IsEmpty)
+                                    DrawBlockSide(mainVertices, mainIndices, mainUv, dir, visiblePart.Item2.Max, visiblePart.Item2.Min);
                             }
 
                             //Draw Underground part of block side (if solid)
@@ -382,11 +381,10 @@ namespace TerrainDemo.Visualization
                                 var underLayerWidth = block.GetUnderLayerWidth();
                                 var visiblePart = CalculateVisiblePart(underLayerWidth, neigh);
 
-                                if (!visiblePart.Item1.IsEmpty && !visiblePart.Item2.IsEmpty)   //Visible side was splitted - just draw entire side, dont bother with two quads
-                                    DrawBlockSide(underVertices, underIndices, underUv, dir, underLayerWidth.Max, underLayerWidth.Min);
-                                else if (!visiblePart.Item1.IsEmpty)
+                                if (!visiblePart.Item1.IsEmpty)
                                     DrawBlockSide(underVertices, underIndices, underUv, dir, visiblePart.Item1.Max, visiblePart.Item1.Min);
-                                //else - side completetly hided by neighbor
+                                if (!visiblePart.Item2.IsEmpty)
+                                    DrawBlockSide(underVertices, underIndices, underUv, dir, visiblePart.Item2.Max, visiblePart.Item2.Min);
                             }
 
                             //Draw Base part of block side
@@ -395,11 +393,10 @@ namespace TerrainDemo.Visualization
                                 var baseLayerWidth = new Interval(block.Height.Base - baseLayerVisibleWidth, block.Height.Base);           //Base layer width is fictional, just for BLock mode visualization
                                 var visiblePart = CalculateVisiblePart(baseLayerWidth, neigh);
 
-                                if (!visiblePart.Item1.IsEmpty && !visiblePart.Item2.IsEmpty)   //Visible side was splitted - just draw entire side, dont bother with two quads
-                                    DrawBlockSide(baseVertices, baseIndices, baseUv, dir, baseLayerWidth.Max, baseLayerWidth.Min);
-                                else if (!visiblePart.Item1.IsEmpty)
+                                if (!visiblePart.Item1.IsEmpty)
                                     DrawBlockSide(baseVertices, baseIndices, baseUv, dir, visiblePart.Item1.Max, visiblePart.Item1.Min);
-                                //else - side completetly hided by neighbor
+                                if (!visiblePart.Item2.IsEmpty)
+                                    DrawBlockSide(baseVertices, baseIndices, baseUv, dir, visiblePart.Item2.Max, visiblePart.Item2.Min);
                             }
                         }
                     }
@@ -466,6 +463,8 @@ namespace TerrainDemo.Visualization
 
                     (Interval, Interval) CalculateVisiblePart(in Interval input, in Blocks otherBlock)
                     {
+                        if (otherBlock.IsEmpty)
+                            return (input, Interval.Empty);
                         return input.Subtract(new Interval(otherBlock.Height.Base - baseLayerVisibleWidth, otherBlock.Height.Main));
                     }
 
