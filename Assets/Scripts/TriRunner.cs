@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using OpenTK;
 using TerrainDemo.Macro;
@@ -9,6 +10,7 @@ using TerrainDemo.Settings;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using TerrainDemo.Visualization;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Debug = UnityEngine.Debug;
@@ -204,6 +206,24 @@ namespace TerrainDemo
                 Biomes[i].Index = i;
         }
 
+        private IEnumerator AnimateTest()
+        {
+            yield return new WaitForSeconds(1);
+            var startTimeOffset = Time.time;
+
+            while (true)
+            {
+                const float deltaTime = 0.2f;
+                const float amplitude = 5;
+                _bridge.Translate((Mathf.Sin(Time.time - startTimeOffset)) * deltaTime * 4);
+
+                yield return new WaitForSeconds(deltaTime);
+                //yield return null;
+
+                Debug.Break();
+            }
+        }
+
         #region Unity
 
         void Awake()
@@ -219,23 +239,8 @@ namespace TerrainDemo
             _renderer = new Renderer(new Mesher(Macro, this), this);
             Render(this);
 
+
             StartCoroutine(AnimateTest());
-        }
-
-        private IEnumerator AnimateTest()
-        {
-            yield return new WaitForSeconds(1);
-
-            var startTimeOffset = Time.time;
-
-            while (true)
-            {
-                const float deltaTime = 0.1f;
-                const float amplitude = 5;
-                _bridge.Translate((Mathf.Sin(Time.time - startTimeOffset)) * deltaTime * 4);                
-                yield return new WaitForSeconds(deltaTime);
-                //yield return null;
-            }
         }
 
         private void OnValidate()
