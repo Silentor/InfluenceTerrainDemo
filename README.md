@@ -13,4 +13,21 @@ So, previous "cave" layer attempt is failed. But I want to have terraing overhan
 
 Lets the prototyping begins!
 
-Previous iterations - https://github.com/Silentor/InfluenceTerrainDemo/blob/247ebd92e136b4acae00ab47067b644ffe07309e/README.md
+### Results
+I've achieved most of targets: Map objects can be created as usual blockmap, meshed as top and bottom surfaces with vertical sides, and its snapped to main map where it intersects. Object and map properly cull each other geometry.
+
+###### Main map + two map objects in Block mode
+<img src="https://github.com/Silentor/InfluenceTerrainDemo/blob/cc22c10a314ed7d8bd190c319b914cb7bcd50ddd/Screenshots/Map%20%2B%20objects%20block%20mode.jpg" width="800">
+
+Same scene in terrain mode. Normals between main map and object is not properly generated yet.
+
+###### Main map + two map objects in Terrain mode
+<img src="https://github.com/Silentor/InfluenceTerrainDemo/blob/cc22c10a314ed7d8bd190c319b914cb7bcd50ddd/Screenshots/Map%20%2B%20objects%20terrain%20mode.jpg" width="800">
+
+###### Funny animation to demostrate snapping of object to main map mesh
+<img src="https://github.com/Silentor/InfluenceTerrainDemo/blob/cc22c10a314ed7d8bd190c319b914cb7bcd50ddd/Screenshots/Culling%20and%20snapping%20object%20to%20map.gif" width="800">
+
+Postponed task: build normals for complex map combined from main map and object map. I should invent some combined map data structure for convenient traversal on blocks and vertices
+
+##### Previous iteration 
+InfluenceTerrainDemo v0.5 "Multiheightmap + empty layer" - https://github.com/Silentor/InfluenceTerrainDemo/blob/247ebd92e136b4acae00ab47067b644ffe07309e/README.md
