@@ -131,7 +131,7 @@ namespace TerrainDemo
                     //Create pulse from two smoothsteps
                     var stairwayBlockHeight =
                         (Interpolation.SmoothStep(Mathf.InverseLerp(xStart, xCenter, x))
-                        - Interpolation.SmoothStep(Mathf.InverseLerp(xCenter, xFinish, x))) * 5 - 3;
+                         - Interpolation.SmoothStep(Mathf.InverseLerp(xCenter, xFinish, x))) * 5 - 3;
 
                     if (z == 0 || z == width)
                         stairwayBlockHeight -= 0.5f;
@@ -213,14 +213,14 @@ namespace TerrainDemo
 
             while (true)
             {
-                const float deltaTime = 0.2f;
+                const float deltaTime = 0.1f;
                 const float amplitude = 5;
                 _bridge.Translate((Mathf.Sin(Time.time - startTimeOffset)) * deltaTime * 4);
 
                 yield return new WaitForSeconds(deltaTime);
                 //yield return null;
 
-                Debug.Break();
+                //Debug.Break();  to take manual screenshots :)
             }
         }
 
@@ -238,7 +238,6 @@ namespace TerrainDemo
 
             _renderer = new Renderer(new Mesher(Macro, this), this);
             Render(this);
-
 
             StartCoroutine(AnimateTest());
         }
