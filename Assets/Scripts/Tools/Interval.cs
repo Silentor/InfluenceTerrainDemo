@@ -96,7 +96,7 @@ namespace TerrainDemo.Tools
 
         public override string ToString()
         {
-            return $"({Min}-{Max}";
+            return IsEmpty ? "(Empty)" : $"({Min} {Max})";
         }
 
         #region IEquatable

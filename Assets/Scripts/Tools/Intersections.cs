@@ -117,14 +117,15 @@ namespace TerrainDemo.Tools
         //             0 =  disjoint (no intersect)
         //             1 =  intersect in unique point I1
         //             2 =  are in the same plane
-        public static int LineTriangleIntersection(Ray ray, Vector3 v0, Vector3 v1, Vector3 v2, out Vector3 inter)    //todo needs testing
+        public static int LineTriangleIntersection(Ray ray, Vector3 v0, Vector3 v1, Vector3 v2, /*out Vector3 inter*/ out float distance)    //todo needs testing
         {
             //Translated from http://geomalgorithms.com/a06-_intersect-2.html#intersect3D_RayTriangle()
 
             Vector3 u, v, n;              // triangle vectors
             Vector3 dir, w0, w;           // ray vectors
-            float r, a, b;              // params to calc ray-plane intersect
-            inter = Vector3.zero;
+            float a, b;              // params to calc ray-plane intersect
+            Vector3 inter;
+            distance = -1;
 
             // get triangle edge vectors and plane normal
             u = v1 - v0;
@@ -145,12 +146,12 @@ namespace TerrainDemo.Tools
             }
 
             // get intersect point of ray with triangle plane
-            r = a / b;
-            if (r < 0.0)                    // ray goes away from triangle
+            distance = a / b;
+            if (distance < 0.0)                    // ray goes away from triangle
                 return 0;                   // => no intersect
                                             // for a segment, also test if (r > 1.0) => no intersect
 
-            inter = ray.origin + r * dir;            // intersect point of ray and plane
+            inter = ray.origin + distance * dir;            // intersect point of ray and plane
 
             // is I inside T?
             float uu, uv, vv, wu, wv, D;
@@ -225,13 +226,13 @@ namespace TerrainDemo.Tools
 
             foreach (var block in blocks)
             {
-                var blockBounds = BlockInfo.GetWorldBounds(block.positon);          //todo optimization inline?
-                float t1 = (blockBounds.min.X - ray.origin.x) * dirFracX;
-                float t2 = (blockBounds.max.X - ray.origin.x) * dirFracX;
+                var (min, max) = BlockInfo.GetWorldBounds(block.positon);
+                float t1 = (min.X - ray.origin.x) * dirFracX;
+                float t2 = (max.X - ray.origin.x) * dirFracX;
                 float t3 = (block.heights.Min - ray.origin.y) * dirFracY;
                 float t4 = (block.heights.Max - ray.origin.y) * dirFracY;
-                float t5 = (blockBounds.min.Y - ray.origin.z) * dirFracZ;
-                float t6 = (blockBounds.max.Y - ray.origin.z) * dirFracZ;
+                float t5 = (min.Y - ray.origin.z) * dirFracZ;
+                float t6 = (max.Y - ray.origin.z) * dirFracZ;
 
                 float aMin = t1 < t2 ? t1 : t2;
                 float bMin = t3 < t4 ? t3 : t4;
@@ -254,6 +255,43 @@ namespace TerrainDemo.Tools
             }
 
             return null;
+        }
+
+        public static float RayBlockIntersection(Ray ray, in Vector2i positon, in Blocks block)
+        {
+            var dirFracX = 1 / ray.direction.x;
+            var dirFracY = 1 / ray.direction.y;
+            var dirFracZ = 1 / ray.direction.z;
+
+
+            var (min, max) = BlockInfo.GetWorldBounds(positon);
+            float t1 = (min.X - ray.origin.x) * dirFracX;
+            float t2 = (max.X - ray.origin.x) * dirFracX;
+            float t3 = (block.Height.Base - ray.origin.y) * dirFracY;
+            float t4 = (block.Height.Nominal - ray.origin.y) * dirFracY;
+            float t5 = (min.Y - ray.origin.z) * dirFracZ;
+            float t6 = (max.Y - ray.origin.z) * dirFracZ;
+
+            float aMin = t1 < t2 ? t1 : t2;
+            float bMin = t3 < t4 ? t3 : t4;
+            float cMin = t5 < t6 ? t5 : t6;
+
+            float aMax = t1 > t2 ? t1 : t2;
+            float bMax = t3 > t4 ? t3 : t4;
+            float cMax = t5 > t6 ? t5 : t6;
+
+            float fMax = aMin > bMin ? aMin : bMin;
+            float fMin = aMax < bMax ? aMax : bMax;
+
+            float t7 = fMax > cMin ? fMax : cMin;
+            float t8 = fMin < cMax ? fMin : cMax;
+
+            float t9 = (t8 < 0 || t7 > t8) ? -1 : t7;
+
+            if (t9 > 0)
+                return t9;
+
+            return -1;
         }
     }
 }

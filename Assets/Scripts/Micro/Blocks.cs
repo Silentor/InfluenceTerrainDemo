@@ -22,20 +22,15 @@ namespace TerrainDemo.Micro
                                 != BlockType.Empty ? Ground : Underground 
                                                               != BlockType.Empty ? Underground : Base;
 
-        public bool IsSimple => Underground != BlockType.Cave;
-
         public bool IsEmpty => Ground == BlockType.Empty && Underground == BlockType.Empty && Base == BlockType.Empty;
 
         public static readonly Blocks Empty;
 
         public Blocks(BlockType ground, BlockType underground, in Heights heights)
         {
-            //Fix heights if needed todo write unit test for block autofixes
+            //Fix heights if needed
             float underHeight = heights.Underground, groundHeight = heights.Main;
             var heightFixed = false;
-
-            if (underground == BlockType.Cave && ground == BlockType.Empty)
-                underground = BlockType.Empty;
 
             if (underground != BlockType.Empty && underHeight == heights.Base)
                 underground = BlockType.Empty;
@@ -49,13 +44,6 @@ namespace TerrainDemo.Micro
             if (ground != BlockType.Empty && groundHeight == underHeight)
             {
                 ground = BlockType.Empty;
-
-                if (underground == BlockType.Cave)
-                {
-                    underground = BlockType.Empty;
-                    underHeight = heights.Base;
-                    heightFixed = true;
-                }
             }
 
             if (ground == BlockType.Empty && groundHeight > underHeight)
@@ -63,7 +51,6 @@ namespace TerrainDemo.Micro
                 groundHeight = underHeight;
                 heightFixed = true;
             }
-
 
             Base = BlockType.Bedrock;
             Underground = underground;
@@ -103,31 +90,30 @@ namespace TerrainDemo.Micro
         [Pure]
         public Interval GetMainLayerWidth()
         {
-            return new Interval(Height.Underground, Height.Main);
+            return IsEmpty ? Interval.Empty : new Interval(Height.Underground, Height.Main);
         }
 
         [Pure]
         public Interval GetUnderLayerWidth()
         {
-            return new Interval(Height.Base, Height.Underground);
-        }
-
-        [Pure]
-        public Interval GetBaseLayerWidth()
-        {
-            return new Interval(float.MinValue, Height.Base);
+            return IsEmpty ? Interval.Empty : new Interval(Height.Base, Height.Underground);
         }
 
         [Pure]
         public Interval GetTotalWidth()
         {
-            return new Interval(float.MinValue, Height.Main);
+            return IsEmpty ? Interval.Empty : new Interval(Height.Base, Height.Main);
         }
 
 
         public override string ToString()
         {
-            return $"({Ground}, {Underground}, {Base})";
+            if (IsEmpty) return "(Empty)";
+            return string.Format("({0} {1} {2})",
+                Ground != BlockType.Empty ? Ground + ":" + Height.Main.ToString("N1") : "Empty",
+                Underground != BlockType.Empty ? Underground + ":" + Height.Underground.ToString("N1") : "Empty",
+                Base + ":" + Height.Base.ToString("N1"));
+
         }
 
         public override bool Equals(object obj)
@@ -147,7 +133,7 @@ namespace TerrainDemo.Micro
         {
             unchecked
             {
-                var hashCode = -862721379;
+                var hashCode = Height.GetHashCode();
                 hashCode = hashCode * -1521134295 + Base.GetHashCode();
                 hashCode = hashCode * -1521134295 + Underground.GetHashCode();
                 hashCode = hashCode * -1521134295 + Ground.GetHashCode();

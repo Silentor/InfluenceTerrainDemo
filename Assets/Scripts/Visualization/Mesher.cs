@@ -42,109 +42,6 @@ namespace TerrainDemo.Visualization
                 _defaultBlockColor[blockSetting.Block] = blockSetting.DefaultColor;
         }
 
-        /*
-        public (Mesh, Texture) CreateMesh(MicroMap map, Bounds2i bounds, TriRunner renderSettings)
-        {
-            bounds = bounds.Intersect(map.Bounds);
-
-            var resultMesh = new Mesh();
-
-            if (bounds.IsEmpty)
-                return (resultMesh, Texture2D.blackTexture);
-
-            var heights = map.GetHeightMap();
-            var blocks = map.GetBlockMap();
-            var vertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z +1));
-            var indices = new List<int>(vertices.Count * 2);
-            var uvs = new List<UnityEngine.Vector2>(vertices.Count);
-
-            var vertCountX = bounds.Size.X + 1;
-            var vertCountZ = bounds.Size.Z + 1;
-
-            //Set vertices
-            for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z + 1; worldZ++)
-                for (int worldX = bounds.Min.X; worldX <= bounds.Max.X + 1; worldX++)
-                {
-                    var mapLocalX = worldX - map.Bounds.Min.X;
-                    var mapLocalZ = worldZ - map.Bounds.Min.Z;
-                    var chunkLocalX = worldX - bounds.Min.X;
-                    var chunkLocalZ = worldZ - bounds.Min.Z;
-
-                    if(renderSettings.RenderLayer == Renderer.TerrainLayerToRender.Main)
-                        vertices.Add(new Vector3(worldX, heights[mapLocalX, mapLocalZ].Nominal, worldZ));
-                    else if(renderSettings.RenderLayer == Renderer.TerrainLayerToRender.Underground)
-                        vertices.Add(new Vector3(worldX, heights[mapLocalX, mapLocalZ].UndergroundHeight, worldZ));
-                    else  //Base layer
-                        vertices.Add(new Vector3(worldX, heights[mapLocalX, mapLocalZ].BaseHeight, worldZ));
-
-                    uvs.Add(new Vector2(chunkLocalX / (float)bounds.Size.X, chunkLocalZ / (float)bounds.Size.Z));
-                }
-
-
-            //Set quads
-            for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
-                for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
-                {
-                    var mapLocalX = worldX - map.Bounds.Min.X;
-                    var mapLocalZ = worldZ - map.Bounds.Min.Z;
-                    var chunkLocalX = worldX - bounds.Min.X;
-                    var chunkLocalZ = worldZ - bounds.Min.Z;
-                    var startIndex = chunkLocalZ * (bounds.Size.X + 1) + chunkLocalX;
-
-                    if( blocks[mapLocalX, mapLocalZ].IsEmpty)
-                        continue;
-
-                    float height00, height01, height11, height10;
-                    if (renderSettings.RenderLayer == Renderer.TerrainLayerToRender.Main)
-                    {
-                        height00 = heights[mapLocalX, mapLocalZ].Nominal;
-                        height01 = heights[mapLocalX, mapLocalZ + 1].Nominal;
-                        height11 = heights[mapLocalX + 1, mapLocalZ + 1].Nominal;
-                        height10 = heights[mapLocalX + 1, mapLocalZ].Nominal;
-                    }
-                    else
-                    {
-                        height00 = heights[mapLocalX, mapLocalZ].UndergroundHeight;
-                        height01 = heights[mapLocalX, mapLocalZ + 1].UndergroundHeight;
-                        height11 = heights[mapLocalX + 1, mapLocalZ + 1].UndergroundHeight;
-                        height10 = heights[mapLocalX + 1, mapLocalZ].UndergroundHeight;
-                    }
-
-                    if (Mathf.Abs(height00 - height11) < Mathf.Abs(height10 - height01))
-                    {
-                        indices.Add(startIndex);
-                        indices.Add(startIndex + vertCountX);
-                        indices.Add(startIndex + vertCountX + 1);
-
-                        indices.Add(startIndex);
-                        indices.Add(startIndex + vertCountX + 1);
-                        indices.Add(startIndex + 1);
-                    }
-                    else
-                    {
-                        indices.Add(startIndex);
-                        indices.Add(startIndex + vertCountX);
-                        indices.Add(startIndex + 1);
-
-                        indices.Add(startIndex + vertCountX);
-                        indices.Add(startIndex + vertCountX + 1);
-                        indices.Add(startIndex + 1);
-                    }
-                }
-
-            resultMesh.SetVertices(vertices);
-
-            resultMesh.SetIndices(indices.ToArray(), MeshTopology.Triangles, 0);
-            resultMesh.SetUVs(0, uvs);
-            resultMesh.RecalculateBounds();
-            resultMesh.RecalculateNormals();
-
-            var resultTexture = CreateBlockTexture(map, bounds, renderSettings);
-
-            return (resultMesh, resultTexture);
-        }
-        */
-
         public Mesh CreateMacroMesh(MacroMap mapMesh, Renderer.MacroCellInfluenceMode influence)
         {
             var result = new Mesh();
@@ -165,40 +62,29 @@ namespace TerrainDemo.Visualization
             return result;
         }
 
-        public ((Mesh, Texture) Base, (Mesh, Texture) Under, (Mesh, Texture) Main) CreateTerrainMesh(MicroMap map, Bounds2i bounds, TriRunner renderSettings)
+        public (Mesh mesh, Texture texture) CreateTerrainMesh(MicroMap map, Bounds2i bounds, TriRunner renderSettings)
         {
             bounds = bounds.Intersect(map.Bounds);
 
             if (bounds.IsEmpty)
             {
                 var emptyMesh = new Mesh();
-                return ((emptyMesh, Texture2D.blackTexture), (emptyMesh, Texture2D.blackTexture), (emptyMesh, Texture2D.blackTexture));
+                return (emptyMesh, Texture2D.blackTexture);
             }
 
             var heightMap = map.GetHeightMap();
             var blockMap = map.GetBlockMap();
 
-            var baseVertIndexBuffer = new int[bounds.Size.X + 1, bounds.Size.Z + 1];
-            var baseVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1))
-                { Vector3.zero};        //Dummy value to make default 0 values of baseVertIndexBuffer a invalid
-            var baseIndices = new List<int>(baseVertices.Count * 2);
-            var baseUv = new List<Vector2>(baseVertices.Count){Vector2.zero};
-
-            var underVertIndexBuffer = new int[bounds.Size.X + 1, bounds.Size.Z + 1];
-            var underVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1))
-                { Vector3.zero};            //Dummy value
-            var underIndices = new List<int>(underVertices.Count * 2);
-            var underUv = new List<Vector2>(underVertices.Count){Vector2.zero};
-
             var groundVertIndexBuffer = new int[bounds.Size.X + 1, bounds.Size.Z + 1];
             var groundVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1))
-                { Vector3.zero};        //Dummy value
+                { Vector3.zero};        //Dummy value to make default 0 values of baseVertIndexBuffer a invalid
             var groundIndices = new List<int>(groundVertices.Count * 2);
             var groundUv = new List<Vector2>(groundVertices.Count){Vector2.zero};
+            //var groundNormals = new List<Vector3>(groundVertices.Count) {Vector3.zero};
 
             //Set quads
-            for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
-                for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
+            for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
+                for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
                 {
                     var mapLocalX = worldX - map.Bounds.Min.X;
                     var mapLocalZ = worldZ - map.Bounds.Min.Z;
@@ -209,304 +95,124 @@ namespace TerrainDemo.Visualization
                     if (block.IsEmpty)
                         continue;
 
-                    //Main layer
-                    if (block.Ground != BlockType.Empty)
+                    //Block culling
+                    //todo Do not check every main map block for culling! Only blocks shared with map objects. Need fast way to check if block is shared with map object. Consider store a flag in Block struct.
+                    if (map.GetOcclusionState(new Vector2i(worldX, worldZ)) == BlockOcclusionState.MapOccluded)
+                        continue;
+
+                    //Prepare block vertices
+                    int v00, v01, v10, v11;
+                    int startIndexCounter = groundVertices.Count;
+                    var h00 = heightMap[mapLocalX, mapLocalZ].Nominal;
+                    if (groundVertIndexBuffer[chunkLocalX, chunkLocalZ] == 0)
                     {
-                        //Prepare block vertices
-                        int v00, v01, v10, v11;
-                        int startIndexCounter = groundVertices.Count;
-                        if (groundVertIndexBuffer[chunkLocalX, chunkLocalZ] == 0)
-                        {
-                            v00 = startIndexCounter++;
-                            groundVertIndexBuffer[chunkLocalX, chunkLocalZ] = v00;
-                            groundVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Main, worldZ));
-                            groundUv.Add(new Vector2(chunkLocalX / (float)bounds.Size.X, chunkLocalZ / (float)bounds.Size.Z));
-                        }
-                        else
-                        {
-                            v00 = groundVertIndexBuffer[chunkLocalX, chunkLocalZ];
-                        }
+                        v00 = startIndexCounter++;
+                        groundVertIndexBuffer[chunkLocalX, chunkLocalZ] = v00;
+                        groundVertices.Add(new Vector3(worldX, h00, worldZ));
+                        groundUv.Add(new Vector2(chunkLocalX / (float) bounds.Size.X,
+                            chunkLocalZ / (float) bounds.Size.Z));
 
-                        if (groundVertIndexBuffer[chunkLocalX, chunkLocalZ + 1] == 0)
-                        {
-                            v01 = startIndexCounter++;
-                            groundVertIndexBuffer[chunkLocalX, chunkLocalZ + 1] = v01;
-                            groundVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ + 1].Main, worldZ + 1));
-                            groundUv.Add(new Vector2(chunkLocalX / (float)bounds.Size.X, (chunkLocalZ + 1) / (float)bounds.Size.Z));
-                        }
-                        else
-                        {
-                            v01 = groundVertIndexBuffer[chunkLocalX, chunkLocalZ + 1];
-                        }
-
-                        if (groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ] == 0)
-                        {
-                            v10 = startIndexCounter++;
-                            groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ] = v10;
-                            groundVertices.Add(new Vector3(worldX + 1, heightMap[mapLocalX + 1, mapLocalZ].Main, worldZ));
-                            groundUv.Add(new Vector2((chunkLocalX + 1) / (float)bounds.Size.X, (chunkLocalZ) / (float)bounds.Size.Z));
-                        }
-                        else
-                        {
-                            v10 = groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ];
-                        }
-
-                        if (groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1] == 0)
-                        {
-                            v11 = startIndexCounter++;
-                            groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1] = v11;
-                            groundVertices.Add(new Vector3(worldX + 1, heightMap[mapLocalX + 1, mapLocalZ + 1].Main, worldZ + 1));
-                            groundUv.Add(new Vector2((chunkLocalX + 1) / (float)bounds.Size.X, (chunkLocalZ + 1) / (float)bounds.Size.Z));
-                        }
-                        else
-                        {
-                            v11 = groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1];
-                        }
-
-                        //Make proper quad
-                        if (Mathf.Abs(heightMap[mapLocalX, mapLocalZ].Main -
-                                      heightMap[mapLocalX + 1, mapLocalZ + 1].Main) <
-                            Mathf.Abs(heightMap[mapLocalX + 1, mapLocalZ].Main -
-                                      heightMap[mapLocalX, mapLocalZ + 1].Main))
-                        {
-                            groundIndices.Add(v00);                    
-                            groundIndices.Add(v01);
-                            groundIndices.Add(v11);
-
-                            groundIndices.Add(v00);
-                            groundIndices.Add(v11);
-                            groundIndices.Add(v10);
-
-                        }
-                        else
-                        {
-                            groundIndices.Add(v00);                    
-                            groundIndices.Add(v01);
-                            groundIndices.Add(v10);
-
-                            groundIndices.Add(v10);
-                            groundIndices.Add(v01);
-                            groundIndices.Add(v11);
-                        }
+                    }
+                    else
+                    {
+                        v00 = groundVertIndexBuffer[chunkLocalX, chunkLocalZ];
                     }
 
-                    if ((block.Underground != BlockType.Empty && block.Ground == BlockType.Empty) || block.Underground == BlockType.Cave)
+                    var h01 = heightMap[mapLocalX, mapLocalZ + 1].Nominal;
+                    if (groundVertIndexBuffer[chunkLocalX, chunkLocalZ + 1] == 0)
                     {
-                        //Prepare block vertices
-                        int v00, v01, v10, v11;
-                        int startIndexCounter = underVertices.Count;
-                        if (underVertIndexBuffer[chunkLocalX, chunkLocalZ] == 0)
-                        {
-                            v00 = startIndexCounter++;
-                            underVertIndexBuffer[chunkLocalX, chunkLocalZ] = v00;
-                            underVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Underground, worldZ));
-                            underUv.Add(new Vector2(chunkLocalX / (float)bounds.Size.X, chunkLocalZ / (float)bounds.Size.Z));
-                        }
-                        else
-                        {
-                            v00 = underVertIndexBuffer[chunkLocalX, chunkLocalZ];
-                        }
-
-                        if (underVertIndexBuffer[chunkLocalX, chunkLocalZ + 1] == 0)
-                        {
-                            v01 = startIndexCounter++;
-                            underVertIndexBuffer[chunkLocalX, chunkLocalZ + 1] = v01;
-                            underVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ + 1].Underground, worldZ + 1));
-                            underUv.Add(new Vector2(chunkLocalX / (float)bounds.Size.X, (chunkLocalZ + 1) / (float)bounds.Size.Z));
-                        }
-                        else
-                        {
-                            v01 = underVertIndexBuffer[chunkLocalX, chunkLocalZ + 1];
-                        }
-
-                        if (underVertIndexBuffer[chunkLocalX + 1, chunkLocalZ] == 0)
-                        {
-                            v10 = startIndexCounter++;
-                            underVertIndexBuffer[chunkLocalX + 1, chunkLocalZ] = v10;
-                            underVertices.Add(new Vector3(worldX + 1, heightMap[mapLocalX + 1, mapLocalZ].Underground, worldZ));
-                            underUv.Add(new Vector2((chunkLocalX + 1) / (float)bounds.Size.X, (chunkLocalZ) / (float)bounds.Size.Z));
-                        }
-                        else
-                        {
-                            v10 = underVertIndexBuffer[chunkLocalX + 1, chunkLocalZ];
-                        }
-
-                        if (underVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1] == 0)
-                        {
-                            v11 = startIndexCounter++;
-                            underVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1] = v11;
-                            underVertices.Add(new Vector3(worldX + 1, heightMap[mapLocalX + 1, mapLocalZ + 1].Underground, worldZ + 1));
-                            underUv.Add(new Vector2((chunkLocalX + 1) / (float)bounds.Size.X, (chunkLocalZ + 1) / (float)bounds.Size.Z));
-                        }
-                        else
-                        {
-                            v11 = underVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1];
-                        }
-
-                        //Make proper quad
-                        if (Mathf.Abs(heightMap[mapLocalX, mapLocalZ].Underground -
-                                      heightMap[mapLocalX + 1, mapLocalZ + 1].Underground) <
-                            Mathf.Abs(heightMap[mapLocalX + 1, mapLocalZ].Underground -
-                                      heightMap[mapLocalX, mapLocalZ + 1].Underground))
-                        {
-                            //Split by main 00-11 diagonal
-                            if (block.Underground == BlockType.Cave)
-                            {
-                                //Flipped quad
-                                underIndices.Add(v00);
-                                underIndices.Add(v10);
-                                underIndices.Add(v11);
-
-                                underIndices.Add(v00);
-                                underIndices.Add(v11);
-                                underIndices.Add(v01);
-                            }
-                            else
-                            {
-                                //Common quad
-                                underIndices.Add(v00);
-                                underIndices.Add(v01);
-                                underIndices.Add(v11);
-
-                                underIndices.Add(v00);
-                                underIndices.Add(v11);
-                                underIndices.Add(v10);
-                            }
-                        }
-                        else
-                        {
-                            //Split by another 01-10 diagonal
-                            if (block.Underground == BlockType.Cave)
-                            {
-                                underIndices.Add(v00);
-                                underIndices.Add(v10);
-                                underIndices.Add(v01);
-
-                                underIndices.Add(v10);
-                                underIndices.Add(v11);
-                                underIndices.Add(v01);
-                            }
-                            else
-                            {
-                                underIndices.Add(v00);
-                                underIndices.Add(v01);
-                                underIndices.Add(v10);
-
-                                underIndices.Add(v10);
-                                underIndices.Add(v01);
-                                underIndices.Add(v11);
-                            }
-                        }
+                        v01 = startIndexCounter++;
+                        groundVertIndexBuffer[chunkLocalX, chunkLocalZ + 1] = v01;
+                        groundVertices.Add(new Vector3(worldX, h01, worldZ + 1));
+                        groundUv.Add(new Vector2(chunkLocalX / (float) bounds.Size.X,
+                            (chunkLocalZ + 1) / (float) bounds.Size.Z));
+                    }
+                    else
+                    {
+                        v01 = groundVertIndexBuffer[chunkLocalX, chunkLocalZ + 1];
                     }
 
-                    if (block.Underground == BlockType.Cave ||
-                        (block.Underground == BlockType.Empty && block.Ground == BlockType.Empty))
+                    var h10 = heightMap[mapLocalX + 1, mapLocalZ].Nominal;
+                    if (groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ] == 0)
                     {
-                        //Prepare block vertices
-                        int v00, v01, v10, v11;
-                        int startIndexCounter = baseVertices.Count;
-                        if (baseVertIndexBuffer[chunkLocalX, chunkLocalZ] == 0)
-                        {
-                            v00 = startIndexCounter++;
-                            baseVertIndexBuffer[chunkLocalX, chunkLocalZ] = v00;
-                            baseVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Base, worldZ));
-                            baseUv.Add(new Vector2(chunkLocalX / (float)bounds.Size.X, chunkLocalZ / (float)bounds.Size.Z));
-                        }
-                        else
-                        {
-                            v00 = baseVertIndexBuffer[chunkLocalX, chunkLocalZ];
-                        }
-
-                        if (baseVertIndexBuffer[chunkLocalX, chunkLocalZ + 1] == 0)
-                        {
-                            v01 = startIndexCounter++;
-                            baseVertIndexBuffer[chunkLocalX, chunkLocalZ + 1] = v01;
-                            baseVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ + 1].Base, worldZ + 1));
-                            baseUv.Add(new Vector2(chunkLocalX / (float)bounds.Size.X, (chunkLocalZ + 1) / (float)bounds.Size.Z));
-                        }
-                        else
-                        {
-                            v01 = baseVertIndexBuffer[chunkLocalX, chunkLocalZ + 1];
-                        }
-
-                        if (baseVertIndexBuffer[chunkLocalX + 1, chunkLocalZ] == 0)
-                        {
-                            v10 = startIndexCounter++;
-                            baseVertIndexBuffer[chunkLocalX + 1, chunkLocalZ] = v10;
-                            baseVertices.Add(new Vector3(worldX + 1, heightMap[mapLocalX + 1, mapLocalZ].Base, worldZ));
-                            baseUv.Add(new Vector2((chunkLocalX + 1) / (float)bounds.Size.X, (chunkLocalZ) / (float)bounds.Size.Z));
-                        }
-                        else
-                        {
-                            v10 = baseVertIndexBuffer[chunkLocalX + 1, chunkLocalZ];
-                        }
-
-                        if (baseVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1] == 0)
-                        {
-                            v11 = startIndexCounter++;
-                            baseVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1] = v11;
-                            baseVertices.Add(new Vector3(worldX + 1, heightMap[mapLocalX + 1, mapLocalZ + 1].Base, worldZ + 1));
-                            baseUv.Add(new Vector2((chunkLocalX + 1) / (float)bounds.Size.X, (chunkLocalZ + 1) / (float)bounds.Size.Z));
-                        }
-                        else
-                        {
-                            v11 = baseVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1];
-                        }
-
-                        //Make proper quad
-                        if (Mathf.Abs(heightMap[mapLocalX, mapLocalZ].Base -
-                                      heightMap[mapLocalX + 1, mapLocalZ + 1].Base) <
-                            Mathf.Abs(heightMap[mapLocalX + 1, mapLocalZ].Base -
-                                      heightMap[mapLocalX, mapLocalZ + 1].Base))
-                        {
-                            baseIndices.Add(v00);
-                            baseIndices.Add(v01);
-                            baseIndices.Add(v11);
-
-                            baseIndices.Add(v00);
-                            baseIndices.Add(v11);
-                            baseIndices.Add(v10);
-
-                        }
-                        else
-                        {
-                            baseIndices.Add(v00);
-                            baseIndices.Add(v01);
-                            baseIndices.Add(v10);
-
-                            baseIndices.Add(v10);
-                            baseIndices.Add(v01);
-                            baseIndices.Add(v11);
-                        }
+                        v10 = startIndexCounter++;
+                        groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ] = v10;
+                        groundVertices.Add(new Vector3(worldX + 1, h10, worldZ));
+                        groundUv.Add(new Vector2((chunkLocalX + 1) / (float) bounds.Size.X,
+                            (chunkLocalZ) / (float) bounds.Size.Z));
+                    }
+                    else
+                    {
+                        v10 = groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ];
                     }
 
+                    var h11 = heightMap[mapLocalX + 1, mapLocalZ + 1].Nominal;
+                    if (groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1] == 0)
+                    {
+                        v11 = startIndexCounter++;
+                        groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1] = v11;
+                        groundVertices.Add(new Vector3(worldX + 1, h11, worldZ + 1));
+                        groundUv.Add(new Vector2((chunkLocalX + 1) / (float) bounds.Size.X,
+                            (chunkLocalZ + 1) / (float) bounds.Size.Z));
+                    }
+                    else
+                    {
+                        v11 = groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1];
+                    }
+
+                    //Make proper quad
+                    if (Mathf.Abs(h00 - h11) < Mathf.Abs(h10 - h01))
+                    {
+                        groundIndices.Add(v00);
+                        groundIndices.Add(v01);
+                        groundIndices.Add(v11);
+
+                        groundIndices.Add(v00);
+                        groundIndices.Add(v11);
+                        groundIndices.Add(v10);
+                    }
+                    else
+                    {
+                        groundIndices.Add(v00);
+                        groundIndices.Add(v01);
+                        groundIndices.Add(v10);
+
+                        groundIndices.Add(v10);
+                        groundIndices.Add(v01);
+                        groundIndices.Add(v11);
+                    }
+
+                    /*
+                    //Calculate normals, check nearby map objects
+                    foreach (var mapChild in map.Childs)
+                    {
+                        if (worldX >= mapChild.Bounds.Min.X && worldX <= mapChild.Bounds.Max.X + 1
+                                                            && worldZ >= mapChild.Bounds.Min.Z &&
+                                                            worldZ <= mapChild.Bounds.Max.Z + 1)
+                        {
+                            ref readonly var childHeight = ref mapChild.get
+                        }
+                    }
+                    */
                 }
 
-            var baseMesh = new Mesh();
-            baseMesh.SetVertices(baseVertices);
-            baseMesh.SetTriangles(baseIndices, 0);
-            baseMesh.SetUVs(0, baseUv);
-            baseMesh.RecalculateNormals();
-
-            var underMesh = new Mesh();
-            underMesh.SetVertices(underVertices);
-            underMesh.SetTriangles(underIndices, 0);
-            underMesh.SetUVs(0, underUv);
-            underMesh.RecalculateNormals();
 
             var groundMesh = new Mesh();
             groundMesh.SetVertices(groundVertices);
             groundMesh.SetTriangles(groundIndices, 0);
             groundMesh.SetUVs(0, groundUv);
+            //groundMesh.SetNormals(groundNormals);
             groundMesh.RecalculateNormals();
 
-            var (baseTexture, underTexture, mainTexture) = CreateBlockTexture2(map, bounds);
+            var mainTexture = CreateBlockTexture(map, bounds, renderSettings);
 
-            return ((baseMesh, baseTexture), (underMesh, underTexture), (mainMesh: groundMesh, mainTexture));
+            return (groundMesh, mainTexture);
         }
 
-        public ((Mesh, Texture) Base, (Mesh, Texture) Under, (Mesh, Texture) Main) CreateMinecraftMesh(MicroMap map, Bounds2i bounds, TriRunner renderSettings)
+        public ((Mesh, Texture) Base, (Mesh, Texture) Under, (Mesh, Texture) Main) CreateMinecraftMesh(BaseBlockMap map, Bounds2i bounds, TriRunner renderSettings)
         {
+            const float baseLayerVisibleWidth = 0.1f;
+
             bounds = bounds.Intersect(map.Bounds);
 
             if (bounds.IsEmpty)
@@ -515,39 +221,25 @@ namespace TerrainDemo.Visualization
                 return ((emptyMesh, Texture2D.blackTexture), (emptyMesh, Texture2D.blackTexture), (emptyMesh, Texture2D.blackTexture));
             }
 
-            /*
-            Blocks[,] chunk;
-            if (renderSettings.RenderLayer == Renderer.TerrainLayerToRender.Main)
-            {
-                chunk = map.GetBlockMapRegion(bounds);
-            }
-            else
-            {
-                if(renderSettings.RenderLayer == Renderer.TerrainLayerToRender.Underground)
-                    chunk = map.GetBlockMapRegion(bounds, b => new Blocks(BlockType.Empty, b.Underground, b.Heights));
-                else
-                    chunk = map.GetBlockMapRegion(bounds, b => new Blocks(BlockType.Empty, BlockType.Empty, b.Heights));
-            }
-            */
             var blockMap = map.GetBlockMap();
 
             var baseVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1));
             var baseIndices = new List<int>(baseVertices.Count * 2);
-            var baseUv = new List<UnityEngine.Vector2>(baseVertices.Count);
+            var baseUv = new List<Vector2>(baseVertices.Count);
 
             var underVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1));
             var underIndices = new List<int>(underVertices.Count * 2);
-            var underUv = new List<UnityEngine.Vector2>(underVertices.Count);
+            var underUv = new List<Vector2>(underVertices.Count);
 
             var mainVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1));
             var mainIndices = new List<int>(mainVertices.Count * 2);
-            var mainUv = new List<UnityEngine.Vector2>(mainVertices.Count);
+            var mainUv = new List<Vector2>(mainVertices.Count);
 
             var uvXCoeff = 1f / bounds.Size.X;
             var uvYCoeff = 1f / bounds.Size.Z;
 
-            for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
-                for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
+            for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
+                for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
                 {
                     var mapLocalX = worldX - map.Bounds.Min.X;
                     var mapLocalZ = worldZ - map.Bounds.Min.Z;
@@ -561,68 +253,67 @@ namespace TerrainDemo.Visualization
 
                     block = Filter(block, renderSettings.RenderLayer);
 
-                    //Draw block tops (or downs)
-                    if (block.Underground == BlockType.Cave)
+                    //Draw block top
+                    if (block.Ground != BlockType.Empty)
                     {
-                        //Draw cave block (ground block must be)
                         DrawFloor(mainVertices, mainIndices, mainUv, block.Height.Main);
-                        DrawCeil(underVertices, underIndices, underUv, block.Height.Underground);
-                        DrawFloor(baseVertices, baseIndices, baseUv, block.Height.Base);
+                    }
+                    else if (block.Underground != BlockType.Empty)
+                    {
+                        DrawFloor(underVertices, underIndices, underUv, block.Height.Underground);
                     }
                     else
-                    {
-                        //Draw block top
-                        if (block.Ground != BlockType.Empty)
-                        {
-                            DrawFloor(mainVertices, mainIndices, mainUv, block.Height.Main);
-                        }
-                        else if (block.Underground != BlockType.Empty)
-                        {
-                            DrawFloor(underVertices, underIndices, underUv, block.Height.Underground);
-                        }
-                        else
-                            DrawFloor(baseVertices, baseIndices, baseUv, block.Height.Base);
-                    }
+                        DrawFloor(baseVertices, baseIndices, baseUv, block.Height.Base);
+
+                    DrawCeil(baseVertices, baseIndices, baseUv, block.Height.Base - baseLayerVisibleWidth);
 
                     //Draw block sides
                     var neighbors = map.GetNeighborBlocks(new Vector2i(worldX, worldZ));
                     foreach (var dir in Directions.Cardinal)
                     {
                         var neigh = neighbors[dir];
-                        if (!neigh.IsEmpty)
+                        //if (!neigh.IsEmpty)
                         {
                             neigh = Filter(neigh, renderSettings.RenderLayer);
 
                             //Draw Ground part of block side
                             if (block.Ground != BlockType.Empty)
                             {
-                                //Calculate visible layer part and draw it in a simple way
-                                var visiblePart = CalculateVisiblePart(block.GetMainLayerWidth(), neigh);
+                                //Calculate visible layer part
+                                var mainLayerWidth = block.GetMainLayerWidth();
+                                var visiblePart = CalculateVisiblePart(mainLayerWidth, neigh);
 
-                                if(!visiblePart.IsEmpty)
-                                    DrawBlockSide(mainVertices, mainIndices, mainUv, dir, visiblePart.Max, visiblePart.Min);
+                                if(!visiblePart.Item1.IsEmpty)   
+                                    DrawBlockSide(mainVertices, mainIndices, mainUv, dir, visiblePart.Item1.Max, visiblePart.Item1.Min);
+                                if(!visiblePart.Item2.IsEmpty)
+                                    DrawBlockSide(mainVertices, mainIndices, mainUv, dir, visiblePart.Item2.Max, visiblePart.Item2.Min);
                             }
 
                             //Draw Underground part of block side (if solid)
-                            if (block.Underground != BlockType.Empty && block.Underground != BlockType.Cave)
+                            if (block.Underground != BlockType.Empty)
                             {
-                                //Calculate visible layer part and draw it in a simple way
-                                var visiblePart = CalculateVisiblePart(block.GetUnderLayerWidth(), neigh);
+                                //Calculate visible layer part
+                                var underLayerWidth = block.GetUnderLayerWidth();
+                                var visiblePart = CalculateVisiblePart(underLayerWidth, neigh);
 
-                                if (!visiblePart.IsEmpty)
-                                    DrawBlockSide(underVertices, underIndices, underUv, dir, visiblePart.Max, visiblePart.Min);
+                                if (!visiblePart.Item1.IsEmpty)
+                                    DrawBlockSide(underVertices, underIndices, underUv, dir, visiblePart.Item1.Max, visiblePart.Item1.Min);
+                                if (!visiblePart.Item2.IsEmpty)
+                                    DrawBlockSide(underVertices, underIndices, underUv, dir, visiblePart.Item2.Max, visiblePart.Item2.Min);
                             }
 
                             //Draw Base part of block side
                             {
-                                //Calculate visible layer part and draw it in a simple way
-                                var visiblePart = CalculateVisiblePart(block.GetBaseLayerWidth(), neigh);
+                                //Calculate visible layer part
+                                var baseLayerWidth = new Interval(block.Height.Base - baseLayerVisibleWidth, block.Height.Base);           //Base layer width is fictional, just for BLock mode visualization
+                                var visiblePart = CalculateVisiblePart(baseLayerWidth, neigh);
 
-                                if (!visiblePart.IsEmpty)
-                                    DrawBlockSide(baseVertices, baseIndices, baseUv, dir, visiblePart.Max, visiblePart.Min);
+                                if (!visiblePart.Item1.IsEmpty)
+                                    DrawBlockSide(baseVertices, baseIndices, baseUv, dir, visiblePart.Item1.Max, visiblePart.Item1.Min);
+                                if (!visiblePart.Item2.IsEmpty)
+                                    DrawBlockSide(baseVertices, baseIndices, baseUv, dir, visiblePart.Item2.Max, visiblePart.Item2.Min);
                             }
                         }
-
                     }
 
                     void DrawFloor(List<Vector3> vertices, List<int> indices, List<Vector2> uv, float height)
@@ -646,14 +337,14 @@ namespace TerrainDemo.Visualization
                     void DrawCeil(List<Vector3> vertices, List<int> indices, List<Vector2> uv, float height)
                     {
                         indices.Add(vertices.Count);
-                        indices.Add(vertices.Count + 3);
-                        indices.Add(vertices.Count + 2);
                         indices.Add(vertices.Count + 1);
+                        indices.Add(vertices.Count + 2);
+                        indices.Add(vertices.Count + 3);
 
                         vertices.Add(new Vector3(worldX, height, worldZ));
-                        vertices.Add(new Vector3(worldX, height, worldZ + 1));
-                        vertices.Add(new Vector3(worldX + 1, height, worldZ + 1));
                         vertices.Add(new Vector3(worldX + 1, height, worldZ));
+                        vertices.Add(new Vector3(worldX + 1, height, worldZ + 1));
+                        vertices.Add(new Vector3(worldX, height, worldZ + 1));
 
                         uv.Add(new Vector2(chunkLocalX * uvXCoeff, chunkLocalZ * uvYCoeff));
                         uv.Add(new Vector2(chunkLocalX * uvXCoeff, (chunkLocalZ + 1) * uvYCoeff));
@@ -685,26 +376,11 @@ namespace TerrainDemo.Visualization
                         uv.Add(new Vector2((chunkLocalX + 1) * uvXCoeff, chunkLocalZ * uvYCoeff));
                     }
 
-                    Interval CalculateVisiblePart(Interval input, in Blocks otherBlock)
+                    (Interval, Interval) CalculateVisiblePart(in Interval input, in Blocks otherBlock)
                     {
-                        if (otherBlock.IsSimple)
-                            return input.Subtract(otherBlock.GetTotalWidth()).minPart;
-
-                        //Hide by Base layer (Under layer is Cave bcoz otherBlock is not simple)
-                        var onlyMain = input.Subtract(otherBlock.GetBaseLayerWidth());
-
-                        Assert.IsTrue(onlyMain.maxPart.IsEmpty, "Base layer cant divide other layer to 2 parts");
-
-                        if (onlyMain.minPart.IsEmpty)
-                            return Interval.Empty;
-
-                        //Hide by Main layer
-                        var complete = onlyMain.minPart.Subtract(otherBlock.GetMainLayerWidth());
-
-                        if (!complete.maxPart.IsEmpty)
-                            return onlyMain.minPart;
-
-                        return complete.minPart;
+                        if (otherBlock.IsEmpty)
+                            return (input, Interval.Empty);
+                        return input.Subtract(new Interval(otherBlock.Height.Base - baseLayerVisibleWidth, otherBlock.Height.Main));
                     }
 
                     Blocks Filter(in Blocks input, Renderer.TerrainLayerToRender layer)
@@ -739,11 +415,221 @@ namespace TerrainDemo.Visualization
             var (baseTexture, underTexture, mainTexture) = CreateBlockTexture2(map, bounds);
 
             return ((baseMesh, baseTexture), (underMesh, underTexture), (mainMesh, mainTexture));
-
-
         }
 
-        private Texture CreateBlockTexture(MicroMap map, Bounds2i bounds, TriRunner mode)
+        public (Mesh mesh, Texture texture) CreateObjectMesh(ObjectMap mapObject, TriRunner renderSettings)
+        {
+            var bounds = mapObject.Bounds;
+            var heightMap = mapObject.GetHeightMap();
+            var blockMap = mapObject.GetBlockMap();
+
+            var groundVertIndexBuffer = new int[bounds.Size.X + 1, bounds.Size.Z + 1];
+            var groundVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1))
+                { Vector3.zero};        //Dummy value to make default 0 values of baseVertIndexBuffer a invalid
+            var groundIndices = new List<int>(groundVertices.Count * 2);
+            var commonUv = new List<Vector2>(groundVertices.Count) { Vector2.zero };
+
+            //Set quads
+            for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
+                for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
+                {
+                    var mapLocalX = worldX - bounds.Min.X;
+                    var mapLocalZ = worldZ - bounds.Min.Z;
+                    var chunkLocalX = mapLocalX;
+                    var chunkLocalZ = mapLocalZ;
+
+                    ref readonly var block = ref blockMap[mapLocalX, mapLocalZ];
+                    if (block.IsEmpty)
+                        continue;
+
+                    //Block culling
+                    if (mapObject.GetOcclusionState(new Vector2i(worldX, worldZ)) == BlockOcclusionState.ObjectOccluded)
+                        continue;
+
+                    //Prepare block vertices
+                    int index00, index01, index10, index11;
+                    int startIndexCounter = groundVertices.Count;
+                    if (groundVertIndexBuffer[chunkLocalX, chunkLocalZ] == 0)
+                    {
+                        index00 = startIndexCounter++;
+                        groundVertIndexBuffer[chunkLocalX, chunkLocalZ] = index00;
+                        groundVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Nominal, worldZ));
+                        commonUv.Add(new Vector2(chunkLocalX / (float) bounds.Size.X,
+                            chunkLocalZ / (float) bounds.Size.Z));
+
+                        startIndexCounter++;
+                        groundVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Base, worldZ));
+                        commonUv.Add(new Vector2(chunkLocalX / (float) bounds.Size.X,
+                            chunkLocalZ / (float) bounds.Size.Z));
+                    }
+                    else
+                    {
+                        index00 = groundVertIndexBuffer[chunkLocalX, chunkLocalZ];
+                    }
+
+                    if (groundVertIndexBuffer[chunkLocalX, chunkLocalZ + 1] == 0)
+                    {
+                        index01 = startIndexCounter++;
+                        groundVertIndexBuffer[chunkLocalX, chunkLocalZ + 1] = index01;
+                        groundVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ + 1].Nominal,
+                            worldZ + 1));
+                        commonUv.Add(new Vector2(chunkLocalX / (float) bounds.Size.X,
+                            (chunkLocalZ + 1) / (float) bounds.Size.Z));
+
+                        startIndexCounter++;
+                        groundVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ + 1].Base,
+                            worldZ + 1));
+                        commonUv.Add(new Vector2(chunkLocalX / (float) bounds.Size.X,
+                            (chunkLocalZ + 1) / (float) bounds.Size.Z));
+                    }
+                    else
+                    {
+                        index01 = groundVertIndexBuffer[chunkLocalX, chunkLocalZ + 1];
+                    }
+
+                    if (groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ] == 0)
+                    {
+                        index10 = startIndexCounter++;
+                        groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ] = index10;
+                        groundVertices.Add(new Vector3(worldX + 1, heightMap[mapLocalX + 1, mapLocalZ].Nominal,
+                            worldZ));
+                        commonUv.Add(new Vector2((chunkLocalX + 1) / (float) bounds.Size.X,
+                            (chunkLocalZ) / (float) bounds.Size.Z));
+
+                        startIndexCounter++;
+                        groundVertices.Add(new Vector3(worldX + 1, heightMap[mapLocalX + 1, mapLocalZ].Base,
+                            worldZ));
+                        commonUv.Add(new Vector2((chunkLocalX + 1) / (float) bounds.Size.X,
+                            (chunkLocalZ) / (float) bounds.Size.Z));
+                    }
+                    else
+                    {
+                        index10 = groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ];
+                    }
+
+                    if (groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1] == 0)
+                    {
+                        index11 = startIndexCounter++;
+                        groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1] = index11;
+                        groundVertices.Add(new Vector3(worldX + 1, heightMap[mapLocalX + 1, mapLocalZ + 1].Nominal,
+                            worldZ + 1));
+                        commonUv.Add(new Vector2((chunkLocalX + 1) / (float) bounds.Size.X,
+                            (chunkLocalZ + 1) / (float) bounds.Size.Z));
+
+                        startIndexCounter++;
+                        groundVertices.Add(new Vector3(worldX + 1, heightMap[mapLocalX + 1, mapLocalZ + 1].Base,
+                            worldZ + 1));
+                        commonUv.Add(new Vector2((chunkLocalX + 1) / (float) bounds.Size.X,
+                            (chunkLocalZ + 1) / (float) bounds.Size.Z));
+                    }
+                    else
+                    {
+                        index11 = groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1];
+                    }
+
+                    //Make proper top quad
+                    if (Mathf.Abs(heightMap[mapLocalX, mapLocalZ].Nominal -
+                                  heightMap[mapLocalX + 1, mapLocalZ + 1].Nominal) <
+                        Mathf.Abs(heightMap[mapLocalX + 1, mapLocalZ].Nominal -
+                                  heightMap[mapLocalX, mapLocalZ + 1].Nominal))
+                    {
+                        groundIndices.Add(index00);
+                        groundIndices.Add(index01);
+                        groundIndices.Add(index11);
+
+                        groundIndices.Add(index00);
+                        groundIndices.Add(index11);
+                        groundIndices.Add(index10);
+                    }
+                    else
+                    {
+                        groundIndices.Add(index00);
+                        groundIndices.Add(index01);
+                        groundIndices.Add(index10);
+
+                        groundIndices.Add(index10);
+                        groundIndices.Add(index01);
+                        groundIndices.Add(index11);
+                    }
+
+                    //Make proper bottom quad
+                    if (Mathf.Abs(heightMap[mapLocalX, mapLocalZ].Base -
+                                  heightMap[mapLocalX + 1, mapLocalZ + 1].Base) <
+                        Mathf.Abs(heightMap[mapLocalX + 1, mapLocalZ].Base -
+                                  heightMap[mapLocalX, mapLocalZ + 1].Base))
+                    {
+                        groundIndices.Add(index00 + 1);
+                        groundIndices.Add(index11 + 1);
+                        groundIndices.Add(index01 + 1);
+
+                        groundIndices.Add(index00 + 1);
+                        groundIndices.Add(index10 + 1);
+                        groundIndices.Add(index11 + 1);
+                    }
+                    else
+                    {
+                        groundIndices.Add(index00 + 1);
+                        groundIndices.Add(index10 + 1);
+                        groundIndices.Add(index01 + 1);
+
+                        groundIndices.Add(index10 + 1);
+                        groundIndices.Add(index11 + 1);
+                        groundIndices.Add(index01 + 1);
+                    }
+
+                    //Draw sides if needed
+                    var neighbors = mapObject.GetNeighborBlocks(new Vector2i(worldX, worldZ));
+                    foreach (var dir in Directions.Cardinal)
+                    {
+                        if (neighbors[dir].IsEmpty)
+                        {
+                            switch (dir)
+                            {
+                                case Side2d.Forward:
+                                    DrawObjectSide(index01, index11);
+                                    break;
+                                case Side2d.Right:
+                                    DrawObjectSide(index11, index10);
+                                    break;
+                                case Side2d.Back:
+                                    DrawObjectSide(index10, index00);
+                                    break;
+                                case Side2d.Left:
+                                    DrawObjectSide(index00, index01);
+                                    break;
+                            }
+                        }
+                    }
+                }
+
+
+            var groundMesh = new Mesh();
+            groundMesh.SetVertices(groundVertices);
+            groundMesh.SetTriangles(groundIndices, 0);
+            groundMesh.SetUVs(0, commonUv);
+            groundMesh.RecalculateNormals();
+
+            var mainTexture = CreateBlockTexture(mapObject, bounds, renderSettings);
+
+            return (groundMesh, mainTexture);
+
+            //Draw side of object block. Parameters: top and bottom point indices
+            void DrawObjectSide(int topPoint1, int topPoint2)
+            {
+                var bottomPoint1 = topPoint1 + 1;
+                var bottomPoint2 = topPoint2 + 1;
+
+                groundIndices.Add(bottomPoint1);
+                groundIndices.Add(bottomPoint2);
+                groundIndices.Add(topPoint2);
+
+                groundIndices.Add(bottomPoint1);
+                groundIndices.Add(topPoint2);
+                groundIndices.Add(topPoint1);
+            }
+        }
+
+        private Texture CreateBlockTexture(BaseBlockMap map, Bounds2i bounds, TriRunner mode)
         {
             bounds = bounds.Intersect(map.Bounds);
 
@@ -823,7 +709,7 @@ namespace TerrainDemo.Visualization
                             }
                             else
                             {
-                                block = map.GetBlockMap()[mapLocalX, mapLocalZ].Base;
+                                block = map.GetBlockMap()[mapLocalX, mapLocalZ].Top;
                             }
                             colors[flatIndex] = BlockToColor(block);
                         }
@@ -835,7 +721,7 @@ namespace TerrainDemo.Visualization
             return result;
         }
 
-        private (Texture Base, Texture Under, Texture Main) CreateBlockTexture2(MicroMap map, Bounds2i bounds)
+        private (Texture Base, Texture Under, Texture Main) CreateBlockTexture2(BaseBlockMap map, Bounds2i bounds)
         {
             bounds = bounds.Intersect(map.Bounds);
 
@@ -871,10 +757,7 @@ namespace TerrainDemo.Visualization
                     baseColors[flatIndex] = BlockToColor(blocks.Base);
 
                     var block = blocks.Underground;
-                    if (block == BlockType.Cave)
-                        underColors[flatIndex] = Color.magenta;         //debug, for visibility
-                    else
-                        underColors[flatIndex] = BlockToColor(block);
+                    underColors[flatIndex] = BlockToColor(block);
 
                     mainColors[flatIndex] = BlockToColor(blocks.Ground);
                 }
@@ -1016,7 +899,7 @@ namespace TerrainDemo.Visualization
         private (int, int) InfluenceToColorsIndex(Influence influence)
         {
             if (influence.IsEmpty)
-                return (Macro.Zone.InvalidId, Macro.Zone.InvalidId);
+                return (Zone.InvalidId, Zone.InvalidId);
 
             if (influence.Count == 1)
                 return (influence.Zone1Id, influence.Zone1Id);
