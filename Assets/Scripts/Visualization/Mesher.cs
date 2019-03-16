@@ -80,6 +80,7 @@ namespace TerrainDemo.Visualization
                 { Vector3.zero};        //Dummy value to make default 0 values of baseVertIndexBuffer a invalid
             var groundIndices = new List<int>(groundVertices.Count * 2);
             var groundUv = new List<Vector2>(groundVertices.Count){Vector2.zero};
+            //var groundNormals = new List<Vector3>(groundVertices.Count) {Vector3.zero};
 
             //Set quads
             for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
@@ -102,25 +103,27 @@ namespace TerrainDemo.Visualization
                     //Prepare block vertices
                     int v00, v01, v10, v11;
                     int startIndexCounter = groundVertices.Count;
+                    var h00 = heightMap[mapLocalX, mapLocalZ].Nominal;
                     if (groundVertIndexBuffer[chunkLocalX, chunkLocalZ] == 0)
                     {
                         v00 = startIndexCounter++;
                         groundVertIndexBuffer[chunkLocalX, chunkLocalZ] = v00;
-                        groundVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ].Nominal, worldZ));
+                        groundVertices.Add(new Vector3(worldX, h00, worldZ));
                         groundUv.Add(new Vector2(chunkLocalX / (float) bounds.Size.X,
                             chunkLocalZ / (float) bounds.Size.Z));
+
                     }
                     else
                     {
                         v00 = groundVertIndexBuffer[chunkLocalX, chunkLocalZ];
                     }
 
+                    var h01 = heightMap[mapLocalX, mapLocalZ + 1].Nominal;
                     if (groundVertIndexBuffer[chunkLocalX, chunkLocalZ + 1] == 0)
                     {
                         v01 = startIndexCounter++;
                         groundVertIndexBuffer[chunkLocalX, chunkLocalZ + 1] = v01;
-                        groundVertices.Add(new Vector3(worldX, heightMap[mapLocalX, mapLocalZ + 1].Nominal,
-                            worldZ + 1));
+                        groundVertices.Add(new Vector3(worldX, h01, worldZ + 1));
                         groundUv.Add(new Vector2(chunkLocalX / (float) bounds.Size.X,
                             (chunkLocalZ + 1) / (float) bounds.Size.Z));
                     }
@@ -129,12 +132,12 @@ namespace TerrainDemo.Visualization
                         v01 = groundVertIndexBuffer[chunkLocalX, chunkLocalZ + 1];
                     }
 
+                    var h10 = heightMap[mapLocalX + 1, mapLocalZ].Nominal;
                     if (groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ] == 0)
                     {
                         v10 = startIndexCounter++;
                         groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ] = v10;
-                        groundVertices.Add(new Vector3(worldX + 1, heightMap[mapLocalX + 1, mapLocalZ].Nominal,
-                            worldZ));
+                        groundVertices.Add(new Vector3(worldX + 1, h10, worldZ));
                         groundUv.Add(new Vector2((chunkLocalX + 1) / (float) bounds.Size.X,
                             (chunkLocalZ) / (float) bounds.Size.Z));
                     }
@@ -143,12 +146,12 @@ namespace TerrainDemo.Visualization
                         v10 = groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ];
                     }
 
+                    var h11 = heightMap[mapLocalX + 1, mapLocalZ + 1].Nominal;
                     if (groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1] == 0)
                     {
                         v11 = startIndexCounter++;
                         groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1] = v11;
-                        groundVertices.Add(new Vector3(worldX + 1, heightMap[mapLocalX + 1, mapLocalZ + 1].Nominal,
-                            worldZ + 1));
+                        groundVertices.Add(new Vector3(worldX + 1, h11, worldZ + 1));
                         groundUv.Add(new Vector2((chunkLocalX + 1) / (float) bounds.Size.X,
                             (chunkLocalZ + 1) / (float) bounds.Size.Z));
                     }
@@ -158,10 +161,7 @@ namespace TerrainDemo.Visualization
                     }
 
                     //Make proper quad
-                    if (Mathf.Abs(heightMap[mapLocalX, mapLocalZ].Nominal -
-                                  heightMap[mapLocalX + 1, mapLocalZ + 1].Nominal) <
-                        Mathf.Abs(heightMap[mapLocalX + 1, mapLocalZ].Nominal -
-                                  heightMap[mapLocalX, mapLocalZ + 1].Nominal))
+                    if (Mathf.Abs(h00 - h11) < Mathf.Abs(h10 - h01))
                     {
                         groundIndices.Add(v00);
                         groundIndices.Add(v01);
@@ -170,7 +170,6 @@ namespace TerrainDemo.Visualization
                         groundIndices.Add(v00);
                         groundIndices.Add(v11);
                         groundIndices.Add(v10);
-
                     }
                     else
                     {
@@ -182,6 +181,19 @@ namespace TerrainDemo.Visualization
                         groundIndices.Add(v01);
                         groundIndices.Add(v11);
                     }
+
+                    /*
+                    //Calculate normals, check nearby map objects
+                    foreach (var mapChild in map.Childs)
+                    {
+                        if (worldX >= mapChild.Bounds.Min.X && worldX <= mapChild.Bounds.Max.X + 1
+                                                            && worldZ >= mapChild.Bounds.Min.Z &&
+                                                            worldZ <= mapChild.Bounds.Max.Z + 1)
+                        {
+                            ref readonly var childHeight = ref mapChild.get
+                        }
+                    }
+                    */
                 }
 
 
@@ -189,6 +201,7 @@ namespace TerrainDemo.Visualization
             groundMesh.SetVertices(groundVertices);
             groundMesh.SetTriangles(groundIndices, 0);
             groundMesh.SetUVs(0, groundUv);
+            //groundMesh.SetNormals(groundNormals);
             groundMesh.RecalculateNormals();
 
             var mainTexture = CreateBlockTexture(map, bounds, renderSettings);

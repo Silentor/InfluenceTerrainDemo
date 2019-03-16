@@ -10,11 +10,11 @@ namespace TerrainDemo.Micro
 {
     public sealed class ObjectMap : BaseBlockMap
     {
-        private readonly MicroMap _parentMap;
+        public readonly MicroMap ParentMap;
 
         public ObjectMap(string name, Bounds2i bounds, MicroMap parentMap) : base(name, bounds)
         {
-            _parentMap = parentMap;
+            ParentMap = parentMap;
         }
 
         /// <summary>
@@ -111,13 +111,11 @@ namespace TerrainDemo.Micro
                 }
 
             //Modify heightmap to proper blend with parent map
-            //Naive approach - iterate each block side
-            //For each block that intersects main map - check its sides
             for (int x = 0; x < Bounds.Size.X; x++)
                 for (int z = 0; z < Bounds.Size.Z; z++)
                 {
                     var worldBlockPos = Local2World((x, z));
-                    ref readonly var parentBlock = ref _parentMap.GetBlockRef(worldBlockPos);
+                    ref readonly var parentBlock = ref ParentMap.GetBlockRef(worldBlockPos);
 
                     if (!parentBlock.IsEmpty && !_blocks[x, z].IsEmpty)
                     {
@@ -128,7 +126,7 @@ namespace TerrainDemo.Micro
                         ref var height11 = ref _heightMap[x + 1, z + 1];
 
                         //Snap object's block to main map block. No intersections allowed!
-                        var parentHeights = _parentMap.GetBlockNominalHeights(worldBlockPos);
+                        var parentHeights = ParentMap.GetBlockNominalHeights(worldBlockPos);
                         if (parentHeights.HasValue)
                         {
                             var (parentHeight00, parentHeight01, parentHeight10, parentHeight11) = parentHeights.Value;
@@ -141,73 +139,73 @@ namespace TerrainDemo.Micro
 
                             //todo occlusion culling of block (either main map or object) to prevent Z-fighting of near placed blocks
                             //Check occlusion
-                            BlockOcclusionState state = BlockOcclusionState.MapOccluded;
+                            var state = BlockOcclusionState.MapOccluded;
 
                             if (height00.Base > parentHeight00)
                             {
-                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.None);
+                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.None);
                                 continue;
                             }
                             else if (height00.Main < parentHeight00)
                             {
-                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.ObjectOccluded);
+                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.ObjectOccluded);
                                 continue;
                             }
                             else if (height00.Main > parentHeight00 && height00.Base < parentHeight00)
                             {
-                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.MapOccluded);
+                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.MapOccluded);
                                 continue;
                             }
 
                             if (height01.Base > parentHeight01)
                             {
-                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.None);
+                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.None);
                                 continue;
                             }
                             else if (height01.Main < parentHeight01)
                             {
-                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.ObjectOccluded);
+                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.ObjectOccluded);
                                 continue;
                             }
                             else if (height01.Main > parentHeight01 && height01.Base < parentHeight01)
                             {
-                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.MapOccluded);
+                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.MapOccluded);
                                 continue;
                             }
 
                             if (height10.Base > parentHeight10)
                             {
-                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.None);
+                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.None);
                                 continue;
                             }
                             else if (height10.Main < parentHeight10)
                             {
-                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.ObjectOccluded);
+                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.ObjectOccluded);
                                 continue;
                             }
                             else if (height10.Main > parentHeight10 && height10.Base < parentHeight10)
                             {
-                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.MapOccluded);
+                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.MapOccluded);
                                 continue;
                             }
 
                             if (height11.Base > parentHeight11)
                             {
-                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.None);
+                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.None);
                                 continue;
                             }
                             else if (height11.Main < parentHeight11)
                             {
-                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.ObjectOccluded);
+                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.ObjectOccluded);
                                 continue;
                             }
                             else if (height11.Main > parentHeight11 && height11.Base < parentHeight11)
                             {
-                                _parentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.MapOccluded);
+                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.MapOccluded);
                                 continue;
                             }
 
-                            _parentMap.SetOcclusionState(worldBlockPos, state);
+                            ParentMap.SetOcclusionState(worldBlockPos, state);
                         }
                     }
 
@@ -246,7 +244,7 @@ namespace TerrainDemo.Micro
 
         public override BlockOcclusionState GetOcclusionState(Vector2i worldPosition)
         {
-            return _parentMap.GetOcclusionState(worldPosition);
+            return ParentMap.GetOcclusionState(worldPosition);
         }
 
         public override string ToString()

@@ -120,7 +120,7 @@ namespace TerrainDemo
             const int xCenter = (xStart + xFinish) / 2;
             const int length = xFinish - xStart;
 
-            var transMatrix = OpenTK.Matrix4.CreateRotationY(MathHelper.DegreesToRadians(25));
+            var transMatrix = OpenTK.Matrix4.CreateRotationY(MathHelper.DegreesToRadians(0));
 
             for (int x = xStart; x <= xFinish; x++)   //length
             {
@@ -129,7 +129,7 @@ namespace TerrainDemo
                     //Create pulse from two smoothsteps
                     var stairwayBlockHeight =
                         (Interpolation.SmoothStep(Mathf.InverseLerp(xStart, xCenter, x))
-                        - Interpolation.SmoothStep(Mathf.InverseLerp(xCenter, xFinish, x))) * 10 + 2;
+                        - Interpolation.SmoothStep(Mathf.InverseLerp(xCenter, xFinish, x))) * 5 - 3;
 
                     if (z == 0 || z == width)
                         stairwayBlockHeight -= 0.5f;
@@ -138,7 +138,7 @@ namespace TerrainDemo
                     if (z == 0 || z == width)
                         baseBlockHeight += 0.5f;
 
-                    blocks.Add(new Blocks(BlockType.Stone, BlockType.Empty, new Heights(stairwayBlockHeight, baseBlockHeight, baseBlockHeight)));
+                    blocks.Add(new Blocks(BlockType.Sand, BlockType.Empty, new Heights(stairwayBlockHeight, baseBlockHeight, baseBlockHeight)));
 
                     var transPos = new OpenTK.Vector4(x, 1, z, 1);
                     transPos = transPos * transMatrix;
@@ -219,18 +219,22 @@ namespace TerrainDemo
             _renderer = new Renderer(new Mesher(Macro, this), this);
             Render(this);
 
-            //StartCoroutine(AnimateTest());
+            StartCoroutine(AnimateTest());
         }
 
         private IEnumerator AnimateTest()
         {
             yield return new WaitForSeconds(1);
-           
-            while (Time.time < 15)
+
+            var startTimeOffset = Time.time;
+
+            while (true)
             {
-                _bridge.Translate(-Time.deltaTime);                
-                //yield return new WaitForSeconds(0.1f);
-                yield return null;
+                const float deltaTime = 0.1f;
+                const float amplitude = 5;
+                _bridge.Translate((Mathf.Sin(Time.time - startTimeOffset)) * deltaTime * 4);                
+                yield return new WaitForSeconds(deltaTime);
+                //yield return null;
             }
         }
 

@@ -251,7 +251,7 @@ namespace TerrainDemo.Micro
                 }
 
             timer.Stop();
-            UnityEngine.Debug.Log($"Heightmap of {Name} generated in {timer.ElapsedMilliseconds}");
+            Debug.Log($"Heightmap of {Name} generated in {timer.ElapsedMilliseconds}");
         }
 
         public void SetOcclusionState(Vector2i worldPosition, BlockOcclusionState state)
