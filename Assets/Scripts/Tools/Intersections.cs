@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Numerics;
 using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
 using UnityEngine;
+using Vector2 = UnityEngine.Vector2;
+using Vector3 = UnityEngine.Vector3;
 
 namespace TerrainDemo.Tools
 {
@@ -99,6 +102,62 @@ namespace TerrainDemo.Tools
             var invDen = 1 / (v0.X * v1.Y - v1.X * v0.Y);
             var v = (v2.X * v1.Y - v1.X * v2.Y) * invDen;
             var w = (v0.X * v2.Y - v2.X * v0.Y) * invDen;
+            var u = 1.0f - v - w;
+
+            return (u, v, w);
+        }
+
+        public static (float u, float v, float w) Barycentric2DCoordsOptimized_00_01_11(OpenTK.Vector2 localPoint)
+        {
+            //Based on http://gamedev.stackexchange.com/a/63203
+            //var v0 = b - a;       0, 1
+            //var v1 = c - a;       1, 1    
+            var v2 = localPoint;
+            const float invDen = 1f / (0 * 1 - 1 * 1);
+            var v = (v2.X - v2.Y) * invDen;
+            var w = (-v2.X) * invDen;
+            var u = 1.0f - v - w;
+
+            return (u, v, w);
+        }
+
+        public static (float u, float v, float w) Barycentric2DCoordsOptimized_00_11_10(OpenTK.Vector2 localPoint)
+        {
+            //Based on http://gamedev.stackexchange.com/a/63203
+            //var v0 = b - a;       1, 1
+            //var v1 = c - a;       1, 0
+            var v2 = localPoint;
+            const float invDen = 1f / (1 * 0 - 1 * 1);
+            var v = (-v2.Y) * invDen;
+            var w = (v2.Y - v2.X) * invDen;
+            var u = 1.0f - v - w;
+
+            return (u, v, w);
+        }
+
+        public static (float u, float v, float w) Barycentric2DCoordsOptimized_00_01_10(OpenTK.Vector2 localPoint)
+        {
+            //Based on http://gamedev.stackexchange.com/a/63203
+            //var v0 = b - a;           0, 1
+            //var v1 = c - a;           1, 0
+            var v2 = localPoint;
+            const float invDen = 1f / (0 * 0 - 1 * 1);
+            var v = (-v2.Y) * invDen;
+            var w = (-v2.X) * invDen;
+            var u = 1.0f - v - w;
+
+            return (u, v, w);
+        }
+
+        public static (float u, float v, float w) Barycentric2DCoordsOptimized_01_11_10(OpenTK.Vector2 localPoint)
+        {
+            //Based on http://gamedev.stackexchange.com/a/63203
+            //var v0 = b - a;           1, 0
+            //var v1 = c - a;           1, -1    
+            var v2 = localPoint - OpenTK.Vector2.UnitY;
+            const float invDen = 1f / (1 * (-1) - 1 * 0);
+            var v = (-v2.X - v2.Y) * invDen;
+            var w = (v2.Y) * invDen;
             var u = 1.0f - v - w;
 
             return (u, v, w);

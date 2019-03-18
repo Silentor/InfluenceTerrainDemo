@@ -124,21 +124,17 @@ namespace TerrainDemo.Micro
                 if (Math.Abs(corners.H00.Nominal - corners.H11.Nominal) <
                     Math.Abs(corners.H10.Nominal - corners.H01.Nominal))
                 {
-                    //todo write optimized Barycentric routine for grid triangles
-
                     //Check the proper triangle of quad (from reduced cross product) (х3 - х1) * (у2 - у1) - (у3 - у1) * (х2 - х1)
                     //var side = (localPos.X - 0) * (1 - 0) - (localPos.Y - 0) * (1 - 0);
                     if (localPos.Y >= localPos.X)
                     {
-                        var (u, v, w) =
-                            Intersections.Barycentric2DCoords(localPos, Vector2.Zero, Vector2.UnitY, Vector2.One);
+                        var (u, v, w) = Intersections.Barycentric2DCoordsOptimized_00_01_11(localPos);
                         return corners.H00.Nominal * u + corners.H01.Nominal * v +
                                corners.H11.Nominal * w;
                     }
                     else
                     {
-                        var (u, v, w) = Intersections.Barycentric2DCoords(localPos, Vector2.Zero, Vector2.One,
-                            Vector2.UnitX);
+                        var (u, v, w) = Intersections.Barycentric2DCoordsOptimized_00_11_10(localPos);
                         return corners.H00.Nominal * u + corners.H11.Nominal * v +
                                corners.H10.Nominal * w;
                     }
@@ -149,21 +145,17 @@ namespace TerrainDemo.Micro
                     //var side = (localPos.X - 0) * (0 - 1) - (localPos.Y - 1) * (1 - 0);
                     if (-localPos.X > localPos.Y - 1)
                     {
-                        var (u, v, w) =
-                            Intersections.Barycentric2DCoords(localPos, Vector2.Zero, Vector2.UnitY, Vector2.UnitX);
+                        var (u, v, w) = Intersections.Barycentric2DCoordsOptimized_00_01_10(localPos);
                         return corners.H00.Nominal * u + corners.H01.Nominal * v +
                                corners.H10.Nominal * w;
                     }
                     else
                     {
-                        var (u, v, w) =
-                            Intersections.Barycentric2DCoords(localPos, Vector2.UnitY, Vector2.One, Vector2.UnitX);
-
+                        var (u, v, w) = Intersections.Barycentric2DCoordsOptimized_01_11_10(localPos);
                         return corners.H01.Nominal * u + corners.H11.Nominal * v +
                                corners.H10.Nominal * w;
                     }
                 }
-                
             }
 
             return 0;
