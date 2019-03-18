@@ -208,11 +208,13 @@ namespace TerrainDemo.Hero
         {
             Changed();
 
+            /*
             var input = GetComponent<Input>();
             input.Move += InputOnMove;
             input.Rotate += InputOnRotate;
             input.Fire += InputOnFire;
             input.Build += InputOnBuild;
+            */
 
             _microMap = GameObject.FindObjectOfType<TriRunner>().Micro;
 

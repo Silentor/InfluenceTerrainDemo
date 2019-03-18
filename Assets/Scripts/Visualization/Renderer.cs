@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using TerrainDemo.Hero;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Settings;
@@ -8,6 +9,8 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using Cell = TerrainDemo.Macro.Cell;
 using Object = UnityEngine.Object;
+using Vector2 = OpenTK.Vector2;
+using Vector3 = OpenTK.Vector3;
 
 namespace TerrainDemo.Visualization
 {
@@ -91,6 +94,23 @@ namespace TerrainDemo.Visualization
                     CreateRenderingGameObject(objectMesh.mesh, objectMesh.texture, "MainMesh", objectRoot.transform);
                 }
             }
+
+            //Render actors
+            foreach (var actor in map.Actors)
+            {
+                var actorObject = _mesher.CreateActorObject(actor, renderSettings);
+                actorObject.transform.SetParent(GetMeshRoot(), true);
+                _renderActorCache[actor] = actorObject;
+                actor.Changed += ActorOnChanged;
+            }
+
+            UpdateObserver();
+        }
+
+        public void AssingCamera(Camera camera, Actor actor)
+        {
+            _observer = camera;
+            _observed = actor;
         }
 
         public void Clear()
@@ -119,6 +139,8 @@ namespace TerrainDemo.Visualization
 
                 Object.Destroy(child);
             }
+
+            _renderActorCache.Clear();
         }
 
         private readonly Mesher _mesher;
@@ -131,6 +153,9 @@ namespace TerrainDemo.Visualization
 
         private readonly Dictionary<Vector2i, GameObject> _renderChunksCache = new Dictionary<Vector2i, GameObject>();
         private readonly Dictionary<ObjectMap, GameObject> _renderObjectCache = new Dictionary<ObjectMap, GameObject>();
+        private readonly Dictionary<Actor, GameObject> _renderActorCache = new Dictionary<Actor, GameObject>();
+        private Camera _observer;
+        private Actor _observed;
 
         private Transform GetMeshRoot()
         {
@@ -168,6 +193,32 @@ namespace TerrainDemo.Visualization
             var baseTexturedMat = new Material(_textured);
             baseTexturedMat.mainTexture = texture;
             renderer.material = baseTexturedMat;
+        }
+
+        private void ActorOnChanged(Actor actor)
+        {
+            var actorObject = _renderActorCache[actor];
+            actorObject.transform.SetPositionAndRotation(actor.Position, actor.Rotation);
+            
+            if(actor == _observed)
+                UpdateObserver();
+        }
+
+        private void UpdateObserver()
+        {
+            if (_observer && _observed != null)
+            {
+                DebugExtension.DebugArrow(_observed.Position + Vector3.UnitY, _observed.Forward * 2, Color.green);
+
+                //Place camera behind and above actor
+                var cameraPosition = -5 * _observed.Forward + 3 * Vector3.UnitY + _observed.Position;
+
+                //Look at ground in front of actor
+                var cameraLookAt = _observed.Forward * 3 + _observed.Position;
+
+                _observer.transform.position = cameraPosition;
+                _observer.transform.LookAt(cameraLookAt);
+            }
         }
 
         /*

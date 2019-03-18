@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using TerrainDemo.Hero;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Settings;
@@ -9,6 +10,7 @@ using TerrainDemo.Tools;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Cell = TerrainDemo.Macro.Cell;
+using Object = UnityEngine.Object;
 
 namespace TerrainDemo.Visualization
 {
@@ -627,6 +629,13 @@ namespace TerrainDemo.Visualization
                 groundIndices.Add(topPoint2);
                 groundIndices.Add(topPoint1);
             }
+        }
+
+        public GameObject CreateActorObject(Actor actor, TriRunner settings)
+        {
+            var newActor = Object.Instantiate(settings.ActorPrefab, actor.Position, actor.Rotation);
+            //Color object...
+            return newActor;
         }
 
         private Texture CreateBlockTexture(BaseBlockMap map, Bounds2i bounds, TriRunner mode)

@@ -184,6 +184,8 @@ MonoBehaviour:
   VertexColoredMat: {fileID: 2100000, guid: 5ae6f60a03e107e4d9e469815a34517d, type: 2}
   TextureMode: 3
   TexturedMat: {fileID: 2100000, guid: cf4bbfe466f303742b1c4030ee57c04b, type: 2}
+  ActorPrefab: {fileID: 6868431656227549215, guid: f10e202aef0fbc647a294987b6423608,
+    type: 3}
 --- !u!1 &914146329
 GameObject:
   m_ObjectHideFlags: 0
@@ -364,7 +366,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1293065045}
   m_LocalRotation: {x: 0.04400717, y: 0.36927286, z: -0.017566528, w: 0.92811227}
-  m_LocalPosition: {x: -11.964375, y: 5.873316, z: -8.799021}
+  m_LocalPosition: {x: -16.4, y: 4.35, z: 17.42}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -435,6 +437,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1648136001}
   - component: {fileID: 1648136003}
+  - component: {fileID: 1648136002}
   m_Layer: 0
   m_Name: Benchmarks
   m_TagString: Untagged
@@ -456,6 +459,18 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1648136002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1648136000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37af8a94792125b48857830ebd85dbab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &1648136003
 MonoBehaviour:
   m_ObjectHideFlags: 0

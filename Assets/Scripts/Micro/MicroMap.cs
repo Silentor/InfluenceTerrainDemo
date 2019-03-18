@@ -5,6 +5,7 @@ using System.Linq;
 using System.Numerics;
 using JetBrains.Annotations;
 using OpenTK;
+using TerrainDemo.Hero;
 using TerrainDemo.Macro;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
@@ -23,7 +24,11 @@ namespace TerrainDemo.Micro
     public sealed class MicroMap : BaseBlockMap
     {
         public readonly Cell[] Cells;
+
         public IEnumerable<BaseBlockMap> Childs => _childs;
+
+        public IEnumerable<Actor> Actors => _actors;
+       
 
         public MicroMap(MacroMap macromap, TriRunner settings) : base("MicroMap", (Bounds2i)macromap.Bounds)
         {
@@ -42,6 +47,11 @@ namespace TerrainDemo.Micro
         public void AddChild(ObjectMap childMap)
         {
             _childs.Add(childMap);
+        }
+
+        public void AddActor(Actor actor)
+        {
+            _actors.Add(actor);
         }
 
         public Cell GetCell([NotNull] Macro.Cell cell)

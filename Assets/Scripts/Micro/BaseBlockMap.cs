@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using OpenTK;
+using TerrainDemo.Hero;
 using TerrainDemo.Macro;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
@@ -430,6 +431,7 @@ namespace TerrainDemo.Micro
         protected readonly Heights[,] _heightMap;           //todo Optimize as vector array
         protected readonly Blocks[,] _blocks;                   //todo Optimize as vector array
         protected readonly List<BaseBlockMap> _childs = new List<BaseBlockMap>();
+        protected readonly List<Actor> _actors = new List<Actor>();
 
         protected void DoChanged()
         {

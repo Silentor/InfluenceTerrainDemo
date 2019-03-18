@@ -743,5 +743,18 @@ namespace OpenTK
         {
             return Xyz == other.Xyz && W == other.W;
         }
+
+        //By Silentor
+#region Unity interop
+        public static implicit operator UnityEngine.Quaternion(Quaternion input)
+        {
+            return new UnityEngine.Quaternion(input.X, input.Y, input.Z, input.W);
+        }
+
+        public static implicit operator Quaternion(UnityEngine.Quaternion input)
+        {
+            return new Quaternion(input.x, input.y, input.z, input.w);
+        }
+#endregion
     }
 }

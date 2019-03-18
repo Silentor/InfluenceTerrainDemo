@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using OpenTK;
+using TerrainDemo.Hero;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Settings;
@@ -14,6 +15,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Debug = UnityEngine.Debug;
+using Input = TerrainDemo.Hero.Input;
 using Renderer = TerrainDemo.Visualization.Renderer;
 using Vector2 = OpenTK.Vector2;
 using Vector3 = OpenTK.Vector3;
@@ -62,6 +64,13 @@ namespace TerrainDemo
 
         #endregion
 
+        #region New region
+
+        [Header("Actors")]
+        public GameObject ActorPrefab;
+
+        #endregion
+
         public Box2 LandBounds { get; private set; }
 
         public MacroMap Macro { get; private set; }
@@ -75,6 +84,7 @@ namespace TerrainDemo
         private Renderer _renderer;
         private BlockSettings[] _allBlocks;
         private ObjectMap _bridge;
+        private Actor _hero;
 
         public void Render(TriRunner renderSettings)
         {
@@ -118,6 +128,9 @@ namespace TerrainDemo
             _bridge = CreateBridgeObj();
             CreateLaputeObj();
             CreateTestBlockObj();
+
+            _hero = new Actor(Micro, new Vector2(-14, 2), Quaternion.FromEulerAngles(0, MathHelper.DegreesToRadians(90), 0));
+            Micro.AddActor(_hero);
 
             Micro.Changed += MicroOnChanged;
 
@@ -254,37 +267,39 @@ namespace TerrainDemo
             }
         }
 
-        private void BenchRaycast()
+        //private IEnumerator ActorNavigateTest()
+        //{
+        //    yield return new WaitForSeconds(1);
+
+        //    _hero.Move(Vector2.UnitX);
+        //    while (Time.time < 10)
+        //    {
+        //        _hero.Update(Time.deltaTime);
+        //        yield return null;
+        //    }
+        //}
+
+        private void InputSourceOnStop()
         {
-            //Old time - 133-137 msec for 1000 raycasts
-            //New time - 81-83 msec for 1000 raycasts
-
-            var timer = Stopwatch.StartNew();
-
-            for (int i = 0; i < 1000; i++)
-            {
-                //Test ray simulates user input from mouse
-                var testRay = new Spatial.Ray(
-                    new Vector3(0, 10, 0),
-                    Quaternion.FromAxisAngle(Vector3.UnitY, UnityEngine.Random.Range(0, 359f)) 
-                    * Quaternion.FromAxisAngle(Vector3.UnitX, UnityEngine.Random.Range(-45, 45f))
-                    * Vector3.UnitZ);
-
-                var hit = Micro.RaycastHeightmap(testRay);
-                if (hit.HasValue)
-                {
-                    Debug.DrawLine(testRay.Origin, hit.Value.hitPoint, Color.green, 10, true);
-                }
-                else
-                    Debug.DrawLine(testRay.Origin, testRay.GetPoint(100), Color.red, 10, true);
-            }
-
-            timer.Stop();
-
-            Debug.Log($"Benchmark time {timer.ElapsedMilliseconds}");
+            _hero.Stop();
         }
 
-        #region Unity
+        private void InputSourceOnMove(OpenTK.Vector2 direction)
+        {
+            _hero.Move(direction);
+        }
+
+        private void InputSourceOnStopRotating()
+        {
+            _hero.Rotate(0);
+        }
+
+        private void InputSourceOnRotate(float normalized)
+        {
+            _hero.Rotate(normalized);
+        }
+
+#region Unity
 
         void Awake()
         {
@@ -297,15 +312,27 @@ namespace TerrainDemo
             Generate();
 
             _renderer = new Renderer(new Mesher(Macro, this), this);
+            _renderer.AssingCamera(FindObjectOfType<ObserverController>().GetComponent<Camera>(), _hero);
             Render(this);
 
             //StartCoroutine(AnimateTest());
-            //BenchRaycast();
+            //StartCoroutine(ActorNavigateTest());
+
+            var inputSource = FindObjectOfType<Input>();
+            inputSource.Move += InputSourceOnMove;
+            inputSource.StopMoving += InputSourceOnStop;
+            inputSource.Rotate += InputSourceOnRotate;
+            inputSource.StopRotating += InputSourceOnStopRotating;
         }
 
         private void OnValidate()
         {
             LandBounds = new Box2(-LandSize / 2, LandSize / 2, LandSize / 2, -LandSize / 2);
+        }
+
+        private void Update()
+        {
+            _hero?.Update(Time.deltaTime);
         }
 #endregion
     }

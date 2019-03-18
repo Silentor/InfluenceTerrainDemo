@@ -1428,7 +1428,7 @@ namespace OpenTK
                 Z == other.Z;
         }
 
-        //MODIFIED BY SILENTOR
+        //By Silentor
         #region Unity interop
 
         public static implicit operator UnityEngine.Vector3(Vector3 input)
