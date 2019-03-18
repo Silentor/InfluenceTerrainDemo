@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
-using OpenTK;
+using OpenToolkit.Mathematics;
 using TerrainDemo.Micro;
 using TerrainDemo.Settings;
 using TerrainDemo.Spatial;
@@ -10,8 +10,8 @@ using TerrainDemo.Tools;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Ray = TerrainDemo.Spatial.Ray;
-using Vector2 = OpenTK.Vector2;
-using Vector3 = OpenTK.Vector3;
+using Vector2 = OpenToolkit.Mathematics.Vector2;
+using Vector3 = OpenToolkit.Mathematics.Vector3;
 
 namespace TerrainDemo.Macro
 {
@@ -58,7 +58,7 @@ namespace TerrainDemo.Macro
         #region 3D properties   
 
         ///Actual height based on neighbor cells 
-        public OpenTK.Vector3 CenterPoint
+        public OpenToolkit.Mathematics.Vector3 CenterPoint
         {
             get
             {
@@ -183,8 +183,8 @@ namespace TerrainDemo.Macro
         private readonly MacroVert[] _vertices;
         private readonly MacroEdge[] _edges;
         private Cell[] _neighbors;
-        private OpenTK.Vector3? _centerPoint;
-        private OpenTK.Vector3[] _corners;
+        private OpenToolkit.Mathematics.Vector3? _centerPoint;
+        private OpenToolkit.Mathematics.Vector3[] _corners;
 
         
 

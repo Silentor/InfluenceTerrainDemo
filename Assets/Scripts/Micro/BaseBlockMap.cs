@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using OpenTK;
+using OpenToolkit.Mathematics;
 using TerrainDemo.Hero;
 using TerrainDemo.Macro;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using UnityEngine;
 using Ray = TerrainDemo.Spatial.Ray;
-using Vector2 = OpenTK.Vector2;
-using Vector3 = OpenTK.Vector3;
+using Vector2 = OpenToolkit.Mathematics.Vector2;
+using Vector3 = OpenToolkit.Mathematics.Vector3;
 
 namespace TerrainDemo.Micro
 {
@@ -316,7 +316,7 @@ namespace TerrainDemo.Micro
             return null;
         }
 
-        public (OpenTK.Vector3 hitPoint, Vector2i position, BaseBlockMap source)? RaycastHeightmap(in Ray ray)
+        public (OpenToolkit.Mathematics.Vector3 hitPoint, Vector2i position, BaseBlockMap source)? RaycastHeightmap(in Ray ray)
         {
             //Get raycasted blocks
             var rayBlocks = Rasterization.DDA((Vector2)ray.Origin, (Vector2)ray.GetPoint(300), true);

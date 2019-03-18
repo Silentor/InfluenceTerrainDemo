@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
-using OpenTK;
+using OpenToolkit.Mathematics;
 using TerrainDemo.Tools;
 using UnityEngine.Assertions;
-using Vector2 = OpenTK.Vector2;
+using Vector2 = OpenToolkit.Mathematics.Vector2;
 
 namespace TerrainDemo.Spatial
 {

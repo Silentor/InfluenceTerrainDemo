@@ -1,10 +1,11 @@
 ﻿using System;
-using OpenTK;
+using OpenToolkit.Mathematics;
 using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
-using Vector2 = OpenTK.Vector2;
-using Vector3 = OpenTK.Vector3;
-using Quaternion = OpenTK.Quaternion;
+using TerrainDemo.Tools;
+using Vector2 = OpenToolkit.Mathematics.Vector2;
+using Vector3 = OpenToolkit.Mathematics.Vector3;
+using Quaternion = OpenToolkit.Mathematics.Quaternion;
 
 namespace TerrainDemo.Hero
 {
@@ -15,7 +16,7 @@ namespace TerrainDemo.Hero
         public Vector3 Position { get; private set; }
         public Quaternion Rotation { get; private set; }
 
-        public Vector3 Forward => DebugRotateVector(Rotation, Vector3.UnitZ);
+        public Vector3 Forward => Rotation * Vector3.UnitZ;
 
         private readonly MicroMap _mainMap;
         private Vector2 _mapPosition;
@@ -86,7 +87,7 @@ namespace TerrainDemo.Hero
             var isChanged = false;
             if (!_isStopped && Speed > 0 && _moveDirection != Vector2.Zero)
             {
-                var rotatedDirection = (Vector2) DebugRotateVector(Rotation, (Vector3) _moveDirection);
+                var rotatedDirection = (Vector2) (Rotation * (Vector3) _moveDirection);
                 var newMapPosition = _mapPosition + rotatedDirection * deltaTime * Speed;
 
                 //Check change block and map
@@ -143,7 +144,7 @@ namespace TerrainDemo.Hero
                         {
                             _currentMap = _mainMap;
 
-                            //maybe we fall from the edge
+                            //Maybe we fall from the edge
                             if (!_isFalling)
                             {
                                 _isFalling = true;
@@ -208,11 +209,5 @@ namespace TerrainDemo.Hero
         }
 
         public event Action<Actor> Changed;
-
-        private Vector3 DebugRotateVector(Quaternion rotation, Vector3 direction)
-        {
-            //DEBUG workaround of OpenTK Quaternion*Vector3 operator bug :(
-            return (UnityEngine.Quaternion) rotation * (UnityEngine.Vector3) direction;
-        }
     }
 }

@@ -10,8 +10,8 @@ using TerrainDemo.Spatial;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Cell = TerrainDemo.Macro.Cell;
-using Vector2 = OpenTK.Vector2;
-using Quaternion = OpenTK.Quaternion;
+using Vector2 = OpenToolkit.Mathematics.Vector2;
+using Quaternion = OpenToolkit.Mathematics.Quaternion;
 
 
 namespace TerrainDemo.Generators

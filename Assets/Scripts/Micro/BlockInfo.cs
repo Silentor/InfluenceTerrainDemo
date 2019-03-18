@@ -2,8 +2,8 @@
 using System.Runtime.CompilerServices;
 using TerrainDemo.Macro;
 using TerrainDemo.Spatial;
-using Vector2 = OpenTK.Vector2;
-using Vector3 = OpenTK.Vector3;
+using Vector2 = OpenToolkit.Mathematics.Vector2;
+using Vector3 = OpenToolkit.Mathematics.Vector3;
 
 namespace TerrainDemo.Micro
 {

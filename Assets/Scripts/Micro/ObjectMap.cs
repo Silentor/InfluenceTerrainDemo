@@ -57,7 +57,7 @@ namespace TerrainDemo.Micro
                     ref readonly var b01 = ref Blocks.Empty;
                     ref readonly var b11 = ref Blocks.Empty;
 
-                    var heightAcc = OpenTK.Vector3.Zero;
+                    var heightAcc = OpenToolkit.Mathematics.Vector3.Zero;
                     int blockCounter = 0;
 
                     if (neighborBlockX0 >= 0 && neighborBlockZ0 >= 0)
@@ -66,7 +66,7 @@ namespace TerrainDemo.Micro
 
                         if (!b00.IsEmpty)
                         {
-                            heightAcc += (OpenTK.Vector3)b00.Height;
+                            heightAcc += (OpenToolkit.Mathematics.Vector3)b00.Height;
                             blockCounter++;
                         }
                     }
@@ -77,7 +77,7 @@ namespace TerrainDemo.Micro
 
                         if (!b10.IsEmpty)
                         {
-                            heightAcc += (OpenTK.Vector3)b10.Height;
+                            heightAcc += (OpenToolkit.Mathematics.Vector3)b10.Height;
                             blockCounter++;
                         }
                     }
@@ -88,7 +88,7 @@ namespace TerrainDemo.Micro
 
                         if (!b01.IsEmpty)
                         {
-                            heightAcc += (OpenTK.Vector3)b01.Height;
+                            heightAcc += (OpenToolkit.Mathematics.Vector3)b01.Height;
                             blockCounter++;
                         }
                     }
@@ -100,7 +100,7 @@ namespace TerrainDemo.Micro
 
                         if (!b11.IsEmpty)
                         {
-                            heightAcc += (OpenTK.Vector3)b11.Height;
+                            heightAcc += (OpenToolkit.Mathematics.Vector3)b11.Height;
                             blockCounter++;
                         }
                     }

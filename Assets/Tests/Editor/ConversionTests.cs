@@ -1,7 +1,7 @@
 ﻿using NUnit.Framework;
 using TerrainDemo.Spatial;
 using UnityEngine;
-using Vector2 = OpenTK.Vector2;
+using Vector2 = OpenToolkit.Mathematics.Vector2;
 
 namespace TerrainDemo.Tests.Editor
 {

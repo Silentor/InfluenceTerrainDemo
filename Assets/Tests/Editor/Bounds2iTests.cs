@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 using NUnit.Framework;
-using OpenTK;
+using OpenToolkit.Mathematics;
 using TerrainDemo.Spatial;
 using UnityEngine;
 using UnityEngine.TestTools;

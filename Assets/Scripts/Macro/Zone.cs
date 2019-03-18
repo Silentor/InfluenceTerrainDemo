@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using OpenTK;
+using OpenToolkit.Mathematics;
 using TerrainDemo.Settings;
 
 namespace TerrainDemo.Macro

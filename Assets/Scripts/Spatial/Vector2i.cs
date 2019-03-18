@@ -1,6 +1,6 @@
 using System;
 using UnityEngine;
-using Vector2 = OpenTK.Vector2;
+using Vector2 = OpenToolkit.Mathematics.Vector2;
 
 namespace TerrainDemo.Spatial
 {

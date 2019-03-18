@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using OpenTK;
+using OpenToolkit.Mathematics;
 using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
 using UnityEngine;
-using Vector2 = OpenTK.Vector2;
+using Vector2 = OpenToolkit.Mathematics.Vector2;
 using Vector3 = UnityEngine.Vector3;
 
 namespace TerrainDemo.Tools

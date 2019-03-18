@@ -94,7 +94,7 @@ namespace TerrainDemo.Tools
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <param name="c"></param>
-        public static (float u, float v, float w) Barycentric2DCoords(OpenTK.Vector2 point, OpenTK.Vector2 a, OpenTK.Vector2 b, OpenTK.Vector2 c)
+        public static (float u, float v, float w) Barycentric2DCoords(OpenToolkit.Mathematics.Vector2 point, OpenToolkit.Mathematics.Vector2 a, OpenToolkit.Mathematics.Vector2 b, OpenToolkit.Mathematics.Vector2 c)
         {
             //Based on http://gamedev.stackexchange.com/a/63203
             var v0 = b - a;
@@ -108,7 +108,7 @@ namespace TerrainDemo.Tools
             return (u, v, w);
         }
 
-        public static (float u, float v, float w) Barycentric2DCoordsOptimized_00_01_11(OpenTK.Vector2 localPoint)
+        public static (float u, float v, float w) Barycentric2DCoordsOptimized_00_01_11(OpenToolkit.Mathematics.Vector2 localPoint)
         {
             //Based on http://gamedev.stackexchange.com/a/63203
             //var v0 = b - a;       0, 1
@@ -122,7 +122,7 @@ namespace TerrainDemo.Tools
             return (u, v, w);
         }
 
-        public static (float u, float v, float w) Barycentric2DCoordsOptimized_00_11_10(OpenTK.Vector2 localPoint)
+        public static (float u, float v, float w) Barycentric2DCoordsOptimized_00_11_10(OpenToolkit.Mathematics.Vector2 localPoint)
         {
             //Based on http://gamedev.stackexchange.com/a/63203
             //var v0 = b - a;       1, 1
@@ -136,7 +136,7 @@ namespace TerrainDemo.Tools
             return (u, v, w);
         }
 
-        public static (float u, float v, float w) Barycentric2DCoordsOptimized_00_01_10(OpenTK.Vector2 localPoint)
+        public static (float u, float v, float w) Barycentric2DCoordsOptimized_00_01_10(OpenToolkit.Mathematics.Vector2 localPoint)
         {
             //Based on http://gamedev.stackexchange.com/a/63203
             //var v0 = b - a;           0, 1
@@ -150,12 +150,12 @@ namespace TerrainDemo.Tools
             return (u, v, w);
         }
 
-        public static (float u, float v, float w) Barycentric2DCoordsOptimized_01_11_10(OpenTK.Vector2 localPoint)
+        public static (float u, float v, float w) Barycentric2DCoordsOptimized_01_11_10(OpenToolkit.Mathematics.Vector2 localPoint)
         {
             //Based on http://gamedev.stackexchange.com/a/63203
             //var v0 = b - a;           1, 0
             //var v1 = c - a;           1, -1    
-            var v2 = localPoint - OpenTK.Vector2.UnitY;
+            var v2 = localPoint - OpenToolkit.Mathematics.Vector2.UnitY;
             const float invDen = 1f / (1 * (-1) - 1 * 0);
             var v = (-v2.X - v2.Y) * invDen;
             var w = (v2.Y) * invDen;
@@ -177,27 +177,27 @@ namespace TerrainDemo.Tools
         //             1 =  intersect in unique point I1
         //             2 =  are in the same plane
         [Obsolete]
-        public static int LineTriangleIntersection(in Ray ray, OpenTK.Vector3 v0, OpenTK.Vector3 v1, OpenTK.Vector3 v2, /*out Vector3 inter*/ out float distance)    //todo needs testing
+        public static int LineTriangleIntersection(in Ray ray, OpenToolkit.Mathematics.Vector3 v0, OpenToolkit.Mathematics.Vector3 v1, OpenToolkit.Mathematics.Vector3 v2, /*out Vector3 inter*/ out float distance)    //todo needs testing
         {
             //Translated from http://geomalgorithms.com/a06-_intersect-2.html#intersect3D_RayTriangle()
 
-            OpenTK.Vector3 u, v, n;              // triangle vectors
-            OpenTK.Vector3 dir, w0, w;           // ray vectors
+            OpenToolkit.Mathematics.Vector3 u, v, n;              // triangle vectors
+            OpenToolkit.Mathematics.Vector3 dir, w0, w;           // ray vectors
             float a, b;              // params to calc ray-plane intersect
-            OpenTK.Vector3 inter;
+            OpenToolkit.Mathematics.Vector3 inter;
             distance = -1;
 
             // get triangle edge vectors and plane normal
             u = v1 - v0;
             v = v2 - v0;
-            n = OpenTK.Vector3.Cross(u, v);              // cross product
-            if (n == OpenTK.Vector3.Zero)              // triangle is degenerate
+            n = OpenToolkit.Mathematics.Vector3.Cross(u, v);              // cross product
+            if (n == OpenToolkit.Mathematics.Vector3.Zero)              // triangle is degenerate
                 return -1;                      // do not deal with this case
 
             dir = ray.Direction;              // ray direction vector
             w0 = ray.Origin - v0;
-            a = - OpenTK.Vector3.Dot(n, w0);
-            b = OpenTK.Vector3.Dot(n, dir);
+            a = - OpenToolkit.Mathematics.Vector3.Dot(n, w0);
+            b = OpenToolkit.Mathematics.Vector3.Dot(n, dir);
             if (Math.Abs(b) < 0.0000001f)
             {     // ray is  parallel to triangle plane
                 if (Mathf.Approximately(a, 0))                 // ray lies in triangle plane
@@ -215,12 +215,12 @@ namespace TerrainDemo.Tools
 
             // is I inside T?
             float uu, uv, vv, wu, wv, D;
-            uu = OpenTK.Vector3.Dot(u, u);
-            uv = OpenTK.Vector3.Dot(u, v);
-            vv = OpenTK.Vector3.Dot(v, v);
+            uu = OpenToolkit.Mathematics.Vector3.Dot(u, u);
+            uv = OpenToolkit.Mathematics.Vector3.Dot(u, v);
+            vv = OpenToolkit.Mathematics.Vector3.Dot(v, v);
             w = inter - v0;
-            wu = OpenTK.Vector3.Dot(w, u);
-            wv = OpenTK.Vector3.Dot(w, v);
+            wu = OpenToolkit.Mathematics.Vector3.Dot(w, u);
+            wv = OpenToolkit.Mathematics.Vector3.Dot(w, v);
             D = uv * uv - uu * vv;
 
             // get and test parametric coords
@@ -245,18 +245,18 @@ namespace TerrainDemo.Tools
         /// <param name="v1"></param>
         /// <param name="v2"></param>
         /// <returns></returns>
-        public static float RayTriangleIntersection(in Ray ray, OpenTK.Vector3 v0, OpenTK.Vector3 v1, OpenTK.Vector3 v2)
+        public static float RayTriangleIntersection(in Ray ray, OpenToolkit.Mathematics.Vector3 v0, OpenToolkit.Mathematics.Vector3 v1, OpenToolkit.Mathematics.Vector3 v2)
         {
             var v1v0 = v1 - v0;
             var v2v0 = v2 - v0;
             var rov0 = ray.Origin - v0;
 
-            var n = OpenTK.Vector3.Cross(v1v0, v2v0);
-            var q = OpenTK.Vector3.Cross(rov0, ray.Direction);
-            float d = 1.0f / OpenTK.Vector3.Dot(ray.Direction, n);
-            float u = d * OpenTK.Vector3.Dot(-q, v2v0);             //u - barycentric coord
-            float v = d * OpenTK.Vector3.Dot(q, v1v0);              //v - barycentric coord
-            float t = d * OpenTK.Vector3.Dot(-n, rov0);             //t - distance to intersection point
+            var n = OpenToolkit.Mathematics.Vector3.Cross(v1v0, v2v0);
+            var q = OpenToolkit.Mathematics.Vector3.Cross(rov0, ray.Direction);
+            float d = 1.0f / OpenToolkit.Mathematics.Vector3.Dot(ray.Direction, n);
+            float u = d * OpenToolkit.Mathematics.Vector3.Dot(-q, v2v0);             //u - barycentric coord
+            float v = d * OpenToolkit.Mathematics.Vector3.Dot(q, v1v0);              //v - barycentric coord
+            float t = d * OpenToolkit.Mathematics.Vector3.Dot(-n, rov0);             //t - distance to intersection point
 
             if (u < 0.0 || u > 1.0 || v < 0.0 || (u + v) > 1.0)
                 t = -1.0f;

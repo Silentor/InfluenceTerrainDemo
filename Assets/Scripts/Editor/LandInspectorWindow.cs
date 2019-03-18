@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
-using OpenTK;
+using OpenToolkit.Mathematics;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Settings;
@@ -15,8 +15,8 @@ using Cell = TerrainDemo.Macro.Cell;
 using Quaternion = UnityEngine.Quaternion;
 using Ray = TerrainDemo.Spatial.Ray;
 using Renderer = TerrainDemo.Visualization.Renderer;
-using Vector2 = OpenTK.Vector2;
-using Vector3 = OpenTK.Vector3;
+using Vector2 = OpenToolkit.Mathematics.Vector2;
+using Vector3 = OpenToolkit.Mathematics.Vector3;
 
 namespace TerrainDemo.Editor
 {
@@ -621,8 +621,8 @@ namespace TerrainDemo.Editor
             if (input.HoveredBlock.HasValue)
             {
                 GUILayout.Label(
-                    $"Influence: {MacroMap.GetInfluence((OpenTK.Vector2) input.CursorPosition)}");
-                GUILayout.Label($"Height: {MacroMap.GetHeight((OpenTK.Vector2) input.CursorPosition):N}");
+                    $"Influence: {MacroMap.GetInfluence((Vector2) input.CursorPosition)}");
+                GUILayout.Label($"Height: {MacroMap.GetHeight((Vector2) input.CursorPosition):N}");
             }
         }
 

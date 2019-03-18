@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using OpenTK;
+using OpenToolkit.Mathematics;
 using TerrainDemo.Hero;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
@@ -17,9 +17,9 @@ using UnityEngine.Assertions;
 using Debug = UnityEngine.Debug;
 using Input = TerrainDemo.Hero.Input;
 using Renderer = TerrainDemo.Visualization.Renderer;
-using Vector2 = OpenTK.Vector2;
-using Vector3 = OpenTK.Vector3;
-using Quaternion = OpenTK.Quaternion;
+using Vector2 = OpenToolkit.Mathematics.Vector2;
+using Vector3 = OpenToolkit.Mathematics.Vector3;
+using Quaternion = OpenToolkit.Mathematics.Quaternion;
 
 namespace TerrainDemo
 {
@@ -180,7 +180,7 @@ namespace TerrainDemo
             const int xCenter = (xStart + xFinish) / 2;
             const int length = xFinish - xStart;
 
-            var transMatrix = OpenTK.Matrix4.CreateRotationY(MathHelper.DegreesToRadians(0));
+            var transMatrix = OpenToolkit.Mathematics.Matrix4.CreateRotationY(MathHelper.DegreesToRadians(0));
 
             for (int x = xStart; x <= xFinish; x++) //length
             {
@@ -201,7 +201,7 @@ namespace TerrainDemo
                     blocks.Add(new Blocks(BlockType.Sand, BlockType.Empty,
                         new Heights(stairwayBlockHeight, baseBlockHeight, baseBlockHeight)));
 
-                    var transPos = new OpenTK.Vector4(x, 1, z, 1);
+                    var transPos = new OpenToolkit.Mathematics.Vector4(x, 1, z, 1);
                     transPos = transPos * transMatrix;
                     positions.Add(new Vector2i(Mathf.RoundToInt(transPos.X), Mathf.RoundToInt(transPos.Z)));
                 }
@@ -284,7 +284,7 @@ namespace TerrainDemo
             _hero.Stop();
         }
 
-        private void InputSourceOnMove(OpenTK.Vector2 direction)
+        private void InputSourceOnMove(OpenToolkit.Mathematics.Vector2 direction)
         {
             _hero.Move(direction);
         }

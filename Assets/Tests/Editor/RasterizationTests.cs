@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
 using NUnit.Framework;
-using OpenTK;
+using OpenToolkit.Mathematics;
 using TerrainDemo.Macro;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using UnityEngine;
-using Vector2 = OpenTK.Vector2;
+using Vector2 = OpenToolkit.Mathematics.Vector2;
 
 namespace TerrainDemo.Tests.Editor
 {

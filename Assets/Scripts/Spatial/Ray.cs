@@ -1,5 +1,6 @@
 ﻿using JetBrains.Annotations;
-using OpenTK;
+using OpenToolkit.Mathematics;
+using TerrainDemo.Tools;
 
 namespace TerrainDemo.Spatial
 {

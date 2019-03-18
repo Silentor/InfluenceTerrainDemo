@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Vector2 = OpenTK.Vector2;
+using Vector2 = OpenToolkit.Mathematics.Vector2;
 
 namespace TerrainDemo.Spatial
 {
@@ -36,6 +36,11 @@ namespace TerrainDemo.Spatial
             _a = a;
             _b = b;
             _c = c;
+        }
+
+        public HalfPlane(UnityEngine.Vector2 linePoint1, UnityEngine.Vector2 linePoint2, UnityEngine.Vector2 halflanePoint) 
+            : this((Vector2)linePoint1, (Vector2)linePoint2, (Vector2) halflanePoint)
+        {
         }
 
         public bool Contains(Vector2 point)

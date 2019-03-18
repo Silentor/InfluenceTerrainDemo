@@ -2,19 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
-using OpenTK;
+using OpenToolkit.Mathematics;
 using TerrainDemo.Generators;
 using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using UnityEngine;
 using UnityEngine.Assertions;
-using Quaternion = OpenTK.Quaternion;
+using Quaternion = OpenToolkit.Mathematics.Quaternion;
 using Random = TerrainDemo.Tools.Random;
 using Ray = TerrainDemo.Spatial.Ray;
-using Vector2 = OpenTK.Vector2;
-using Vector3 = UnityEngine.Vector3;
-using Vector4 = OpenTK.Vector4;
+using Vector2 = OpenToolkit.Mathematics.Vector2;
+using Vector3 = OpenToolkit.Mathematics.Vector3;
+using Vector4 = OpenToolkit.Mathematics.Vector4;
 
 namespace TerrainDemo.Macro
 {
@@ -77,7 +77,7 @@ namespace TerrainDemo.Macro
 
         public ValueTuple<Cell, Vector3> Raycast(Ray ray)
         {
-            foreach (var cell in Cells.OrderBy(c => Vector3.SqrMagnitude(c.CenterPoint - ray.Origin)))
+            foreach (var cell in Cells.OrderBy(c => Vector3.DistanceSquared(c.CenterPoint, ray.Origin)))
             {
                 var intersection = cell.Raycast(ray);
                 if (intersection.HasValue)
@@ -86,7 +86,7 @@ namespace TerrainDemo.Macro
                 }
             }
 
-            return new ValueTuple<Cell, Vector3>(null, Vector3.zero);
+            return new ValueTuple<Cell, Vector3>(null, Vector3.Zero);
         }
 
         public IEnumerable<Cell> FloodFill(Cell startCell, Predicate<Cell> fillCondition = null)

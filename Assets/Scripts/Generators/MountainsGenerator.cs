@@ -6,7 +6,7 @@ using TerrainDemo.Settings;
 using TerrainDemo.Spatial;
 using UnityEngine.Assertions;
 using Cell = TerrainDemo.Macro.Cell;
-using Vector2 = OpenTK.Vector2;
+using Vector2 = OpenToolkit.Mathematics.Vector2;
 
 namespace TerrainDemo.Generators
 {

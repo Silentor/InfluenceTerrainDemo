@@ -33,7 +33,7 @@ namespace TerrainDemo.Hero
                 if (moveDir != Vector2.zero)
                 {
                     var clampedDir = Vector2.ClampMagnitude(moveDir, 1);
-                    Move?.Invoke(new OpenTK.Vector2(clampedDir.x, clampedDir.y));
+                    Move?.Invoke(new OpenToolkit.Mathematics.Vector2(clampedDir.x, clampedDir.y));
                 }
                 else
                     StopMoving?.Invoke();
@@ -95,7 +95,7 @@ namespace TerrainDemo.Hero
         /// <summary>
         /// Fired when move direction changed. Param: normalized move direction
         /// </summary>
-        public event Action<OpenTK.Vector2> Move = delegate { };
+        public event Action<OpenToolkit.Mathematics.Vector2> Move = delegate { };
 
         /// <summary>
         /// No move event present

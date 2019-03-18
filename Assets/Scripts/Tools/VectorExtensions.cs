@@ -1,6 +1,7 @@
 ﻿using System;
 using TerrainDemo.Spatial;
 using UnityEngine;
+using OpenTK = OpenToolkit.Mathematics;
 
 namespace TerrainDemo.Tools
 {
@@ -26,27 +27,29 @@ namespace TerrainDemo.Tools
             return new Vector3(v.x, 0, v.y);
         }
 
+        /// <summary>
+        /// I prefer custom Vector2 - Vector3 conversion logic
+        /// </summary>
+        /// <param name="v"></param>
+        /// <returns></returns>
+        public static OpenTK.Vector2 ConvertTo2D(this OpenTK.Vector3 v)
+        {
+            return new OpenTK.Vector2(v.X, v.Z);
+        }
+
+        /// <summary>
+        /// I prefer custom Vector2 - Vector3 conversion logic
+        /// </summary>
+        /// <param name="v"></param>
+        /// <returns></returns>
+        public static OpenTK.Vector3 ConvertTo3D(this OpenTK.Vector2 v)
+        {
+            return new OpenTK.Vector3(v.X, 0, v.Y);
+        }
+
         public static Vector3 ConvertTo3D(this Vector2i v)
         {
             return ((Vector2)v).ConvertTo3D();
-        }
-
-        public static Vector3? ConvertTo3D(this Vector2? v)
-        {
-            if (v.HasValue)
-                return v.Value.ConvertTo3D();
-            else
-                return null;
-        }
-
-        public static OpenTK.Vector3 ConvertUnity2OpenTK(this Vector3 v)
-        {
-            return new OpenTK.Vector3(v.x, v.y, v.z);
-        }
-
-        public static UnityEngine.Vector3 ConvertOpenTK2Unity(this OpenTK.Vector3 v)
-        {
-            return new UnityEngine.Vector3(v.X, v.Y, v.Z);
         }
 
         /// <summary>

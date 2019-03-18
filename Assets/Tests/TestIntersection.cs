@@ -45,10 +45,10 @@ namespace TerrainDemo.Tests
             Debug.DrawRay(screenRay.origin, screenRay.direction * 100, Color.yellow);
             float distance;
 
-            var v1 = _handle1.transform.position.ConvertUnity2OpenTK();
-            var v2 = _handle2.transform.position.ConvertUnity2OpenTK();
-            var v3 = _handle3.transform.position.ConvertUnity2OpenTK();
-            var result2 = Intersections.RayTriangleIntersection(new Spatial.Ray(screenRay.origin.ConvertUnity2OpenTK(), screenRay.direction.ConvertUnity2OpenTK()),
+            var v1 = _handle1.transform.position;
+            var v2 = _handle2.transform.position;
+            var v3 = _handle3.transform.position;
+            var result2 = Intersections.RayTriangleIntersection(new Spatial.Ray(screenRay.origin, screenRay.direction),
                 v1, v2, v3);
 
             var intersection = screenRay.GetPoint(result2);
@@ -101,10 +101,10 @@ namespace TerrainDemo.Tests
             Gizmos.DrawSphere(_handle3.transform.position, 0.5f);
 
             
-            var result = Intersections.Barycentric2DCoords((OpenTK.Vector2)_handle4.transform.position, 
-                (OpenTK.Vector2)_handle1.transform.position,
-                (OpenTK.Vector2)_handle2.transform.position,
-                (OpenTK.Vector2)_handle3.transform.position);
+            var result = Intersections.Barycentric2DCoords((OpenToolkit.Mathematics.Vector2)_handle4.transform.position, 
+                (OpenToolkit.Mathematics.Vector2)_handle1.transform.position,
+                (OpenToolkit.Mathematics.Vector2)_handle2.transform.position,
+                (OpenToolkit.Mathematics.Vector2)_handle3.transform.position);
             Debug.Log(result);
 
             var resultColor = new Color(result.u, result.v, result.w);

@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using JetBrains.Annotations;
-using OpenTK;
+using OpenToolkit.Mathematics;
 using TerrainDemo.Hero;
 using TerrainDemo.Macro;
 using TerrainDemo.Spatial;
@@ -13,7 +13,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Debug = UnityEngine.Debug;
-using Vector2 = OpenTK.Vector2;
+using Vector2 = OpenToolkit.Mathematics.Vector2;
 using Vector3 = UnityEngine.Vector3;
 
 namespace TerrainDemo.Micro
@@ -69,10 +69,10 @@ namespace TerrainDemo.Micro
         public void DigSphere(Vector3 position, float radius)
         {
             //Get influenced vertices
-            var flatPosition = (OpenTK.Vector2)position;
+            var flatPosition = (OpenToolkit.Mathematics.Vector2)position;
             var flatBound = new Box2(flatPosition.X - radius, flatPosition.Y + radius, flatPosition.X + radius, flatPosition.Y - radius);
             var sqrRadius = radius * radius;
-            var flatVertices = Rasterization.ConvexToVertices(v => OpenTK.Vector2.DistanceSquared(v, flatPosition) < sqrRadius, flatBound);
+            var flatVertices = Rasterization.ConvexToVertices(v => OpenToolkit.Mathematics.Vector2.DistanceSquared(v, flatPosition) < sqrRadius, flatBound);
 
             //Modify vertices
             var vertexCounter = 0;
@@ -146,10 +146,10 @@ namespace TerrainDemo.Micro
         public void Build(Vector3 position, float radius)
         {
             //Get influenced vertices
-            var flatPosition = (OpenTK.Vector2)position;
+            var flatPosition = (OpenToolkit.Mathematics.Vector2)position;
             var flatBound = new Box2(flatPosition.X - radius, flatPosition.Y + radius, flatPosition.X + radius, flatPosition.Y - radius);
             var sqrRadius = radius * radius;
-            var flatVertices = Rasterization.ConvexToBlocks(v => OpenTK.Vector2.DistanceSquared(v, flatPosition) < sqrRadius, flatBound);
+            var flatVertices = Rasterization.ConvexToBlocks(v => OpenToolkit.Mathematics.Vector2.DistanceSquared(v, flatPosition) < sqrRadius, flatBound);
 
             //Modify vertices
             var vertexCounter = 0;
@@ -226,29 +226,29 @@ namespace TerrainDemo.Micro
                     ref readonly var b11 = ref _blocks[neighborBlockX1, neighborBlockZ1];
 
                     //Trivial vertex height calculation
-                    var heightAcc = OpenTK.Vector3.Zero;
+                    var heightAcc = OpenToolkit.Mathematics.Vector3.Zero;
                     int blockCounter = 0;
                     if (!b00.IsEmpty)
                     {
-                        heightAcc += (OpenTK.Vector3)b00.Height;
+                        heightAcc += (OpenToolkit.Mathematics.Vector3)b00.Height;
                         blockCounter++;
                     }
 
                     if (!b01.IsEmpty)
                     {
-                        heightAcc += (OpenTK.Vector3)b01.Height;
+                        heightAcc += (OpenToolkit.Mathematics.Vector3)b01.Height;
                         blockCounter++;
                     }
 
                     if (!b10.IsEmpty)
                     {
-                        heightAcc += (OpenTK.Vector3)b10.Height;
+                        heightAcc += (OpenToolkit.Mathematics.Vector3)b10.Height;
                         blockCounter++;
                     }
 
                     if (!b11.IsEmpty)
                     {
-                        heightAcc += (OpenTK.Vector3)b11.Height;
+                        heightAcc += (OpenToolkit.Mathematics.Vector3)b11.Height;
                         blockCounter++;
                     }
 

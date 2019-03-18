@@ -1,6 +1,6 @@
 ﻿using System;
 using JetBrains.Annotations;
-using OpenTK;
+using OpenToolkit.Mathematics;
 
 namespace TerrainDemo.Macro
 {
@@ -83,9 +83,9 @@ namespace TerrainDemo.Macro
             return new Heights((float)v.Z, (float)v.Y, (float)v.X);
         }
 
-        public static explicit operator OpenTK.Vector3(Heights h)
+        public static explicit operator OpenToolkit.Mathematics.Vector3(Heights h)
         {
-            return new OpenTK.Vector3(h.Base, h.Underground, h.Main);
+            return new OpenToolkit.Mathematics.Vector3(h.Base, h.Underground, h.Main);
         }
 
         public override string ToString()

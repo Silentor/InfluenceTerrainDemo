@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using TerrainDemo.Tools;
 using UnityEngine;
-using Vector3 = OpenTK.Vector3;
+using Vector3 = OpenToolkit.Mathematics.Vector3;
 using Ray = TerrainDemo.Spatial.Ray;
 
 
@@ -32,7 +32,7 @@ namespace TerrainDemo.Tests
             var testRays = new Ray[iterations];
             for (int i = 0; i < testRays.Length; i++)
             {
-                var origin = new OpenTK.Vector3((float)(random.NextDouble() - 0.5) * 5, (float)(random.NextDouble() - 0.5) * 5, 0);
+                var origin = new OpenToolkit.Mathematics.Vector3((float)(random.NextDouble() - 0.5) * 5, (float)(random.NextDouble() - 0.5) * 5, 0);
                 testRays[i] = new Spatial.Ray(origin, Vector3.UnitZ);
             }
 

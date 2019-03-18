@@ -35,7 +35,7 @@ namespace TerrainDemo.Tools
 
         }
 
-        private static Vector3 Convert(OpenTK.Vector2 v)
+        private static Vector3 Convert(OpenToolkit.Mathematics.Vector2 v)
         {
             return new Vector3(v.X, 0, v.Y);
         }

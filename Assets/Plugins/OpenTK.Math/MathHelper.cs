@@ -9,7 +9,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 
-namespace OpenTK
+namespace OpenToolkit.Mathematics
 {
     /// <summary>
     /// Contains common mathematical functions and constants.
@@ -17,42 +17,43 @@ namespace OpenTK
     public static class MathHelper
     {
         /// <summary>
-        /// Defines the value of Pi as a <see cref="System.Single"/>.
+        /// Defines the value of Pi as a <see cref="float"/>.
         /// </summary>
-        public const float Pi = 3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067982148086513282306647093844609550582231725359408128481117450284102701938521105559644622948954930382f;
+        public const float Pi =
+            3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067982148086513282306647093844609550582231725359408128481117450284102701938521105559644622948954930382f;
 
         /// <summary>
-        /// Defines the value of Pi divided by two as a <see cref="System.Single"/>.
+        /// Defines the value of Pi divided by two as a <see cref="float"/>.
         /// </summary>
         public const float PiOver2 = Pi / 2;
 
         /// <summary>
-        /// Defines the value of Pi divided by three as a <see cref="System.Single"/>.
+        /// Defines the value of Pi divided by three as a <see cref="float"/>.
         /// </summary>
         public const float PiOver3 = Pi / 3;
 
         /// <summary>
-        /// Definesthe value of  Pi divided by four as a <see cref="System.Single"/>.
+        /// Defines the value of  Pi divided by four as a <see cref="float"/>.
         /// </summary>
         public const float PiOver4 = Pi / 4;
 
         /// <summary>
-        /// Defines the value of Pi divided by six as a <see cref="System.Single"/>.
+        /// Defines the value of Pi divided by six as a <see cref="float"/>.
         /// </summary>
         public const float PiOver6 = Pi / 6;
 
         /// <summary>
-        /// Defines the value of Pi multiplied by two as a <see cref="System.Single"/>.
+        /// Defines the value of Pi multiplied by two as a <see cref="float"/>.
         /// </summary>
         public const float TwoPi = 2 * Pi;
 
         /// <summary>
-        /// Defines the value of Pi multiplied by 3 and divided by two as a <see cref="System.Single"/>.
+        /// Defines the value of Pi multiplied by 3 and divided by two as a <see cref="float"/>.
         /// </summary>
         public const float ThreePiOver2 = 3 * Pi / 2;
 
         /// <summary>
-        /// Defines the value of E as a <see cref="System.Single"/>.
+        /// Defines the value of E as a <see cref="float"/>.
         /// </summary>
         public const float E = 2.71828182845904523536f;
 
@@ -75,9 +76,10 @@ namespace OpenTK
         {
             if (n < 0)
             {
-                throw new ArgumentOutOfRangeException("n", "Must be positive.");
+                throw new ArgumentOutOfRangeException(nameof(n), "Must be positive.");
             }
-            return (long)System.Math.Pow(2, System.Math.Ceiling(System.Math.Log((double)n, 2)));
+
+            return (long)Math.Pow(2, Math.Ceiling(Math.Log(n, 2)));
         }
 
         /// <summary>
@@ -89,9 +91,10 @@ namespace OpenTK
         {
             if (n < 0)
             {
-                throw new ArgumentOutOfRangeException("n", "Must be positive.");
+                throw new ArgumentOutOfRangeException(nameof(n), "Must be positive.");
             }
-            return (int)System.Math.Pow(2, System.Math.Ceiling(System.Math.Log((double)n, 2)));
+
+            return (int)Math.Pow(2, Math.Ceiling(Math.Log(n, 2)));
         }
 
         /// <summary>
@@ -103,9 +106,10 @@ namespace OpenTK
         {
             if (n < 0)
             {
-                throw new ArgumentOutOfRangeException("n", "Must be positive.");
+                throw new ArgumentOutOfRangeException(nameof(n), "Must be positive.");
             }
-            return (float)System.Math.Pow(2, System.Math.Ceiling(System.Math.Log((double)n, 2)));
+
+            return (float)Math.Pow(2, Math.Ceiling(Math.Log(n, 2)));
         }
 
         /// <summary>
@@ -117,15 +121,17 @@ namespace OpenTK
         {
             if (n < 0)
             {
-                throw new ArgumentOutOfRangeException("n", "Must be positive.");
+                throw new ArgumentOutOfRangeException(nameof(n), "Must be positive.");
             }
-            return System.Math.Pow(2, System.Math.Ceiling(System.Math.Log((double)n, 2)));
+
+            return Math.Pow(2, Math.Ceiling(Math.Log(n, 2)));
         }
 
-        /// <summary>Calculates the factorial of a given natural number.
+        /// <summary>
+        /// Calculates the factorial of a given natural number.
         /// </summary>
         /// <param name="n">The number.</param>
-        /// <returns>n!</returns>
+        /// <returns>The factorial of <paramref name="n"/>.</returns>
         public static long Factorial(int n)
         {
             long result = 1;
@@ -143,7 +149,7 @@ namespace OpenTK
         /// </summary>
         /// <param name="n">The n.</param>
         /// <param name="k">The k.</param>
-        /// <returns>n! / (k! * (n - k)!)</returns>
+        /// <returns>n! / (k! * (n - k)!).</returns>
         public static long BinomialCoefficient(int n, int k)
         {
             return Factorial(n) / (Factorial(k) * Factorial(n - k));
@@ -153,22 +159,22 @@ namespace OpenTK
         /// Returns an approximation of the inverse square root of left number.
         /// </summary>
         /// <param name="x">A number.</param>
-        /// <returns>An approximation of the inverse square root of the specified number, with an upper error bound of 0.001</returns>
+        /// <returns>An approximation of the inverse square root of the specified number, with an upper error bound of 0.001.</returns>
         /// <remarks>
         /// This is an improved implementation of the the method known as Carmack's inverse square root
         /// which is found in the Quake III source code. This implementation comes from
         /// http://www.codemaestro.com/reviews/review00000105.html. For the history of this method, see
-        /// http://www.beyond3d.com/content/articles/8/
+        /// http://www.beyond3d.com/content/articles/8/.
         /// </remarks>
         public static float InverseSqrtFast(float x)
         {
             unsafe
             {
-                float xhalf = 0.5f * x;
-                int i = *(int*)&x;              // Read bits as integer.
-                i = 0x5f375a86 - (i >> 1);      // Make an initial guess for Newton-Raphson approximation
-                x = *(float*)&i;                // Convert bits back to float
-                x = x * (1.5f - xhalf * x * x); // Perform left single Newton-Raphson step.
+                var xhalf = 0.5f * x;
+                var i = *(int*)&x; // Read bits as integer.
+                i = 0x5f375a86 - (i >> 1); // Make an initial guess for Newton-Raphson approximation
+                x = *(float*)&i; // Convert bits back to float
+                x = x * (1.5f - (xhalf * x * x)); // Perform left single Newton-Raphson step.
                 return x;
             }
         }
@@ -177,71 +183,69 @@ namespace OpenTK
         /// Returns an approximation of the inverse square root of left number.
         /// </summary>
         /// <param name="x">A number.</param>
-        /// <returns>An approximation of the inverse square root of the specified number, with an upper error bound of 0.001</returns>
+        /// <returns>An approximation of the inverse square root of the specified number, with an upper error bound of 0.001.</returns>
         /// <remarks>
         /// This is an improved implementation of the the method known as Carmack's inverse square root
         /// which is found in the Quake III source code. This implementation comes from
         /// http://www.codemaestro.com/reviews/review00000105.html. For the history of this method, see
-        /// http://www.beyond3d.com/content/articles/8/
+        /// http://www.beyond3d.com/content/articles/8/.
+        /// double magic number from: https://cs.uwaterloo.ca/~m32rober/rsqrt.pdf
+        /// chapter 4.8.
         /// </remarks>
         public static double InverseSqrtFast(double x)
         {
-            return InverseSqrtFast((float)x);
-            // TODO: The following code is wrong. Fix it, to improve precision.
-#if false
             unsafe
             {
-                double xhalf = 0.5f * x;
-                int i = *(int*)&x;              // Read bits as integer.
-                i = 0x5f375a86 - (i >> 1);      // Make an initial guess for Newton-Raphson approximation
-                x = *(float*)&i;                // Convert bits back to float
-                x = x * (1.5f - xhalf * x * x); // Perform left single Newton-Raphson step.
+                double xhalf = 0.5 * x;
+                long i = *(long*)&x; // Read bits as long.
+                i = 0x5fe6eb50c7b537a9 - (i >> 1); // Make an initial guess for Newton-Raphson approximation
+                x = *(double*)&i; // Convert bits back to double
+                x = x * (1.5 - (xhalf * x * x)); // Perform left single Newton-Raphson step.
                 return x;
             }
-#endif
         }
 
         /// <summary>
-        /// Convert degrees to radians
+        /// Convert degrees to radians.
         /// </summary>
-        /// <param name="degrees">An angle in degrees</param>
-        /// <returns>The angle expressed in radians</returns>
+        /// <param name="degrees">An angle in degrees.</param>
+        /// <returns>The angle expressed in radians.</returns>
         public static float DegreesToRadians(float degrees)
         {
-            const float degToRad = (float)System.Math.PI / 180.0f;
+            const float degToRad = (float)Math.PI / 180.0f;
             return degrees * degToRad;
         }
 
         /// <summary>
-        /// Convert radians to degrees
+        /// Convert radians to degrees.
         /// </summary>
-        /// <param name="radians">An angle in radians</param>
-        /// <returns>The angle expressed in degrees</returns>
+        /// <param name="radians">An angle in radians.</param>
+        /// <returns>The angle expressed in degrees.</returns>
         public static float RadiansToDegrees(float radians)
         {
-            const float radToDeg = 180.0f / (float)System.Math.PI;
+            const float radToDeg = 180.0f / (float)Math.PI;
             return radians * radToDeg;
         }
 
         /// <summary>
-        /// Convert degrees to radians
+        /// Convert degrees to radians.
         /// </summary>
-        /// <param name="degrees">An angle in degrees</param>
-        /// <returns>The angle expressed in radians</returns>
+        /// <param name="degrees">An angle in degrees.</param>
+        /// <returns>The angle expressed in radians.</returns>
         public static double DegreesToRadians(double degrees)
         {
-            const double degToRad = System.Math.PI / 180.0;
+            const double degToRad = Math.PI / 180.0;
             return degrees * degToRad;
         }
 
         /// <summary>
-        /// Convert radians to degrees
+        /// Convert radians to degrees.
         /// </summary>
-        /// <param name="radians">An angle in radians</param>
-        /// <returns>The angle expressed in degrees</returns>
+        /// <param name="radians">An angle in radians.</param>
+        /// <returns>The angle expressed in degrees.</returns>
         public static double RadiansToDegrees(double radians)
         {
-            const double radToDeg = 180.0 / System.Math.PI;
+            const double radToDeg = 180.0 / Math.PI;
             return radians * radToDeg;
         }
 
@@ -252,7 +256,7 @@ namespace OpenTK
         /// <param name="b">The second value.</param>
         public static void Swap(ref double a, ref double b)
         {
-            double temp = a;
+            var temp = a;
             a = b;
             b = temp;
         }
@@ -264,7 +268,7 @@ namespace OpenTK
         /// <param name="b">The second value.</param>
         public static void Swap(ref float a, ref float b)
         {
-            float temp = a;
+            var temp = a;
             a = b;
             b = temp;
         }
@@ -311,32 +315,62 @@ namespace OpenTK
         }
 
         /// <summary>
+        /// Scales the specified number linearly between a minimum and a maximum.
+        /// </summary>
+        /// <param name="value">The number to scale.</param>
+        /// <param name="valueMin">The minimum expected number (inclusive).</param>
+        /// <param name="valueMax">The maximum expected number (inclusive).</param>
+        /// <param name="resultMin">The minimum output number (inclusive).</param>
+        /// <param name="resultMax">The maximum output number (inclusive).</param>
+        /// <returns>The number, scaled linearly between min and max.</returns>
+        public static int ScaleValue
+        (
+            int value,
+            int valueMin,
+            int valueMax,
+            int resultMin,
+            int resultMax
+        )
+        {
+            if (valueMin >= valueMax || resultMin >= resultMax)
+            {
+                throw new ArgumentOutOfRangeException();
+            }
+
+            value = Clamp(value, valueMin, valueMax);
+
+            var range = resultMax - resultMin;
+            long temp = (value - valueMin) * range; // need long to avoid overflow
+            return (int)((temp / (valueMax - valueMin)) + resultMin);
+        }
+
+        /// <summary>
         /// Approximates floating point equality with a maximum number of different bits.
         /// This is typically used in place of an epsilon comparison.
         /// see: https://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/
-        /// see: https://stackoverflow.com/questions/3874627/floating-point-comparison-functions-for-c-sharp
+        /// see: https://stackoverflow.com/questions/3874627/floating-point-comparison-functions-for-c-sharp.
         /// </summary>
-        /// <param name="a">the first value to compare</param>
-        /// <param name="b">>the second value to compare</param>
-        /// <param name="maxDeltaBits">the number of floating point bits to check</param>
-        /// <returns></returns>
+        /// <param name="a">the first value to compare.</param>
+        /// <param name="b">>the second value to compare.</param>
+        /// <param name="maxDeltaBits">the number of floating point bits to check.</param>
+        /// <returns>true if the values are approximately equal; otherwise, false.</returns>
         public static bool ApproximatelyEqual(float a, float b, int maxDeltaBits)
         {
             // we use longs here, otherwise we run into a two's complement problem, causing this to fail with -2 and 2.0
-            long aInt = FloatToInt32Bits(a);
-            if (aInt < 0)
+            long k = FloatToInt32Bits(a);
+            if (k < 0)
             {
-                aInt = Int32.MinValue - aInt;
+                k = int.MinValue - k;
             }
 
-            long bInt = FloatToInt32Bits(b);
-            if (bInt < 0)
+            long l = FloatToInt32Bits(b);
+            if (l < 0)
             {
-                bInt = Int32.MinValue - bInt;
+                l = int.MinValue - l;
             }
 
-            long intDiff = Math.Abs(aInt - bInt);
-            return intDiff <= (1 << maxDeltaBits);
+            var intDiff = Math.Abs(k - l);
+            return intDiff <= 1 << maxDeltaBits;
         }
 
         /// <summary>
@@ -346,14 +380,17 @@ namespace OpenTK
         /// <param name="a">The first float.</param>
         /// <param name="b">The second float.</param>
         /// <param name="epsilon">The maximum error between the two.</param>
-        /// <returns><value>true</value> if the values are approximately equal within the error margin; otherwise, <value>false</value>.</returns>
-        [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
+        /// <returns>
+        ///  <value>true</value> if the values are approximately equal within the error margin; otherwise,
+        /// <value>false</value>.
+        /// </returns>
+        [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator", Justification = "Used for early bailout.")]
         public static bool ApproximatelyEqualEpsilon(double a, double b, double epsilon)
         {
             const double doubleNormal = (1L << 52) * double.Epsilon;
-            double absA = Math.Abs(a);
-            double absB = Math.Abs(b);
-            double diff = Math.Abs(a - b);
+            var absA = Math.Abs(a);
+            var absB = Math.Abs(b);
+            var diff = Math.Abs(a - b);
 
             if (a == b)
             {
@@ -365,11 +402,11 @@ namespace OpenTK
             {
                 // a or b is zero, or both are extremely close to it.
                 // relative error is less meaningful here
-                return diff < (epsilon * doubleNormal);
+                return diff < epsilon * doubleNormal;
             }
 
             // use relative error
-            return diff / Math.Min((absA + absB), double.MaxValue) < epsilon;
+            return diff / Math.Min(absA + absB, double.MaxValue) < epsilon;
         }
 
         /// <summary>
@@ -379,14 +416,17 @@ namespace OpenTK
         /// <param name="a">The first float.</param>
         /// <param name="b">The second float.</param>
         /// <param name="epsilon">The maximum error between the two.</param>
-        /// <returns><value>true</value> if the values are approximately equal within the error margin; otherwise, <value>false</value>.</returns>
-        [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
+        /// <returns>
+        ///  <value>true</value> if the values are approximately equal within the error margin; otherwise,
+        ///  <value>false</value>.
+        /// </returns>
+        [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator", Justification = "Used for early bailout.")]
         public static bool ApproximatelyEqualEpsilon(float a, float b, float epsilon)
         {
             const float floatNormal = (1 << 23) * float.Epsilon;
-            float absA = Math.Abs(a);
-            float absB = Math.Abs(b);
-            float diff = Math.Abs(a - b);
+            var absA = Math.Abs(a);
+            var absB = Math.Abs(b);
+            var diff = Math.Abs(a - b);
 
             if (a == b)
             {
@@ -398,11 +438,11 @@ namespace OpenTK
             {
                 // a or b is zero, or both are extremely close to it.
                 // relative error is less meaningful here
-                return diff < (epsilon * floatNormal);
+                return diff < epsilon * floatNormal;
             }
 
             // use relative error
-            float relativeError = diff / Math.Min((absA + absB), float.MaxValue);
+            var relativeError = diff / Math.Min(absA + absB, float.MaxValue);
             return relativeError < epsilon;
         }
 
@@ -413,10 +453,10 @@ namespace OpenTK
         /// inclusive.
         /// </summary>
         /// <param name="a">The first value to compare.</param>
-        /// <param name="b">The second value to compare·</param>
+        /// <param name="b">The second value to compare.</param>
         /// <param name="tolerance">The tolerance within which the two values would be considered equivalent.</param>
         /// <returns>Whether or not the values can be considered equivalent within the tolerance.</returns>
-        [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
+        [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator", Justification = "Used for early bailout.")]
         public static bool ApproximatelyEquivalent(float a, float b, float tolerance)
         {
             if (a == b)
@@ -425,7 +465,7 @@ namespace OpenTK
                 return true;
             }
 
-            float diff = Math.Abs(a - b);
+            var diff = Math.Abs(a - b);
             return diff <= tolerance;
         }
 
@@ -436,10 +476,10 @@ namespace OpenTK
         /// inclusive.
         /// </summary>
         /// <param name="a">The first value to compare.</param>
-        /// <param name="b">The second value to compare·</param>
+        /// <param name="b">The second value to compare.</param>
         /// <param name="tolerance">The tolerance within which the two values would be considered equivalent.</param>
         /// <returns>Whether or not the values can be considered equivalent within the tolerance.</returns>
-        [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
+        [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator", Justification = "Used for early bailout.")]
         public static bool ApproximatelyEquivalent(double a, double b, double tolerance)
         {
             if (a == b)
@@ -448,7 +488,7 @@ namespace OpenTK
                 return true;
             }
 
-            double diff = Math.Abs(a - b);
+            var diff = Math.Abs(a - b);
             return diff <= tolerance;
         }
     }

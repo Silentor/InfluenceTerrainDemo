@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Linq;
-using OpenTK;
+using OpenToolkit.Mathematics;
 using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using UnityEngine;
 using UnityEngine.Assertions;
-using Vector2 = OpenTK.Vector2;
+using Vector2 = OpenToolkit.Mathematics.Vector2;
 using Vector3 = UnityEngine.Vector3;
 
 namespace TerrainDemo.Tests
@@ -46,10 +46,10 @@ namespace TerrainDemo.Tests
             {
                 var center = (_h1.position + _h2.position + _h3.position + _h4.position) / 4;
 
-                var h1 = new HalfPlane((Vector2)_h1.position, (Vector2)_h2.position, (Vector2)center);
-                var h2 = new HalfPlane((Vector2)_h2.position, (Vector2)_h3.position, (Vector2)center);
-                var h3 = new HalfPlane((Vector2)_h3.position, (Vector2)_h4.position, (Vector2)center);
-                var h4 = new HalfPlane((Vector2)_h4.position, (Vector2)_h1.position, (Vector2)center);
+                var h1 = new HalfPlane(_h1.position.ConvertTo2D(), _h2.position.ConvertTo2D(), center.ConvertTo2D());
+                var h2 = new HalfPlane(_h2.position.ConvertTo2D(), _h3.position.ConvertTo2D(), center.ConvertTo2D());
+                var h3 = new HalfPlane(_h3.position.ConvertTo2D(), _h4.position.ConvertTo2D(), center.ConvertTo2D());
+                var h4 = new HalfPlane(_h4.position.ConvertTo2D(), _h1.position.ConvertTo2D(), center.ConvertTo2D());
 
                 var containsCallCounter = 0;
                 
@@ -83,7 +83,7 @@ namespace TerrainDemo.Tests
                     foreach (var blockBound in blockBounds)
                     {
                         var blockCenter = BlockInfo.GetWorldCenter(blockBound);
-                        DebugExtension.DrawPoint((Vector3)blockCenter, Color.white / 2, 0.1f);
+                        DebugExtension.DrawPoint(blockCenter.ConvertTo3D(), Color.white / 2, 0.1f);
                     }
 
                     var blocks = Rasterization.ConvexToBlocks(isContains, bounds);
