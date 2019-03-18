@@ -82,11 +82,13 @@ namespace TerrainDemo.Tests
             Gizmos.color = Color.blue;
             Gizmos.DrawSphere(_handle3.transform.position, 0.5f);
 
-            var result = Intersections.Barycentric2DCoords(_handle4.transform.position, _handle1.transform.position,
-                _handle2.transform.position, _handle3.transform.position);
+            var result = Intersections.Barycentric2DCoords((OpenTK.Vector2)_handle4.transform.position, 
+                (OpenTK.Vector2)_handle1.transform.position,
+                (OpenTK.Vector2)_handle2.transform.position,
+                (OpenTK.Vector2)_handle3.transform.position);
             Debug.Log(result);
 
-            var resultColor = new Color(result.x, result.y, result.z);
+            var resultColor = new Color(result.u, result.v, result.w);
             Gizmos.color = resultColor;
             Gizmos.DrawSphere(_handle4.transform.position, 0.5f);
         }

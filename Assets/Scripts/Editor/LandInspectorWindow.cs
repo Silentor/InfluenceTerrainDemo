@@ -103,10 +103,10 @@ namespace TerrainDemo.Editor
 
                     if (isSelected)
                     {
-                        if (_selectedBlock == result.HoveredBlock2)
+                        if (_selectedBlock == result.HoveredBlock)
                             _selectedBlock = null;
                         else
-                            _selectedBlock = result.HoveredBlock2;
+                            _selectedBlock = result.HoveredBlock;
 
                         if(_selectedBlock.HasValue)
                             Debug.Log($"Selected block {_selectedBlock.Value}");
@@ -133,13 +133,13 @@ namespace TerrainDemo.Editor
                             }
                         }
                         //Process block selection
-                        else if (result.HoveredBlock2.HasValue)
+                        else if (result.HoveredBlock.HasValue)
                         {
-                            if (_selectedBlock == result.HoveredBlock2)
+                            if (_selectedBlock == result.HoveredBlock)
                                 _selectedBlock = null;           //Deselect
                             else
                             {
-                                _selectedBlock = result.HoveredBlock2;      //Select
+                                _selectedBlock = result.HoveredBlock;      //Select
                                 Debug.Log($"Selected block {_selectedBlock.Value}");
                             }
                         }
@@ -192,7 +192,7 @@ namespace TerrainDemo.Editor
             {
                 input.Distance = hoveredBlock.Value.distance;
                 input.CursorPosition = input.CursorRay.GetPoint(input.Distance);
-                input.HoveredBlock2 = (hoveredBlock.Value.position, hoveredBlock.Value.source.GetBlockRef(hoveredBlock.Value.position), hoveredBlock.Value.source);
+                input.HoveredBlock = (hoveredBlock.Value.position, hoveredBlock.Value.source.GetBlockRef(hoveredBlock.Value.position), hoveredBlock.Value.source);
             }
 
             return input;
@@ -206,7 +206,7 @@ namespace TerrainDemo.Editor
             {
                 input.Distance = Vector3.Distance(input.CursorRay.origin, hoveredBlock.Value.hitPoint);
                 input.CursorPosition = hoveredBlock.Value.hitPoint;
-                input.HoveredBlock2 = (hoveredBlock.Value.position, hoveredBlock.Value.source.GetBlockRef(hoveredBlock.Value.position), hoveredBlock.Value.source);
+                input.HoveredBlock = (hoveredBlock.Value.position, hoveredBlock.Value.source.GetBlockRef(hoveredBlock.Value.position), hoveredBlock.Value.source);
 
                 var roundedCursorPosition = new Vector3(Mathf.Round(input.CursorPosition.x), input.CursorPosition.y,
                     Mathf.Round(input.CursorPosition.z));
@@ -226,11 +226,11 @@ namespace TerrainDemo.Editor
 
         private void DrawBlockModeHandles(Input input)
         {
-            if (input.HoveredBlock2.HasValue)
+            if (input.HoveredBlock.HasValue)
             {
                 DrawCursor(input.CursorPosition);
                 //DrawBlock(input.HoveredBlock.Value, MicroMap.GetBlockRef(input.HoveredBlock.Value));
-                DrawBlock(input.HoveredBlock2.Value.position, input.HoveredBlock2.Value.block);
+                DrawBlock(input.HoveredBlock.Value.position, input.HoveredBlock.Value.block);
             }
 
             if (input.SelectedBlock.HasValue)
@@ -241,18 +241,26 @@ namespace TerrainDemo.Editor
 
         private void DrawTerrainModeHandles(Input input)
         {
-            if (input.HoveredBlock2.HasValue)
+            if (input.HoveredBlock.HasValue)
             {
                 DrawCursor(input.CursorPosition);
 
-                //ref readonly var block = ref MicroMap.GetBlockRef(input.HoveredBlock.Value);
-                var block = input.HoveredBlock2.Value.block;
-                var mapSource = input.HoveredBlock2.Value.source;
-                ref readonly var c00 = ref mapSource.GetHeightRef(input.HoveredBlock2.Value.position);
-                ref readonly var c01 = ref mapSource.GetHeightRef(input.HoveredBlock2.Value.position + Vector2i.Forward);
-                ref readonly var c11 = ref mapSource.GetHeightRef(input.HoveredBlock2.Value.position + Vector2i.One);
-                ref readonly var c10 = ref mapSource.GetHeightRef(input.HoveredBlock2.Value.position + Vector2i.Right);
-                DrawBlock(input.HoveredBlock2.Value.position, block, c00, c01, c11, c10);
+                //DEBUG draw interpolated height
+                var height =
+                    input.HoveredBlock.Value.source.GetHeight(new OpenTK.Vector2(input.CursorPosition.x,
+                        input.CursorPosition.z));
+
+                DebugExtension.DebugWireSphere(new Vector3(input.CursorPosition.x, height, input.CursorPosition.z), Color.blue,0.02f, 0, true);
+                //DEBUG
+
+
+                var block = input.HoveredBlock.Value.block;
+                var mapSource = input.HoveredBlock.Value.source;
+                ref readonly var c00 = ref mapSource.GetHeightRef(input.HoveredBlock.Value.position);
+                ref readonly var c01 = ref mapSource.GetHeightRef(input.HoveredBlock.Value.position + Vector2i.Forward);
+                ref readonly var c11 = ref mapSource.GetHeightRef(input.HoveredBlock.Value.position + Vector2i.One);
+                ref readonly var c10 = ref mapSource.GetHeightRef(input.HoveredBlock.Value.position + Vector2i.Right);
+                DrawBlock(input.HoveredBlock.Value.position, block, c00, c01, c11, c10);
             }
 
             if (input.SelectedBlock.HasValue)
@@ -560,9 +568,9 @@ namespace TerrainDemo.Editor
             if (input.SelectedBlock.HasValue)
                 ShowBlockInfo(input.SelectedBlock.Value, true, false);
 
-            if (input.HoveredBlock2.HasValue && input.HoveredBlock2 != input.SelectedBlock)
+            if (input.HoveredBlock.HasValue && input.HoveredBlock != input.SelectedBlock)
             {
-                ShowBlockInfo(input.HoveredBlock2.Value, false, false);
+                ShowBlockInfo(input.HoveredBlock.Value, false, false);
             }
         }
 
@@ -571,8 +579,8 @@ namespace TerrainDemo.Editor
             if (input.SelectedBlock.HasValue)
                 ShowBlockInfo(input.SelectedBlock.Value, true, true);
 
-            if (input.HoveredBlock2.HasValue && input.HoveredBlock2 != input.SelectedBlock)
-                ShowBlockInfo(input.HoveredBlock2.Value, false, true);
+            if (input.HoveredBlock.HasValue && input.HoveredBlock != input.SelectedBlock)
+                ShowBlockInfo(input.HoveredBlock.Value, false, true);
 
             if (input.SelectedHeightVertex.HasValue)
                 ShowHeightVertexInfo(input.SelectedHeightVertex.Value, true);
@@ -609,7 +617,7 @@ namespace TerrainDemo.Editor
             GUILayout.Label("Cursor", EditorStyles.boldLabel);
             GUILayout.Label($"World pos: {VectorToString(input.CursorPosition, GetZoomLevel(input.Distance))}");
             GUILayout.Label($"Camera dist: {Vector3.Distance(input.CursorPosition, input.View.origin):N0} m");
-            if (input.HoveredBlock2.HasValue)
+            if (input.HoveredBlock.HasValue)
             {
                 GUILayout.Label(
                     $"Influence: {MacroMap.GetInfluence((OpenTK.Vector2) input.CursorPosition)}");
@@ -926,9 +934,9 @@ namespace TerrainDemo.Editor
                     ShowCursorInfo(_input);
                 }
 
-                if (_input.HoveredBlock2.HasValue)
+                if (_input.HoveredBlock.HasValue)
                 {
-                    ShowBlockInfo(_input.HoveredBlock2.Value, false, true);
+                    ShowBlockInfo(_input.HoveredBlock.Value, false, true);
                 }
 
                 if (_input.SelectedMacroCell != null)
@@ -994,7 +1002,7 @@ namespace TerrainDemo.Editor
             /// <summary>
             /// Mouse hovered block
             /// </summary>
-            public (Vector2i position, Blocks block, BaseBlockMap source)? HoveredBlock2;
+            public (Vector2i position, Blocks block, BaseBlockMap source)? HoveredBlock;
 
             /// <summary>
             /// Selected block position

@@ -90,19 +90,18 @@ namespace TerrainDemo.Tools
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <param name="c"></param>
-        /// <returns>3 coords packed in vector in a, b, c order</returns>
-        public static Vector3 Barycentric2DCoords(Vector2 point, Vector2 a, Vector2 b, Vector2 c)
+        public static (float u, float v, float w) Barycentric2DCoords(OpenTK.Vector2 point, OpenTK.Vector2 a, OpenTK.Vector2 b, OpenTK.Vector2 c)
         {
             //Based on http://gamedev.stackexchange.com/a/63203
-            Vector2 v0 = b - a;
-            Vector2 v1 = c - a;
-            Vector2 v2 = point - a;
-            var den = v0.x * v1.y - v1.x * v0.y;
-            var v = (v2.x * v1.y - v1.x * v2.y) / den;
-            var w = (v0.x * v2.y - v2.x * v0.y) / den;
+            var v0 = b - a;
+            var v1 = c - a;
+            var v2 = point - a;
+            var invDen = 1 / (v0.X * v1.Y - v1.X * v0.Y);
+            var v = (v2.X * v1.Y - v1.X * v2.Y) * invDen;
+            var w = (v0.X * v2.Y - v2.X * v0.Y) * invDen;
             var u = 1.0f - v - w;
 
-            return new Vector3(u, v, w);
+            return (u, v, w);
         }
 
         private static float GetPseudoDotProduct(Vector3 p1, Vector3 p2)

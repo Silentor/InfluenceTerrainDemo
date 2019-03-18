@@ -9,27 +9,27 @@ namespace TerrainDemo.Tests.Editor
         [Test]
         public void TestBarycentric2DCoords()
         {
-            var a = new Vector2(0, 0);
-            var b = new Vector2(10, 0);
-            var c = new Vector2(0, 10);
+            var a = new OpenTK.Vector2(0, 0);
+            var b = new OpenTK.Vector2(10, 0);
+            var c = new OpenTK.Vector2(0, 10);
 
             //First coord should be large
-            var coords = Intersections.Barycentric2DCoords(new Vector2(0.5f, 0.5f), a, b, c);
-            Assert.That(coords.x, Is.GreaterThan(0.8));
-            Assert.That(coords.x + coords.y + coords.z, Is.EqualTo(1));
+            var coords = Intersections.Barycentric2DCoords(new OpenTK.Vector2(0.5f, 0.5f), a, b, c);
+            Assert.That(coords.u, Is.GreaterThan(0.8));
+            Assert.That(coords.u + coords.v + coords.w, Is.EqualTo(1));
 
             //Second coord should be large
-            coords = Intersections.Barycentric2DCoords(new Vector2(9f, 0.5f), a, b, c);
-            Assert.That(coords.y, Is.GreaterThan(0.8));
-            Assert.That(coords.x + coords.y + coords.z, Is.EqualTo(1));
+            coords = Intersections.Barycentric2DCoords(new OpenTK.Vector2(9f, 0.5f), a, b, c);
+            Assert.That(coords.v, Is.GreaterThan(0.8));
+            Assert.That(coords.u + coords.v + coords.w, Is.EqualTo(1));
 
             //Third coord should be large
-            coords = Intersections.Barycentric2DCoords(new Vector2(0.5f, 9f), a, b, c);
-            Assert.That(coords.z, Is.GreaterThan(0.8));
-            Assert.That(coords.x + coords.y + coords.z, Is.EqualTo(1));
+            coords = Intersections.Barycentric2DCoords(new OpenTK.Vector2(0.5f, 9f), a, b, c);
+            Assert.That(coords.w, Is.GreaterThan(0.8));
+            Assert.That(coords.u + coords.v + coords.w, Is.EqualTo(1));
 
             //Some manual case
-            coords = Intersections.Barycentric2DCoords(new Vector2(94, 27), new Vector2(86, 34), new Vector2(119, 23), new Vector2(93, -2));
+            coords = Intersections.Barycentric2DCoords(new  OpenTK.Vector2(94, 27), new OpenTK.Vector2(86, 34), new OpenTK.Vector2(119, 23), new OpenTK.Vector2(93, -2));
             //Assert.tha
         }
     }
