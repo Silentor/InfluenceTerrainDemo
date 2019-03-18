@@ -17,6 +17,17 @@ namespace TerrainDemo.Micro
         public readonly BlockType Base;
         public readonly BlockType Underground;
         public readonly BlockType Ground;
+        /// <summary>
+        /// How blocks overlapped between main map and objects maps
+        /// nnnn nnxx - id of another object map with overlapped block
+        /// xxxx xxnn - overlap state <see cref="BlockOverlapState"/>
+        /// 0000 0000 - no overlap at all
+        /// nnnn nn00 - object block hidden underground
+        /// nnnn nn01 - object block overlap main map block
+        /// nnnn nn10 - object block float over main map block
+        /// nnnn nn11 - reserved
+        /// </summary>
+        private readonly byte OverlapState;  
 
         public BlockType Top => Ground 
                                 != BlockType.Empty ? Ground : Underground 
@@ -24,9 +35,15 @@ namespace TerrainDemo.Micro
 
         public bool IsEmpty => Ground == BlockType.Empty && Underground == BlockType.Empty && Base == BlockType.Empty;
 
+        public bool IsOverlapped => OverlapState == 0;
+
         public static readonly Blocks Empty;
 
-        public Blocks(BlockType ground, BlockType underground, in Heights heights)
+        public Blocks(BlockType ground, BlockType underground, in Heights heights) : this(ground, underground, heights, 0)
+        {
+        }
+
+        private Blocks(BlockType ground, BlockType underground, in Heights heights, byte overlapState)
         {
             //Fix heights if needed
             float underHeight = heights.Underground, groundHeight = heights.Main;
@@ -61,15 +78,31 @@ namespace TerrainDemo.Micro
             else
                 Height = heights;
 
+            OverlapState = overlapState;
+
             Assert.IsTrue(Ground != BlockType.Empty || Height.Main - Height.Underground == 0, $"Block is wrong");
             Assert.IsTrue(Underground != BlockType.Empty || Height.Underground - Height.Base == 0, $"Block is wrong");
-
         }
 
         [Pure]
         public Blocks MutateHeight(in Heights heights)
         {
             return new Blocks(Ground, Underground, heights);
+        }
+
+        [Pure]
+        public Blocks MutateOverlapState(int objectMapId, BlockOverlapState newState)  //todo consider implement TryMutateOverlapState to not instantiate another Blocks if overlap state is not changed
+        {
+            if(objectMapId < 0 || objectMapId > 62) throw new ArgumentOutOfRangeException(nameof(objectMapId));
+
+            if (newState == BlockOverlapState.None)
+                objectMapId = 0;
+            if (newState != BlockOverlapState.None)
+            {
+                newState = newState - 1;
+                objectMapId += 1;
+            }
+            return new Blocks(Ground, Underground, Height, (byte)((objectMapId << 2) | (int)newState));
         }
 
         [Pure]
@@ -105,6 +138,17 @@ namespace TerrainDemo.Micro
             return IsEmpty ? Interval.Empty : new Interval(Height.Base, Height.Main);
         }
 
+        public (int mapId, BlockOverlapState state) GetOverlapState()
+        {
+            if (OverlapState == 0)
+                return (0, BlockOverlapState.None);
+            else
+            {
+                var mapId = (OverlapState >> 2) - 1;
+                var state = (OverlapState & 0x03) + 1;
+                return (mapId, (BlockOverlapState) state);
+            }
+        }
 
         public override string ToString()
         {

@@ -96,8 +96,7 @@ namespace TerrainDemo.Visualization
                         continue;
 
                     //Block culling
-                    //todo Do not check every main map block for culling! Only blocks shared with map objects. Need fast way to check if block is shared with map object. Consider store a flag in Block struct.
-                    if (map.GetOcclusionState(new Vector2i(worldX, worldZ)) == BlockOcclusionState.MapOccluded)
+                    if (block.GetOverlapState().state == BlockOverlapState.Overlap)
                         continue;
 
                     //Prepare block vertices
@@ -430,8 +429,8 @@ namespace TerrainDemo.Visualization
             var commonUv = new List<Vector2>(groundVertices.Count) { Vector2.zero };
 
             //Set quads
-            for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
-                for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
+            for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
+                for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
                 {
                     var mapLocalX = worldX - bounds.Min.X;
                     var mapLocalZ = worldZ - bounds.Min.Z;
@@ -443,7 +442,8 @@ namespace TerrainDemo.Visualization
                         continue;
 
                     //Block culling
-                    if (mapObject.GetOcclusionState(new Vector2i(worldX, worldZ)) == BlockOcclusionState.ObjectOccluded)
+                    var occlusionState = mapObject.GetOcclusionState(new Vector2i(worldX, worldZ));
+                    if (occlusionState.state == BlockOverlapState.Under && occlusionState.map == mapObject)
                         continue;
 
                     //Prepare block vertices

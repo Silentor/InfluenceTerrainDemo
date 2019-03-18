@@ -254,28 +254,55 @@ namespace TerrainDemo.Micro
             Debug.Log($"Heightmap of {Name} generated in {timer.ElapsedMilliseconds}");
         }
 
-        public void SetOcclusionState(Vector2i worldPosition, BlockOcclusionState state)
+        public void SetOcclusionState(Vector2i worldPosition, ObjectMap childMap, BlockOverlapState state)
         {
-            _occlusion[worldPosition] = state;
+            var localPos = World2Local(worldPosition);
+            var objectMapId = _childs.IndexOf(childMap);
+            ref var block = ref _blocks[localPos.X, localPos.Z];
+            block = block.MutateOverlapState(objectMapId, state);
         }
 
-        public override BlockOcclusionState GetOcclusionState(Vector2i worldPosition)
+        public override (ObjectMap map, BlockOverlapState state) GetOcclusionState(Vector2i worldPosition)
         {
-            if (_occlusion.TryGetValue(worldPosition, out var state))
-                return state;
-            return BlockOcclusionState.None;
+            if (!Bounds.Contains(worldPosition))
+                return (null, BlockOverlapState.None);
+
+            var localPos = World2Local(worldPosition);
+            var state = _blocks[localPos.X, localPos.Z].GetOverlapState();
+
+            if (state.state == BlockOverlapState.None)
+                return (null, BlockOverlapState.None);
+            else
+                return ((ObjectMap) _childs[state.mapId], state.state);
+
         }
 
         private readonly MacroMap _macromap;
         private readonly TriRunner _settings;
-        private readonly Dictionary<Vector2i, BlockOcclusionState> _occlusion = new Dictionary<Vector2i, BlockOcclusionState>();
+        //private readonly Dictionary<Vector2i, BlockOverlapState> _occlusion = new Dictionary<Vector2i, BlockOverlapState>();
         
     }
 
-    public enum BlockOcclusionState
+    /// <summary>
+    /// 
+    /// </summary>
+    public enum BlockOverlapState
     {
+        /// <summary>
+        /// There is no other block to intersects with this block
+        /// </summary>
         None,
-        MapOccluded,
-        ObjectOccluded
+        /// <summary>
+        /// Some other block completely under this block
+        /// </summary>
+        Under,                    
+        /// <summary>
+        /// Some other block overlap this block
+        /// </summary>
+        Overlap,                     
+        /// <summary>
+        /// Some other block completely above this block
+        /// </summary>
+        Above,                    
     }
 }

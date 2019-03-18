@@ -137,75 +137,73 @@ namespace TerrainDemo.Micro
                             SnapHeight(ref height00, ref height11, parentHeight00, parentHeight11);
                             SnapHeight(ref height10, ref height01, parentHeight10, parentHeight01);
 
-                            //todo occlusion culling of block (either main map or object) to prevent Z-fighting of near placed blocks
-                            //Check occlusion
-                            var state = BlockOcclusionState.MapOccluded;
 
+                            //Check occlusion
                             if (height00.Base > parentHeight00)
                             {
-                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.None);
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Above);
                                 continue;
                             }
                             else if (height00.Main < parentHeight00)
                             {
-                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.ObjectOccluded);
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Under);
                                 continue;
                             }
                             else if (height00.Main > parentHeight00 && height00.Base < parentHeight00)
                             {
-                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.MapOccluded);
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Overlap);
                                 continue;
                             }
 
                             if (height01.Base > parentHeight01)
                             {
-                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.None);
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Above);
                                 continue;
                             }
                             else if (height01.Main < parentHeight01)
                             {
-                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.ObjectOccluded);
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Under);
                                 continue;
                             }
                             else if (height01.Main > parentHeight01 && height01.Base < parentHeight01)
                             {
-                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.MapOccluded);
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Overlap);
                                 continue;
                             }
 
                             if (height10.Base > parentHeight10)
                             {
-                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.None);
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Above);
                                 continue;
                             }
                             else if (height10.Main < parentHeight10)
                             {
-                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.ObjectOccluded);
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Under);
                                 continue;
                             }
                             else if (height10.Main > parentHeight10 && height10.Base < parentHeight10)
                             {
-                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.MapOccluded);
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Overlap);
                                 continue;
                             }
 
                             if (height11.Base > parentHeight11)
                             {
-                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.None);
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Above);
                                 continue;
                             }
                             else if (height11.Main < parentHeight11)
                             {
-                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.ObjectOccluded);
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Under);
                                 continue;
                             }
                             else if (height11.Main > parentHeight11 && height11.Base < parentHeight11)
                             {
-                                ParentMap.SetOcclusionState(worldBlockPos, BlockOcclusionState.MapOccluded);
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Overlap);
                                 continue;
                             }
 
-                            ParentMap.SetOcclusionState(worldBlockPos, state);
+                            ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Overlap);
                         }
                     }
 
@@ -242,7 +240,7 @@ namespace TerrainDemo.Micro
             UnityEngine.Debug.Log($"Heightmap of {Name} generated in {timer.ElapsedMilliseconds}");
         }
 
-        public override BlockOcclusionState GetOcclusionState(Vector2i worldPosition)
+        public override (ObjectMap map, BlockOverlapState state) GetOcclusionState(Vector2i worldPosition)
         {
             return ParentMap.GetOcclusionState(worldPosition);
         }

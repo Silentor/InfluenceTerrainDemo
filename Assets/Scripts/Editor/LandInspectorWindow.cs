@@ -187,7 +187,7 @@ namespace TerrainDemo.Editor
         private Input PrepareBlockModeInput(Input input)
         {
             //var selectedBlock = MicroMap?.RaycastBlockmap(input.Cursor);
-            var hoveredBlock = MicroMap?.RaycastBlockmap2(input.CursorRay);
+            var hoveredBlock = MicroMap?.RaycastBlockmap(input.CursorRay);
             if (hoveredBlock.HasValue)
             {
                 input.Distance = hoveredBlock.Value.distance;
@@ -201,7 +201,7 @@ namespace TerrainDemo.Editor
         private Input PrepareTerrainModeInput(Input input)
         {
             //var selectedBlock = MicroMap?.RaycastHeightmap(input.CursorRay);
-            var hoveredBlock = MicroMap?.RaycastHeightmap2(input.CursorRay);
+            var hoveredBlock = MicroMap?.RaycastHeightmap(input.CursorRay);
             if (hoveredBlock.HasValue)
             {
                 input.Distance = Vector3.Distance(input.CursorRay.origin, hoveredBlock.Value.hitPoint);
@@ -642,6 +642,11 @@ namespace TerrainDemo.Editor
                 GUILayout.Label($"{block.Height.Base:N1}");
                 GUILayout.EndHorizontal();
                 GUILayout.EndVertical();
+
+                var occlusion = MicroMap.GetOcclusionState(position);
+                GUILayout.Label(occlusion.state != BlockOverlapState.None 
+                    ? $"{occlusion.map.Name} block is {occlusion.state}"
+                    : "No overlap");
 
                 if (showHeightmap)
                 {
