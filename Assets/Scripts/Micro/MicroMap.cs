@@ -268,13 +268,8 @@ namespace TerrainDemo.Micro
                 return (null, BlockOverlapState.None);
 
             var localPos = World2Local(worldPosition);
-            var state = _blocks[localPos.X, localPos.Z].GetOverlapState();
-
-            if (state.state == BlockOverlapState.None)
-                return (null, BlockOverlapState.None);
-            else
-                return ((ObjectMap) _childs[state.mapId], state.state);
-
+            ref readonly var blocks = ref _blocks[localPos.X, localPos.Z];
+            return GetOcclusionState(in blocks);
         }
 
         private readonly MacroMap _macromap;

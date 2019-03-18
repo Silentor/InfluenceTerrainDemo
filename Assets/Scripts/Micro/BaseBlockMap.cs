@@ -226,24 +226,29 @@ namespace TerrainDemo.Micro
                 ref readonly var testedBlock = ref GetBlockRef(position);
                 if(testedBlock.IsEmpty) continue;
 
-                var distance = Intersections.RayBlockIntersection(ray, in position, in testedBlock);
-                if (distance > 0)
+                var occludeState = GetOcclusionState(in testedBlock);
+
+                if (occludeState.state != BlockOverlapState.Overlap)
                 {
-                    resultDistance = distance;
-                    source = this;
+                    var distance = Intersections.RayBlockIntersection(ray, in position, in testedBlock);
+                    if (distance > 0)
+                    {
+                        resultDistance = distance;
+                        source = this;
+                    }
                 }
 
                 //Check map objects
-                foreach (var childMap in _childs)
+                if (occludeState.state == BlockOverlapState.Overlap || occludeState.state == BlockOverlapState.Above)
                 {
-                    testedBlock = ref childMap.GetBlockRef(position);
+                    testedBlock = ref occludeState.map.GetBlockRef(position);
                     if(testedBlock.IsEmpty) continue;
 
                     var childDistance = Intersections.RayBlockIntersection(ray, in position, in testedBlock);
                     if (childDistance > 0 && (resultDistance < 0 || childDistance < resultDistance))
                     {
                         resultDistance = childDistance;
-                        source = childMap;
+                        source = occludeState.map;
                     }
                 }
 
@@ -373,6 +378,18 @@ namespace TerrainDemo.Micro
         protected void DoChanged()
         {
             Changed?.Invoke();
+        }
+
+        protected (ObjectMap map, BlockOverlapState state) GetOcclusionState(in Blocks block)
+        {
+            if(block.IsEmpty)
+                return (null, BlockOverlapState.None);
+
+            var state = block.GetOverlapState();
+            if (state.state == BlockOverlapState.None)
+                return (null, BlockOverlapState.None);
+            else
+                return ((ObjectMap)_childs[state.mapId], state.state);
         }
     }
 
