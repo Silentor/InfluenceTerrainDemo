@@ -44,29 +44,43 @@ namespace TerrainDemo.Hero
             //Process rotation input
             //Get horizontal mouse move
             var normalizedPosition = UnityEngine.Input.mousePosition / new Vector2(Screen.width, Screen.height);
-            var mouseManualRotation = (normalizedPosition - _oldMouseNormalizedPosition).x;
-
-            //Get simulated delta if mouse near screen edges
-            var mouseAutoRotation = 0f;
-            if (normalizedPosition.x < 0.1f && normalizedPosition.x >= 0)
-                mouseAutoRotation = -0.01f;
-            else if(normalizedPosition.x > 0.9f && normalizedPosition.x <= 1)
-                mouseAutoRotation = 0.01f;
-
-            if (Math.Abs(mouseAutoRotation) > Math.Abs(mouseManualRotation))
-                mouseManualRotation = mouseAutoRotation;
-
-            if (mouseManualRotation != _lastRotationFired)
+            if (normalizedPosition.x >= 0 && normalizedPosition.x <= 1 && normalizedPosition.y >= 0 &&
+                normalizedPosition.y <= 1)
             {
-                if(mouseManualRotation != 0)
-                    Rotate?.Invoke(mouseManualRotation);
-                else
-                    StopRotating?.Invoke();
+                var mouseManualRotation = (normalizedPosition - _oldMouseNormalizedPosition).x;
 
-                _lastRotationFired = mouseManualRotation;
+                //Get simulated delta if mouse near screen edges
+                var mouseAutoRotation = 0f;
+                if (normalizedPosition.x < 0.1f && normalizedPosition.x >= 0)
+                    mouseAutoRotation = -0.01f;
+                else if (normalizedPosition.x > 0.9f && normalizedPosition.x <= 1)
+                    mouseAutoRotation = 0.01f;
+
+                if (Math.Abs(mouseAutoRotation) > Math.Abs(mouseManualRotation))
+                    mouseManualRotation = mouseAutoRotation;
+
+                if (mouseManualRotation != _lastRotationFired)
+                {
+                    if (mouseManualRotation != 0)
+                        Rotate?.Invoke(mouseManualRotation);
+                    else
+                        StopRotating?.Invoke();
+
+                    _lastRotationFired = mouseManualRotation;
+                }
+
+                _oldMouseNormalizedPosition = normalizedPosition;
             }
+            else
+            {
+                if (_lastRotationFired != 0)
+                {
+                    _lastRotationFired = 0;
+                    StopRotating?.Invoke();
+                }
 
-            _oldMouseNormalizedPosition = normalizedPosition;
+                _oldMouseNormalizedPosition = normalizedPosition;
+            }
 
             /*
             else if (UnityEngine.Input.GetKey(KeyCode.Q))
