@@ -13,9 +13,10 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using Cell = TerrainDemo.Macro.Cell;
 using Quaternion = UnityEngine.Quaternion;
+using Ray = TerrainDemo.Spatial.Ray;
 using Renderer = TerrainDemo.Visualization.Renderer;
-using Vector2 = UnityEngine.Vector2;
-using Vector3 = UnityEngine.Vector3;
+using Vector2 = OpenTK.Vector2;
+using Vector3 = OpenTK.Vector3;
 
 namespace TerrainDemo.Editor
 {
@@ -58,7 +59,8 @@ namespace TerrainDemo.Editor
 
             Input result = new Input
             {
-                View = new Ray(SceneView.currentDrawingSceneView.camera.transform.position, SceneView.currentDrawingSceneView.camera.transform.forward),
+                View = new Ray(SceneView.currentDrawingSceneView.camera.transform.position, 
+                    SceneView.currentDrawingSceneView.camera.transform.forward),
             };
 
             //Validate cursor position
@@ -72,7 +74,7 @@ namespace TerrainDemo.Editor
             }
             else
             {
-                result.CursorRay = HandleUtility.GUIPointToWorldRay(@event.mousePosition);
+                result.CursorRay = (Ray)HandleUtility.GUIPointToWorldRay(@event.mousePosition);
             }
 
             if (@event.isKey)
@@ -158,7 +160,7 @@ namespace TerrainDemo.Editor
                         {
                             result.IsMapSelected = true;
                             result.CursorPosition = selectedCell.Item2;
-                            result.Distance = Vector3.Distance(result.CursorPosition, result.View.origin);
+                            result.Distance = Vector3.Distance(result.CursorPosition, result.View.Origin);
                             result.SelectedMacroCell = selectedCell.Item1;
                             result.SelectedVert = MacroMap.Vertices.FirstOrDefault(v => Vector3.Distance(
                                                                                             new Vector3(v.Position.X, v.Height.Nominal, v.Position.Y), result.CursorPosition) < 1);
@@ -204,15 +206,15 @@ namespace TerrainDemo.Editor
             var hoveredBlock = MicroMap?.RaycastHeightmap(input.CursorRay);
             if (hoveredBlock.HasValue)
             {
-                input.Distance = Vector3.Distance(input.CursorRay.origin, hoveredBlock.Value.hitPoint);
+                input.Distance = Vector3.Distance(input.CursorRay.Origin, hoveredBlock.Value.hitPoint);
                 input.CursorPosition = hoveredBlock.Value.hitPoint;
                 input.HoveredBlock = (hoveredBlock.Value.position, hoveredBlock.Value.source.GetBlockRef(hoveredBlock.Value.position), hoveredBlock.Value.source);
 
-                var roundedCursorPosition = new Vector3(Mathf.Round(input.CursorPosition.x), input.CursorPosition.y,
-                    Mathf.Round(input.CursorPosition.z));
+                var roundedCursorPosition = new Vector3(Mathf.Round(input.CursorPosition.X), input.CursorPosition.Y,
+                    Mathf.Round(input.CursorPosition.Z));
                 if (Vector3.Distance(input.CursorPosition, roundedCursorPosition) < 0.2f)
                 {
-                    var position = new Vector2i(roundedCursorPosition.x, roundedCursorPosition.z);
+                    var position = new Vector2i(roundedCursorPosition.X, roundedCursorPosition.Z);
                     input.HoveredHeightVertex = (position, hoveredBlock.Value.source.GetHeightRef(position), hoveredBlock.Value.source);
                 }
             }
@@ -247,10 +249,9 @@ namespace TerrainDemo.Editor
 
                 //DEBUG draw interpolated height
                 var height =
-                    input.HoveredBlock.Value.source.GetHeight(new OpenTK.Vector2(input.CursorPosition.x,
-                        input.CursorPosition.z));
+                    input.HoveredBlock.Value.source.GetHeight((Vector2)input.CursorPosition);
 
-                DebugExtension.DebugWireSphere(new Vector3(input.CursorPosition.x, height, input.CursorPosition.z), Color.blue,0.02f, 0, true);
+                DebugExtension.DebugWireSphere(new Vector3(input.CursorPosition.X, height, input.CursorPosition.Z), Color.blue,0.02f, 0, true);
                 //DEBUG
 
 
@@ -324,7 +325,7 @@ namespace TerrainDemo.Editor
 
             if (filled)
             {
-                Handles.DrawLines(new Vector3[]
+                Handles.DrawLines(new UnityEngine.Vector3[]
                 {
                     VertexToPosition(cell.Vertices[0]), cell.CenterPoint,
                     VertexToPosition(cell.Vertices[1]), cell.CenterPoint,
@@ -335,7 +336,7 @@ namespace TerrainDemo.Editor
                 });
             }
 
-            var cellDistance = Vector3.Distance(cell.Center, _input.View.origin);
+            var cellDistance = Vector3.Distance((Vector3)cell.Center, _input.View.Origin);
             var fontSize = Mathf.RoundToInt(-cellDistance * 1 / 8 + 15);
 
             if (cellDistance < 80 && cellDistance > 3 && fontSize > 0)
@@ -346,7 +347,7 @@ namespace TerrainDemo.Editor
                 contrastLabelStyle.fontSize = fontSize;
                 Handles.Label( cell.CenterPoint, cell.Coords.ToString(), contrastLabelStyle);
                 Handles.color = contrastColor;
-                Handles.DrawWireDisc(cell.CenterPoint, _input.View.direction, 0.1f);
+                Handles.DrawWireDisc(cell.CenterPoint, _input.View.Direction, 0.1f);
 
                 if (labelVertices)
                 {
@@ -369,7 +370,7 @@ namespace TerrainDemo.Editor
             foreach (var block in cell.GetBlocks())
             {
                 //Cull backface blocks
-                if(Vector3.Angle(_input.View.direction, block.Normal) > 90)
+                if(Vector3.CalculateAngle(_input.View.Direction, block.Normal) > MathHelper.DegreesToRadians(90))
                     DrawBlock(block, color);
             }
         }
@@ -382,7 +383,7 @@ namespace TerrainDemo.Editor
         private void DrawTriVert(MacroVert vert)
         {
             Handles.color = Color.white;
-            Handles.DrawWireDisc(new Vector3(vert.Position.X, vert.Height.Nominal, vert.Position.Y), _input.View.direction, 1);
+            Handles.DrawWireDisc(new Vector3(vert.Position.X, vert.Height.Nominal, vert.Position.Y), _input.View.Direction, 1);
         }
         
 
@@ -407,7 +408,7 @@ namespace TerrainDemo.Editor
 
             DrawRectangle.ForHandle(corner00, corner01, corner11, corner10, color, width);
 
-            if (drawNormal && block.Normal != Vector3.zero)
+            if (drawNormal && block.Normal != Vector3.Zero)
                 DrawArrow.ForDebug(block.GetCenter(), block.Normal);
         }
 
@@ -601,13 +602,13 @@ namespace TerrainDemo.Editor
         {
             GUILayout.Label($"Macro.Cell {cell.Coords}", EditorStyles.boldLabel);
             GUILayout.Label($"Zone: {cell.ZoneId} - {cell.Biome.name}");
-            GUILayout.Label($"Height: {cell.DesiredHeight:F1} desired, {cell.CenterPoint.y:F1} true");
+            GUILayout.Label($"Height: {cell.DesiredHeight} desired, {cell.CenterPoint.Y:F1} true");
         }
 
         private void ShowTriVertInfo(MacroVert vert, float distance)
         {
             GUILayout.Label("MacroVert", EditorStyles.boldLabel);
-            GUILayout.Label($"Id: {vert.Id}, pos: {vert.Position.ToString(GetZoomLevel(distance))}");
+            GUILayout.Label($"Id: {vert.Id}, pos: {VectorToString(vert.Position, GetZoomLevel(distance))}");
             GUILayout.Label($"Cells: {vert.Cells.Select(c => c.Coords).ToJoinedString()}");
             GUILayout.Label($"Influence: {vert.Influence}");
         }
@@ -616,7 +617,7 @@ namespace TerrainDemo.Editor
         {
             GUILayout.Label("Cursor", EditorStyles.boldLabel);
             GUILayout.Label($"World pos: {VectorToString(input.CursorPosition, GetZoomLevel(input.Distance))}");
-            GUILayout.Label($"Camera dist: {Vector3.Distance(input.CursorPosition, input.View.origin):N0} m");
+            GUILayout.Label($"Camera dist: {Vector3.Distance(input.CursorPosition, input.View.Origin):N0} m");
             if (input.HoveredBlock.HasValue)
             {
                 GUILayout.Label(
@@ -731,13 +732,30 @@ namespace TerrainDemo.Editor
             switch (precision)
             {
                 case 0:
-                    return $"({vector.x:F0}, {vector.y:F0}, {vector.z:F0})";
+                    return $"({vector.X:F0}, {vector.Y:F0}, {vector.Z:F0})";
                 case 1:
-                    return $"({vector.x:F1}, {vector.y:F1}, {vector.z:F1})";
+                    return $"({vector.X:F1}, {vector.Y:F1}, {vector.Z:F1})";
                 case 2:
-                    return $"({vector.x:F2}, {vector.y:F2}, {vector.z:F2})";
+                    return $"({vector.X:F2}, {vector.Y:F2}, {vector.Z:F2})";
                 case 3:
-                    return $"({vector.x:F3}, {vector.y:F3}, {vector.z:F3})";
+                    return $"({vector.X:F3}, {vector.Y:F3}, {vector.Z:F3})";
+                default:
+                    return ToString();
+            }
+        }
+
+        public string VectorToString(Vector2 vector, int precision)
+        {
+            switch (precision)
+            {
+                case 0:
+                    return $"({vector.X:F0}, {vector.Y:F0})";
+                case 1:
+                    return $"({vector.X:F1}, {vector.Y:F1})";
+                case 2:
+                    return $"({vector.X:F2}, {vector.Y:F2})";
+                case 3:
+                    return $"({vector.X:F3}, {vector.Y:F3})";
                 default:
                     return ToString();
             }

@@ -181,7 +181,7 @@ namespace TerrainDemo.Hero
         {
             if (_microMap != null)
             {
-                var worldRay = _camera.ScreenPointToRay(UnityEngine.Input.mousePosition);
+                var worldRay = (Spatial.Ray)_camera.ScreenPointToRay(UnityEngine.Input.mousePosition);
                 var hitPoint = _microMap.RaycastHeightmap(worldRay);
 
                 if(hitPoint.HasValue)
@@ -193,7 +193,7 @@ namespace TerrainDemo.Hero
         {
             if (_microMap != null)
             {
-                var worldRay = _camera.ScreenPointToRay(UnityEngine.Input.mousePosition);
+                var worldRay = (Spatial.Ray)_camera.ScreenPointToRay(UnityEngine.Input.mousePosition);
                 var hitPoint = _microMap.RaycastHeightmap(worldRay);
 
                 if (hitPoint.HasValue)
@@ -232,12 +232,12 @@ namespace TerrainDemo.Hero
                 _microMap = GameObject.FindObjectOfType<TriRunner>().Micro;
             else
             {
-                var worldRay = _camera.ScreenPointToRay(UnityEngine.Input.mousePosition);
+                var worldRay = (Spatial.Ray)_camera.ScreenPointToRay(UnityEngine.Input.mousePosition);
                 var hitPoint = _microMap.RaycastHeightmap(worldRay);
 
                 if (hitPoint.HasValue)
                 {
-                    DrawCursor(hitPoint.Value.Item1);
+                    DrawCursor(hitPoint.Value.hitPoint);
                 }
                 else
                 {

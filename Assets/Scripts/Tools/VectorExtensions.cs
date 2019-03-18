@@ -39,6 +39,16 @@ namespace TerrainDemo.Tools
                 return null;
         }
 
+        public static OpenTK.Vector3 ConvertUnity2OpenTK(this Vector3 v)
+        {
+            return new OpenTK.Vector3(v.x, v.y, v.z);
+        }
+
+        public static UnityEngine.Vector3 ConvertOpenTK2Unity(this OpenTK.Vector3 v)
+        {
+            return new UnityEngine.Vector3(v.X, v.Y, v.Z);
+        }
+
         /// <summary>
         /// Compare points in clockwise order (relatively center)
         /// </summary>

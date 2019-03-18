@@ -11,6 +11,7 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using Quaternion = OpenTK.Quaternion;
 using Random = TerrainDemo.Tools.Random;
+using Ray = TerrainDemo.Spatial.Ray;
 using Vector2 = OpenTK.Vector2;
 using Vector3 = UnityEngine.Vector3;
 using Vector4 = OpenTK.Vector4;
@@ -76,7 +77,7 @@ namespace TerrainDemo.Macro
 
         public ValueTuple<Cell, Vector3> Raycast(Ray ray)
         {
-            foreach (var cell in Cells.OrderBy(c => Vector3.SqrMagnitude(c.CenterPoint - ray.origin)))
+            foreach (var cell in Cells.OrderBy(c => Vector3.SqrMagnitude(c.CenterPoint - ray.Origin)))
             {
                 var intersection = cell.Raycast(ray);
                 if (intersection.HasValue)

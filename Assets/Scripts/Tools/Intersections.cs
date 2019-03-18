@@ -4,6 +4,7 @@ using System.Numerics;
 using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
 using UnityEngine;
+using Ray = TerrainDemo.Spatial.Ray;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
 
@@ -175,27 +176,28 @@ namespace TerrainDemo.Tools
         //             0 =  disjoint (no intersect)
         //             1 =  intersect in unique point I1
         //             2 =  are in the same plane
-        public static int LineTriangleIntersection(Ray ray, Vector3 v0, Vector3 v1, Vector3 v2, /*out Vector3 inter*/ out float distance)    //todo needs testing
+        [Obsolete]
+        public static int LineTriangleIntersection(in Ray ray, OpenTK.Vector3 v0, OpenTK.Vector3 v1, OpenTK.Vector3 v2, /*out Vector3 inter*/ out float distance)    //todo needs testing
         {
             //Translated from http://geomalgorithms.com/a06-_intersect-2.html#intersect3D_RayTriangle()
 
-            Vector3 u, v, n;              // triangle vectors
-            Vector3 dir, w0, w;           // ray vectors
+            OpenTK.Vector3 u, v, n;              // triangle vectors
+            OpenTK.Vector3 dir, w0, w;           // ray vectors
             float a, b;              // params to calc ray-plane intersect
-            Vector3 inter;
+            OpenTK.Vector3 inter;
             distance = -1;
 
             // get triangle edge vectors and plane normal
             u = v1 - v0;
             v = v2 - v0;
-            n = Vector3.Cross(u, v);              // cross product
-            if (n == Vector3.zero)              // triangle is degenerate
+            n = OpenTK.Vector3.Cross(u, v);              // cross product
+            if (n == OpenTK.Vector3.Zero)              // triangle is degenerate
                 return -1;                      // do not deal with this case
 
-            dir = ray.direction;              // ray direction vector
-            w0 = ray.origin - v0;
-            a = -Vector3.Dot(n, w0);
-            b = Vector3.Dot(n, dir);
+            dir = ray.Direction;              // ray direction vector
+            w0 = ray.Origin - v0;
+            a = - OpenTK.Vector3.Dot(n, w0);
+            b = OpenTK.Vector3.Dot(n, dir);
             if (Math.Abs(b) < 0.0000001f)
             {     // ray is  parallel to triangle plane
                 if (Mathf.Approximately(a, 0))                 // ray lies in triangle plane
@@ -209,16 +211,16 @@ namespace TerrainDemo.Tools
                 return 0;                   // => no intersect
                                             // for a segment, also test if (r > 1.0) => no intersect
 
-            inter = ray.origin + distance * dir;            // intersect point of ray and plane
+            inter = ray.Origin + distance * dir;            // intersect point of ray and plane
 
             // is I inside T?
             float uu, uv, vv, wu, wv, D;
-            uu = Vector3.Dot(u, u);
-            uv = Vector3.Dot(u, v);
-            vv = Vector3.Dot(v, v);
+            uu = OpenTK.Vector3.Dot(u, u);
+            uv = OpenTK.Vector3.Dot(u, v);
+            vv = OpenTK.Vector3.Dot(v, v);
             w = inter - v0;
-            wu = Vector3.Dot(w, u);
-            wv = Vector3.Dot(w, v);
+            wu = OpenTK.Vector3.Dot(w, u);
+            wv = OpenTK.Vector3.Dot(w, v);
             D = uv * uv - uu * vv;
 
             // get and test parametric coords
@@ -231,6 +233,36 @@ namespace TerrainDemo.Tools
                 return 0;
 
             return 1;                       // I is in T
+        }
+
+        /// <summary>
+        /// Fast GPU optimized code
+        /// http://iquilezles.org/www/articles/intersectors/intersectors.htm
+        /// </summary>
+        /// <param name="ro"></param>
+        /// <param name="rd"></param>
+        /// <param name="v0"></param>
+        /// <param name="v1"></param>
+        /// <param name="v2"></param>
+        /// <returns></returns>
+        public static float RayTriangleIntersection(in Ray ray, OpenTK.Vector3 v0, OpenTK.Vector3 v1, OpenTK.Vector3 v2)
+        {
+            var v1v0 = v1 - v0;
+            var v2v0 = v2 - v0;
+            var rov0 = ray.Origin - v0;
+
+            var n = OpenTK.Vector3.Cross(v1v0, v2v0);
+            var q = OpenTK.Vector3.Cross(rov0, ray.Direction);
+            float d = 1.0f / OpenTK.Vector3.Dot(ray.Direction, n);
+            float u = d * OpenTK.Vector3.Dot(-q, v2v0);             //u - barycentric coord
+            float v = d * OpenTK.Vector3.Dot(q, v1v0);              //v - barycentric coord
+            float t = d * OpenTK.Vector3.Dot(-n, rov0);             //t - distance to intersection point
+
+            if (u < 0.0 || u > 1.0 || v < 0.0 || (u + v) > 1.0)
+                t = -1.0f;
+
+            //return (t, u, v);
+            return t;
         }
 
         /// <summary>
@@ -276,21 +308,21 @@ namespace TerrainDemo.Tools
         /// Some internal knowledge
         /// </summary>
         /// <returns></returns>
-        public static (float distance, Vector2i position)? RayBlockIntersection(Ray ray, IEnumerable<(Vector2i positon, Interval heights)> blocks)  //todo consider use IEnumerable parameters, its not neccessary to produce complete volumes array
+        public static (float distance, Vector2i position)? RayBlockIntersection(in Ray ray, IEnumerable<(Vector2i positon, Interval heights)> blocks)  //todo consider use IEnumerable parameters, its not neccessary to produce complete volumes array
         {
-            var dirFracX = 1 / ray.direction.x;
-            var dirFracY = 1 / ray.direction.y;
-            var dirFracZ = 1 / ray.direction.z;
+            var dirFracX = 1 / ray.Direction.X;
+            var dirFracY = 1 / ray.Direction.Y;
+            var dirFracZ = 1 / ray.Direction.Z;
 
             foreach (var block in blocks)
             {
                 var (min, max) = BlockInfo.GetWorldBounds(block.positon);
-                float t1 = (min.X - ray.origin.x) * dirFracX;
-                float t2 = (max.X - ray.origin.x) * dirFracX;
-                float t3 = (block.heights.Min - ray.origin.y) * dirFracY;
-                float t4 = (block.heights.Max - ray.origin.y) * dirFracY;
-                float t5 = (min.Y - ray.origin.z) * dirFracZ;
-                float t6 = (max.Y - ray.origin.z) * dirFracZ;
+                float t1 = (min.X - ray.Origin.X) * dirFracX;
+                float t2 = (max.X - ray.Origin.X) * dirFracX;
+                float t3 = (block.heights.Min - ray.Origin.Y) * dirFracY;
+                float t4 = (block.heights.Max - ray.Origin.Y) * dirFracY;
+                float t5 = (min.Y - ray.Origin.Z) * dirFracZ;
+                float t6 = (max.Y - ray.Origin.Z) * dirFracZ;
 
                 float aMin = t1 < t2 ? t1 : t2;
                 float bMin = t3 < t4 ? t3 : t4;
@@ -315,20 +347,20 @@ namespace TerrainDemo.Tools
             return null;
         }
 
-        public static float RayBlockIntersection(Ray ray, in Vector2i positon, in Blocks block)
+        public static float RayBlockIntersection(in Ray ray, in Vector2i positon, in Blocks block)
         {
-            var dirFracX = 1 / ray.direction.x;
-            var dirFracY = 1 / ray.direction.y;
-            var dirFracZ = 1 / ray.direction.z;
+            var dirFracX = 1 / ray.Direction.X;
+            var dirFracY = 1 / ray.Direction.Y;
+            var dirFracZ = 1 / ray.Direction.Z;
 
 
             var (min, max) = BlockInfo.GetWorldBounds(positon);
-            float t1 = (min.X - ray.origin.x) * dirFracX;
-            float t2 = (max.X - ray.origin.x) * dirFracX;
-            float t3 = (block.Height.Base - ray.origin.y) * dirFracY;
-            float t4 = (block.Height.Nominal - ray.origin.y) * dirFracY;
-            float t5 = (min.Y - ray.origin.z) * dirFracZ;
-            float t6 = (max.Y - ray.origin.z) * dirFracZ;
+            float t1 = (min.X - ray.Origin.X) * dirFracX;
+            float t2 = (max.X - ray.Origin.X) * dirFracX;
+            float t3 = (block.Height.Base - ray.Origin.Y) * dirFracY;
+            float t4 = (block.Height.Nominal - ray.Origin.Y) * dirFracY;
+            float t5 = (min.Y - ray.Origin.Z) * dirFracZ;
+            float t6 = (max.Y - ray.Origin.Z) * dirFracZ;
 
             float aMin = t1 < t2 ? t1 : t2;
             float bMin = t3 < t4 ? t3 : t4;

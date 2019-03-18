@@ -6,8 +6,9 @@ using TerrainDemo.Macro;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using UnityEngine;
+using Ray = TerrainDemo.Spatial.Ray;
 using Vector2 = OpenTK.Vector2;
-using Vector3 = UnityEngine.Vector3;
+using Vector3 = OpenTK.Vector3;
 
 namespace TerrainDemo.Micro
 {
@@ -267,10 +268,10 @@ namespace TerrainDemo.Micro
             );
         }
 
-        public (float distance, Vector2i position, BaseBlockMap source)? RaycastBlockmap(Ray ray)
+        public (float distance, Vector2i position, BaseBlockMap source)? RaycastBlockmap(in Ray ray)
         {
             //Get raycasted blocks
-            var raycastedBlocks = Rasterization.DDA((Vector2)ray.origin, (Vector2)ray.GetPoint(300), true);
+            var raycastedBlocks = Rasterization.DDA((Vector2)ray.Origin, (Vector2)ray.GetPoint(300), true);
 
             BaseBlockMap source = null;
             float resultDistance = -1;
@@ -314,10 +315,10 @@ namespace TerrainDemo.Micro
             return null;
         }
 
-        public (Vector3 hitPoint, Vector2i position, BaseBlockMap source)? RaycastHeightmap(Ray ray)
+        public (OpenTK.Vector3 hitPoint, Vector2i position, BaseBlockMap source)? RaycastHeightmap(in Ray ray)
         {
             //Get raycasted blocks
-            var rayBlocks = Rasterization.DDA((OpenTK.Vector2)ray.origin, (OpenTK.Vector2)ray.GetPoint(300), true);
+            var rayBlocks = Rasterization.DDA((Vector2)ray.Origin, (Vector2)ray.GetPoint(300), true);
 
             float distance = float.MaxValue;
             BaseBlockMap source = null;
@@ -331,7 +332,7 @@ namespace TerrainDemo.Micro
 
                 if (occludeState.state != BlockOverlapState.Overlap)
                 {
-                    var blockHitDistance = CheckBlockIntersection(this, blockPos);
+                    var blockHitDistance = CheckBlockIntersection(ray, this, blockPos);
                     if (blockHitDistance > 0)
                     {
                         distance = blockHitDistance;
@@ -341,7 +342,7 @@ namespace TerrainDemo.Micro
 
                 if (occludeState.state == BlockOverlapState.Overlap || occludeState.state == BlockOverlapState.Above)
                 {
-                    var childBlockHitDistance = CheckBlockIntersection(occludeState.map, blockPos);
+                    var childBlockHitDistance = CheckBlockIntersection(ray, occludeState.map, blockPos);
                     if (childBlockHitDistance > 0)
                     {
                         if (childBlockHitDistance < distance)
@@ -360,7 +361,7 @@ namespace TerrainDemo.Micro
 
             return null;
 
-            float CheckBlockIntersection(BaseBlockMap map, in Vector2i position)
+            float CheckBlockIntersection(in Ray ray2, BaseBlockMap map, in Vector2i position)
             {
                 const float NoIntersection = -1f;
                 if (!map.Bounds.Contains(position)) return NoIntersection;
@@ -382,21 +383,23 @@ namespace TerrainDemo.Micro
 
                 //Check block's triangles for intersection
                 float resultDistance;
-                if (Math.Abs((float) (c00 - c11)) < Math.Abs((float) (c01 - c10)))
+                if (Math.Abs(c00 - c11) < Math.Abs(c01 - c10))
                 {
-                    if (Intersections.LineTriangleIntersection(ray, v00, v01, v11, out resultDistance) == 1
-                        || Intersections.LineTriangleIntersection(ray, v00, v11, v10, out resultDistance) == 1)
-                    {
+                    resultDistance = Intersections.RayTriangleIntersection(in ray2, v00, v01, v11);
+                    if (resultDistance >= 0)
                         return resultDistance;
-                    }
+                    resultDistance = Intersections.RayTriangleIntersection(in ray2, v00, v11, v10);
+                    if (resultDistance >= 0)
+                        return resultDistance;
                 }
                 else
                 {
-                    if (Intersections.LineTriangleIntersection(ray, v00, v01, v10, out resultDistance) == 1
-                        || Intersections.LineTriangleIntersection(ray, v01, v11, v10, out resultDistance) == 1)
-                    {
+                    resultDistance = Intersections.RayTriangleIntersection(in ray2, v00, v01, v10);
+                    if (resultDistance >= 0)
                         return resultDistance;
-                    }
+                    resultDistance = Intersections.RayTriangleIntersection(in ray2, v01, v11, v10);
+                    if (resultDistance >= 0)
+                        return resultDistance;
                 }
 
                 return NoIntersection;

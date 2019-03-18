@@ -14,10 +14,10 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Debug = UnityEngine.Debug;
-using Quaternion = UnityEngine.Quaternion;
 using Renderer = TerrainDemo.Visualization.Renderer;
 using Vector2 = OpenTK.Vector2;
 using Vector3 = OpenTK.Vector3;
+using Quaternion = OpenTK.Quaternion;
 
 namespace TerrainDemo
 {
@@ -264,19 +264,19 @@ namespace TerrainDemo
             for (int i = 0; i < 1000; i++)
             {
                 //Test ray simulates user input from mouse
-                var testRay = new Ray(
-                    new UnityEngine.Vector3(0, 10, 0),
-                    Quaternion.AngleAxis(UnityEngine.Random.Range(0, 359f), UnityEngine.Vector3.up) 
-                    * Quaternion.AngleAxis(UnityEngine.Random.Range(-45, 45f), UnityEngine.Vector3.right)
-                    * UnityEngine.Vector3.forward);
+                var testRay = new Spatial.Ray(
+                    new Vector3(0, 10, 0),
+                    Quaternion.FromAxisAngle(Vector3.UnitY, UnityEngine.Random.Range(0, 359f)) 
+                    * Quaternion.FromAxisAngle(Vector3.UnitX, UnityEngine.Random.Range(-45, 45f))
+                    * Vector3.UnitZ);
 
                 var hit = Micro.RaycastHeightmap(testRay);
                 if (hit.HasValue)
                 {
-                    Debug.DrawLine(testRay.origin, hit.Value.hitPoint, Color.green, 10, true);
+                    Debug.DrawLine(testRay.Origin, hit.Value.hitPoint, Color.green, 10, true);
                 }
                 else
-                    Debug.DrawLine(testRay.origin, testRay.GetPoint(100), Color.red, 10, true);
+                    Debug.DrawLine(testRay.Origin, testRay.GetPoint(100), Color.red, 10, true);
             }
 
             timer.Stop();

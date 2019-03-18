@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-namespace TerrainDemo.Assets.Tests
+namespace TerrainDemo.Tests
 {
     public class NoiseBench : MonoBehaviour
     {

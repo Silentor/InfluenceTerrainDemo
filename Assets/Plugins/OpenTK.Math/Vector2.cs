@@ -916,7 +916,7 @@ namespace OpenTK
         }
 
 
-        #region Silentor's stuff
+        #region Unity interop
 
         //MODIFIED BY SILENTOR
         public static implicit operator UnityEngine.Vector3(Vector2 input)
@@ -937,22 +937,15 @@ namespace OpenTK
         }
 
         //MODIFIED BY SILENTOR
-        [Pure]
-        public string ToString(int precision)
+        public static explicit operator Vector2(Vector3 input)
         {
-            switch (precision)
-            {
-                case 0:
-                    return string.Format("({0:F0}, {1:F0})", X, Y);
-                case 1:
-                    return string.Format("({0:F1}, {1:F1})", X, Y);
-                case 2:
-                    return string.Format("({0:F2}, {1:F2})", X, Y);
-                case 3:
-                    return string.Format("({0:F3}, {1:F3})", X, Y);
-                default:
-                    return ToString();
-            }
+            return new Vector2(input.X, input.Z);
+        }
+
+        //MODIFIED BY SILENTOR
+        public static explicit operator Vector3(Vector2 input)
+        {
+            return new Vector3(input.X, 0, input.Y);
         }
 
         #endregion

@@ -1427,5 +1427,20 @@ namespace OpenTK
                 Y == other.Y &&
                 Z == other.Z;
         }
+
+        //MODIFIED BY SILENTOR
+        #region Unity interop
+
+        public static implicit operator UnityEngine.Vector3(Vector3 input)
+        {
+            return new UnityEngine.Vector3(input.X, input.Y, input.Z);
+        }
+
+        public static implicit operator Vector3(UnityEngine.Vector3 input)
+        {
+            return new Vector3(input.x, input.y, input.z);
+        }
+
+        #endregion
     }
 }

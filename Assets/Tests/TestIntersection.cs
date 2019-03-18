@@ -29,7 +29,7 @@ namespace TerrainDemo.Tests
             _handle4.transform.localPosition = new Vector3(0, 0, 0);
         }
 
-        /*
+        
         /// <summary>
         /// Test line-triangle intersection
         /// </summary>
@@ -38,25 +38,43 @@ namespace TerrainDemo.Tests
             if(!Application.isPlaying)
                 return;
 
-            DrawPolyline.ForGizmo(new Vector3[] {_handle1.transform.position, _handle2.transform.position, _handle3.transform.position, _handle1.transform.position }, Color.white);
+            DrawPolyline.ForGizmo(new Vector3[] {_handle1.transform.position, _handle2.transform.position, _handle3.transform.position }, Color.white, true);
 
             //var screenRay = SceneView.currentDrawingSceneView.camera.ScreenPointToRay(Input.mousePosition);
             var screenRay = new Ray(Vector3.zero, Vector3.forward);
-            Debug.DrawRay(screenRay.origin, screenRay.direction * 1000, Color.yellow);
-            Vector3 intersectPos;
-            var result = Intersections.LineTriangleIntersection(screenRay, _handle1.transform.position, _handle2.transform.position,
-                _handle3.transform.position, out intersectPos);
+            Debug.DrawRay(screenRay.origin, screenRay.direction * 100, Color.yellow);
+            float distance;
 
-            if(result == 1)
+            var v1 = _handle1.transform.position.ConvertUnity2OpenTK();
+            var v2 = _handle2.transform.position.ConvertUnity2OpenTK();
+            var v3 = _handle3.transform.position.ConvertUnity2OpenTK();
+            var result2 = Intersections.RayTriangleIntersection(new Spatial.Ray(screenRay.origin.ConvertUnity2OpenTK(), screenRay.direction.ConvertUnity2OpenTK()),
+                v1, v2, v3);
+
+            var intersection = screenRay.GetPoint(result2);
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(intersection, 0.1f);
+
+            Debug.Log(result2);
+
+            /*
+            var result = Intersections.LineTriangleIntersection(screenRay, _handle1.transform.position, _handle2.transform.position,
+                //_handle3.transform.position, out distance);
+
+            var intersection = screenRay.GetPoint(distance);
+
+            if (result == 1)
             {
                 Gizmos.color = Color.red;
-                Gizmos.DrawSphere(intersectPos, 0.1f);
+                Gizmos.DrawSphere(intersection, 0.1f);
             }
             else 
                 Debug.Log(result);
+                */
         }
-        */
+        
 
+        /*
         /// <summary>
         /// Test barycentric interpolation
         /// </summary>
@@ -82,6 +100,7 @@ namespace TerrainDemo.Tests
             Gizmos.color = Color.blue;
             Gizmos.DrawSphere(_handle3.transform.position, 0.5f);
 
+            
             var result = Intersections.Barycentric2DCoords((OpenTK.Vector2)_handle4.transform.position, 
                 (OpenTK.Vector2)_handle1.transform.position,
                 (OpenTK.Vector2)_handle2.transform.position,
@@ -92,5 +111,6 @@ namespace TerrainDemo.Tests
             Gizmos.color = resultColor;
             Gizmos.DrawSphere(_handle4.transform.position, 0.5f);
         }
+        */
     }
 }

@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using TerrainDemo.Macro;
 using TerrainDemo.Spatial;
 using Vector2 = OpenTK.Vector2;
-using Vector3 = UnityEngine.Vector3;
+using Vector3 = OpenTK.Vector3;
 
 namespace TerrainDemo.Micro
 {
@@ -28,7 +28,7 @@ namespace TerrainDemo.Micro
             Corner01 = corner01;
             Corner11 = corner11;
             Corner10 = corner10;
-            Normal = Vector3.up; // GetBlockNormal(Corner00.Nominal, Corner11.Nominal, Corner01.Nominal, Corner10.Nominal);
+            Normal = Vector3.UnitY; // GetBlockNormal(Corner00.Nominal, Corner11.Nominal, Corner01.Nominal, Corner10.Nominal);
 
         }
 
@@ -63,7 +63,7 @@ namespace TerrainDemo.Micro
             var slope1 = height11 - height00;
             var slope2 = height10 - height01;
             var result = new Vector3(-slope1, 2, slope2);
-            return result.normalized;
+            return result.Normalized();
         }
 
     }
