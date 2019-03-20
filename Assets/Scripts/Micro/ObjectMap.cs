@@ -240,9 +240,9 @@ namespace TerrainDemo.Micro
             UnityEngine.Debug.Log($"Heightmap of {Name} generated in {timer.ElapsedMilliseconds}");
         }
 
-        public override (ObjectMap map, BlockOverlapState state) GetOcclusionState(Vector2i worldPosition)
+        public override (ObjectMap map, BlockOverlapState state) GetOverlapState(Vector2i worldPosition)
         {
-            return ParentMap.GetOcclusionState(worldPosition);
+            return ParentMap.GetOverlapState(worldPosition);
         }
 
         public override string ToString()

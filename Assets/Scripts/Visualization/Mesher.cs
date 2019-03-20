@@ -444,7 +444,7 @@ namespace TerrainDemo.Visualization
                         continue;
 
                     //Block culling
-                    var occlusionState = mapObject.GetOcclusionState(new Vector2i(worldX, worldZ));
+                    var occlusionState = mapObject.GetOverlapState(new Vector2i(worldX, worldZ));
                     if (occlusionState.state == BlockOverlapState.Under && occlusionState.map == mapObject)
                         continue;
 
@@ -634,7 +634,11 @@ namespace TerrainDemo.Visualization
         public GameObject CreateActorObject(Actor actor, TriRunner settings)
         {
             var newActor = Object.Instantiate(settings.ActorPrefab, actor.Position, actor.Rotation);
-            //Color object...
+
+            //Setup actor view...
+            var view = newActor.GetComponent<ActorView>();
+            view.Init(actor);
+
             return newActor;
         }
 

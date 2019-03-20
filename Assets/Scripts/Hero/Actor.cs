@@ -18,6 +18,9 @@ namespace TerrainDemo.Hero
 
         public Vector3 Forward => Rotation * Vector3.UnitZ;
 
+        public BaseBlockMap Map => _currentMap;
+        public Vector2i Block => _currentBlock;
+
         private readonly MicroMap _mainMap;
         private Vector2 _mapPosition;
         private Vector2 _moveDirection;
@@ -26,6 +29,7 @@ namespace TerrainDemo.Hero
 
         private Vector2i _currentBlock;
         private BaseBlockMap _currentMap;
+        private BlockOverlapState _currentOverlapState;
 
         //Fast n dirty fake falling
         private float _fallVelocity;
@@ -91,70 +95,75 @@ namespace TerrainDemo.Hero
                 var newMapPosition = _mapPosition + rotatedDirection * deltaTime * Speed;
 
                 //Check change block and map
-                var blockPos = (Vector2i) newMapPosition;
-                if (blockPos != _currentBlock)
+                var newBlockPosition = (Vector2i) newMapPosition;
+                if (newBlockPosition != _currentBlock)
                 {
-                    var newBlockState = _mainMap.GetOcclusionState(blockPos);
+                    var (newMap, newOverlapState) = _mainMap.GetOverlapState(newBlockPosition);
 
-                    if (newBlockState.map != _currentMap)
+                    if (newOverlapState != _currentOverlapState || newMap != _currentMap)
                     {
-                        //Check blocks above current 
-                        if (newBlockState.state == BlockOverlapState.Above)
+                        switch (newOverlapState)
                         {
-                            ref readonly var newBlock = ref newBlockState.map.GetBlockRef(blockPos);
-                            if (newBlock.GetNominalHeight() - Position.Y < 1)
+                            case BlockOverlapState.Above:
                             {
-                                //todo check block inclination
-                                //We can climb on block - use new map and current moving
-                                _currentMap = newBlockState.map;
-                            }
-                            else if (newBlock.Height.Base - Position.Y > 2)
-                            {
-                                //We can go under the floating block - use old map and current moving
-                                ;
-                            }
-                            else
-                            {
-                                //We stopped by the block, discard movement
-                                newMapPosition = _mapPosition;
-                                blockPos = _currentBlock;
-                            }
-                        }
+                                ref readonly var newBlock = ref newMap.GetBlockRef(newBlockPosition);
+                                if (newBlock.GetNominalHeight() - Position.Y < 1)       //Check prev block height difference
+                                {
+                                    //todo check block inclination
+                                    //We can climb on block - use new map
+                                    _currentMap = newMap;
+                                }
+                                else if (newBlock.Height.Base - Position.Y > 2)
+                                {
+                                    //We can go under the floating block - use old map
+                                }
+                                else
+                                {
+                                    //We stopped by the low gap or very tall wall of block, discard movement
+                                    return false;
+                                }
 
-                        //Check block overlapped with current
-                        if (newBlockState.state == BlockOverlapState.Overlap)
-                        {
-                            ref readonly var newBlock = ref newBlockState.map.GetBlockRef(blockPos);
-                            if (newBlock.GetNominalHeight() - Position.Y < 1)
-                            {
-                                //todo check block inclination
-                                //We can climb on block - use new map and current moving
-                                _currentMap = newBlockState.map;
+                                break;
                             }
-                            else
+
+                            case BlockOverlapState.Overlap:
                             {
-                                //We stopped by the block, discard movement
-                                newMapPosition = _mapPosition;
-                                blockPos = _currentBlock;
+                                ref readonly var newBlock = ref newMap.GetBlockRef(newBlockPosition);
+                                if (newBlock.GetNominalHeight() - Position.Y < 1)       //Check prev block height difference
+                                    {
+                                    //todo check block inclination
+                                    //We can climb on block - use new map
+                                    _currentMap = newMap;
+                                }
+                                else
+                                {
+                                    //We stopped by the tall wall of block, discard movement
+                                    return false;
+                                }
+
+                                break;
                             }
-                        }
 
-                        //Check no block of current map above main map block, return to main map
-                        if (newBlockState.state == BlockOverlapState.Under || newBlockState.state == BlockOverlapState.None)
-                        {
-                            _currentMap = _mainMap;
-
-                            //Maybe we fall from the edge
-                            if (!_isFalling)
+                            case BlockOverlapState.None:
+                            case BlockOverlapState.Under:
                             {
-                                _isFalling = true;
-                                _fallDirection = rotatedDirection;
-                                _fallVelocity = 0;
+                                _currentMap = _mainMap;
+
+                                //Maybe we fall from the edge of object map
+                                if (!_isFalling && (_currentOverlapState == BlockOverlapState.Above || _currentOverlapState == BlockOverlapState.Overlap))
+                                {
+                                    _isFalling = true;
+                                    _fallDirection = rotatedDirection;
+                                    _fallVelocity = 0;
+                                }
+
+                                break;
                             }
                         }
                     }
 
-                    _currentBlock = blockPos;
+                    _currentBlock = newBlockPosition;
+                    _currentOverlapState = newOverlapState;
                 }
 
                 if (newMapPosition != _mapPosition)

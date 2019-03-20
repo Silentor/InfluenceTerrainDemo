@@ -272,7 +272,7 @@ namespace TerrainDemo.Micro
             block = block.MutateOverlapState(objectMapId, state);
         }
 
-        public override (ObjectMap map, BlockOverlapState state) GetOcclusionState(Vector2i worldPosition)
+        public override (ObjectMap map, BlockOverlapState state) GetOverlapState(Vector2i worldPosition)
         {
             if (!Bounds.Contains(worldPosition))
                 return (null, BlockOverlapState.None);

@@ -652,7 +652,7 @@ namespace TerrainDemo.Editor
                 GUILayout.EndHorizontal();
                 GUILayout.EndVertical();
 
-                var occlusion = MicroMap.GetOcclusionState(position);
+                var occlusion = MicroMap.GetOverlapState(position);
                 GUILayout.Label(occlusion.state != BlockOverlapState.None 
                     ? $"{occlusion.map.Name} block is {occlusion.state}"
                     : "No overlap");

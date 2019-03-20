@@ -329,7 +329,7 @@ namespace TerrainDemo.Micro
             //todo Early discard block based on block height (blocks AABB?)
             foreach (var blockPos in rayBlocks)
             {
-                var occludeState = GetOcclusionState(blockPos);
+                var occludeState = GetOverlapState(blockPos);
 
                 if (occludeState.state != BlockOverlapState.Overlap)
                 {
@@ -423,7 +423,7 @@ namespace TerrainDemo.Micro
             return worldPosition - Bounds.Min;
         }
 
-        public abstract (ObjectMap map, BlockOverlapState state) GetOcclusionState(Vector2i worldPosition);
+        public abstract (ObjectMap map, BlockOverlapState state) GetOverlapState(Vector2i worldPosition);
 
 
         public event Action Changed;
