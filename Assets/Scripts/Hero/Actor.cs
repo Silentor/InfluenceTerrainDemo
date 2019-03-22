@@ -11,15 +11,39 @@ namespace TerrainDemo.Hero
 {
     public class Actor
     {
+        /// <summary>
+        /// Max speed (m/s)
+        /// </summary>
         public float Speed => 4;
+
+        /// <summary>
+        /// Max angular speed (deg)
+        /// </summary>
         public float RotationSpeed => 90;
-        public Vector3 Position { get; private set; }
+
+        
+
         public Quaternion Rotation { get; private set; }
 
         public Vector3 Forward => Rotation * Vector3.UnitZ;
+        public Vector3 Position { get; private set; }
 
         public BaseBlockMap Map => _currentMap;
+
         public Vector2i Block => _currentBlock;
+
+        public NavState State
+        {
+            get
+            {
+                if (_isFalling)
+                    return NavState.Falling;
+                else if (!_isStopped)
+                    return NavState.Moving;
+                else
+                    return NavState.Stopped;
+            }
+        }
 
         private readonly MicroMap _mainMap;
         private Vector2 _mapPosition;
@@ -30,6 +54,8 @@ namespace TerrainDemo.Hero
         private Vector2i _currentBlock;
         private BaseBlockMap _currentMap;
         private BlockOverlapState _currentOverlapState;
+        private float _blockInclinationSpeedModifier = 1;
+        private float _blockMaterialSpeedModifier = 1;
 
         //Fast n dirty fake falling
         private float _fallVelocity;
@@ -61,6 +87,10 @@ namespace TerrainDemo.Hero
             _isStopped = true;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="normalizedDelta">-1..1</param>
         public void Rotate(float normalizedDelta)
         {
             _targetRotation = normalizedDelta * RotationSpeed;
@@ -86,13 +116,30 @@ namespace TerrainDemo.Hero
                 Changed?.Invoke(this);
         }
 
+#if UNITY_EDITOR
+        public (Vector2 moveDirection, float blockInclinationSpeedMod, float blockMaterialSpeedMod) GetDebugState()
+        {
+            return (_moveDirection, _blockInclinationSpeedModifier, _blockMaterialSpeedModifier);
+        }
+
+#endif
         private bool UpdateMovement(float deltaTime)
         {
             var isChanged = false;
             if (!_isStopped && Speed > 0 && _moveDirection != Vector2.Zero)
             {
-                var rotatedDirection = (Vector2) (Rotation * (Vector3) _moveDirection);
-                var newMapPosition = _mapPosition + rotatedDirection * deltaTime * Speed;
+                var rotatedDirection = (Vector2) Vector3.Transform((Vector3)_moveDirection, Rotation);      //Rotate direction in XZ plane
+
+                //DEBUG
+                var currentBlockNormal = _currentMap.GetNormal2(_currentBlock);           //todo cache
+                _blockInclinationSpeedModifier = Vector3.Dot((Vector3) rotatedDirection, currentBlockNormal)/(rotatedDirection.Length);
+                _blockInclinationSpeedModifier = (_blockInclinationSpeedModifier + 1);      //0..2
+
+                var blockMat = _currentMap.GetBlockRef(_currentBlock).Top;
+                _blockMaterialSpeedModifier = _mainMap.GetBlockSettings(blockMat).SpeedModifier;
+                    //DEBUG
+
+                var newMapPosition = _mapPosition + rotatedDirection * deltaTime * (Speed * _blockInclinationSpeedModifier * _blockMaterialSpeedModifier);
 
                 //Check change block and map
                 var newBlockPosition = (Vector2i) newMapPosition;
@@ -218,5 +265,12 @@ namespace TerrainDemo.Hero
         }
 
         public event Action<Actor> Changed;
+
+        public enum NavState
+        {
+            Stopped,
+            Moving,
+            Falling
+        }
     }
 }

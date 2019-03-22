@@ -39,8 +39,7 @@ namespace TerrainDemo.Visualization
             _settings = settings;
             _macroMap = macroMap;
 
-            var blocksSettings = Resources.LoadAll<BlockSettings>("");
-            foreach (var blockSetting in blocksSettings)
+            foreach (var blockSetting in settings.AllBlocks)
                 _defaultBlockColor[blockSetting.Block] = blockSetting.DefaultColor;
         }
 

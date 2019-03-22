@@ -238,6 +238,8 @@ namespace TerrainDemo.Micro
             timer.Stop();
 
             UnityEngine.Debug.Log($"Heightmap of {Name} generated in {timer.ElapsedMilliseconds}");
+
+            GenerateNormalMap1();
         }
 
         public override (ObjectMap map, BlockOverlapState state) GetOverlapState(Vector2i worldPosition)

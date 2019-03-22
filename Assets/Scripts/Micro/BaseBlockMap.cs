@@ -25,6 +25,8 @@ namespace TerrainDemo.Micro
 
             _heightMap = new Heights[Bounds.Size.X + 1, Bounds.Size.Z + 1];
             _blocks = new Blocks[Bounds.Size.X, Bounds.Size.Z];
+            _blockNormalMap1 = new Vector3[Bounds.Size.X, Bounds.Size.Z];
+            _blockNormalMap2 = new Vector3[Bounds.Size.X, Bounds.Size.Z];
 
             Debug.Log($"Created {Name} blockmap {Bounds.Size.X} x {Bounds.Size.Z} = {Bounds.Size.X * Bounds.Size.Z} blocks");
         }
@@ -53,6 +55,53 @@ namespace TerrainDemo.Micro
         /// Generate heightmap from blockmap
         /// </summary>
         public abstract void GenerateHeightmap();
+
+        public void GenerateNormalMap1()
+        {
+            var xMax = _blocks.GetLength(0) - 1;
+            var zMax = _blocks.GetLength(1) - 1;
+
+            //Iterate in local space
+            for (int x = 0; x <= xMax; x++)
+            {
+                for (int z = 0; z <= zMax; z++)
+                {
+                    ref readonly var block = ref _blocks[x, z];
+                    if (block.IsEmpty)
+                        continue;
+
+                    //Variant 1 (4 neighbor blocks)
+                    ref readonly var rightBlock = ref _blocks[Math.Min(x + 1, xMax), z];
+                    if (rightBlock.IsEmpty) rightBlock = ref block;
+                    ref readonly var leftBlock = ref _blocks[Math.Max(x - 1, 0), z];
+                    if (leftBlock.IsEmpty) leftBlock = ref block;
+                    ref readonly var topBlock = ref _blocks[x, Math.Min(z + 1, zMax)];
+                    if (topBlock.IsEmpty) topBlock = ref block;
+                    ref readonly var bottomBlock = ref _blocks[x, Math.Max(z - 1, 0)];
+                    if (bottomBlock.IsEmpty) bottomBlock = ref block;
+
+                    var normal = new Vector3(leftBlock.GetNominalHeight() - rightBlock.GetNominalHeight(),
+                        2,
+                        bottomBlock.GetNominalHeight() - topBlock.GetNominalHeight());
+                    _blockNormalMap1[x, z] = normal.Normalized();
+
+                    //Variant 2 (4 neighbor vertices)
+                    var h00 = _heightMap[x, z].Main;
+                    var h01 = _heightMap[x, z + 1].Main;
+                    var h10 = _heightMap[x + 1, z].Main;
+                    var h11 = _heightMap[x + 1, z + 1].Main;
+
+                    const float scale = 0.7071067811865475f;
+                    const float sqrt2 = 1.414213562373095f;
+                    //normal = new Vector3(v11 - v00, 2*scale, v10 - v01);
+                    normal = Vector3.Cross(                             //todo simplify
+                        new Vector3(-1, h01 - h10, 1),
+                        new Vector3(1, h11 - h00, 1)
+                        );
+                    _blockNormalMap2[x, z] = normal.Normalized();
+                }
+            }
+        }
 
         public void SetBlocks(IEnumerable<Vector2i> positions, IEnumerable<Blocks> blocks, bool regenerateHeightmap)
         {
@@ -247,6 +296,25 @@ namespace TerrainDemo.Micro
             return ref _blocks[xWorldBlockPos - Bounds.Min.X, zWorldBlockPos - Bounds.Min.Z];
         }
 
+        public Vector3 GetNormal1(Vector2i worldBlockPos)
+        {
+            if (!Bounds.Contains(worldBlockPos))
+                return Vector3.Zero;
+
+            var localPos = worldBlockPos - Bounds.Min;
+            return _blockNormalMap1[localPos.X, localPos.Z];
+        }
+
+        public Vector3 GetNormal2(Vector2i worldBlockPos)
+        {
+            if (!Bounds.Contains(worldBlockPos))
+                return Vector3.Zero;
+
+            var localPos = worldBlockPos - Bounds.Min;
+            return _blockNormalMap2[localPos.X, localPos.Z];
+        }
+
+
         public NeighborBlocks GetNeighborBlocks(Vector2i worldBlockPos)
         {
             //Blocks forward = Blocks.Empty, right = Blocks.Empty, back = Blocks.Empty, left = Blocks.Empty;
@@ -430,6 +498,12 @@ namespace TerrainDemo.Micro
 
         protected readonly Heights[,] _heightMap;           //todo Optimize as vector array
         protected readonly Blocks[,] _blocks;                   //todo Optimize as vector array
+
+        //DEBUG
+        protected readonly Vector3[,] _blockNormalMap1;     //Test block normal map, variant1
+        protected readonly Vector3[,] _blockNormalMap2;     //Test block normal map, variant2
+        //DEBUG
+
         protected readonly List<BaseBlockMap> _childs = new List<BaseBlockMap>();
         protected readonly List<Actor> _actors = new List<Actor>();
 

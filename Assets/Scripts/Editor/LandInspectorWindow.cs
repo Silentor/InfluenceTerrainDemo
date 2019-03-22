@@ -239,6 +239,8 @@ namespace TerrainDemo.Editor
             {
                 DrawBlock(input.SelectedBlock.Value.position, input.SelectedBlock.Value.block, Color.white);
             }
+
+            DrawNormals(input);
         }
 
         private void DrawTerrainModeHandles(Input input)
@@ -283,6 +285,50 @@ namespace TerrainDemo.Editor
             if (input.SelectedHeightVertex.HasValue)
             {
                 DrawHeightVertex(input.SelectedHeightVertex.Value, Color.white);
+            }
+
+            DrawNormals(input);
+        }
+
+        private void DrawNormals(Input input)
+        {
+            //DEBUG draw normal 1
+            //Find near blocks
+            const int visualizeRadius = 20;
+            var bounds = new Bounds2i((Vector2i) input.CursorRay.Origin.ConvertTo2D(), visualizeRadius);
+            foreach (var position in bounds)
+            {
+                ref readonly var block = ref MicroMap.GetBlockRef(position);
+                var overlap = MicroMap.GetOverlapState(position);
+                if (overlap.state == BlockOverlapState.Above)
+                {
+                    DrawBlockNormal(position, block.Height.Main, MicroMap.GetNormal1(position), Color.green);
+                    DrawBlockNormal(position, overlap.map.GetBlockRef(position).Height.Main, overlap.map.GetNormal1(position), Color.green);
+
+                    DrawBlockNormal(position, block.Height.Main, MicroMap.GetNormal2(position), Color.blue);
+                    DrawBlockNormal(position, overlap.map.GetBlockRef(position).Height.Main, overlap.map.GetNormal2(position), Color.blue);
+                }
+                else if (overlap.state == BlockOverlapState.Overlap)
+                {
+                    DrawBlockNormal(position, overlap.map.GetBlockRef(position).Height.Main, overlap.map.GetNormal1(position), Color.green);
+
+                    DrawBlockNormal(position, overlap.map.GetBlockRef(position).Height.Main, overlap.map.GetNormal2(position), Color.blue);
+                }
+                else
+                {
+                    DrawBlockNormal(position, block.Height.Main, MicroMap.GetNormal1(position), Color.green);
+
+                    DrawBlockNormal(position, block.Height.Main, MicroMap.GetNormal2(position), Color.blue);
+                }
+
+                void DrawBlockNormal(Vector2i pos, float height, Vector3 normal, Color color)
+                {
+                    var blockCenterPoint = new Vector3(pos.X + 0.5f, height, pos.Z + 0.5f);
+                    if (Vector3.Distance(input.CursorRay.Origin, blockCenterPoint) < visualizeRadius)
+                    {
+                        DrawArrow.ForDebug(blockCenterPoint, normal, color);
+                    }
+                }
             }
         }
 
@@ -806,9 +852,8 @@ namespace TerrainDemo.Editor
                 _oldRenderLayer = _runner.RenderLayer;
                 _oldRenderMode = _runner.RenderMode;
 
-                var blocksSettings = Resources.LoadAll<BlockSettings>("");
                 _defaultBlockColor.Clear();
-                foreach (var blockSetting in blocksSettings)
+                foreach (var blockSetting in _runner.AllBlocks)
                     _defaultBlockColor[blockSetting.Block] = blockSetting.DefaultColor;
             }
             else if (state == PlayModeStateChange.ExitingPlayMode)

@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace TerrainDemo.Visualization
 {
+    [SelectionBase]
     public class ActorView : MonoBehaviour
     {
         public Actor Actor { get; private set; }

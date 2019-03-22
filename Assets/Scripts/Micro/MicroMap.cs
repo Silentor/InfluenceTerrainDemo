@@ -7,6 +7,7 @@ using JetBrains.Annotations;
 using OpenToolkit.Mathematics;
 using TerrainDemo.Hero;
 using TerrainDemo.Macro;
+using TerrainDemo.Settings;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using UnityEditor;
@@ -42,6 +43,8 @@ namespace TerrainDemo.Micro
                 var microCell = new Cell(macroCell, this);
                 Cells[i] = microCell;
             }
+
+            foreach (var blockSettingse in settings.AllBlocks) _blockSettings[blockSettingse.Block] = blockSettingse;
         }
 
         public void AddChild(ObjectMap childMap)
@@ -262,6 +265,8 @@ namespace TerrainDemo.Micro
 
             timer.Stop();
             Debug.Log($"Heightmap of {Name} generated in {timer.ElapsedMilliseconds}");
+
+            GenerateNormalMap1();
         }
 
         public void SetOcclusionState(Vector2i worldPosition, ObjectMap childMap, BlockOverlapState state)
@@ -282,9 +287,15 @@ namespace TerrainDemo.Micro
             return GetOcclusionState(in blocks);
         }
 
+        public BlockSettings GetBlockSettings(BlockType type)
+        {
+            return _blockSettings[type];
+        }
+
         private readonly MacroMap _macromap;
         private readonly TriRunner _settings;
-        //private readonly Dictionary<Vector2i, BlockOverlapState> _occlusion = new Dictionary<Vector2i, BlockOverlapState>();
+        private Dictionary<BlockType, BlockSettings> _blockSettings = new Dictionary<BlockType, BlockSettings>();
+        
         
     }
 

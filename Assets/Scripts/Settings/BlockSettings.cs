@@ -8,5 +8,7 @@ namespace TerrainDemo.Settings
     {
         public BlockType Block;
         public Color DefaultColor = Color.white;
+        [Range(0, 1)]
+        public float SpeedModifier = 1;
     }
 }

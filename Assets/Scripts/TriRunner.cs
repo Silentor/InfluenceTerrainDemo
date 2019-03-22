@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -128,6 +129,7 @@ namespace TerrainDemo
             _bridge = CreateBridgeObj();
             CreateLaputeObj();
             CreateTestBlockObj();
+            CreateMountObj();
 
             _hero = new Actor(Micro, new Vector2(-14, 2), Quaternion.FromEulerAngles(0, MathHelper.DegreesToRadians(90), 0));
             Micro.AddActor(_hero);
@@ -198,7 +200,7 @@ namespace TerrainDemo
                     if (z == 0 || z == width)
                         baseBlockHeight += 0.5f;
 
-                    blocks.Add(new Blocks(BlockType.Sand, BlockType.Empty,
+                    blocks.Add(new Blocks(BlockType.Stone, BlockType.Empty,
                         new Heights(stairwayBlockHeight, baseBlockHeight, baseBlockHeight)));
 
                     var transPos = new OpenToolkit.Mathematics.Vector4(x, 1, z, 1);
@@ -215,6 +217,36 @@ namespace TerrainDemo
             bridgeObj.GenerateHeightmap();
             bridgeObj.Changed += MicroOnChanged;
             return bridgeObj;
+        }
+
+        private ObjectMap CreateMountObj()
+        {
+            var positions = new List<Vector2i>();
+            var blocks = new List<Blocks>();
+
+            var center = new Vector2i(-18, 11);
+            const float radius = 6;
+            const float maxHeight = 5;
+            var bounds = new Bounds2i(center, (int)radius);
+
+            foreach (var position in bounds)
+            {
+                positions.Add(position);
+
+                var mainHeight = 1 / Mathf.Pow(Vector2.Distance(center, position) / 6, 2);
+                
+                var mainMapBlockHeight = Micro.GetBlockRef(position).Height.Main;
+                mainHeight = Math.Min(mainHeight, maxHeight + mainMapBlockHeight);
+                var height = new Heights(mainHeight + mainMapBlockHeight, mainMapBlockHeight - 3);
+                blocks.Add(new Blocks(BlockType.Grass, BlockType.Empty, height));
+            }
+
+            var mountObj = new ObjectMap("Mount", bounds, Micro);
+            mountObj.SetBlocks(positions, blocks, false);
+            Micro.AddChild(mountObj);
+            mountObj.GenerateHeightmap();
+            mountObj.Changed += MicroOnChanged;
+            return mountObj;
         }
 
         private ObjectMap CreateTestBlockObj()

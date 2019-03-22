@@ -121,20 +121,25 @@ namespace TerrainDemo.Visualization
                 var child = GetMeshRoot().GetChild(0).gameObject;
                 child.transform.parent = null;
 
-                var filters = child.GetComponentsInChildren<MeshFilter>();
-                foreach (var filter in filters)
+                //Because Actors if prefab instantiated.
+                //Need script for each render object with overloaded Clear :/
+                if (child.GetComponent<ActorView>() == null)
                 {
-                    Object.Destroy(filter.sharedMesh);
-                    filter.sharedMesh = null;
-                }
-
-                var renderers = child.GetComponentsInChildren<MeshRenderer>();
-                foreach (var meshRenderer in renderers)
-                {
-                    if (meshRenderer.sharedMaterial.mainTexture != null)
+                    var filters = child.GetComponentsInChildren<MeshFilter>();
+                    foreach (var filter in filters)
                     {
-                        Object.Destroy(meshRenderer.sharedMaterial.mainTexture);
-                        meshRenderer.sharedMaterial.mainTexture = null;
+                        Object.Destroy(filter.sharedMesh);
+                        filter.sharedMesh = null;
+                    }
+
+                    var renderers = child.GetComponentsInChildren<MeshRenderer>();
+                    foreach (var meshRenderer in renderers)
+                    {
+                        if (meshRenderer.sharedMaterial.mainTexture != null)
+                        {
+                            Object.Destroy(meshRenderer.sharedMaterial.mainTexture);
+                            meshRenderer.sharedMaterial.mainTexture = null;
+                        }
                     }
                 }
 
