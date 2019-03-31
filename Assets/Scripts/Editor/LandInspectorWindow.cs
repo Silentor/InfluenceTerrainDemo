@@ -249,7 +249,7 @@ namespace TerrainDemo.Editor
             {
                 DrawCursor(input.CursorPosition);
 
-                //DEBUG draw interpolated height
+                //DEBUG draw interpolated height to compare accurateness
                 var height =
                     input.HoveredBlock.Value.source.GetHeight((Vector2)input.CursorPosition);
 
@@ -292,7 +292,6 @@ namespace TerrainDemo.Editor
 
         private void DrawNormals(Input input)
         {
-            //DEBUG draw normal 1
             //Find near blocks
             const int visualizeRadius = 20;
             var bounds = new Bounds2i((Vector2i) input.CursorRay.Origin.ConvertTo2D(), visualizeRadius);
@@ -302,23 +301,16 @@ namespace TerrainDemo.Editor
                 var overlap = MicroMap.GetOverlapState(position);
                 if (overlap.state == BlockOverlapState.Above)
                 {
-                    DrawBlockNormal(position, block.Height.Main, MicroMap.GetNormal1(position), Color.green);
-                    DrawBlockNormal(position, overlap.map.GetBlockRef(position).Height.Main, overlap.map.GetNormal1(position), Color.green);
-
-                    DrawBlockNormal(position, block.Height.Main, MicroMap.GetNormal2(position), Color.blue);
-                    DrawBlockNormal(position, overlap.map.GetBlockRef(position).Height.Main, overlap.map.GetNormal2(position), Color.blue);
+                    DrawBlockNormal(position, MicroMap.GetHeight(position), MicroMap.GetNormal(position), Color.blue);
+                    DrawBlockNormal(position, overlap.map.GetHeight(position), overlap.map.GetNormal(position), Color.blue);
                 }
                 else if (overlap.state == BlockOverlapState.Overlap)
                 {
-                    DrawBlockNormal(position, overlap.map.GetBlockRef(position).Height.Main, overlap.map.GetNormal1(position), Color.green);
-
-                    DrawBlockNormal(position, overlap.map.GetBlockRef(position).Height.Main, overlap.map.GetNormal2(position), Color.blue);
+                    DrawBlockNormal(position, overlap.map.GetHeight(position), overlap.map.GetNormal(position), Color.blue);
                 }
                 else
                 {
-                    DrawBlockNormal(position, block.Height.Main, MicroMap.GetNormal1(position), Color.green);
-
-                    DrawBlockNormal(position, block.Height.Main, MicroMap.GetNormal2(position), Color.blue);
+                    DrawBlockNormal(position, MicroMap.GetHeight(position), MicroMap.GetNormal(position), Color.blue);
                 }
 
                 void DrawBlockNormal(Vector2i pos, float height, Vector3 normal, Color color)

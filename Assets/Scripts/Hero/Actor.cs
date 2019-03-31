@@ -131,7 +131,7 @@ namespace TerrainDemo.Hero
                 var rotatedDirection = (Vector2) Vector3.Transform((Vector3)_moveDirection, Rotation);      //Rotate direction in XZ plane
 
                 //DEBUG
-                var currentBlockNormal = _currentMap.GetNormal2(_currentBlock);           //todo cache
+                var currentBlockNormal = _currentMap.GetNormal(_currentBlock);           //todo cache
                 _blockInclinationSpeedModifier = Vector3.Dot((Vector3) rotatedDirection, currentBlockNormal)/(rotatedDirection.Length);
                 _blockInclinationSpeedModifier = (_blockInclinationSpeedModifier + 1);      //0..2
 

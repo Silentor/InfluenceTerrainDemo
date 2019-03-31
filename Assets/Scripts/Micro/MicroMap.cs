@@ -266,7 +266,7 @@ namespace TerrainDemo.Micro
             timer.Stop();
             Debug.Log($"Heightmap of {Name} generated in {timer.ElapsedMilliseconds}");
 
-            GenerateNormalMap1();
+            GenerateNormalMap();
         }
 
         public void SetOcclusionState(Vector2i worldPosition, ObjectMap childMap, BlockOverlapState state)
