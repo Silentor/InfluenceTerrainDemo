@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using TerrainDemo.Macro;
 using TerrainDemo.Spatial;
@@ -15,6 +16,47 @@ namespace TerrainDemo.Micro
         public ObjectMap(string name, Bounds2i bounds, MicroMap parentMap) : base(name, bounds)
         {
             ParentMap = parentMap;
+            _originalHeightmap = new Heights[Bounds.Size.X + 1, Bounds.Size.Z + 1];
+        }
+
+        public override void SetHeights(IEnumerable<Vector2i> positions, IEnumerable<Heights> heights)
+        {
+            var posEnumerator = positions.GetEnumerator();
+            var infEnumerator = heights.GetEnumerator();
+            using (posEnumerator)
+            {
+                using (infEnumerator)
+                {
+                    while (posEnumerator.MoveNext() & infEnumerator.MoveNext())
+                    {
+                        var localX = posEnumerator.Current.X - Bounds.Min.X;
+                        var localZ = posEnumerator.Current.Z - Bounds.Min.Z;
+                        _originalHeightmap[localX, localZ] = infEnumerator.Current;
+                        _heightMap[localX, localZ] = infEnumerator.Current;
+                    }
+                }
+            }
+
+            //Snap();
+            DoChanged();
+        }
+
+        public override void SetHeights(IEnumerable<Vector2i> positions, Heights[,] heights)
+        {
+            var posEnumerator = positions.GetEnumerator();
+            using (posEnumerator)
+            {
+                while (posEnumerator.MoveNext())
+                {
+                    var localX = posEnumerator.Current.X - Bounds.Min.X;
+                    var localZ = posEnumerator.Current.Z - Bounds.Min.Z;
+                    _originalHeightmap[localX, localZ] = heights[localX, localZ];
+                    _heightMap[localX, localZ] = heights[localX, localZ];
+                }
+            }
+
+            //Snap();
+            DoChanged();
         }
 
         /// <summary>
@@ -26,8 +68,9 @@ namespace TerrainDemo.Micro
             for (int x = 0; x < Bounds.Size.X + 1; x++)
                 for (int z = 0; z < Bounds.Size.Z + 1; z++)
                 {
-                    ref var height = ref _heightMap[x, z];
-                    height = new Heights(height.Main + yOffset, height.Underground + yOffset, height.Base + yOffset);
+                    ref var height = ref _originalHeightmap[x, z];
+                    height = height.Translate(yOffset);
+                    _heightMap[x, z] = height;
                 }
 
             Snap();
@@ -259,6 +302,10 @@ namespace TerrainDemo.Micro
                     if (!parentBlock.IsEmpty && !_blocks[x, z].IsEmpty)
                     {
                         //Need check thats block edges
+                        ref readonly var inputHeight00 = ref _originalHeightmap[x, z];
+                        ref readonly var inputHeight01 = ref _originalHeightmap[x, z + 1];
+                        ref readonly var inputHeight10 = ref _originalHeightmap[x + 1, z];
+                        ref readonly var inputHeight11 = ref _originalHeightmap[x + 1, z + 1];
                         ref var height00 = ref _heightMap[x, z];
                         ref var height01 = ref _heightMap[x, z + 1];
                         ref var height10 = ref _heightMap[x + 1, z];
@@ -269,12 +316,18 @@ namespace TerrainDemo.Micro
                         if (parentHeights.HasValue)
                         {
                             var (parentHeight00, parentHeight01, parentHeight10, parentHeight11) = parentHeights.Value;
-                            SnapHeight(ref height00, ref height01, parentHeight00, parentHeight01);
-                            SnapHeight(ref height00, ref height10, parentHeight00, parentHeight10);
-                            SnapHeight(ref height01, ref height11, parentHeight01, parentHeight11);
-                            SnapHeight(ref height10, ref height11, parentHeight10, parentHeight11);
-                            SnapHeight(ref height00, ref height11, parentHeight00, parentHeight11);
-                            SnapHeight(ref height10, ref height01, parentHeight10, parentHeight01);
+                            SnapHeight(inputHeight00, inputHeight01, 
+                                ref height00, ref height01, parentHeight00, parentHeight01);
+                            SnapHeight(inputHeight00, inputHeight10,
+                                ref height00, ref height10, parentHeight00, parentHeight10);
+                            SnapHeight(inputHeight01, inputHeight11,
+                                ref height01, ref height11, parentHeight01, parentHeight11);
+                            SnapHeight(inputHeight10, inputHeight11, 
+                                ref height10, ref height11, parentHeight10, parentHeight11);
+                            SnapHeight(inputHeight00, inputHeight11, 
+                                ref height00, ref height11, parentHeight00, parentHeight11);
+                            SnapHeight(inputHeight10, inputHeight01, 
+                                ref height10, ref height01, parentHeight10, parentHeight01);
 
                             //Check occlusion
                             if (height00.Base > parentHeight00)
@@ -348,28 +401,28 @@ namespace TerrainDemo.Micro
                 }
 
             //Snap intersecting sides of object to main map
-            void SnapHeight(ref Heights height1, ref Heights height2, float parentHeight1, float parentHeight2)
+            void SnapHeight(in Heights input1, in Heights input2, ref Heights height1, ref Heights height2, float parentHeight1, float parentHeight2)
             {
-                var diff1 = parentHeight1 - height1.Main;
-                var diff2 = parentHeight2 - height2.Main;
+                var diff1 = parentHeight1 - input1.Main;
+                var diff2 = parentHeight2 - input2.Main;
 
                 if (diff1 * diff2 < 0)            //Check the signs of differences
                 {
                     if (Math.Abs(diff1) < Math.Abs(diff2))
-                        height1 = new Heights(parentHeight1, height1.Base);
+                        height1 = new Heights(parentHeight1, input1.Base);
                     else
-                        height2 = new Heights(parentHeight2, height2.Base);
+                        height2 = new Heights(parentHeight2, input2.Base);
                 }
 
-                diff1 = parentHeight1 - height1.Base;
-                diff2 = parentHeight2 - height2.Base;
+                diff1 = parentHeight1 - input1.Base;
+                diff2 = parentHeight2 - input2.Base;
 
                 if (diff1 * diff2 < 0)            //Check the signs of differences
                 {
                     if (Math.Abs(diff1) < Math.Abs(diff2))
-                        height1 = new Heights(height1.Main, parentHeight1);
+                        height1 = new Heights(input1.Main, parentHeight1);
                     else
-                        height2 = new Heights(height2.Main, parentHeight2);
+                        height2 = new Heights(input2.Main, parentHeight2);
                 }
             }
 
@@ -387,5 +440,7 @@ namespace TerrainDemo.Micro
         {
             return $"{Name} at {Bounds}";
         }
+
+        private readonly Heights[,] _originalHeightmap;
     }
 }

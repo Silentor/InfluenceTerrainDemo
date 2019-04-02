@@ -30,7 +30,7 @@ namespace TerrainDemo.Micro
             Debug.Log($"Created {Name} blockmap {Bounds.Size.X} x {Bounds.Size.Z} = {Bounds.Size.X * Bounds.Size.Z} blocks");
         }
 
-        public void SetHeights(IEnumerable<Vector2i> positions, IEnumerable<Heights> heights)
+        public virtual void SetHeights(IEnumerable<Vector2i> positions, IEnumerable<Heights> heights)
         {
             var posEnumerator = positions.GetEnumerator();
             var infEnumerator = heights.GetEnumerator();
@@ -50,7 +50,7 @@ namespace TerrainDemo.Micro
             DoChanged();
         }
 
-        public void SetHeights(IEnumerable<Vector2i> positions, Heights[,] heights)
+        public virtual void SetHeights(IEnumerable<Vector2i> positions, Heights[,] heights)
         {
             var posEnumerator = positions.GetEnumerator();
             using (posEnumerator)
