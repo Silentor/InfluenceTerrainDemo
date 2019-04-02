@@ -44,11 +44,11 @@ namespace TerrainDemo.Macro
         {
         }
 
-        public Heights(Heights copyFrom)
+        private Heights(in Heights copyFrom, float offset)
         {
-            Base = copyFrom.Base;
-            Underground = copyFrom.Underground;
-            Main = copyFrom.Main;
+            Base = copyFrom.Base + offset;
+            Underground = copyFrom.Underground + offset;
+            Main = copyFrom.Main + offset;
         }
 
         [Pure]
@@ -68,7 +68,7 @@ namespace TerrainDemo.Macro
         [Pure]
         public Heights Translate(float offset)
         {
-            return new Heights(Main + offset, Underground + offset, Base + offset); //todo Optimize do not revalidate offseted Heights
+            return new Heights(in this, offset); 
         }
 
         /*

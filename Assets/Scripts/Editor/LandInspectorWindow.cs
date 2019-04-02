@@ -242,7 +242,7 @@ namespace TerrainDemo.Editor
             }
             */
 
-            DrawNormals(input);
+            //DrawNormals(input);
         }
 
         private void DrawTerrainModeHandles(Input input)
@@ -289,7 +289,7 @@ namespace TerrainDemo.Editor
                 DrawHeightVertex(input.SelectedHeightVertex.Value, Color.white);
             }
 
-            DrawNormals(input);
+            //DrawNormals(input);
         }
 
         private void DrawNormals(Input input)

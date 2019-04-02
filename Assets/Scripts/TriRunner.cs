@@ -128,33 +128,33 @@ namespace TerrainDemo
 
             microtimer.Stop();
 
-            var laputaGenerator = new LaputaGenerator(4);
-            var laputaData = laputaGenerator.Generate((-14, -14), 10);
-            var laputa = new ObjectMap("Laputa", laputaData.bounds, Micro);
-            laputa.SetHeights(laputaData.vertexPositions, laputaData.heightmap);
-            laputa.SetBlocks(laputaData.blockPositions, laputaData.blockmap);
+            var laputaGenerator = new LaputaGenerator(5);
+            var laputaData = laputaGenerator.Generate(new Vector2(-14, -14), 10);
+            var laputa = new ObjectMap("Laputa", laputaData.Bounds, Micro);
+            laputa.SetHeights(laputaData.VertexPositions, laputaData.Heightmap);
+            laputa.SetBlocks(laputaData.BlockPositions, laputaData.Blockmap);
             Micro.AddChild(laputa);
             laputa.Snap();
             laputa.Changed += MicroOnChanged;
-
+            
             var bridgeGenerator = new BridgeGenerator(20, 6, 6);
-            var bridgeData = bridgeGenerator.Generate((0, 5), 2);
-            var bridge = new ObjectMap("Bridge", bridgeData.bounds, Micro);
-            bridge.SetHeights(bridgeData.vertexPositions, bridgeData.heightmap);
-            bridge.SetBlocks(bridgeData.blockPositions, bridgeData.blockmap);
+            var bridgeData = bridgeGenerator.Generate(new Vector2(0, 5), 4);
+            var bridge = new ObjectMap("Bridge", bridgeData.Bounds, Micro);
+            bridge.SetHeights(bridgeData.VertexPositions, bridgeData.Heightmap);
+            bridge.SetBlocks(bridgeData.BlockPositions, bridgeData.Blockmap);
             Micro.AddChild(bridge);
             bridge.Snap();
             bridge.Changed += MicroOnChanged;
-
+            
             var mountGenerator = new MountGenerator(10, 20, Micro);
-            var mountData = mountGenerator.Generate((14, -16), 0);
-            var mount = new ObjectMap("Mount", mountData.bounds, Micro);
-            mount.SetHeights(mountData.vertexPositions, mountData.heightmap);
-            mount.SetBlocks(mountData.blockPositions, mountData.blockmap);
+            var mountData = mountGenerator.Generate(new Vector2(14.5f, -16), -0.5f);
+            var mount = new ObjectMap("Mount", mountData.Bounds, Micro);
+            mount.SetHeights(mountData.VertexPositions, mountData.Heightmap);
+            mount.SetBlocks(mountData.BlockPositions, mountData.Blockmap);
             Micro.AddChild(mount);
             mount.Snap();
             mount.Changed += MicroOnChanged;
-
+            
             _hero = new Actor(Micro, new Vector2(-14, 2), Quaternion.FromEulerAngles(0, MathHelper.DegreesToRadians(90), 0));
             Micro.AddActor(_hero);
 
@@ -162,7 +162,7 @@ namespace TerrainDemo
 
             Debug.LogFormat("Created micromap in {0} msec", microtimer.ElapsedMilliseconds);
 
-            StartCoroutine(AnimateTest(bridge));
+            //StartCoroutine(AnimateTest(bridge));
         }
 
         private void MicroOnChanged()

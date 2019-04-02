@@ -22,49 +22,28 @@ namespace TerrainDemo.Generators.MapObjects
             _parentMap = parentMap;
         }
 
-        public override (Bounds2i bounds, IEnumerable<Vector2i> vertexPositions, Heights[,] heightmap, IEnumerable<Vector2i> blockPositions, Blocks[,] blockmap) Generate(Vector2i position, float height)
+        protected override Bounds2i CalculateBounds(Vector2 instancePosition)
         {
-            var bounds = new Bounds2i(position, _radius);
-            var blockPositions = new List<Vector2i>();
-            var blocks = new Blocks[bounds.Size.X, bounds.Size.Z];
-            var heightPositions = new List<Vector2i>();
-            var heights = new Heights[bounds.Size.X + 1, bounds.Size.Z + 1];
-            var center = BlockInfo.GetWorldCenter(position);
+            return new Bounds2i((Vector2i)instancePosition, _radius);
+        }
 
-            for (int x = bounds.Min.X; x < bounds.Max.X; x++)
-                for (int z = bounds.Min.Z; z < bounds.Max.Z; z++)
-                {
-                    var localPosX = x - bounds.Min.X;
-                    var localPosZ = z - bounds.Min.Z;
-                    var pos = new Vector2(x + 0.5f, z + 0.5f);
-                    if (Vector2.Distance(pos, center) < _radius)
-                    {
-                        //Generate heights
-                        AddHeight(localPosX, localPosZ);
-                        AddHeight(localPosX, localPosZ + 1);
-                        AddHeight(localPosX + 1, localPosZ);
-                        AddHeight(localPosX + 1, localPosZ + 1);
+        protected override bool IsBlockExist(Vector2i blockPosition)
+        {
+            return Vector2.Distance(BlockInfo.GetWorldCenter(blockPosition), InstancePosition) < _radius;
+        }
 
-                        blockPositions.Add(new Vector2i(x, z));
-                        blocks[localPosX, localPosZ] = new Blocks(BlockType.Grass, BlockType.Empty);
-                    }
-                }
+        protected override void GenerateHeight(Vector2i vertexPosition, float instanceHeight, out Heights heightVertex)
+        {
+            ref readonly var parentHeightVertex = ref _parentMap.GetHeightRef(vertexPosition);
+            var mainMapBlockHeight = parentHeightVertex.Nominal;
+            var mainHeight = Interpolation.InQuad(Mathf.InverseLerp(_radius, 0, Vector2.Distance(InstancePosition, vertexPosition))) * _height + mainMapBlockHeight + instanceHeight;
 
-            return (bounds, heightPositions, heights, blockPositions, blocks);
+            heightVertex = new Heights(mainHeight, mainMapBlockHeight - 3);
+        }
 
-            void AddHeight(int localPosX, int localPosZ)
-            {
-                if (heights[localPosX, localPosZ].IsEmpty)
-                {
-                    var worldPosition = new Vector2i(localPosX + bounds.Min.X, localPosZ + bounds.Min.Z);
-
-                    var mainMapBlockHeight = _parentMap.GetBlockData(worldPosition).Height;
-                    var mainHeight = Interpolation.InQuad(Mathf.InverseLerp(_radius, 0, Vector2.Distance(center, worldPosition))) * _height + mainMapBlockHeight;
-
-                    heights[localPosX, localPosZ] = new Heights(mainHeight, mainMapBlockHeight - 3);
-                    heightPositions.Add(worldPosition);
-                }
-            }
+        protected override void GenerateBlock(Vector2i blockPosition, out Blocks block)
+        {
+            block = new Blocks(BlockType.Grass, BlockType.Empty);
         }
     }
 }
