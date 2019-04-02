@@ -22,6 +22,7 @@ namespace TerrainDemo.Macro
         public bool IsUndergroundLayerPresent => Underground > Base;
 
         public static readonly Heights Empty = new Heights(0, 0, 0);
+        public bool IsEmpty => this == Empty;
 
         public Heights(float mainHeight, float undergroundHeight, float baseHeight)
         {
@@ -87,6 +88,12 @@ namespace TerrainDemo.Macro
         {
             return new OpenToolkit.Mathematics.Vector3(h.Base, h.Underground, h.Main);
         }
+
+        public static explicit operator Heights(Vector3 v)
+        {
+            return new Heights(v.Z, v.Y, v.X);
+        }
+
 
         public override string ToString()
         {

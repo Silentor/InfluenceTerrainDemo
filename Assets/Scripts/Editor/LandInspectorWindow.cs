@@ -228,6 +228,7 @@ namespace TerrainDemo.Editor
 
         private void DrawBlockModeHandles(Input input)
         {
+            /*
             if (input.HoveredBlock.HasValue)
             {
                 DrawCursor(input.CursorPosition);
@@ -239,6 +240,7 @@ namespace TerrainDemo.Editor
             {
                 DrawBlock(input.SelectedBlock.Value.position, input.SelectedBlock.Value.block, Color.white);
             }
+            */
 
             DrawNormals(input);
         }
@@ -301,16 +303,16 @@ namespace TerrainDemo.Editor
                 var overlap = MicroMap.GetOverlapState(position);
                 if (overlap.state == BlockOverlapState.Above)
                 {
-                    DrawBlockNormal(position, MicroMap.GetHeight(position), MicroMap.GetNormal(position), Color.blue);
-                    DrawBlockNormal(position, overlap.map.GetHeight(position), overlap.map.GetNormal(position), Color.blue);
+                    DrawBlockNormal(position, MicroMap.GetHeight(position), MicroMap.GetBlockData(position).Normal, Color.blue);
+                    DrawBlockNormal(position, overlap.map.GetHeight(position), overlap.map.GetBlockData(position).Normal, Color.blue);
                 }
                 else if (overlap.state == BlockOverlapState.Overlap)
                 {
-                    DrawBlockNormal(position, overlap.map.GetHeight(position), overlap.map.GetNormal(position), Color.blue);
+                    DrawBlockNormal(position, overlap.map.GetHeight(position), overlap.map.GetBlockData(position).Normal, Color.blue);
                 }
                 else
                 {
-                    DrawBlockNormal(position, MicroMap.GetHeight(position), MicroMap.GetNormal(position), Color.blue);
+                    DrawBlockNormal(position, MicroMap.GetHeight(position), MicroMap.GetBlockData(position).Normal, Color.blue);
                 }
 
                 void DrawBlockNormal(Vector2i pos, float height, Vector3 normal, Color color)
@@ -434,7 +436,7 @@ namespace TerrainDemo.Editor
                 DrawArrow.ForDebug(BlockInfo.GetWorldCenter(position), normal.Value);
         }
 
-        private void DrawBlock(BlockInfo block, Color color, uint width = 0, bool drawNormal = false)
+        private void DrawBlock(in BlockInfo block, Color color, uint width = 0, bool drawNormal = false)
         {
             Handles.color = color;
 
@@ -450,7 +452,8 @@ namespace TerrainDemo.Editor
                 DrawArrow.ForDebug(block.GetCenter(), block.Normal);
         }
 
-        private void DrawBlock(Vector2i position, in Blocks block, Color? overrideColor = null)
+        /*
+        private void DrawBlock(Vector2i position, BaseBlockMap map, Color? overrideColor = null)
         {
             if (block.IsEmpty)
                 return;
@@ -458,6 +461,7 @@ namespace TerrainDemo.Editor
             var bounds2d = BlockInfo.GetWorldBounds(position);
 
             //Draw only top of base layer
+
             DrawRectangle.ForHandle(
                 new Vector3(bounds2d.min.X, block.Height.Base, bounds2d.min.Y),
                 new Vector3(bounds2d.min.X, block.Height.Base, bounds2d.max.Y),
@@ -487,6 +491,7 @@ namespace TerrainDemo.Editor
                 return result;
             }
         }
+        */
 
         private void DrawBlock(Vector2i position, in Blocks block, in Heights c00, in Heights c01, in Heights c11, in Heights c10, Color32? overrideColor = null)
         {
@@ -676,17 +681,17 @@ namespace TerrainDemo.Editor
                 GUILayout.BeginVertical("box", GUILayout.Width(150));
                 GUILayout.BeginHorizontal();
                 GUILayout.Label($"{block.Ground}", GUILayout.Width(100));
-                GUILayout.Label(block.Ground != BlockType.Empty ? $"{block.Height.Main:N1}" : "-");
+                //GUILayout.Label(block.Ground != BlockType.Empty ? $"{block.Height.Main:N1}" : "-");
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
                 GUILayout.Label($"{block.Underground}", GUILayout.Width(100));
-                GUILayout.Label(block.Underground != BlockType.Empty ? $"{block.Height.Underground:N1}" : "-");
+                //GUILayout.Label(block.Underground != BlockType.Empty ? $"{block.Height.Underground:N1}" : "-");
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
                 GUILayout.Label($"{block.Base}", GUILayout.Width(100));
-                GUILayout.Label($"{block.Height.Base:N1}");
+                //GUILayout.Label($"{block.Height.Base:N1}");
                 GUILayout.EndHorizontal();
                 GUILayout.EndVertical();
 

@@ -245,6 +245,7 @@ namespace TerrainDemo.Visualization
                     var mapLocalZ = worldZ - map.Bounds.Min.Z;
                     var chunkLocalX = worldX - bounds.Min.X;
                     var chunkLocalZ = worldZ - bounds.Min.Z;
+                    var worldPosition = new Vector2i(worldX, worldZ);
 
                     var block = blockMap[mapLocalX, mapLocalZ];
                     //var block = chunk[chunkLocalX, chunkLocalZ];
@@ -252,36 +253,39 @@ namespace TerrainDemo.Visualization
                         continue;
 
                     block = Filter(block, renderSettings.RenderLayer);
+                    ref readonly var blockData = ref map.GetBlockData(worldPosition);
 
                     //Draw block top
                     if (block.Ground != BlockType.Empty)
                     {
-                        DrawFloor(mainVertices, mainIndices, mainUv, block.Height.Main);
+                        DrawFloor(mainVertices, mainIndices, mainUv, blockData.Height);
                     }
                     else if (block.Underground != BlockType.Empty)
                     {
-                        DrawFloor(underVertices, underIndices, underUv, block.Height.Underground);
+                        DrawFloor(underVertices, underIndices, underUv, blockData.Height);
                     }
                     else
-                        DrawFloor(baseVertices, baseIndices, baseUv, block.Height.Base);
+                        DrawFloor(baseVertices, baseIndices, baseUv, blockData.Height);
 
-                    DrawCeil(baseVertices, baseIndices, baseUv, block.Height.Base - baseLayerVisibleWidth);
+                    DrawCeil(baseVertices, baseIndices, baseUv, blockData.MinHeight - baseLayerVisibleWidth);
 
                     //Draw block sides
-                    var neighbors = map.GetNeighborBlocks(new Vector2i(worldX, worldZ));
+                    var neighbors = map.GetNeighborBlocks(worldPosition);
                     foreach (var dir in Directions.Cardinal)
                     {
                         var neigh = neighbors[dir];
                         //if (!neigh.IsEmpty)
                         {
                             neigh = Filter(neigh, renderSettings.RenderLayer);
+                            ref readonly var neighData =
+                                ref map.GetBlockData(worldPosition + Directions.Vector2I[(int) dir]);
 
                             //Draw Ground part of block side
                             if (block.Ground != BlockType.Empty)
                             {
                                 //Calculate visible layer part
-                                var mainLayerWidth = block.GetMainLayerWidth();
-                                var visiblePart = CalculateVisiblePart(mainLayerWidth, neigh);
+                                var mainLayerWidth = new Interval(blockData.MinHeight, blockData.Height);
+                                var visiblePart = CalculateVisiblePart(mainLayerWidth, neighData);
 
                                 if(!visiblePart.Item1.IsEmpty)   
                                     DrawBlockSide(mainVertices, mainIndices, mainUv, dir, visiblePart.Item1.Max, visiblePart.Item1.Min);
@@ -293,8 +297,8 @@ namespace TerrainDemo.Visualization
                             if (block.Underground != BlockType.Empty)
                             {
                                 //Calculate visible layer part
-                                var underLayerWidth = block.GetUnderLayerWidth();
-                                var visiblePart = CalculateVisiblePart(underLayerWidth, neigh);
+                                var underLayerWidth = new Interval(blockData.MinHeight, blockData.Height);
+                                var visiblePart = CalculateVisiblePart(underLayerWidth, neighData);
 
                                 if (!visiblePart.Item1.IsEmpty)
                                     DrawBlockSide(underVertices, underIndices, underUv, dir, visiblePart.Item1.Max, visiblePart.Item1.Min);
@@ -305,8 +309,8 @@ namespace TerrainDemo.Visualization
                             //Draw Base part of block side
                             {
                                 //Calculate visible layer part
-                                var baseLayerWidth = new Interval(block.Height.Base - baseLayerVisibleWidth, block.Height.Base);           //Base layer width is fictional, just for BLock mode visualization
-                                var visiblePart = CalculateVisiblePart(baseLayerWidth, neigh);
+                                var baseLayerWidth = new Interval(blockData.MinHeight - baseLayerVisibleWidth, blockData.Height);           //Base layer width is fictional, just for BLock mode visualization
+                                var visiblePart = CalculateVisiblePart(baseLayerWidth, neighData);
 
                                 if (!visiblePart.Item1.IsEmpty)
                                     DrawBlockSide(baseVertices, baseIndices, baseUv, dir, visiblePart.Item1.Max, visiblePart.Item1.Min);
@@ -376,19 +380,19 @@ namespace TerrainDemo.Visualization
                         uv.Add(new Vector2((chunkLocalX + 1) * uvXCoeff, chunkLocalZ * uvYCoeff));
                     }
 
-                    (Interval, Interval) CalculateVisiblePart(in Interval input, in Blocks otherBlock)
+                    (Interval, Interval) CalculateVisiblePart(in Interval input, in BlockData otherBlock)
                     {
                         if (otherBlock.IsEmpty)
                             return (input, Interval.Empty);
-                        return input.Subtract(new Interval(otherBlock.Height.Base - baseLayerVisibleWidth, otherBlock.Height.Main));
+                        return input.Subtract(new Interval(otherBlock.MinHeight - baseLayerVisibleWidth, otherBlock.Height));
                     }
 
                     Blocks Filter(in Blocks input, Renderer.TerrainLayerToRender layer)
                     {
                         if(layer == Renderer.TerrainLayerToRender.Base)
-                            return new Blocks(BlockType.Empty, BlockType.Empty, input.Height);
+                            return new Blocks(BlockType.Empty, BlockType.Empty);
                         else if(layer == Renderer.TerrainLayerToRender.Underground)
-                            return new Blocks(BlockType.Empty, input.Underground, input.Height);
+                            return new Blocks(BlockType.Empty, input.Underground);
                         else
                             return input;
                     }

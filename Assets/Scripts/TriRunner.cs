@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using OpenToolkit.Mathematics;
+using TerrainDemo.Generators;
+using TerrainDemo.Generators.MapObjects;
 using TerrainDemo.Hero;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
@@ -120,16 +122,38 @@ namespace TerrainDemo
 
             foreach (var zone in Macro.Zones)
             {
-                template.GenerateMicroZone(Macro, zone, Micro);
+                template.GenerateMicroZone2(Macro, zone, Micro);
             }
             Micro.GenerateHeightmap();
 
             microtimer.Stop();
 
-            _bridge = CreateBridgeObj();
-            CreateLaputeObj();
-            CreateTestBlockObj();
-            CreateMountObj();
+            var laputaGenerator = new LaputaGenerator(4);
+            var laputaData = laputaGenerator.Generate((-14, -14), 10);
+            var laputa = new ObjectMap("Laputa", laputaData.bounds, Micro);
+            laputa.SetHeights(laputaData.vertexPositions, laputaData.heightmap);
+            laputa.SetBlocks(laputaData.blockPositions, laputaData.blockmap);
+            Micro.AddChild(laputa);
+            laputa.Snap();
+            laputa.Changed += MicroOnChanged;
+
+            var bridgeGenerator = new BridgeGenerator(20, 6, 6);
+            var bridgeData = bridgeGenerator.Generate((0, 5), 2);
+            var bridge = new ObjectMap("Bridge", bridgeData.bounds, Micro);
+            bridge.SetHeights(bridgeData.vertexPositions, bridgeData.heightmap);
+            bridge.SetBlocks(bridgeData.blockPositions, bridgeData.blockmap);
+            Micro.AddChild(bridge);
+            bridge.Snap();
+            bridge.Changed += MicroOnChanged;
+
+            var mountGenerator = new MountGenerator(10, 20, Micro);
+            var mountData = mountGenerator.Generate((14, -16), 0);
+            var mount = new ObjectMap("Mount", mountData.bounds, Micro);
+            mount.SetHeights(mountData.vertexPositions, mountData.heightmap);
+            mount.SetBlocks(mountData.blockPositions, mountData.blockmap);
+            Micro.AddChild(mount);
+            mount.Snap();
+            mount.Changed += MicroOnChanged;
 
             _hero = new Actor(Micro, new Vector2(-14, 2), Quaternion.FromEulerAngles(0, MathHelper.DegreesToRadians(90), 0));
             Micro.AddActor(_hero);
@@ -137,131 +161,8 @@ namespace TerrainDemo
             Micro.Changed += MicroOnChanged;
 
             Debug.LogFormat("Created micromap in {0} msec", microtimer.ElapsedMilliseconds);
-        }
 
-        private ObjectMap CreateLaputeObj()
-        {
-            var positions = new List<Vector2i>();
-            var blocks = new List<Blocks>();
-
-            Vector2i laputaCenter = (-14, -14);
-            float laputaHeight = 10f;
-            int laputaRadius = 4;
-            for (int x = laputaCenter.X - laputaRadius - 1; x < laputaCenter.X + laputaRadius + 1; x++)
-                for (int z = laputaCenter.Z - laputaRadius - 1; z < laputaCenter.Z + laputaRadius + 1; z++)
-                {
-                    var pos = new Vector2i(x, z);
-                    if (Vector2.Distance(pos, laputaCenter) < laputaRadius)
-                    {
-                        positions.Add(pos);
-
-                        var mainHeight = Mathf.Sqrt(laputaRadius * laputaRadius - Vector2.DistanceSquared(laputaCenter, pos));
-                        mainHeight = Mathf.Max(mainHeight - 2, 0.25f);
-
-                        blocks.Add(new Blocks(BlockType.Grass, BlockType.Empty,
-                            new Heights(laputaHeight + mainHeight / 2, laputaHeight - mainHeight)));
-                    }
-                }
-
-            var laputaObj = new ObjectMap("Laputa",
-                new Bounds2i((positions.Select(p => p.X).Min(), positions.Select(p => p.Z).Min()),
-                    (positions.Select(p => p.X).Max(), positions.Select(p => p.Z).Max())), Micro);
-            laputaObj.SetBlocks(positions, blocks, false);
-            Micro.AddChild(laputaObj);
-            laputaObj.GenerateHeightmap();
-            laputaObj.Changed += MicroOnChanged;
-            return laputaObj;
-        }
-
-        private ObjectMap CreateBridgeObj()
-        {
-            var positions = new List<Vector2i>();
-            var blocks = new List<Blocks>();
-
-            const int xStart = -10, xFinish = 10, width = 5;
-            const int xCenter = (xStart + xFinish) / 2;
-            const int length = xFinish - xStart;
-
-            var transMatrix = OpenToolkit.Mathematics.Matrix4.CreateRotationY(MathHelper.DegreesToRadians(0));
-
-            for (int x = xStart; x <= xFinish; x++) //length
-            {
-                for (int z = 0; z <= width; z++) //width
-                {
-                    //Create pulse from two smoothsteps
-                    var stairwayBlockHeight =
-                        (Interpolation.SmoothStep(Mathf.InverseLerp(xStart, xCenter, x))
-                         - Interpolation.SmoothStep(Mathf.InverseLerp(xCenter, xFinish, x))) * 5 + 2;
-
-                    if (z == 0 || z == width)
-                        stairwayBlockHeight -= 0.5f;
-
-                    var baseBlockHeight = stairwayBlockHeight - 2;
-                    if (z == 0 || z == width)
-                        baseBlockHeight += 0.5f;
-
-                    blocks.Add(new Blocks(BlockType.Stone, BlockType.Empty,
-                        new Heights(stairwayBlockHeight, baseBlockHeight, baseBlockHeight)));
-
-                    var transPos = new OpenToolkit.Mathematics.Vector4(x, 1, z, 1);
-                    transPos = transPos * transMatrix;
-                    positions.Add(new Vector2i(Mathf.RoundToInt(transPos.X), Mathf.RoundToInt(transPos.Z)));
-                }
-            }
-
-            var bridgeObj = new ObjectMap("Bridge",
-                new Bounds2i((positions.Select(p => p.X).Min(), positions.Select(p => p.Z).Min()),
-                    (positions.Select(p => p.X).Max(), positions.Select(p => p.Z).Max())), Micro);
-            bridgeObj.SetBlocks(positions, blocks, false);
-            Micro.AddChild(bridgeObj);
-            bridgeObj.GenerateHeightmap();
-            bridgeObj.Changed += MicroOnChanged;
-            return bridgeObj;
-        }
-
-        private ObjectMap CreateMountObj()
-        {
-            var positions = new List<Vector2i>();
-            var blocks = new List<Blocks>();
-
-            var center = new Vector2i(-18, 11);
-            const float radius = 6;
-            const float maxHeight = 5;
-            var bounds = new Bounds2i(center, (int)radius);
-
-            foreach (var position in bounds)
-            {
-                positions.Add(position);
-
-                var mainHeight = 1 / Mathf.Pow(Vector2.Distance(center, position) / 6, 2);
-                
-                var mainMapBlockHeight = Micro.GetBlockRef(position).Height.Main;
-                mainHeight = Math.Min(mainHeight, maxHeight + mainMapBlockHeight);
-                var height = new Heights(mainHeight + mainMapBlockHeight, mainMapBlockHeight - 3);
-                blocks.Add(new Blocks(BlockType.Grass, BlockType.Empty, height));
-            }
-
-            var mountObj = new ObjectMap("Mount", bounds, Micro);
-            mountObj.SetBlocks(positions, blocks, false);
-            Micro.AddChild(mountObj);
-            mountObj.GenerateHeightmap();
-            mountObj.Changed += MicroOnChanged;
-            return mountObj;
-        }
-
-        private ObjectMap CreateTestBlockObj()
-        {
-            Vector2i position = (10, 10);
-            var mainBlock = Micro.GetBlockRef(position);
-            var testBlock = new Blocks(BlockType.Stone, BlockType.Empty, 
-                new Heights(mainBlock.Height.Main - 3, mainBlock.Height.Main - 5));
-
-            var testObj = new ObjectMap("TestBlock", new Bounds2i(position, position), Micro);
-            testObj.SetBlocks(new []{position}, new []{ testBlock }, false);
-            Micro.AddChild(testObj);
-            testObj.GenerateHeightmap();
-            testObj.Changed += MicroOnChanged;
-            return testObj;
+            StartCoroutine(AnimateTest(bridge));
         }
 
         private void MicroOnChanged()
@@ -281,7 +182,7 @@ namespace TerrainDemo
                 Biomes[i].Index = i;
         }
 
-        private IEnumerator AnimateTest()
+        private IEnumerator AnimateTest(ObjectMap obj)
         {
             yield return new WaitForSeconds(1);
             var startTimeOffset = Time.time;
@@ -290,7 +191,7 @@ namespace TerrainDemo
             {
                 const float deltaTime = 0.1f;
                 const float amplitude = 5;
-                _bridge.Translate((Mathf.Sin(Time.time - startTimeOffset)) * deltaTime * 4);
+                obj.Translate((Mathf.Sin(Time.time - startTimeOffset)) * deltaTime * 4);
 
                 yield return new WaitForSeconds(deltaTime);
                 //yield return null;
@@ -298,18 +199,6 @@ namespace TerrainDemo
                 //Debug.Break();  to take manual screenshots :)
             }
         }
-
-        //private IEnumerator ActorNavigateTest()
-        //{
-        //    yield return new WaitForSeconds(1);
-
-        //    _hero.Move(Vector2.UnitX);
-        //    while (Time.time < 10)
-        //    {
-        //        _hero.Update(Time.deltaTime);
-        //        yield return null;
-        //    }
-        //}
 
         private void InputSourceOnStop()
         {
@@ -346,9 +235,6 @@ namespace TerrainDemo
             _renderer = new Renderer(new Mesher(Macro, this), this);
             _renderer.AssingCamera(FindObjectOfType<ObserverController>().GetComponent<Camera>(), _hero);
             Render(this);
-
-            //StartCoroutine(AnimateTest());
-            //StartCoroutine(ActorNavigateTest());
 
             var inputSource = FindObjectOfType<Input>();
             inputSource.Move += InputSourceOnMove;

@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using TerrainDemo.Macro;
 using TerrainDemo.Spatial;
@@ -8,9 +9,9 @@ using Vector3 = OpenToolkit.Mathematics.Vector3;
 namespace TerrainDemo.Micro
 {
     /// <summary>
-    /// Helper block structure, combine all block properties
+    /// Helper block structure, combine all block properties. Handy but slow, mostly for debug purposes
     /// </summary>
-    public readonly struct BlockInfo
+    public readonly struct BlockInfo : IEquatable<BlockInfo>
     {
         public readonly Vector2i Position;
         public readonly Blocks Block;
@@ -19,17 +20,21 @@ namespace TerrainDemo.Micro
         public readonly Heights Corner11;
         public readonly Heights Corner10;
         public readonly Vector3 Normal;
+        public readonly float Height;
+        private readonly BaseBlockMap _map;
 
-        public BlockInfo(Vector2i position, Blocks block, Heights corner00, Heights corner01, Heights corner11, Heights corner10)
+        public BlockInfo(Vector2i position, BaseBlockMap map)
         {
             Position = position;
-            Block = block;
-            Corner00 = corner00;
-            Corner01 = corner01;
-            Corner11 = corner11;
-            Corner10 = corner10;
-            Normal = Vector3.UnitY; // GetBlockNormal(Corner00.Nominal, Corner11.Nominal, Corner01.Nominal, Corner10.Nominal);
-
+            Block = map.GetBlockRef(position);
+            Corner00 = map.GetHeightRef(position);
+            Corner01 = map.GetHeightRef(position + Vector2i.Unit01);
+            Corner11 = map.GetHeightRef(position + Vector2i.Unit11); 
+            Corner10 = map.GetHeightRef(position + Vector2i.Unit10);
+            ref readonly var data = ref map.GetBlockData(position);
+            Normal = data.Normal;
+            Height = data.Height;
+            _map = map;
         }
 
         public static Bounds2i GetBounds(Vector2i worldPosition)
@@ -54,9 +59,10 @@ namespace TerrainDemo.Micro
 
         public Vector3 GetCenter()
         {
-            return new Vector3(Position.X + 0.5f, Block.Height.Nominal, Position.Z + 0.5f);
+            return new Vector3(Position.X + 0.5f, Height, Position.Z + 0.5f);
         }
 
+        /*
         //based on http://www.flipcode.com/archives/Calculating_Vertex_Normals_for_Height_Maps.shtml
         public static Vector3 GetBlockNormal(float height00, float height11, float height01, float height10)
         {
@@ -65,6 +71,44 @@ namespace TerrainDemo.Micro
             var result = new Vector3(-slope1, 2, slope2);
             return result.Normalized();
         }
+        */
 
+        public bool Equals(BlockInfo other)
+        {
+            return Position.Equals(other.Position) && Block.Equals(other.Block) && Corner00.Equals(other.Corner00) && Corner01.Equals(other.Corner01) && Corner11.Equals(other.Corner11) && Corner10.Equals(other.Corner10) && Normal.Equals(other.Normal) && Height.Equals(other.Height) && Equals(_map, other._map);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            return obj is BlockInfo other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = Position.GetHashCode();
+                hashCode = (hashCode * 397) ^ Block.GetHashCode();
+                hashCode = (hashCode * 397) ^ Corner00.GetHashCode();
+                hashCode = (hashCode * 397) ^ Corner01.GetHashCode();
+                hashCode = (hashCode * 397) ^ Corner11.GetHashCode();
+                hashCode = (hashCode * 397) ^ Corner10.GetHashCode();
+                hashCode = (hashCode * 397) ^ Normal.GetHashCode();
+                hashCode = (hashCode * 397) ^ Height.GetHashCode();
+                hashCode = (hashCode * 397) ^ (_map != null ? _map.GetHashCode() : 0);
+                return hashCode;
+            }
+        }
+
+        public static bool operator ==(BlockInfo left, BlockInfo right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(BlockInfo left, BlockInfo right)
+        {
+            return !left.Equals(right);
+        }
     }
 }

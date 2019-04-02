@@ -71,9 +71,22 @@ namespace TerrainDemo.Generators
             return Zone;
         }
 
+        /*
         public virtual Blocks GenerateBlock2(Vector2i position, Heights macroHeight)
         {
             return new Blocks(Zone.Biome.DefaultMainBlock.Block, Zone.Biome.DefaultUndergroundBlock.Block, macroHeight);
+        }
+        */
+
+        public virtual BlockLayers GenerateBlock3(Vector2i position, in Heights v00, in Heights v01, in Heights v10,
+            in Heights v11)
+        {
+            return new BlockLayers(Zone.Biome.DefaultMainBlock.Block, Zone.Biome.DefaultUndergroundBlock.Block);
+        }
+
+        public virtual Heights GenerateHeight(Vector2i position, in Heights macroHeight)
+        {
+            return macroHeight;
         }
 
         /// <summary>

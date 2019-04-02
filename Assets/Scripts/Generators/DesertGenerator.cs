@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using OpenToolkit.Mathematics;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Settings;
@@ -8,6 +9,7 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using Cell = TerrainDemo.Macro.Cell;
 using Vector2 = OpenToolkit.Mathematics.Vector2;
+using Vector3 = OpenToolkit.Mathematics.Vector3;
 using Quaternion = OpenToolkit.Mathematics.Quaternion;
 
 namespace TerrainDemo.Generators
@@ -23,7 +25,7 @@ namespace TerrainDemo.Generators
 
             _hillsOrientation = _random.Range(0, 180f);
             _stoneBlock = settings.AllBlocks.First(b => b.Block == BlockType.Stone);
-            _globalZoneHeight = _random.Range(0, 10);
+            _globalZoneHeight = _random.Range(1, 3);
         }
 
         public override Macro.Zone GenerateMacroZone()
@@ -37,6 +39,7 @@ namespace TerrainDemo.Generators
             return Zone;
         }
 
+        /*
         public override Blocks GenerateBlock2(Vector2i position, Heights macroHeight)
         {
             var rotatedPos = Vector2.Transform((Vector2)position, Quaternion.FromEulerAngles(0, 0, _hillsOrientation));
@@ -44,15 +47,30 @@ namespace TerrainDemo.Generators
             return new Blocks(BlockType.Sand, BlockType.GoldOre,
                 new Heights((float)(_dunesNoise.GetSimplex(rotatedPos.X / 10f, rotatedPos.Y / 30f)) * 2 + macroHeight.Main, macroHeight.Underground, macroHeight.Base)); //Вытянутые дюны
         }
+        */
 
-        private float NormalToSlope(Vector3 normal)
+        public override Heights GenerateHeight(Vector2i position, in Heights macroHeight)
         {
-            return Vector3.Angle(normal, Vector3.up);
+            var rotatedPos = Vector2.Transform(position, Quaternion.FromEulerAngles(0, 0, _hillsOrientation));
+            return new Heights((float)(_dunesNoise.GetSimplex(rotatedPos.X / 10f, rotatedPos.Y / 30f)) * 2 + macroHeight.Main, macroHeight.Underground, macroHeight.Base); //Вытянутые дюны
+        }
+
+        public override BlockLayers GenerateBlock3(Vector2i position, in Heights v00, in Heights v01, in Heights v10, in Heights v11)
+        {
+            var normal = Vector3.Cross(                             //todo simplify
+                new Vector3(-1, v01.Nominal - v10.Nominal, 1),
+                new Vector3(1, v11.Nominal - v00.Nominal, 1)
+            ).Normalized();
+
+            if(Vector3.CalculateAngle(normal, Vector3.UnitY) <= MathHelper.DegreesToRadians(45))
+                return new BlockLayers(BlockType.Sand, BlockType.GoldOre);
+            else
+                return new BlockLayers(BlockType.Stone, BlockType.GoldOre);
         }
 
         private readonly FastNoise _dunesNoise;
         private readonly float _hillsOrientation;
         private readonly BlockSettings _stoneBlock;
-        private int _globalZoneHeight;
+        private readonly int _globalZoneHeight;
     }
 }

@@ -211,6 +211,9 @@ namespace TerrainDemo.Micro
         /// </summary>
         public override void GenerateHeightmap()
         {
+            return;
+
+            /*
             var timer = Stopwatch.StartNew();
 
             //Local space iteration
@@ -266,7 +269,8 @@ namespace TerrainDemo.Micro
             timer.Stop();
             Debug.Log($"Heightmap of {Name} generated in {timer.ElapsedMilliseconds}");
 
-            GenerateNormalMap();
+            GenerateDataMap();
+            */
         }
 
         public void SetOcclusionState(Vector2i worldPosition, ObjectMap childMap, BlockOverlapState state)
@@ -292,9 +296,14 @@ namespace TerrainDemo.Micro
             return _blockSettings[type];
         }
 
+        public override string ToString()
+        {
+            return "Main map";
+        }
+
         private readonly MacroMap _macromap;
         private readonly TriRunner _settings;
-        private Dictionary<BlockType, BlockSettings> _blockSettings = new Dictionary<BlockType, BlockSettings>();
+        private readonly Dictionary<BlockType, BlockSettings> _blockSettings = new Dictionary<BlockType, BlockSettings>();
         
         
     }

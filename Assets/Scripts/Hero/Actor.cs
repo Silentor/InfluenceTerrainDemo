@@ -131,7 +131,7 @@ namespace TerrainDemo.Hero
                 var rotatedDirection = (Vector2) Vector3.Transform((Vector3)_moveDirection, Rotation);      //Rotate direction in XZ plane
 
                 //DEBUG
-                var currentBlockNormal = _currentMap.GetNormal(_currentBlock);           //todo cache
+                var currentBlockNormal = _currentMap.GetBlockData(_currentBlock).Normal;           //todo cache
                 _blockInclinationSpeedModifier = Vector3.Dot((Vector3) rotatedDirection, currentBlockNormal)/(rotatedDirection.Length);
                 _blockInclinationSpeedModifier = (_blockInclinationSpeedModifier + 1);      //0..2
 
@@ -154,13 +154,14 @@ namespace TerrainDemo.Hero
                             case BlockOverlapState.Above:
                             {
                                 ref readonly var newBlock = ref newMap.GetBlockRef(newBlockPosition);
-                                if (newBlock.GetNominalHeight() - Position.Y < 1)       //Check prev block height difference
+                                ref readonly var newBlockData = ref newMap.GetBlockData(newBlockPosition);
+                                if (newBlockData.Height - Position.Y < 1)       //Check prev block height difference
                                 {
                                     //todo check block inclination
                                     //We can climb on block - use new map
                                     _currentMap = newMap;
                                 }
-                                else if (newBlock.Height.Base - Position.Y > 2)
+                                else if (newBlockData.MinHeight - Position.Y > 2)
                                 {
                                     //We can go under the floating block - use old map
                                 }
@@ -176,8 +177,9 @@ namespace TerrainDemo.Hero
                             case BlockOverlapState.Overlap:
                             {
                                 ref readonly var newBlock = ref newMap.GetBlockRef(newBlockPosition);
-                                if (newBlock.GetNominalHeight() - Position.Y < 1)       //Check prev block height difference
-                                    {
+                                ref readonly var newBlockData = ref newMap.GetBlockData(newBlockPosition);
+                                if (newBlockData.Height - Position.Y < 1)       //Check prev block height difference
+                                {
                                     //todo check block inclination
                                     //We can climb on block - use new map
                                     _currentMap = newMap;

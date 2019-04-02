@@ -25,7 +25,7 @@ namespace TerrainDemo.Micro
 
             _heightMap = new Heights[Bounds.Size.X + 1, Bounds.Size.Z + 1];
             _blocks = new Blocks[Bounds.Size.X, Bounds.Size.Z];
-            _blockNormalMap = new Vector3[Bounds.Size.X, Bounds.Size.Z];
+            _blockData = new BlockData[Bounds.Size.X, Bounds.Size.Z];
 
             Debug.Log($"Created {Name} blockmap {Bounds.Size.X} x {Bounds.Size.Z} = {Bounds.Size.X * Bounds.Size.Z} blocks");
         }
@@ -50,12 +50,28 @@ namespace TerrainDemo.Micro
             DoChanged();
         }
 
+        public void SetHeights(IEnumerable<Vector2i> positions, Heights[,] heights)
+        {
+            var posEnumerator = positions.GetEnumerator();
+            using (posEnumerator)
+            {
+                while (posEnumerator.MoveNext())
+                {
+                    var localX = posEnumerator.Current.X - Bounds.Min.X;
+                    var localZ = posEnumerator.Current.Z - Bounds.Min.Z;
+                    _heightMap[localX, localZ] = heights[localX, localZ];
+                }
+            }
+
+            DoChanged();
+        }
+
         /// <summary>
         /// Generate heightmap from blockmap
         /// </summary>
         public abstract void GenerateHeightmap();
 
-        public void GenerateNormalMap()
+        public void GenerateDataMap()
         {
             var xMax = _blocks.GetLength(0) - 1;
             var zMax = _blocks.GetLength(1) - 1;
@@ -70,17 +86,12 @@ namespace TerrainDemo.Micro
                         continue;
 
                     //Variant 2 (4 neighbor vertices)
-                    var h00 = _heightMap[x, z].Main;
-                    var h01 = _heightMap[x, z + 1].Main;
-                    var h10 = _heightMap[x + 1, z].Main;
-                    var h11 = _heightMap[x + 1, z + 1].Main;
+                    ref readonly var h00 = ref _heightMap[x, z];
+                    ref readonly var h01 = ref _heightMap[x, z + 1];
+                    ref readonly var h10 = ref _heightMap[x + 1, z];
+                    ref readonly var h11 = ref _heightMap[x + 1, z + 1];
 
-                    //normal = new Vector3(v11 - v00, 2*scale, v10 - v01);
-                    var normal = Vector3.Cross(                             //todo simplify
-                        new Vector3(-1, h01 - h10, 1),
-                        new Vector3(1, h11 - h00, 1)
-                        );
-                    _blockNormalMap[x, z] = normal.Normalized();
+                    _blockData[x, z] = new BlockData(in h00, in h01, in h10, in h11);
                 }
             }
         }
@@ -107,6 +118,24 @@ namespace TerrainDemo.Micro
                 if(regenerateHeightmap)
                     throw new NotImplementedException("Its not allowed to autoregenerate heightmap before adding child map to main map");
 
+            GenerateDataMap();
+            DoChanged();
+        }
+
+        public void SetBlocks(IEnumerable<Vector2i> positions, Blocks[,] blocks)
+        {
+            var posEnumerator = positions.GetEnumerator();
+            using (posEnumerator)
+            {
+                while (posEnumerator.MoveNext())
+                {
+                    var localX = posEnumerator.Current.X - Bounds.Min.X;
+                    var localZ = posEnumerator.Current.Z - Bounds.Min.Z;
+                    _blocks[localX, localZ] = blocks[localX, localZ];
+                }
+            }
+
+            GenerateDataMap();
             DoChanged();
         }
 
@@ -125,6 +154,27 @@ namespace TerrainDemo.Micro
             }
 
             return ref Heights.Empty;
+        }
+
+        public bool GetHeights(Vector2i worldPos, out Heights h00, out Heights h01, out Heights h10, out Heights h11)
+        {
+            if (worldPos.X >= Bounds.Min.X && worldPos.X <= Bounds.Max.X + 1
+                                           && worldPos.Z >= Bounds.Min.Z && worldPos.Z <= Bounds.Max.Z + 1)
+            {
+                var localPos = worldPos - Bounds.Min;
+                h00 = _heightMap[localPos.X, localPos.Z];
+                h01 = _heightMap[localPos.X, localPos.Z + 1];
+                h10 = _heightMap[localPos.X + 1, localPos.Z];
+                h11 = _heightMap[localPos.X + 1, localPos.Z + 1];
+                return true;
+            }
+
+            h00 = Heights.Empty;
+            h01 = Heights.Empty;
+            h10 = Heights.Empty;
+            h11 = Heights.Empty;
+
+            return false;
         }
 
         public BlockHeights? GetBlockHeights(Vector2i worldPos)
@@ -269,12 +319,7 @@ namespace TerrainDemo.Micro
             if (!Bounds.Contains(blockPos))
                 return null;
 
-            var localPos = blockPos - Bounds.Min;
-            var result = new BlockInfo(blockPos, _blocks[localPos.X, localPos.Z],
-                _heightMap[localPos.X, localPos.Z],
-                _heightMap[localPos.X, localPos.Z + 1],
-                _heightMap[localPos.X + 1, localPos.Z + 1],
-                _heightMap[localPos.X + 1, localPos.Z]);
+            var result = new BlockInfo(blockPos, this);
             return result;
         }
 
@@ -295,13 +340,13 @@ namespace TerrainDemo.Micro
             return ref _blocks[xWorldBlockPos - Bounds.Min.X, zWorldBlockPos - Bounds.Min.Z];
         }
 
-        public Vector3 GetNormal(Vector2i worldBlockPos)
+        public ref readonly BlockData GetBlockData(Vector2i worldBlockPos)
         {
             if (!Bounds.Contains(worldBlockPos))
-                return Vector3.Zero;
+                return ref BlockData.Empty;
 
             var localPos = worldBlockPos - Bounds.Min;
-            return _blockNormalMap[localPos.X, localPos.Z];
+            return ref _blockData[localPos.X, localPos.Z];
         }
 
 
@@ -488,7 +533,7 @@ namespace TerrainDemo.Micro
 
         protected readonly Heights[,] _heightMap;           //todo Optimize as vector array
         protected readonly Blocks[,] _blocks;                   //todo Optimize as vector array
-        protected readonly Vector3[,] _blockNormalMap;     //Normal for blocks based on adjascent height vertices
+        protected readonly BlockData[,] _blockData;     //Cache for useful block properties
 
         protected readonly List<BaseBlockMap> _childs = new List<BaseBlockMap>();
         protected readonly List<Actor> _actors = new List<Actor>();

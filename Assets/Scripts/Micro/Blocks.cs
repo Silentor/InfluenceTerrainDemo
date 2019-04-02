@@ -13,7 +13,7 @@ namespace TerrainDemo.Micro
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public readonly struct Blocks : IEquatable<Blocks>
     {
-        public readonly Heights Height;
+        //public readonly Heights Height;
         public readonly BlockType Base;
         public readonly BlockType Underground;
         public readonly BlockType Ground;
@@ -39,12 +39,13 @@ namespace TerrainDemo.Micro
 
         public static readonly Blocks Empty;
 
-        public Blocks(BlockType ground, BlockType underground, in Heights heights) : this(ground, underground, heights, 0)
+        public Blocks(BlockType ground, BlockType underground) : this(ground, underground, 0)
         {
         }
 
-        private Blocks(BlockType ground, BlockType underground, in Heights heights, byte overlapState)
+        private Blocks(BlockType ground, BlockType underground, byte overlapState)
         {
+            /*
             //Fix heights if needed
             float underHeight = heights.Underground, groundHeight = heights.Main;
             var heightFixed = false;
@@ -68,26 +69,23 @@ namespace TerrainDemo.Micro
                 groundHeight = underHeight;
                 heightFixed = true;
             }
+            */
 
             Base = BlockType.Bedrock;
             Underground = underground;
             Ground = ground;
 
+            /*
             if (heightFixed)
                 Height = new Heights(groundHeight, underHeight, heights.Base);
             else
                 Height = heights;
+                */
 
             OverlapState = overlapState;
 
-            Assert.IsTrue(Ground != BlockType.Empty || Height.Main - Height.Underground == 0, $"Block is wrong");
-            Assert.IsTrue(Underground != BlockType.Empty || Height.Underground - Height.Base == 0, $"Block is wrong");
-        }
-
-        [Pure]
-        public Blocks MutateHeight(in Heights heights)
-        {
-            return new Blocks(Ground, Underground, heights);
+            //Assert.IsTrue(Ground != BlockType.Empty || Height.Main - Height.Underground == 0, $"Block is wrong");
+            //Assert.IsTrue(Underground != BlockType.Empty || Height.Underground - Height.Base == 0, $"Block is wrong");
         }
 
         [Pure]
@@ -102,40 +100,7 @@ namespace TerrainDemo.Micro
                 newState = newState - 1;
                 objectMapId += 1;
             }
-            return new Blocks(Ground, Underground, Height, (byte)((objectMapId << 2) | (int)newState));
-        }
-
-        [Pure]
-        public float GetNominalHeight()
-        {
-            //Simplified after strict layers ordering
-            return Height.Main;
-            /*
-            if (Ground != BlockType.Empty)
-                return Heights.Layer1Height;
-            else if (Underground != BlockType.Empty)
-                return Heights.UndergroundHeight;
-            else
-                return Heights.BaseHeight;
-                */
-        }
-
-        [Pure]
-        public Interval GetMainLayerWidth()
-        {
-            return IsEmpty ? Interval.Empty : new Interval(Height.Underground, Height.Main);
-        }
-
-        [Pure]
-        public Interval GetUnderLayerWidth()
-        {
-            return IsEmpty ? Interval.Empty : new Interval(Height.Base, Height.Underground);
-        }
-
-        [Pure]
-        public Interval GetTotalWidth()
-        {
-            return IsEmpty ? Interval.Empty : new Interval(Height.Base, Height.Main);
+            return new Blocks(Ground, Underground, (byte)((objectMapId << 2) | (int)newState));
         }
 
         public (int mapId, BlockOverlapState state) GetOverlapState()
@@ -153,11 +118,7 @@ namespace TerrainDemo.Micro
         public override string ToString()
         {
             if (IsEmpty) return "(Empty)";
-            return string.Format("({0} {1} {2})",
-                Ground != BlockType.Empty ? Ground + ":" + Height.Main.ToString("N1") : "Empty",
-                Underground != BlockType.Empty ? Underground + ":" + Height.Underground.ToString("N1") : "Empty",
-                Base + ":" + Height.Base.ToString("N1"));
-
+            return $"({Ground} {Underground} {Base})";
         }
 
         public override bool Equals(object obj)
@@ -177,8 +138,7 @@ namespace TerrainDemo.Micro
         {
             unchecked
             {
-                var hashCode = Height.GetHashCode();
-                hashCode = hashCode * -1521134295 + Base.GetHashCode();
+                var hashCode = Base.GetHashCode();
                 hashCode = hashCode * -1521134295 + Underground.GetHashCode();
                 hashCode = hashCode * -1521134295 + Ground.GetHashCode();
                 return hashCode;
@@ -187,7 +147,7 @@ namespace TerrainDemo.Micro
 
         public bool Equals(Blocks other)
         {
-            return Base == other.Base && Underground == other.Underground && Ground == other.Ground && Height.Equals(other.Height);
+            return Base == other.Base && Underground == other.Underground && Ground == other.Ground;
         }
 
         public static bool operator ==(Blocks left, Blocks right)
@@ -198,6 +158,21 @@ namespace TerrainDemo.Micro
         public static bool operator !=(Blocks left, Blocks right)
         {
             return !left.Equals(right);
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public readonly struct BlockLayers
+    {
+        public readonly BlockType Base;
+        public readonly BlockType Underground;
+        public readonly BlockType Ground;
+
+        public BlockLayers(BlockType ground, BlockType underground) : this()
+        {
+            Underground = underground;
+            Ground = ground;
+            Base = BlockType.Bedrock;
         }
     }
 }

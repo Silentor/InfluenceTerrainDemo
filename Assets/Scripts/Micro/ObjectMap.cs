@@ -23,15 +23,14 @@ namespace TerrainDemo.Micro
         /// <param name="yOffset"></param>
         public void Translate(float yOffset)
         {
-            for (int x = 0; x < Bounds.Size.X; x++)
-                for (int z = 0; z < Bounds.Size.Z; z++)
+            for (int x = 0; x < Bounds.Size.X + 1; x++)
+                for (int z = 0; z < Bounds.Size.Z + 1; z++)
                 {
-                    ref var block = ref _blocks[x, z];
-                    block = block.MutateHeight(new Heights(block.Height.Main + yOffset,
-                        block.Height.Underground + yOffset, block.Height.Base + yOffset));
+                    ref var height = ref _heightMap[x, z];
+                    height = new Heights(height.Main + yOffset, height.Underground + yOffset, height.Base + yOffset);
                 }
 
-            GenerateHeightmap();
+            Snap();
             DoChanged();
         }
 
@@ -40,6 +39,9 @@ namespace TerrainDemo.Micro
         /// </summary>
         public override void GenerateHeightmap()
         {
+            return;
+
+            /*
             var timer = Stopwatch.StartNew();
 
             //Local space iteration
@@ -239,7 +241,141 @@ namespace TerrainDemo.Micro
 
             UnityEngine.Debug.Log($"Heightmap of {Name} generated in {timer.ElapsedMilliseconds}");
 
-            GenerateNormalMap();
+            GenerateDataMap();
+            */
+        }
+
+        public void Snap()
+        {
+            var timer = Stopwatch.StartNew();
+
+            //Modify heightmap to proper blend with parent map
+            for (int x = 0; x < Bounds.Size.X; x++)
+                for (int z = 0; z < Bounds.Size.Z; z++)
+                {
+                    var worldBlockPos = Local2World((x, z));
+                    ref readonly var parentBlock = ref ParentMap.GetBlockRef(worldBlockPos);
+
+                    if (!parentBlock.IsEmpty && !_blocks[x, z].IsEmpty)
+                    {
+                        //Need check thats block edges
+                        ref var height00 = ref _heightMap[x, z];
+                        ref var height01 = ref _heightMap[x, z + 1];
+                        ref var height10 = ref _heightMap[x + 1, z];
+                        ref var height11 = ref _heightMap[x + 1, z + 1];
+
+                        //Snap object's block to main map block. No intersections allowed!
+                        var parentHeights = ParentMap.GetBlockNominalHeights(worldBlockPos);
+                        if (parentHeights.HasValue)
+                        {
+                            var (parentHeight00, parentHeight01, parentHeight10, parentHeight11) = parentHeights.Value;
+                            SnapHeight(ref height00, ref height01, parentHeight00, parentHeight01);
+                            SnapHeight(ref height00, ref height10, parentHeight00, parentHeight10);
+                            SnapHeight(ref height01, ref height11, parentHeight01, parentHeight11);
+                            SnapHeight(ref height10, ref height11, parentHeight10, parentHeight11);
+                            SnapHeight(ref height00, ref height11, parentHeight00, parentHeight11);
+                            SnapHeight(ref height10, ref height01, parentHeight10, parentHeight01);
+
+                            //Check occlusion
+                            if (height00.Base > parentHeight00)
+                            {
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Above);
+                                continue;
+                            }
+                            else if (height00.Main < parentHeight00)
+                            {
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Under);
+                                continue;
+                            }
+                            else if (height00.Main > parentHeight00 && height00.Base < parentHeight00)
+                            {
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Overlap);
+                                continue;
+                            }
+
+                            if (height01.Base > parentHeight01)
+                            {
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Above);
+                                continue;
+                            }
+                            else if (height01.Main < parentHeight01)
+                            {
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Under);
+                                continue;
+                            }
+                            else if (height01.Main > parentHeight01 && height01.Base < parentHeight01)
+                            {
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Overlap);
+                                continue;
+                            }
+
+                            if (height10.Base > parentHeight10)
+                            {
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Above);
+                                continue;
+                            }
+                            else if (height10.Main < parentHeight10)
+                            {
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Under);
+                                continue;
+                            }
+                            else if (height10.Main > parentHeight10 && height10.Base < parentHeight10)
+                            {
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Overlap);
+                                continue;
+                            }
+
+                            if (height11.Base > parentHeight11)
+                            {
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Above);
+                                continue;
+                            }
+                            else if (height11.Main < parentHeight11)
+                            {
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Under);
+                                continue;
+                            }
+                            else if (height11.Main > parentHeight11 && height11.Base < parentHeight11)
+                            {
+                                ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Overlap);
+                                continue;
+                            }
+
+                            ParentMap.SetOcclusionState(worldBlockPos, this, BlockOverlapState.Overlap);
+                        }
+                    }
+
+                }
+
+            //Snap intersecting sides of object to main map
+            void SnapHeight(ref Heights height1, ref Heights height2, float parentHeight1, float parentHeight2)
+            {
+                var diff1 = parentHeight1 - height1.Main;
+                var diff2 = parentHeight2 - height2.Main;
+
+                if (diff1 * diff2 < 0)            //Check the signs of differences
+                {
+                    if (Math.Abs(diff1) < Math.Abs(diff2))
+                        height1 = new Heights(parentHeight1, height1.Base);
+                    else
+                        height2 = new Heights(parentHeight2, height2.Base);
+                }
+
+                diff1 = parentHeight1 - height1.Base;
+                diff2 = parentHeight2 - height2.Base;
+
+                if (diff1 * diff2 < 0)            //Check the signs of differences
+                {
+                    if (Math.Abs(diff1) < Math.Abs(diff2))
+                        height1 = new Heights(height1.Main, parentHeight1);
+                    else
+                        height2 = new Heights(height2.Main, parentHeight2);
+                }
+            }
+
+            timer.Stop();
+
+            UnityEngine.Debug.Log($"{Name} snapped in {timer.ElapsedMilliseconds}");
         }
 
         public override (ObjectMap map, BlockOverlapState state) GetOverlapState(Vector2i worldPosition)

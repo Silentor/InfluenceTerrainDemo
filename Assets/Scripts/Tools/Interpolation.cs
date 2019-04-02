@@ -70,6 +70,11 @@ namespace TerrainDemo.Tools
             return x * x;
         }
 
+        public static float InQuad(float x)
+        {
+            return x * x;
+        }
+
         public static double InExpo(double x)
         {
             return Math.Pow(2, 10 * (x - 1));

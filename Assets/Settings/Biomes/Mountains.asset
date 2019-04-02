@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Type: 1
   LayoutColor: {r: 1, g: 0, b: 0, a: 1}
-  SizeRange: {x: 5, y: 10}
-  DefaultMainBlock: {fileID: 11400000, guid: ea38fa3041cdf754cac03d16c05485e0, type: 2}
+  SizeRange: {x: 7, y: 10}
+  DefaultMainBlock: {fileID: 11400000, guid: 35c01d9ed441fa64484f3c72cd32f718, type: 2}
   DefaultUndergroundBlock: {fileID: 11400000, guid: 600732b90a5a1d540bd6537c72e76bd1,
     type: 2}

@@ -168,9 +168,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfe8cbee957a471faca6d4f7bc77070c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Seed: 1914769332
+  Seed: 1047392521
   RandomizeSeed: 0
-  LandSize: 50
+  LandSize: 70
   CellSide: 10
   GridPerturbFreq: 0.01
   GridPerturbPower: 10

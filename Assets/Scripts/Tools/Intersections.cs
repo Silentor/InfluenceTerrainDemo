@@ -357,8 +357,10 @@ namespace TerrainDemo.Tools
             var (min, max) = BlockInfo.GetWorldBounds(positon);
             float t1 = (min.X - ray.Origin.X) * dirFracX;
             float t2 = (max.X - ray.Origin.X) * dirFracX;
-            float t3 = (block.Height.Base - ray.Origin.Y) * dirFracY;
-            float t4 = (block.Height.Nominal - ray.Origin.Y) * dirFracY;
+            //float t3 = (block.Height.Base - ray.Origin.Y) * dirFracY;
+            //float t4 = (block.Height.Nominal - ray.Origin.Y) * dirFracY;
+            float t3 = (-1 - ray.Origin.Y) * dirFracY;      //DEBUG
+            float t4 = (1 - ray.Origin.Y) * dirFracY;       //DEBUG
             float t5 = (min.Y - ray.Origin.Z) * dirFracZ;
             float t6 = (max.Y - ray.Origin.Z) * dirFracZ;
 

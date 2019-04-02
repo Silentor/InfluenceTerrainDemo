@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using NUnit.Framework;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
@@ -11,6 +12,8 @@ namespace TerrainDemo.Tests.Editor
         [Test]
         public void TestCreateAutoFix()
         {
+            throw new NotImplementedException();
+            /*
             //Good solid block
             var b = new Blocks(BlockType.Grass, BlockType.GoldOre, new Heights(3, 2, 1));
             Assert.That(b.Ground == BlockType.Grass && b.Underground == BlockType.GoldOre && b.Base == BlockType.Bedrock 
@@ -40,6 +43,8 @@ namespace TerrainDemo.Tests.Editor
             b = new Blocks(BlockType.Grass, BlockType.GoldOre, new Heights(3, 0, 1));
             Assert.That(b.Ground == BlockType.Grass && b.Underground == BlockType.Empty && b.Base == BlockType.Bedrock
                         && b.Height.Main == 3 && b.Height.Underground == 1 && b.Height.Base == 1 && !b.IsEmpty);
+
+    */
         }
 
     }

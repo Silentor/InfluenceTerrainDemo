@@ -57,6 +57,22 @@ namespace TerrainDemo.Generators
             return Zone;
         }
 
+        public override Heights GenerateHeight(Vector2i position, in Heights macroHeight)
+        {
+            var mainLayer =
+                +(float)System.Math.Pow(_microReliefNoise.GetSimplex(position.X / 10f, position.Z / 10f) + 1, 2) - 2 //Вытянутые пики средней частоты
+                + (float)_microReliefNoise.GetSimplex(position.X / 2f, position.Z / 2f) //Высокочастотные неровности
+                + macroHeight.Main;
+            return new Heights(mainLayer, UnityEngine.Random.Range(macroHeight.Base, macroHeight.Underground),
+                macroHeight.Base);
+        }
+
+        public override BlockLayers GenerateBlock3(Vector2i position, in Heights v00, in Heights v01, in Heights v10, in Heights v11)
+        {
+            return new BlockLayers(BlockType.Stone, BlockType.GoldOre);
+        }
+
+        /*
         public override Blocks GenerateBlock2(Vector2i position, Heights macroHeight)
         {
             var mainLayer =
@@ -67,6 +83,7 @@ namespace TerrainDemo.Generators
             return new Blocks(BlockType.Stone, BlockType.GoldOre,
                 new Heights(mainLayer, UnityEngine.Random.Range(macroHeight.Base, macroHeight.Underground), macroHeight.Base));
         }
+        */
 
         private readonly FastNoise _microReliefNoise;
     }

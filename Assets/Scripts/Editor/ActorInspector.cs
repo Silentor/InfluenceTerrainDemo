@@ -34,7 +34,7 @@ namespace TerrainDemo.Editor
             GUILayout.Label($"Block: {_actor.Block}");
 
             ref readonly var block = ref _actor.Map.GetBlockRef(_actor.Block);
-            var blockNormal = _actor.Map.GetNormal(_actor.Block);
+            var blockNormal = _actor.Map.GetBlockData(_actor.Block).Normal;
 
             var blockInclinationAngle = MathHelper.RadiansToDegrees(Vector3.CalculateAngle(Vector3.UnitY, blockNormal));
             GUILayout.Label($"Block angle : {blockInclinationAngle:N2}, block material : {block.Top}");
