@@ -273,7 +273,7 @@ namespace TerrainDemo.Micro
             */
         }
 
-        public void SetOcclusionState(Vector2i worldPosition, ObjectMap childMap, BlockOverlapState state)
+        public void SetOverlapState(Vector2i worldPosition, ObjectMap childMap, BlockOverlapState state)
         {
             var localPos = World2Local(worldPosition);
             var objectMapId = _childs.IndexOf(childMap);

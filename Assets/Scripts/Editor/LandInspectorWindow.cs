@@ -299,28 +299,27 @@ namespace TerrainDemo.Editor
             var bounds = new Bounds2i((Vector2i) input.CursorRay.Origin.ConvertTo2D(), visualizeRadius);
             foreach (var position in bounds)
             {
-                ref readonly var block = ref MicroMap.GetBlockRef(position);
                 var overlap = MicroMap.GetOverlapState(position);
                 if (overlap.state == BlockOverlapState.Above)
                 {
-                    DrawBlockNormal(position, MicroMap.GetHeight(position), MicroMap.GetBlockData(position).Normal, Color.blue);
-                    DrawBlockNormal(position, overlap.map.GetHeight(position), overlap.map.GetBlockData(position).Normal, Color.blue);
+                    DrawBlockNormal(position, in MicroMap.GetBlockData(position), Color.blue);
+                    DrawBlockNormal(position, in overlap.map.GetBlockData(position), Color.blue);
                 }
                 else if (overlap.state == BlockOverlapState.Overlap)
                 {
-                    DrawBlockNormal(position, overlap.map.GetHeight(position), overlap.map.GetBlockData(position).Normal, Color.blue);
+                    DrawBlockNormal(position, in MicroMap.GetBlockData(position), Color.blue);
                 }
                 else
                 {
-                    DrawBlockNormal(position, MicroMap.GetHeight(position), MicroMap.GetBlockData(position).Normal, Color.blue);
+                    DrawBlockNormal(position, in MicroMap.GetBlockData(position), Color.blue);
                 }
 
-                void DrawBlockNormal(Vector2i pos, float height, Vector3 normal, Color color)
+                void DrawBlockNormal(Vector2i pos, in BlockData blockData, Color color)
                 {
-                    var blockCenterPoint = new Vector3(pos.X + 0.5f, height, pos.Z + 0.5f);
+                    var blockCenterPoint = new Vector3(pos.X + 0.5f, blockData.Height, pos.Z + 0.5f);
                     if (Vector3.Distance(input.CursorRay.Origin, blockCenterPoint) < visualizeRadius)
                     {
-                        DrawArrow.ForDebug(blockCenterPoint, normal, color);
+                        DrawArrow.ForDebug(blockCenterPoint, blockData.Normal, color);
                     }
                 }
             }

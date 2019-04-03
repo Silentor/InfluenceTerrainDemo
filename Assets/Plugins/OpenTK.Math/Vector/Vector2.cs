@@ -933,6 +933,9 @@ namespace OpenToolkit.Mathematics
             return new Vector2(input.x, input.y);
         }
 
+#endregion
+
+        #region Custom Vector2 <-> Vector3 conversion logic
         //MODIFIED BY SILENTOR
         public static explicit operator Vector2(Vector3 input)
         {
@@ -945,7 +948,8 @@ namespace OpenToolkit.Mathematics
             return new Vector3(input.X, 0, input.Y);
         }
 
-#endregion
+        #endregion
+
 
     }
 }

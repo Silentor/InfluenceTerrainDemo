@@ -244,23 +244,6 @@ namespace TerrainDemo.Micro
             return 0;
         }
 
-        /// <summary>
-        /// Caluclate height of block center. Fast but not accurate. Perfect calculated height <see cref="GetHeight(OpenToolkit.Mathematics.Vector2)"/>
-        /// </summary>
-        /// <param name="position"></param>
-        /// <returns></returns>
-        public float GetHeight(Vector2i position)
-        {
-            var cornersResult = GetBlockHeights(position);
-            if (cornersResult.HasValue)
-            {
-                var corners = cornersResult.Value;
-                return (corners.H00.Nominal + corners.H11.Nominal + corners.H10.Nominal + corners.H01.Nominal) / 4;
-            }
-
-            return 0;
-        }
-
         public BlockNominalHeights? GetBlockNominalHeights(Vector2i worldPos)
         {
             if (!Bounds.Contains(worldPos))

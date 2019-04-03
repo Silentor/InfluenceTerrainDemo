@@ -31,10 +31,10 @@ namespace TerrainDemo.Editor
             var debugInternals = _actor.GetDebugState();
 
             GUILayout.Label($"Map: {_actor.Map.Name}");
-            GUILayout.Label($"Block: {_actor.Block}");
+            GUILayout.Label($"Block: {_actor.BlockPos}");
 
-            ref readonly var block = ref _actor.Map.GetBlockRef(_actor.Block);
-            var blockNormal = _actor.Map.GetBlockData(_actor.Block).Normal;
+            ref readonly var block = ref _actor.Map.GetBlockRef(_actor.BlockPos);
+            var blockNormal = _actor.Map.GetBlockData(_actor.BlockPos).Normal;
 
             var blockInclinationAngle = MathHelper.RadiansToDegrees(Vector3.CalculateAngle(Vector3.UnitY, blockNormal));
             GUILayout.Label($"Block angle : {blockInclinationAngle:N2}, block material : {block.Top}");

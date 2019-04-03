@@ -1,5 +1,9 @@
-﻿using TerrainDemo.Tools;
+﻿using System.Linq;
+using OpenToolkit.Mathematics;
+using TerrainDemo.Micro;
+using TerrainDemo.Tools;
 using UnityEngine;
+using Vector3 = UnityEngine.Vector3;
 
 namespace TerrainDemo.Tests
 {
@@ -30,49 +34,50 @@ namespace TerrainDemo.Tests
         }
 
         
-        /// <summary>
-        /// Test line-triangle intersection
-        /// </summary>
-        void OnDrawGizmos()
-        {
-            if(!Application.isPlaying)
-                return;
+        ///// <summary>
+        ///// Test line-triangle intersection
+        ///// </summary>
+        //void OnDrawGizmos()
+        //{
+        //    if(!Application.isPlaying)
+        //        return;
 
-            DrawPolyline.ForGizmo(new Vector3[] {_handle1.transform.position, _handle2.transform.position, _handle3.transform.position }, Color.white, true);
+        //    DrawPolyline.ForGizmo(new Vector3[] {_handle1.transform.position, _handle2.transform.position, _handle3.transform.position }, Color.white, true);
 
-            //var screenRay = SceneView.currentDrawingSceneView.camera.ScreenPointToRay(Input.mousePosition);
-            var screenRay = new Ray(Vector3.zero, Vector3.forward);
-            Debug.DrawRay(screenRay.origin, screenRay.direction * 100, Color.yellow);
-            float distance;
+        //    //var screenRay = SceneView.currentDrawingSceneView.camera.ScreenPointToRay(Input.mousePosition);
+        //    var screenRay = new Ray(Vector3.zero, Vector3.forward);
+        //    Debug.DrawRay(screenRay.origin, screenRay.direction * 100, Color.yellow);
+        //    float distance;
 
-            var v1 = _handle1.transform.position;
-            var v2 = _handle2.transform.position;
-            var v3 = _handle3.transform.position;
-            var result2 = Intersections.RayTriangleIntersection(new Spatial.Ray(screenRay.origin, screenRay.direction),
-                v1, v2, v3);
+        //    var v1 = _handle1.transform.position;
+        //    var v2 = _handle2.transform.position;
+        //    var v3 = _handle3.transform.position;
+        //    var result2 = Intersections.RayTriangleIntersection(new Spatial.Ray(screenRay.origin, screenRay.direction),
+        //        v1, v2, v3);
 
-            var intersection = screenRay.GetPoint(result2);
-            Gizmos.color = Color.red;
-            Gizmos.DrawSphere(intersection, 0.1f);
+        //    var intersection = screenRay.GetPoint(result2);
+        //    Gizmos.color = Color.red;
+        //    Gizmos.DrawSphere(intersection, 0.1f);
 
-            Debug.Log(result2);
+        //    Debug.Log(result2);
 
-            /*
-            var result = Intersections.LineTriangleIntersection(screenRay, _handle1.transform.position, _handle2.transform.position,
-                //_handle3.transform.position, out distance);
+        //    /*
+        //    var result = Intersections.LineTriangleIntersection(screenRay, _handle1.transform.position, _handle2.transform.position,
+        //        //_handle3.transform.position, out distance);
 
-            var intersection = screenRay.GetPoint(distance);
+        //    var intersection = screenRay.GetPoint(distance);
 
-            if (result == 1)
-            {
-                Gizmos.color = Color.red;
-                Gizmos.DrawSphere(intersection, 0.1f);
-            }
-            else 
-                Debug.Log(result);
-                */
-        }
-        
+        //    if (result == 1)
+        //    {
+        //        Gizmos.color = Color.red;
+        //        Gizmos.DrawSphere(intersection, 0.1f);
+        //    }
+        //    else 
+        //        Debug.Log(result);
+        //        */
+        //}
+    
+
 
         /*
         /// <summary>
@@ -112,5 +117,43 @@ namespace TerrainDemo.Tests
             Gizmos.DrawSphere(_handle4.transform.position, 0.5f);
         }
         */
+
+        /// <summary>
+        /// Test grid intersections
+        /// </summary>
+        void OnDrawGizmos()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            var handle1Pos = _handle1.transform.position;
+            handle1Pos.y = 0;
+            _handle1.transform.position = handle1Pos;
+
+            var handle2Pos = _handle2.transform.position;
+            handle2Pos.y = 0;
+            _handle2.transform.position = handle2Pos;
+
+            Gizmos.color = Color.blue;
+            Gizmos.DrawLine(handle1Pos, handle2Pos);
+
+            var from = (OpenToolkit.Mathematics.Vector2)handle1Pos;
+            var to = (OpenToolkit.Mathematics.Vector2)handle2Pos;
+            var intersections = Intersections.GridIntersections(from, to);
+
+            var ray = new UnityEngine.Ray(handle1Pos, handle2Pos - handle1Pos);
+            foreach (var intersection in intersections)
+            {
+                var intersectedBlock = BlockInfo.GetBounds(intersection.blockPosition);
+                DrawRectangle.ForGizmo(intersectedBlock, Color.white);
+
+                var hitPoint = ray.GetPoint(intersection.distance);
+                DebugExtension.DrawPoint(hitPoint, Color.green,0.1f);
+
+                DrawArrow.ForGizmo(hitPoint, ((Vector3)intersection.normal) / 5, Color.yellow, 0.1f);
+            }
+
+            Debug.Log($"Intersections {intersections.Count()}");
+        }
     }
 }

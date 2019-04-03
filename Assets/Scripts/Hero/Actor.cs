@@ -3,6 +3,7 @@ using OpenToolkit.Mathematics;
 using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
+using UnityEngine;
 using Vector2 = OpenToolkit.Mathematics.Vector2;
 using Vector3 = OpenToolkit.Mathematics.Vector3;
 using Quaternion = OpenToolkit.Mathematics.Quaternion;
@@ -14,7 +15,7 @@ namespace TerrainDemo.Hero
         /// <summary>
         /// Max speed (m/s)
         /// </summary>
-        public float Speed => 4;
+        public float Speed => 6;
 
         /// <summary>
         /// Max angular speed (deg)
@@ -30,7 +31,7 @@ namespace TerrainDemo.Hero
 
         public BaseBlockMap Map => _currentMap;
 
-        public Vector2i Block => _currentBlock;
+        public Vector2i BlockPos => _currentBlockPos;
 
         public NavState State
         {
@@ -51,25 +52,25 @@ namespace TerrainDemo.Hero
         private bool _isStopped = true;
         private float _targetRotation;
 
-        private Vector2i _currentBlock;
+        private Vector2i _currentBlockPos;
         private BaseBlockMap _currentMap;
         private BlockOverlapState _currentOverlapState;
-        private float _blockInclinationSpeedModifier = 1;
-        private float _blockMaterialSpeedModifier = 1;
+        private float _currentBlockInclinationSpeedModifier = 1;
+        private float _currentBlockMaterialSpeedModifier = 1;
 
         //Fast n dirty fake falling
         private float _fallVelocity;
         private Vector2 _fallDirection;
         private bool _isFalling;
 
-        public Actor(MicroMap map, Vector2 startPosition, Quaternion rotation)
+        public Actor(MicroMap map, Vector2 startPosition, Vector2 direction)
         {
             _mainMap = map;
             _currentMap = map;
             _mapPosition = startPosition;
-            _currentBlock = (Vector2i) _mapPosition;
+            _currentBlockPos = (Vector2i) _mapPosition;
             Position = new Vector3(_mapPosition.X, _mainMap.GetHeight(_mapPosition), _mapPosition.Y);
-            Rotation = rotation;
+            Rotation = new Quaternion(0, Vector3.CalculateAngle(Vector3.UnitZ, (Vector3)direction), 0);
         }
 
         public void Move(Vector2 direction)
@@ -119,7 +120,7 @@ namespace TerrainDemo.Hero
 #if UNITY_EDITOR
         public (Vector2 moveDirection, float blockInclinationSpeedMod, float blockMaterialSpeedMod) GetDebugState()
         {
-            return (_moveDirection, _blockInclinationSpeedModifier, _blockMaterialSpeedModifier);
+            return (_moveDirection,  _currentBlockInclinationSpeedModifier,  _currentBlockMaterialSpeedModifier);
         }
 
 #endif
@@ -129,90 +130,35 @@ namespace TerrainDemo.Hero
             if (!_isStopped && Speed > 0 && _moveDirection != Vector2.Zero)
             {
                 var rotatedDirection = (Vector2) Vector3.Transform((Vector3)_moveDirection, Rotation);      //Rotate direction in XZ plane
+                //Speed modifiers - its a fast n dirty moving modification. More accurate way - calculate friction force vector
+                var step = rotatedDirection * deltaTime * Speed * _currentBlockInclinationSpeedModifier *
+                           _currentBlockMaterialSpeedModifier;
 
-                //DEBUG
-                var currentBlockNormal = _currentMap.GetBlockData(_currentBlock).Normal;           //todo cache
-                _blockInclinationSpeedModifier = Vector3.Dot((Vector3) rotatedDirection, currentBlockNormal)/(rotatedDirection.Length);
-                _blockInclinationSpeedModifier = (_blockInclinationSpeedModifier + 1);      //0..2
+                var newMapPosition = _mapPosition + step;
 
-                var blockMat = _currentMap.GetBlockRef(_currentBlock).Top;
-                _blockMaterialSpeedModifier = _mainMap.GetBlockSettings(blockMat).SpeedModifier;
-                    //DEBUG
-
-                var newMapPosition = _mapPosition + rotatedDirection * deltaTime * (Speed * _blockInclinationSpeedModifier * _blockMaterialSpeedModifier);
-
-                //Check change block and map
+                //Check change block (and map maybe)
                 var newBlockPosition = (Vector2i) newMapPosition;
-                if (newBlockPosition != _currentBlock)
+                if (newBlockPosition != _currentBlockPos)
                 {
-                    var (newMap, newOverlapState) = _mainMap.GetOverlapState(newBlockPosition);
-
-                    if (newOverlapState != _currentOverlapState || newMap != _currentMap)
+                    if (IsPassable(_currentMap, _currentBlockPos, newBlockPosition, out var toMap))
                     {
-                        switch (newOverlapState)
-                        {
-                            case BlockOverlapState.Above:
-                            {
-                                ref readonly var newBlock = ref newMap.GetBlockRef(newBlockPosition);
-                                ref readonly var newBlockData = ref newMap.GetBlockData(newBlockPosition);
-                                if (newBlockData.Height - Position.Y < 1)       //Check prev block height difference
-                                {
-                                    //todo check block inclination
-                                    //We can climb on block - use new map
-                                    _currentMap = newMap;
-                                }
-                                else if (newBlockData.MinHeight - Position.Y > 2)
-                                {
-                                    //We can go under the floating block - use old map
-                                }
-                                else
-                                {
-                                    //We stopped by the low gap or very tall wall of block, discard movement
-                                    return false;
-                                }
-
-                                break;
-                            }
-
-                            case BlockOverlapState.Overlap:
-                            {
-                                ref readonly var newBlock = ref newMap.GetBlockRef(newBlockPosition);
-                                ref readonly var newBlockData = ref newMap.GetBlockData(newBlockPosition);
-                                if (newBlockData.Height - Position.Y < 1)       //Check prev block height difference
-                                {
-                                    //todo check block inclination
-                                    //We can climb on block - use new map
-                                    _currentMap = newMap;
-                                }
-                                else
-                                {
-                                    //We stopped by the tall wall of block, discard movement
-                                    return false;
-                                }
-
-                                break;
-                            }
-
-                            case BlockOverlapState.None:
-                            case BlockOverlapState.Under:
-                            {
-                                _currentMap = _mainMap;
-
-                                //Maybe we fall from the edge of object map
-                                if (!_isFalling && (_currentOverlapState == BlockOverlapState.Above || _currentOverlapState == BlockOverlapState.Overlap))
-                                {
-                                    _isFalling = true;
-                                    _fallDirection = rotatedDirection;
-                                    _fallVelocity = 0;
-                                }
-
-                                break;
-                            }
-                        }
+                        _currentBlockPos = newBlockPosition;
+                        //_currentOverlapState = newOverlapState;
+                        _currentMap = toMap;
                     }
+                    else
+                        return false;
 
-                    _currentBlock = newBlockPosition;
-                    _currentOverlapState = newOverlapState;
+                    //Cache new block properties
+                    //_currentBlockPos = newBlockPosition;
+                    //_currentOverlapState = newOverlapState;
+                    //var currentBlockNormal = _currentMap.GetBlockData(_currentBlockPos).Normal;           
+                    //var incline  = Vector3.Dot((Vector3) rotatedDirection, currentBlockNormal);
+                    //Remap dot value to speed modifier -0.5 = 0, 0 = 1, 1 = 2 (prevent climb to over 60 deg)
+                    //_currentBlockInclinationSpeedModifier = Mathf.Clamp(
+                    //-0.66666666666f * incline * incline + 1.66666666666f * incline + 1, 0, 2);
+                    //var blockMat = _currentMap.GetBlockRef(_currentBlockPos).Top;
+                    //_currentBlockMaterialSpeedModifier = _mainMap.GetBlockSettings(blockMat).SpeedModifier;
                 }
 
                 if (newMapPosition != _mapPosition)
@@ -265,6 +211,104 @@ namespace TerrainDemo.Hero
 
             return true;
         }
+
+        /// <summary>
+        /// todo need check new block inclination too
+        /// </summary>
+        /// <param name="fromMap"></param>
+        /// <param name="fromPos"></param>
+        /// <param name="toPos"></param>
+        /// <param name="toMap"></param>
+        /// <returns></returns>
+        private bool IsPassable(BaseBlockMap fromMap, Vector2i fromPos, Vector2i toPos, out BaseBlockMap toMap)
+        {
+            //Assume that fromPos -> toPos is small for simplicity
+            /*
+            if (Vector2i.ManhattanDistance(fromPos, toPos) > 1)
+            {
+                toMap = null;
+                return false;
+            }
+            */
+
+            var (newMap, newOverlapState) = _mainMap.GetOverlapState(toPos);
+
+            //Check special cases with map change
+            ref readonly var fromData = ref fromMap.GetBlockData(fromPos);
+            switch (newOverlapState)
+            {
+                case BlockOverlapState.Above:
+                {
+                    ref readonly var toData = ref newMap.GetBlockData(toPos);
+
+                    //Can we climb to floating block surface?
+                    if (toData.Height - fromData.Height < 1)
+                    {
+                        toMap = newMap;
+                        return true;
+                    }
+
+                    //Can we pass under floating block?
+                    if (toData.MinHeight - fromData.Height > 2)
+                    {
+                        toMap = fromMap;
+                        return true;
+                    }
+                }
+                    break;
+
+                case BlockOverlapState.Overlap:
+                {
+                    ref readonly var toData = ref newMap.GetBlockData(toPos);
+
+                    //Can we climb to overlap block surface?
+                    if (toData.Height - fromData.Height < 1)
+                    {
+                        toMap = newMap;
+                        return true;
+                    }
+                }
+                    break;
+
+                //Check from object map to main map transition
+                case BlockOverlapState.Under:
+                case BlockOverlapState.None:
+                {
+                    //ref readonly var toData = ref _mainMap.GetBlockData(toPos);
+                    toMap = _mainMap;
+                    return true;
+                }
+                    break;
+            }
+
+            //No pass 
+            toMap = null;
+            return false;
+        }
+
+        /*
+        /// <summary>
+        /// </summary>
+        /// <param name="worldPosition"></param>
+        /// <param name="blockPosition"></param>
+        /// <returns>New position outside the block</returns>
+        private Vector2 ResolveBlockCollision(Vector2 oldPosition, Vector2 newPosition, Vector2i blockPosition)
+        {
+            //var localPosition = worldPosition - (Vector2i) worldPosition;
+            var roundX = Math.Round(worldPosition.X);
+            var roundZ = Math.Round(worldPosition.Y);
+
+            if(roundX)
+
+        }
+        */
+
+        /*
+        private void CacheBlockProperties(Vector2i position, BaseBlockMap map, )
+        {
+
+        }
+        */
 
         public event Action<Actor> Changed;
 

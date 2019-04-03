@@ -110,6 +110,8 @@ namespace TerrainDemo.Tools
                 yield return (Vector3i)p2;
         }
 
+        
+
         /// <summary>
         /// Issues in some quadrants, need speed test against DDA
         /// </summary>

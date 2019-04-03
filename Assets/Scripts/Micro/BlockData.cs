@@ -24,9 +24,9 @@ namespace TerrainDemo.Micro
             if (h01.Base < MinHeight) MinHeight = h01.Base;
             if (h10.Base < MinHeight) MinHeight = h10.Base;
             if (h11.Base < MinHeight) MinHeight = h11.Base;
-            if (h01.Nominal > MaxHeight) MaxHeight = h01.Base;
-            if (h10.Nominal > MaxHeight) MaxHeight = h10.Base;
-            if (h11.Nominal > MaxHeight) MaxHeight = h11.Base;
+            if (h01.Nominal > MaxHeight) MaxHeight = h01.Nominal;
+            if (h10.Nominal > MaxHeight) MaxHeight = h10.Nominal;
+            if (h11.Nominal > MaxHeight) MaxHeight = h11.Nominal;
 
             var normal = Vector3.Cross(                             //todo simplify
                 new Vector3(-1, h01.Nominal - h10.Nominal, 1),

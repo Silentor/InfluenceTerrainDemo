@@ -145,7 +145,7 @@ namespace TerrainDemo
             Micro.AddChild(bridge);
             bridge.Snap();
             bridge.Changed += MicroOnChanged;
-            
+
             var mountGenerator = new MountGenerator(10, 20, Micro);
             var mountData = mountGenerator.Generate(new Vector2(14.5f, -16), -0.5f);
             var mount = new ObjectMap("Mount", mountData.Bounds, Micro);
@@ -154,8 +154,17 @@ namespace TerrainDemo
             Micro.AddChild(mount);
             mount.Snap();
             mount.Changed += MicroOnChanged;
-            
-            _hero = new Actor(Micro, new Vector2(-14, 2), Quaternion.FromEulerAngles(0, MathHelper.DegreesToRadians(90), 0));
+
+            var wallGenerator = new WallGenerator(10, 1, 5, Micro);
+            var wallData = wallGenerator.Generate(new Vector2(0, -3), 0);
+            var wall = new ObjectMap("Wall", wallData.Bounds, Micro);
+            wall.SetHeights(wallData.VertexPositions, wallData.Heightmap);
+            wall.SetBlocks(wallData.BlockPositions, wallData.Blockmap);
+            Micro.AddChild(wall);
+            wall.Snap();
+            wall.Changed += MicroOnChanged;
+
+            _hero = new Actor(Micro, new Vector2(12, 3), Vector2.One);
             Micro.AddActor(_hero);
 
             Micro.Changed += MicroOnChanged;

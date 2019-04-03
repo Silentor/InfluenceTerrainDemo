@@ -19,9 +19,9 @@ namespace TerrainDemo.Tools
             Vector2 b = p3 - p4;
             Vector2 c = p1 - p3;
 
-            float alphaNumerator = b.y*c.x - b.x*c.y;
-            float alphaDenominator = a.y*b.x - a.x*b.y;
-            float betaNumerator = a.x*c.y - a.y*c.x;
+            float alphaNumerator = b.y * c.x - b.x * c.y;
+            float alphaDenominator = a.y * b.x - a.x * b.y;
+            float betaNumerator = a.x * c.y - a.y * c.x;
             float betaDenominator = alphaDenominator; /*2013/07/05, fix by Deniz*/
 
             bool doIntersect = true;
@@ -166,7 +166,7 @@ namespace TerrainDemo.Tools
 
         private static float GetPseudoDotProduct(Vector3 p1, Vector3 p2)
         {
-            return p1.x*p2.z - p2.x*p1.z;
+            return p1.x * p2.z - p2.x * p1.z;
         }
 
         // intersect3D_RayTriangle(): find the 3D intersection of a ray with a triangle
@@ -196,7 +196,7 @@ namespace TerrainDemo.Tools
 
             dir = ray.Direction;              // ray direction vector
             w0 = ray.Origin - v0;
-            a = - OpenToolkit.Mathematics.Vector3.Dot(n, w0);
+            a = -OpenToolkit.Mathematics.Vector3.Dot(n, w0);
             b = OpenToolkit.Mathematics.Vector3.Dot(n, dir);
             if (Math.Abs(b) < 0.0000001f)
             {     // ray is  parallel to triangle plane
@@ -302,6 +302,44 @@ namespace TerrainDemo.Tools
             return t9;
         }
 
+        public static float RayBlockIntersection(in Ray ray, in Vector2i positon, in Blocks block)
+        {
+            var dirFracX = 1 / ray.Direction.X;
+            var dirFracY = 1 / ray.Direction.Y;
+            var dirFracZ = 1 / ray.Direction.Z;
+
+            var (min, max) = BlockInfo.GetWorldBounds(positon);
+            float t1 = (min.X - ray.Origin.X) * dirFracX;
+            float t2 = (max.X - ray.Origin.X) * dirFracX;
+            //float t3 = (block.Height.Base - ray.Origin.Y) * dirFracY;
+            //float t4 = (block.Height.Nominal - ray.Origin.Y) * dirFracY;
+            float t3 = (-1 - ray.Origin.Y) * dirFracY;      //DEBUG
+            float t4 = (1 - ray.Origin.Y) * dirFracY;       //DEBUG
+            float t5 = (min.Y - ray.Origin.Z) * dirFracZ;
+            float t6 = (max.Y - ray.Origin.Z) * dirFracZ;
+
+            float aMin = t1 < t2 ? t1 : t2;
+            float bMin = t3 < t4 ? t3 : t4;
+            float cMin = t5 < t6 ? t5 : t6;
+
+            float aMax = t1 > t2 ? t1 : t2;
+            float bMax = t3 > t4 ? t3 : t4;
+            float cMax = t5 > t6 ? t5 : t6;
+
+            float fMax = aMin > bMin ? aMin : bMin;
+            float fMin = aMax < bMax ? aMax : bMax;
+
+            float t7 = fMax > cMin ? fMax : cMin;
+            float t8 = fMin < cMax ? fMin : cMax;
+
+            float t9 = (t8 < 0 || t7 > t8) ? -1 : t7;
+
+            if (t9 > 0)
+                return t9;
+
+            return -1;
+        }
+
         /// <summary>
         /// Unity source https://gist.github.com/unitycoder/8d1c2905f2e9be693c78db7d9d03a102
         /// More info and C (GPU compatible) source https://gamedev.stackexchange.com/a/18459
@@ -347,43 +385,79 @@ namespace TerrainDemo.Tools
             return null;
         }
 
-        public static float RayBlockIntersection(in Ray ray, in Vector2i positon, in Blocks block)
+        public static IEnumerable<(Vector2i blockPosition, float distance, Vector2i normal)> GridIntersections(OpenToolkit.Mathematics.Vector2 start, OpenToolkit.Mathematics.Vector2 finish)
         {
-            var dirFracX = 1 / ray.Direction.X;
-            var dirFracY = 1 / ray.Direction.Y;
-            var dirFracZ = 1 / ray.Direction.Z;
+            var xIncrement = Math.Sign(finish.X - start.X);
+            var yIncrement = Math.Sign(finish.Y - start.Y);
 
+            var startBlock = (Vector2i)start;
+            var finishBlock = (Vector2i)finish;
 
-            var (min, max) = BlockInfo.GetWorldBounds(positon);
-            float t1 = (min.X - ray.Origin.X) * dirFracX;
-            float t2 = (max.X - ray.Origin.X) * dirFracX;
-            //float t3 = (block.Height.Base - ray.Origin.Y) * dirFracY;
-            //float t4 = (block.Height.Nominal - ray.Origin.Y) * dirFracY;
-            float t3 = (-1 - ray.Origin.Y) * dirFracY;      //DEBUG
-            float t4 = (1 - ray.Origin.Y) * dirFracY;       //DEBUG
-            float t5 = (min.Y - ray.Origin.Z) * dirFracZ;
-            float t6 = (max.Y - ray.Origin.Z) * dirFracZ;
+            if (startBlock == finishBlock)
+                yield break;
 
-            float aMin = t1 < t2 ? t1 : t2;
-            float bMin = t3 < t4 ? t3 : t4;
-            float cMin = t5 < t6 ? t5 : t6;
+            var k = (finish.Y - start.Y) / (finish.X - start.X);        //Угловой коэфициент
+            var testedXPosition = xIncrement < 0 ? startBlock.X + 1 : startBlock.X;
+            var testedYPosition = yIncrement < 0 ? startBlock.Z + 1 : startBlock.Z;
 
-            float aMax = t1 > t2 ? t1 : t2;
-            float bMax = t3 > t4 ? t3 : t4;
-            float cMax = t5 > t6 ? t5 : t6;
+            //Fast pass - horizontal line
+            if (startBlock.X == finishBlock.X)
+            {
+                while (startBlock != finishBlock)
+                {
+                    var pointY = new OpenToolkit.Mathematics.Vector2(
+                        ((testedYPosition + yIncrement) - start.Y) / k + start.X,
+                        testedYPosition + yIncrement);
 
-            float fMax = aMin > bMin ? aMin : bMin;
-            float fMin = aMax < bMax ? aMax : bMax;
+                    testedYPosition += yIncrement;
+                    startBlock = new Vector2i(startBlock.X, startBlock.Z + yIncrement);
+                    yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointY, start), new Vector2i(0, -yIncrement));
+                }
+            }
+            //Fast pass - vertical line
+            else if (startBlock.Z == finishBlock.Z)
+            {
+                while (startBlock != finishBlock)
+                {
+                    var pointX = new OpenToolkit.Mathematics.Vector2(testedXPosition + xIncrement,
+                        k * ((testedXPosition + xIncrement) - start.X) + start.Y);
 
-            float t7 = fMax > cMin ? fMax : cMin;
-            float t8 = fMin < cMax ? fMin : cMax;
-
-            float t9 = (t8 < 0 || t7 > t8) ? -1 : t7;
-
-            if (t9 > 0)
-                return t9;
-
-            return -1;
+                    testedXPosition += xIncrement;
+                    startBlock = new Vector2i(startBlock.X + xIncrement, startBlock.Z);
+                    yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointX, start), new Vector2i(-xIncrement, 0));
+                }
+            }
+            //Default pass - diagonal line
+            else
+            {
+                var testedPoint = start;
+                var pointX = new OpenToolkit.Mathematics.Vector2(testedXPosition + xIncrement,
+                    k * ((testedXPosition + xIncrement) - start.X) + start.Y);
+                var pointY = new OpenToolkit.Mathematics.Vector2(((testedYPosition + yIncrement) - start.Y) / k + start.X,
+                    testedYPosition + yIncrement);
+                while (startBlock != finishBlock)
+                {
+                    //Compare two intersection points
+                    if (OpenToolkit.Mathematics.Vector2.DistanceSquared(pointX, testedPoint) < OpenToolkit.Mathematics.Vector2.DistanceSquared(pointY, testedPoint))
+                    {
+                        testedXPosition += xIncrement;
+                        testedPoint = pointX;
+                        startBlock = new Vector2i(startBlock.X + xIncrement, startBlock.Z);
+                        yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointX, start), new Vector2i(-xIncrement, 0));
+                        pointX = new OpenToolkit.Mathematics.Vector2(testedXPosition + xIncrement,
+                            k * ((testedXPosition + xIncrement) - start.X) + start.Y);
+                    }
+                    else
+                    {
+                        testedYPosition += yIncrement;
+                        testedPoint = pointY;
+                        startBlock = new Vector2i(startBlock.X, startBlock.Z + yIncrement);
+                        yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointY, start), new Vector2i(0, -yIncrement));
+                        pointY = new OpenToolkit.Mathematics.Vector2(((testedYPosition + yIncrement) - start.Y) / k + start.X,
+                            testedYPosition + yIncrement);
+                    }
+                }
+            }
         }
     }
 }
