@@ -32,7 +32,7 @@ namespace TerrainDemo.Hero
 
         public BaseBlockMap Map => _currentMap;
 
-        public Vector2i BlockPos => _currentBlockPos;
+        public Vector2i BlockPosition => _currentBlockPos;
 
         public NavState State
         {

@@ -28,6 +28,8 @@ namespace TerrainDemo.Hero
         public Quaternion Rotation { get { return _camera.transform.rotation; } }
 
         public float Range { get { return AOIRange; } }
+        public (OpenToolkit.Mathematics.Vector3 hitPoint, Vector2i position, BaseBlockMap source)? HitPoint { get; private set; }
+
 
         /// <summary>
         /// Get chunk positions order by valuable
@@ -161,6 +163,7 @@ namespace TerrainDemo.Hero
         private MicroMap _microMap;
 
         private GameObject _cursorObj;
+
         //private LandLayout _land;
 
         private void InputOnRotate(float rotateDir)
@@ -235,11 +238,11 @@ namespace TerrainDemo.Hero
             else
             {
                 var worldRay = (Spatial.Ray)_camera.ScreenPointToRay(UnityEngine.Input.mousePosition);
-                var hitPoint = _microMap.RaycastHeightmap(worldRay);
+                HitPoint = _microMap.RaycastHeightmap(worldRay);
 
-                if (hitPoint.HasValue)
+                if (HitPoint.HasValue)
                 {
-                    DrawCursor(hitPoint.Value.hitPoint);
+                    DrawCursor(HitPoint.Value.hitPoint);
                 }
                 else
                 {

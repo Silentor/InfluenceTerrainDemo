@@ -88,6 +88,8 @@ namespace TerrainDemo
         private BlockSettings[] _allBlocks;
         private ObjectMap _bridge;
         private Actor _hero;
+        private Navigator _heroNavigator;
+        private ObserverController _observer;
 
         public void Render(TriRunner renderSettings)
         {
@@ -165,6 +167,7 @@ namespace TerrainDemo
             wall.Changed += MicroOnChanged;
 
             _hero = new Actor(Micro, (-11, 7), Vector2.One);
+            _heroNavigator = new Navigator(_hero, Micro);
             Micro.AddActor(_hero);
 
             Micro.Changed += MicroOnChanged;
@@ -229,6 +232,16 @@ namespace TerrainDemo
             _hero.Rotate(normalized);
         }
 
+        private void InputSourceOnFire()
+        {
+            var hitPoint = _observer.HitPoint;
+
+            if (hitPoint.HasValue)
+            {
+                _heroNavigator.Go(hitPoint.Value.position);
+            }
+        }
+
 #region Unity
 
         void Awake()
@@ -241,8 +254,10 @@ namespace TerrainDemo
         {
             Generate();
 
+            _observer = FindObjectOfType<ObserverController>();
+
             _renderer = new Renderer(new Mesher(Macro, this), this);
-            _renderer.AssingCamera(FindObjectOfType<ObserverController>().GetComponent<Camera>(), _hero);
+            _renderer.AssingCamera(_observer.GetComponent<Camera>(), _hero);
             Render(this);
 
             var inputSource = FindObjectOfType<Input>();
@@ -250,6 +265,7 @@ namespace TerrainDemo
             inputSource.StopMoving += InputSourceOnStop;
             inputSource.Rotate += InputSourceOnRotate;
             inputSource.StopRotating += InputSourceOnStopRotating;
+            inputSource.Fire += InputSourceOnFire;
         }
 
         private void OnValidate()

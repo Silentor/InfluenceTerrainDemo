@@ -1,4 +1,6 @@
-﻿namespace TerrainDemo.Spatial
+﻿using OpenToolkit.Mathematics;
+
+namespace TerrainDemo.Spatial
 {
     /// <summary>
     /// Cardinal directions on square grid
@@ -27,6 +29,14 @@
         public static readonly Vector2i[] Vector2I =
         {
             Vector2i.Forward, Vector2i.Right, Vector2i.Back, Vector2i.Left,
+        };
+
+        /// <summary>
+        /// Directions on grid as Vector2i
+        /// </summary>
+        public static readonly Vector2[] Vector2 =
+        {
+            OpenToolkit.Mathematics.Vector2.UnitY, OpenToolkit.Mathematics.Vector2.UnitX, -OpenToolkit.Mathematics.Vector2.UnitY, -OpenToolkit.Mathematics.Vector2.UnitX,
         };
     }
 }
