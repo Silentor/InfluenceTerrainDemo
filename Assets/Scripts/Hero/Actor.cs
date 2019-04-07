@@ -4,6 +4,7 @@ using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using UnityEngine;
+using UnityEngine.Assertions;
 using Vector2 = OpenToolkit.Mathematics.Vector2;
 using Vector3 = OpenToolkit.Mathematics.Vector3;
 using Quaternion = OpenToolkit.Mathematics.Quaternion;
@@ -48,7 +49,7 @@ namespace TerrainDemo.Hero
 
         private readonly MicroMap _mainMap;
         private Vector2 _mapPosition;
-        private Vector2 _moveDirection;
+        private Vector2 _inputVelocity;
         private bool _isStopped = true;
         private float _targetRotation;
 
@@ -63,6 +64,8 @@ namespace TerrainDemo.Hero
         private Vector2 _fallDirection;
         private bool _isFalling;
 
+        private static readonly float SafeAngle = MathHelper.DegreesToRadians(60);
+
         public Actor(MicroMap map, Vector2 startPosition, Vector2 direction)
         {
             _mainMap = map;
@@ -73,9 +76,11 @@ namespace TerrainDemo.Hero
             Rotation = new Quaternion(0, Vector3.CalculateAngle(Vector3.UnitZ, (Vector3)direction), 0);
         }
 
+        public Actor(MicroMap map, Vector2i startPosition, Vector2 direction) : this(map, BlockInfo.GetWorldCenter(startPosition), direction) { }
+
         public void Move(Vector2 direction)
         {
-            _moveDirection = direction;
+            _inputVelocity = direction;
             /*
             Rotation = Quaternion.FromAxisAngle(Vector3.UnitY,
                 Vector3.CalculateAngle(Vector3.UnitZ, new Vector3(direction.X, 0, direction.Y)));
@@ -94,7 +99,7 @@ namespace TerrainDemo.Hero
         /// <param name="normalizedDelta">-1..1</param>
         public void Rotate(float normalizedDelta)
         {
-            _targetRotation = normalizedDelta * RotationSpeed;
+            _targetRotation = Mathf.Clamp(normalizedDelta, -1, 1) * RotationSpeed;
         }
 
         public void Update(float deltaTime)
@@ -120,72 +125,73 @@ namespace TerrainDemo.Hero
 #if UNITY_EDITOR
         public (Vector2 moveDirection, float blockInclinationSpeedMod, float blockMaterialSpeedMod) GetDebugState()
         {
-            return (_moveDirection,  _currentBlockInclinationSpeedModifier,  _currentBlockMaterialSpeedModifier);
+            return (_moveDirection: _inputVelocity,  _currentBlockInclinationSpeedModifier,  _currentBlockMaterialSpeedModifier);
         }
 
 #endif
-        private bool UpdateMovement(float deltaTime)
+        private Vector2 GetThrustVelocity()
         {
-            var isChanged = false;
-            if (!_isStopped && Speed > 0 && _moveDirection != Vector2.Zero)
+            if (!_isStopped && Speed > 0 && _inputVelocity != Vector2.Zero)
             {
-                var rotatedDirection = (Vector2) Vector3.Transform((Vector3)_moveDirection, Rotation);      //Rotate direction in XZ plane
-                //Speed modifiers - its a fast n dirty moving modification. More accurate way - calculate friction force vector
-                var step = rotatedDirection * deltaTime * Speed * _currentBlockInclinationSpeedModifier *
-                           _currentBlockMaterialSpeedModifier;
-
-                var newMapPosition = _mapPosition + step;
-
-                //Check change block (and map maybe)
-                var newBlockPosition = (Vector2i) newMapPosition;
-                if (newBlockPosition != _currentBlockPos)
-                {
-                    if (IsPassable(_currentMap, _currentBlockPos, newBlockPosition, out var toMap))
-                    {
-                        _currentBlockPos = newBlockPosition;
-                        //_currentOverlapState = newOverlapState;
-                        _currentMap = toMap;
-                    }
-                    else
-                        return false;
-
-                    //Cache new block properties
-                    //_currentBlockPos = newBlockPosition;
-                    //_currentOverlapState = newOverlapState;
-                    //var currentBlockNormal = _currentMap.GetBlockData(_currentBlockPos).Normal;           
-                    //var incline  = Vector3.Dot((Vector3) rotatedDirection, currentBlockNormal);
-                    //Remap dot value to speed modifier -0.5 = 0, 0 = 1, 1 = 2 (prevent climb to over 60 deg)
-                    //_currentBlockInclinationSpeedModifier = Mathf.Clamp(
-                    //-0.66666666666f * incline * incline + 1.66666666666f * incline + 1, 0, 2);
-                    //var blockMat = _currentMap.GetBlockRef(_currentBlockPos).Top;
-                    //_currentBlockMaterialSpeedModifier = _mainMap.GetBlockSettings(blockMat).SpeedModifier;
-                }
-
-                if (newMapPosition != _mapPosition)
-                {
-                    _mapPosition = newMapPosition;
-                    var newHeight = _currentMap.GetHeight(_mapPosition);
-
-                    if (_isFalling)
-                    {
-                        if (Position.Y - newHeight > 0.1f)
-                            //Falling confirmed
-                            Position = new Vector3(_mapPosition.X, Position.Y, _mapPosition.Y);
-                        else
-                        {
-                            //Falling is not confirmed
-                            _isFalling = false;
-                        }
-                    }
-
-                    if(!_isFalling)
-                        Position = new Vector3(_mapPosition.X, newHeight, _mapPosition.Y);
-
-                    isChanged = true;
-                }
+                var rotatedVelocity = (Vector2)Vector3.Transform((Vector3)_inputVelocity, Rotation);      //Rotate direction in XZ plane
+                return rotatedVelocity * Speed;
             }
 
-            return isChanged;
+            return Vector2.Zero;
+        }
+
+        private bool UpdateMovement(float deltaTime)
+        {
+            var thrustVelocity = GetThrustVelocity();
+            var step = thrustVelocity * deltaTime;
+            var newMapPosition = _mapPosition + step;
+
+            //Check change block(and map maybe)
+            var newBlockPosition = (Vector2i)newMapPosition;
+            if (newBlockPosition != _currentBlockPos)
+            {
+                var collidedPos = CheckPass(_currentMap, _mapPosition, newMapPosition, out _currentMap);
+                newMapPosition = collidedPos;
+                _currentBlockPos = (Vector2i) collidedPos;
+
+                //return false;
+
+                //Cache new block properties
+                //_currentBlockPos = newBlockPosition;
+                //_currentOverlapState = newOverlapState;
+                //var currentBlockNormal = _currentMap.GetBlockData(_currentBlockPos).Normal;           
+                //var incline  = Vector3.Dot((Vector3) rotatedDirection, currentBlockNormal);
+                //Remap dot value to speed modifier -0.5 = 0, 0 = 1, 1 = 2 (prevent climb to over 60 deg)
+                //_currentBlockInclinationSpeedModifier = Mathf.Clamp(
+                //-0.66666666666f * incline * incline + 1.66666666666f * incline + 1, 0, 2);
+                //var blockMat = _currentMap.GetBlockRef(_currentBlockPos).Top;
+                //_currentBlockMaterialSpeedModifier = _mainMap.GetBlockSettings(blockMat).SpeedModifier;
+            }
+
+            if (newMapPosition != _mapPosition)
+            {
+                _mapPosition = newMapPosition;
+                var newHeight = _currentMap.GetHeight(_mapPosition);
+
+                if (_isFalling)
+                {
+                    if (Position.Y - newHeight > 0.1f)
+                        //Falling confirmed
+                        Position = new Vector3(_mapPosition.X, Position.Y, _mapPosition.Y);
+                    else
+                    {
+                        //Falling is not confirmed
+                        _isFalling = false;
+                    }
+                }
+
+                if (!_isFalling)
+                    Position = new Vector3(_mapPosition.X, newHeight, _mapPosition.Y);
+
+                return true;
+            }
+
+            return false;
         }
 
         private bool UpdateFalling(float deltaTime)
@@ -213,7 +219,7 @@ namespace TerrainDemo.Hero
         }
 
         /// <summary>
-        /// todo need check new block inclination too
+        /// 
         /// </summary>
         /// <param name="fromMap"></param>
         /// <param name="fromPos"></param>
@@ -235,80 +241,152 @@ namespace TerrainDemo.Hero
 
             //Check special cases with map change
             ref readonly var fromData = ref fromMap.GetBlockData(fromPos);
+            ref readonly var toData = ref BlockData.Empty;
+            toMap = null;
             switch (newOverlapState)
             {
+                //Check from object map to main map transition
+                case BlockOverlapState.Under:
+                case BlockOverlapState.None:
+                {
+                    toData = ref _mainMap.GetBlockData(toPos);
+                    toMap = _mainMap;
+                }
+                    break;
+
                 case BlockOverlapState.Above:
                 {
-                    ref readonly var toData = ref newMap.GetBlockData(toPos);
-
-                    //Can we climb to floating block surface?
-                    if (toData.Height - fromData.Height < 1)
-                    {
-                        toMap = newMap;
-                        return true;
-                    }
+                    ref readonly var aboveBlockData = ref newMap.GetBlockData(toPos);
 
                     //Can we pass under floating block?
-                    if (toData.MinHeight - fromData.Height > 2)
+                    if (aboveBlockData.MinHeight > fromData.MaxHeight + 2)
                     {
+                        toData = ref fromMap.GetBlockData(toPos);
                         toMap = fromMap;
-                        return true;
+                    }
+                    else
+                    {
+                        toData = ref aboveBlockData;
+                        toMap = newMap;
                     }
                 }
                     break;
 
                 case BlockOverlapState.Overlap:
                 {
-                    ref readonly var toData = ref newMap.GetBlockData(toPos);
-
-                    //Can we climb to overlap block surface?
-                    if (toData.Height - fromData.Height < 1)
-                    {
-                        toMap = newMap;
-                        return true;
-                    }
+                    toData = ref newMap.GetBlockData(toPos);
+                    toMap = newMap;
                 }
                     break;
 
-                //Check from object map to main map transition
-                case BlockOverlapState.Under:
-                case BlockOverlapState.None:
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            if (toData != BlockData.Empty)
+            {
+                if (toData.Height < fromData.Height + 1 &&
+                    Vector3.CalculateAngle(Vector3.UnitY, toData.Normal) < SafeAngle)
                 {
-                    //ref readonly var toData = ref _mainMap.GetBlockData(toPos);
-                    toMap = _mainMap;
+                    //Can step on new block
+                    Assert.IsNotNull(toMap);
                     return true;
                 }
-                    break;
             }
 
             //No pass 
-            toMap = null;
             return false;
         }
 
-        /*
-        /// <summary>
-        /// </summary>
-        /// <param name="worldPosition"></param>
-        /// <param name="blockPosition"></param>
-        /// <returns>New position outside the block</returns>
-        private Vector2 ResolveBlockCollision(Vector2 oldPosition, Vector2 newPosition, Vector2i blockPosition)
+        private Vector2 CheckPass(BaseBlockMap fromMap, Vector2 fromPos, Vector2 toPos, out BaseBlockMap toMap)
         {
-            //var localPosition = worldPosition - (Vector2i) worldPosition;
-            var roundX = Math.Round(worldPosition.X);
-            var roundZ = Math.Round(worldPosition.Y);
+            for (var i = 0; i < 2; i++)
+            {
+                var fromBlock = (Vector2i) fromPos;
+                var toBlock = (Vector2i) toPos;
 
-            if(roundX)
+                Debug.Log($"{Time.frameCount} - {i}: From pos {fromPos} block {fromBlock} to pos {toPos} block {toBlock}");
 
+                //Count from block as passable apriori
+                if (fromBlock == toBlock)
+                {
+                    Debug.Log($"{Time.frameCount} - {i}: Blocks are equal");
+
+                    toMap = fromMap;
+                    return toPos;
+                }
+
+                var intersections = Intersections.GridIntersections(fromPos, toPos);
+                var pathRay = new Ray2(fromPos, toPos - fromPos);
+                foreach (var intersection in intersections)
+                {
+                    toBlock = intersection.blockPosition;
+                    Debug.Log($"{Time.frameCount} - {i}: Check pass from {fromBlock} to {toBlock}");
+                    if (!IsPassable(fromMap, fromBlock, toBlock, out var toMap2))
+                    {
+                        //Respond to collision
+                        var hitPoint = pathRay.GetPoint(intersection.distance);
+
+                        Debug.Log($"{Time.frameCount} - {i}: Inpassable block {intersection.blockPosition}, hit {hitPoint}, normal {intersection.normal}");
+
+                        DebugExtension.DebugPoint(hitPoint, Color.red, 0.1f);
+
+                        var collisionVector = toPos - hitPoint;
+
+                        DrawArrow.ForDebug(hitPoint, collisionVector.Normalized(), Color.red);
+
+                        var projectedCollisionVector = collisionVector -
+                                                      Vector2.Dot(collisionVector, intersection.normal) *
+                                                      (Vector2) intersection.normal;
+
+                        DrawArrow.ForDebug(hitPoint, projectedCollisionVector.Normalized(), Color.green);
+                        DrawArrow.ForDebug(fromPos, hitPoint - fromPos, Color.white);
+
+                        //Recheck resolved point for another collision (one more time only)
+                        fromPos = hitPoint + (Vector2)intersection.normal * 0.01f; // a little bit inside into "from block" 
+
+                        if (projectedCollisionVector == Vector2.Zero) //Resolving finished, return calculated toPos and toMap
+                        {
+                            Debug.Log($"{Time.frameCount} - {i}: Resolving completed, result {toPos}");
+
+                            toMap = fromMap;
+                            return fromPos;
+                        }
+                        else
+                        {
+                            if (i < 1)
+                            {
+                                Debug.Log($"{Time.frameCount} - {i}: Projected vector {projectedCollisionVector} not zero, make next iter");
+                                toPos = fromPos + projectedCollisionVector;
+                                break;
+                            }
+                            else
+                            {
+                                Debug.LogWarning($"{Time.frameCount} - {i} Actor collision still not resolved completely on second check, use last good hit point");
+
+                                toMap = fromMap;
+                                return fromPos;
+                            }
+
+                        }
+                    }
+                    else
+                    {
+                        Debug.Log($"{Time.frameCount} - {i}: There is pass from {fromBlock} to {toBlock}, check next pass");
+                        //Continue check intersections
+                        fromBlock = toBlock;
+                        fromMap = toMap2;
+                    }
+                }
+
+                if (fromBlock == toBlock)
+                    break;
+            }
+
+            //No collision, pass is clear
+            toMap = fromMap;
+            return toPos;
         }
-        */
-
-        /*
-        private void CacheBlockProperties(Vector2i position, BaseBlockMap map, )
-        {
-
-        }
-        */
 
         public event Action<Actor> Changed;
 

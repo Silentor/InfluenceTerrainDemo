@@ -33,12 +33,19 @@ namespace TerrainDemo.Generators.MapObjects
         protected override void GenerateHeight(Vector2i vertexPosition, float instanceHeight, out Heights heightVertex)
         {
             ref readonly var mainMapHeight = ref _mainMap.GetHeightRef(vertexPosition);
-            heightVertex = new Heights(mainMapHeight.Nominal + _height, mainMapHeight.Nominal);
+
+            //if(vertexPosition.X == 0 || vertexPosition.X == 1 || vertexPosition.Z == 0 || vertexPosition.Z == 1)
+                heightVertex = new Heights(mainMapHeight.Nominal + _height, mainMapHeight.Nominal);
+            //else
+                //heightVertex = new Heights(mainMapHeight.Nominal, mainMapHeight.Nominal);
         }
 
         protected override void GenerateBlock(Vector2i blockPosition, out Blocks block)
         {
-            block = new Blocks(BlockType.Stone, BlockType.Empty);
+            if(blockPosition.X == InstanceBounds.Min.X || blockPosition.Z == InstanceBounds.Min.Z)
+                block = new Blocks(BlockType.Stone, BlockType.Empty);
+            else
+                block = Blocks.Empty;
         }
     }
 }

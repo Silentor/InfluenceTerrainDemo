@@ -155,7 +155,7 @@ namespace TerrainDemo
             mount.Snap();
             mount.Changed += MicroOnChanged;
 
-            var wallGenerator = new WallGenerator(10, 1, 5, Micro);
+            var wallGenerator = new WallGenerator(10, 5, 5, Micro);
             var wallData = wallGenerator.Generate(new Vector2(0, -3), 0);
             var wall = new ObjectMap("Wall", wallData.Bounds, Micro);
             wall.SetHeights(wallData.VertexPositions, wallData.Heightmap);
@@ -164,7 +164,7 @@ namespace TerrainDemo
             wall.Snap();
             wall.Changed += MicroOnChanged;
 
-            _hero = new Actor(Micro, new Vector2(12, 3), Vector2.One);
+            _hero = new Actor(Micro, (-11, 7), Vector2.One);
             Micro.AddActor(_hero);
 
             Micro.Changed += MicroOnChanged;
