@@ -186,7 +186,7 @@ namespace TerrainDemo.Hero
             {
                 if (_inputVelocity != Vector2.Zero)
                 {
-                    var rotatedVelocity = _inputVelocity.Length * (Vector2) Forward; //Rotate direction in XZ plane
+                    var rotatedVelocity = (Vector2)Vector3.Transform((Vector3)_inputVelocity, Rotation); //Rotate direction in XZ plane
                     return rotatedVelocity * Speed;
                 }
             }
@@ -367,12 +367,12 @@ namespace TerrainDemo.Hero
                 var fromBlock = (Vector2i) fromPos;
                 var toBlock = (Vector2i) toPos;
 
-                Debug.Log($"{Time.frameCount} - {i}: From pos {fromPos} block {fromBlock} to pos {toPos} block {toBlock}");
+                //Debug.Log($"{Time.frameCount} - {i}: From pos {fromPos} block {fromBlock} to pos {toPos} block {toBlock}");
 
                 //Count from block as passable apriori
                 if (fromBlock == toBlock)
                 {
-                    Debug.Log($"{Time.frameCount} - {i}: Blocks are equal");
+                    //Debug.Log($"{Time.frameCount} - {i}: Blocks are equal");
 
                     toMap = fromMap;
                     return toPos;
@@ -383,13 +383,13 @@ namespace TerrainDemo.Hero
                 foreach (var intersection in intersections)
                 {
                     toBlock = intersection.blockPosition;
-                    Debug.Log($"{Time.frameCount} - {i}: Check pass from {fromBlock} to {toBlock}");
+                    //Debug.Log($"{Time.frameCount} - {i}: Check pass from {fromBlock} to {toBlock}");
                     if (!IsPassable(fromMap, fromBlock, toBlock, out var toMap2))
                     {
                         //Respond to collision
                         var hitPoint = pathRay.GetPoint(intersection.distance);
 
-                        Debug.Log($"{Time.frameCount} - {i}: Inpassable block {intersection.blockPosition}, hit {hitPoint}, normal {intersection.normal}");
+                        //Debug.Log($"{Time.frameCount} - {i}: Inpassable block {intersection.blockPosition}, hit {hitPoint}, normal {intersection.normal}");
 
                         DebugExtension.DebugPoint(hitPoint, Color.red, 0.1f);
 
@@ -409,7 +409,7 @@ namespace TerrainDemo.Hero
 
                         if (projectedCollisionVector == Vector2.Zero) //Resolving finished, return calculated toPos and toMap
                         {
-                            Debug.Log($"{Time.frameCount} - {i}: Resolving completed, result {toPos}");
+                            //Debug.Log($"{Time.frameCount} - {i}: Resolving completed, result {toPos}");
 
                             toMap = fromMap;
                             return fromPos;
@@ -418,13 +418,13 @@ namespace TerrainDemo.Hero
                         {
                             if (i < 1)
                             {
-                                Debug.Log($"{Time.frameCount} - {i}: Projected vector {projectedCollisionVector} not zero, make next iter");
+                                //Debug.Log($"{Time.frameCount} - {i}: Projected vector {projectedCollisionVector} not zero, make next iter");
                                 toPos = fromPos + projectedCollisionVector;
                                 break;
                             }
                             else
                             {
-                                Debug.LogWarning($"{Time.frameCount} - {i} Actor collision still not resolved completely on second check, use last good hit point");
+                                //Debug.LogWarning($"{Time.frameCount} - {i} Actor collision still not resolved completely on second check, use last good hit point");
 
                                 toMap = fromMap;
                                 return fromPos;
@@ -434,7 +434,7 @@ namespace TerrainDemo.Hero
                     }
                     else
                     {
-                        Debug.Log($"{Time.frameCount} - {i}: There is pass from {fromBlock} to {toBlock}, check next pass");
+                        //Debug.Log($"{Time.frameCount} - {i}: There is pass from {fromBlock} to {toBlock}, check next pass");
                         //Continue check intersections
                         fromBlock = toBlock;
                         fromMap = toMap2;

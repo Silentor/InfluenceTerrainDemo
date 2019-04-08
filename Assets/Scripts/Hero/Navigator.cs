@@ -18,10 +18,17 @@ namespace TerrainDemo.Hero
     /// </summary>
     public class Navigator
     {
+        public Actor Owner { get; }
+        public bool IsNavigated { get; private set; }
+
+        public IReadOnlyList<(BaseBlockMap, Vector2i)> Path => _path;
+        public int WaypointIndex { get; private set; }
+
         private readonly MicroMap _map;
         private readonly AStarSearch _pathfinder;
         private IReadOnlyList<(BaseBlockMap, Vector2i)> _path;
-        public Actor Owner { get; }
+        private Task _navigateTask;
+        private CancellationTokenSource _navigateCancel;
 
         public Navigator(Actor owner, MicroMap map)
         {
@@ -41,30 +48,30 @@ namespace TerrainDemo.Hero
             if (Owner.BlockPosition == blockDestination)
                 return;
             
-            _path = _pathfinder.CreatePath(Owner.Map, Owner.BlockPosition, _map, destination);
+            var path = _pathfinder.CreatePath(Owner.Map, Owner.BlockPosition, _map, destination);
 
-            if (_path != null)
+            if (path != null)
             {
-                foreach (var step in _path)
-                {
-                    var blockHeight = step.Item1.GetBlockData(step.Item2).Height;
-                    var blockCenter = BlockInfo.GetWorldCenter(step.Item2);
-                    DebugExtension.DebugWireSphere(new UnityEngine.Vector3(blockCenter.X, blockHeight, blockCenter.Y),
-                        Color.white, 0.3f, 5, true);
-                }
+                _path = path;
+                if(_navigateTask != null && !_navigateTask.IsCompleted)
+                    _navigateCancel?.Cancel();
 
-                Task.Run(() => NavigatePath(_path))
-                    .ContinueWith(t => UnityEngine.Debug.Log($"Navigate task completed"));
+                _navigateCancel = new CancellationTokenSource();
+                _navigateTask = Task.Run(() => NavigatePath(path, _navigateCancel.Token), _navigateCancel.Token);
+                _navigateTask.ContinueWith(navTask =>
+                    UnityEngine.Debug.Log($"Navigate task {(navTask.IsCanceled ? "cancelled" : "completed")}"));
             }
         }
 
-        private async Task NavigatePath(IReadOnlyList<(BaseBlockMap, Vector2i)> path)
+        private async Task NavigatePath(IReadOnlyList<(BaseBlockMap, Vector2i)> path, CancellationToken ct)
         {
             if(path.Count == 0)
                 Owner.Stop();
 
+            IsNavigated = true;
             for (int i = 0; i < path.Count; i++)
             {
+                WaypointIndex = i;
                 var waypoint = path[i];
                 var waypointPosition = BlockInfo.GetWorldCenter(waypoint.Item2);
 
@@ -72,11 +79,19 @@ namespace TerrainDemo.Hero
                 {
                     //Owner.Rotate(waypointPosition);
                     Owner.MoveTo(waypointPosition);
-                    await Task.Delay(300);
+                    await Task.Delay(300, ct);
+
+                    if (ct.IsCancellationRequested)
+                    {
+                        Owner.Stop();
+                        IsNavigated = false;
+                        ct.ThrowIfCancellationRequested();
+                    }
                 }
             }
 
             Owner.Stop();
+            IsNavigated = false;
 
             UnityEngine.Debug.Log($"Path completed");
         }

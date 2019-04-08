@@ -1,5 +1,6 @@
 ﻿using OpenToolkit.Mathematics;
 using TerrainDemo.Hero;
+using TerrainDemo.Micro;
 using TerrainDemo.Tools;
 using TerrainDemo.Visualization;
 using UnityEditor;
@@ -66,6 +67,29 @@ namespace TerrainDemo.Editor
             }
             GUILayout.Label($"Real 3D speed {_real3dSpeed:N2}, 2D speed {_real2dSpeed:N2}");
 
+        }
+
+        private void OnSceneGUI()
+        {
+            if (_actor != null)
+            {
+                if (_actor.Nav.IsNavigated)
+                {
+                    for (int i = 0; i < _actor.Nav.Path.Count; i++)
+                    {
+                        var wp = _actor.Nav.Path[i];
+                        var mapPosition = BlockInfo.GetWorldCenter(wp.Item2);
+                        var position = new UnityEngine.Vector3(mapPosition.X, wp.Item1.GetBlockData(wp.Item2).Height,
+                            mapPosition.Y);
+                        var color = i < _actor.Nav.WaypointIndex
+                            ? Color.gray
+                            : i > _actor.Nav.WaypointIndex
+                                ? Color.white
+                                : Color.red;
+                        DebugExtension.DebugWireSphere(position, color, 0.3f);
+                    }
+                }
+            }
         }
     }
 }

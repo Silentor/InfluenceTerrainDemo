@@ -33,4 +33,6 @@ namespace TerrainDemo.Visualization
             if(Actor == null) throw new ArgumentException("Actor must be initialized");
         }
     }
+
+    
 }
