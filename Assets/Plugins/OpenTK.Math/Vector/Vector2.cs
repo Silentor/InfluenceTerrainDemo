@@ -928,12 +928,19 @@ namespace OpenToolkit.Mathematics
         }
 
         //MODIFIED BY SILENTOR
-        public static explicit operator Vector2(UnityEngine.Vector2 input)
+        public static implicit operator Vector2(UnityEngine.Vector2 input)
         {
             return new Vector2(input.x, input.y);
         }
 
-#endregion
+        //MODIFIED BY SILENTOR
+        public static implicit operator UnityEngine.Vector2(Vector2 input)
+        {
+            return new UnityEngine.Vector2(input.X, input.Y);
+        }
+
+
+        #endregion
 
         #region Custom Vector2 <-> Vector3 conversion logic
         //MODIFIED BY SILENTOR

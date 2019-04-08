@@ -1067,7 +1067,7 @@ namespace OpenToolkit.Mathematics
         [XmlIgnore]
         public Vector3 Xyz
         {
-            get => throw new NotImplementedException(); //Unsafe.As<Vector4, Vector3>(ref this);
+            get => new Vector3(X, Y, Z); //Unsafe.As<Vector4, Vector3>(ref this);
             set
             {
                 X = value.X;

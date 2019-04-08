@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using OpenToolkit.Mathematics;
 using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
 using UnityEngine.Assertions;
+using Debug = UnityEngine.Debug;
 
 //Based on https://www.redblobgames.com/pathfinding/a-star/implementation.html#csharp
 
@@ -84,7 +86,7 @@ namespace TerrainDemo.Hero
             _map = map;
         }
 
-        public bool Passable(BaseBlockMap fromMap, Vector2i fromPos, Vector2i toPos, out BaseBlockMap toMap)
+        private bool Passable(BaseBlockMap fromMap, Vector2i fromPos, Vector2i toPos, out BaseBlockMap toMap)
         {
             var (newMap, newOverlapState) = _map.GetOverlapState(toPos);
 
@@ -149,7 +151,7 @@ namespace TerrainDemo.Hero
 
         public float Cost(Location a, Location b)
         {
-            return 1;       //Calculate cost
+            return 1;       //Calculate true cost
         }
 
         public IEnumerable<Location> Neighbors(BaseBlockMap fromMap, Vector2i fromPos)
@@ -217,30 +219,42 @@ namespace TerrainDemo.Hero
 
     public class AStarSearch
     {
-        public Dictionary<Location, Location> cameFrom
+        private readonly Dictionary<Location, Location> _cameFrom
             = new Dictionary<Location, Location>();
 
-        public readonly Dictionary<Location, float> costSoFar
+        private readonly Dictionary<Location, float> _costSoFar
             = new Dictionary<Location, float>();
-
-        private readonly List<(BaseBlockMap, Vector2i)> _path = new List<(BaseBlockMap, Vector2i)>();
+        
+        private readonly WeightedGraph<Location> _graph;
 
         // Note: a generic version of A* would abstract over Location and
         // also Heuristic
-        static public float Heuristic(Location a, Location b)
+        private static float Heuristic(Location a, Location b)
         {
             return Math.Abs(a.Position.X - b.Position.X) + Math.Abs(a.Position.Z - b.Position.Z);
         }
 
-        public AStarSearch(WeightedGraph<Location> graph, BaseBlockMap fromMap, Vector2i fromPos, BaseBlockMap toMap, Vector2i toPos)
+        public AStarSearch(WeightedGraph<Location> graph)
         {
+            _graph = graph;
+        }
+
+        public IReadOnlyList<(BaseBlockMap, Vector2i)> CreatePath(BaseBlockMap fromMap, Vector2i fromPos,
+            BaseBlockMap toMap, Vector2i toPos)
+        {
+            var timer = Stopwatch.StartNew();
+            int processedLocations = 0, maxFrontierCount = 0;
+
+            _cameFrom.Clear();
+            _costSoFar.Clear();
+
             var frontier = new PriorityQueue<Location>();
             var start = new Location(fromPos, fromMap);
             var goal = new Location(toPos, toMap);
             frontier.Enqueue(start, 0);
 
-            cameFrom[start] = start;
-            costSoFar[start] = 0;
+            _cameFrom[start] = start;
+            _costSoFar[start] = 0;
 
             while (frontier.Count > 0)
             {
@@ -251,46 +265,53 @@ namespace TerrainDemo.Hero
                     break;
                 }
 
-                foreach (var next in graph.Neighbors(current.Map, current.Position))
+                foreach (var next in _graph.Neighbors(current.Map, current.Position))
                 {
-                    var newCost = costSoFar[current]
-                                     + graph.Cost(current, next);
-                    if (!costSoFar.ContainsKey(next)
-                        || newCost < costSoFar[next])
+                    var newCost = _costSoFar[current]
+                                  + _graph.Cost(current, next);
+                    if (!_costSoFar.TryGetValue(next, out var storedNextCost) || newCost< storedNextCost)
                     {
-                        costSoFar[next] = newCost;
+                        _costSoFar[next] = newCost;
                         var priority = newCost + Heuristic(next, goal);
                         frontier.Enqueue(next, priority);
-                        cameFrom[next] = current;
+                        _cameFrom[next] = current;
                     }
                 }
+
+                processedLocations++;
+                if (frontier.Count > maxFrontierCount)
+                    maxFrontierCount = frontier.Count;
             }
+
+            timer.Stop();
 
             //Reconstruct path
             var result = new List<(BaseBlockMap, Vector2i)>();
             Location prev;
-            if (cameFrom.ContainsKey(goal))
+            if (_cameFrom.ContainsKey(goal))
             {
                 prev = goal;
                 result.Add((prev.Map, prev.Position));
             }
             else
-                return;
+            {
+                Debug.Log($"Path from {fromPos} to {toPos} cant be found, processed {processedLocations}, max frontier size {maxFrontierCount}, time {timer.ElapsedMilliseconds} msec");
+                return null;
+            }
 
             do
             {
-                prev = cameFrom[prev];
+                prev = _cameFrom[prev];
                 result.Add((prev.Map, prev.Position));
             } while (prev != start);
 
             result.Reverse();
-            _path = result;
+
+            Debug.Log($"Path from {fromPos} to {toPos} is found, steps {result.Count}, processed {processedLocations}, max frontier size {maxFrontierCount}, time {timer.ElapsedMilliseconds} msec");
+
+            return result;
         }
 
-        public IEnumerable<(BaseBlockMap, Vector2i)> GetPath()
-        {
-            return _path;
-        }
     }
 }
 

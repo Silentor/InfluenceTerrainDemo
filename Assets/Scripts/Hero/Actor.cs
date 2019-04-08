@@ -23,11 +23,10 @@ namespace TerrainDemo.Hero
         /// </summary>
         public float RotationSpeed => 90;
 
-        
-
         public Quaternion Rotation { get; private set; }
 
-        public Vector3 Forward => Rotation * Vector3.UnitZ;
+        public Vector3 Forward => Vector3.Transform(Vector3.UnitZ, Rotation);
+
         public Vector3 Position { get; private set; }
 
         public BaseBlockMap Map => _currentMap;
@@ -47,11 +46,17 @@ namespace TerrainDemo.Hero
             }
         }
 
+        public Navigator Nav { get; }
+
+        public bool IsHero => _fpsLocomotion;
+
         private readonly MicroMap _mainMap;
         private Vector2 _mapPosition;
         private Vector2 _inputVelocity;
         private bool _isStopped = true;
-        private float _targetRotation;
+        private float _rotateDirection;
+        private Vector2? _targetPosition;
+        private Quaternion _targetRotation;
 
         private Vector2i _currentBlockPos;
         private BaseBlockMap _currentMap;
@@ -65,56 +70,99 @@ namespace TerrainDemo.Hero
         private bool _isFalling;
 
         private static readonly float SafeAngle = MathHelper.DegreesToRadians(60);
+        private bool _fpsLocomotion;
 
-        public Actor(MicroMap map, Vector2 startPosition, Vector2 direction)
+        public Actor(MicroMap map, Vector2 startPosition, Vector2 direction, bool fpsLocomotion)
         {
             _mainMap = map;
             _currentMap = map;
             _mapPosition = startPosition;
             _currentBlockPos = (Vector2i) _mapPosition;
             Position = new Vector3(_mapPosition.X, _mainMap.GetHeight(_mapPosition), _mapPosition.Y);
-            Rotation = new Quaternion(0, Vector3.CalculateAngle(Vector3.UnitZ, (Vector3)direction), 0);
+            Rotation = Quaternion.FromEulerAngles(0, Vector3.CalculateAngle(Vector3.UnitZ, (Vector3)direction), 0);
+            Nav = new Navigator(this, map);
+            _fpsLocomotion = fpsLocomotion;
         }
 
-        public Actor(MicroMap map, Vector2i startPosition, Vector2 direction) : this(map, BlockInfo.GetWorldCenter(startPosition), direction) { }
+        public Actor(MicroMap map, Vector2i startPosition, Vector2 direction, bool fpsMode) 
+            : this(map, BlockInfo.GetWorldCenter(startPosition), direction, fpsMode) { }
+
+        #region FPS locomotion
 
         public void Move(Vector2 direction)
         {
-            _inputVelocity = direction;
-            /*
-            Rotation = Quaternion.FromAxisAngle(Vector3.UnitY,
-                Vector3.CalculateAngle(Vector3.UnitZ, new Vector3(direction.X, 0, direction.Y)));
-                */
+            if (!_fpsLocomotion) return;
+            _inputVelocity = direction.LengthSquared > 1 ? Vector2.Normalize(direction) : direction;
             _isStopped = false;
+            _targetPosition = null;
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="direction">-1..1</param>
+        public void Rotate(float direction)
+        {
+            if (!_fpsLocomotion) return;
+            direction = Mathf.Clamp(direction, -1, 1);
+            _rotateDirection = direction;
+        }
+
+        #endregion
+
+        #region NPC locomotion
+
+        public void MoveTo(Vector2 worldPosition)
+        {
+            if (_fpsLocomotion) return;
+            _targetPosition = worldPosition;
+            _inputVelocity = Vector2.Zero;
+            _rotateDirection = 0;
+            _isStopped = false;
+            Rotate(worldPosition);
+        }
+
+        public void Rotate(Vector2 worldPosition)
+        {
+            if (_fpsLocomotion) return;
+            var angle = UnityEngine.Vector2.SignedAngle(worldPosition - (Vector2)Position, UnityEngine.Vector2.up);
+            _targetRotation = Quaternion.FromEulerAngles(0, MathHelper.DegreesToRadians(angle), 0);
+        }
+
+        #endregion
 
         public void Stop()
         {
             _isStopped = true;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="normalizedDelta">-1..1</param>
-        public void Rotate(float normalizedDelta)
-        {
-            _targetRotation = Mathf.Clamp(normalizedDelta, -1, 1) * RotationSpeed;
-        }
-
         public void Update(float deltaTime)
         {
             var isChanged = false;
 
+            
             if (_isFalling)
                 isChanged |= UpdateFalling(deltaTime);
             else
                 isChanged |= UpdateMovement(deltaTime);
+                
 
-            if (_targetRotation != 0)
+            if (_fpsLocomotion)
             {
-                var rotationDelta = Quaternion.FromEulerAngles(0, _targetRotation * deltaTime, 0);
-                Rotation = Rotation * rotationDelta;
+                if (_rotateDirection != 0)
+                {
+                    Rotation = Rotation * Quaternion.FromEulerAngles(0,
+                            MathHelper.DegreesToRadians(_rotateDirection * RotationSpeed * deltaTime), 0);
+                    isChanged = true;
+                }
+            }
+            else
+            {
+                if (Rotation != _targetRotation)
+                {
+                    var unityQuat = UnityEngine.Quaternion.RotateTowards(Rotation, _targetRotation, RotationSpeed * deltaTime);  //todo rewrite on OpenTK
+                    Rotation = unityQuat;
+                }
                 isChanged = true;
             }
 
@@ -131,10 +179,24 @@ namespace TerrainDemo.Hero
 #endif
         private Vector2 GetThrustVelocity()
         {
-            if (!_isStopped && Speed > 0 && _inputVelocity != Vector2.Zero)
+            if(_isStopped || Speed <= 0.01)
+                return Vector2.Zero;
+
+            if (_fpsLocomotion)
             {
-                var rotatedVelocity = (Vector2)Vector3.Transform((Vector3)_inputVelocity, Rotation);      //Rotate direction in XZ plane
-                return rotatedVelocity * Speed;
+                if (_inputVelocity != Vector2.Zero)
+                {
+                    var rotatedVelocity = _inputVelocity.Length * (Vector2) Forward; //Rotate direction in XZ plane
+                    return rotatedVelocity * Speed;
+                }
+            }
+            else
+            {
+                if (_targetPosition.HasValue)
+                {
+                    var direction = _targetPosition.Value - _mapPosition;
+                    return direction.Length > Speed ? direction.Normalized() * Speed : direction;
+                }
             }
 
             return Vector2.Zero;

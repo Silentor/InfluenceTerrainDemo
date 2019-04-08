@@ -88,8 +88,8 @@ namespace TerrainDemo
         private BlockSettings[] _allBlocks;
         private ObjectMap _bridge;
         private Actor _hero;
-        private Navigator _heroNavigator;
         private ObserverController _observer;
+        private Actor _npc;
 
         public void Render(TriRunner renderSettings)
         {
@@ -166,9 +166,13 @@ namespace TerrainDemo
             wall.Snap();
             wall.Changed += MicroOnChanged;
 
-            _hero = new Actor(Micro, (-11, 7), Vector2.One);
-            _heroNavigator = new Navigator(_hero, Micro);
+            _hero = new Actor(Micro, (-11, 7), Vector2.One, true);
             Micro.AddActor(_hero);
+
+            _npc = new Actor(Micro, (-13, 12), Vector2.One, false);
+            Micro.AddActor(_npc);
+
+            _npc.Rotate((Vector2)_hero.Position);
 
             Micro.Changed += MicroOnChanged;
 
@@ -217,7 +221,7 @@ namespace TerrainDemo
             _hero.Stop();
         }
 
-        private void InputSourceOnMove(OpenToolkit.Mathematics.Vector2 direction)
+        private void InputSourceOnMove(Vector2 direction)
         {
             _hero.Move(direction);
         }
@@ -227,9 +231,9 @@ namespace TerrainDemo
             _hero.Rotate(0);
         }
 
-        private void InputSourceOnRotate(float normalized)
+        private void InputSourceOnRotate(float direction)
         {
-            _hero.Rotate(normalized);
+            _hero.Rotate(direction);
         }
 
         private void InputSourceOnFire()
@@ -238,7 +242,7 @@ namespace TerrainDemo
 
             if (hitPoint.HasValue)
             {
-                _heroNavigator.Go(hitPoint.Value.position);
+                _npc.Nav.Go(hitPoint.Value.position);
             }
         }
 
@@ -276,6 +280,7 @@ namespace TerrainDemo
         private void Update()
         {
             _hero?.Update(Time.deltaTime);
+            _npc?.Update(Time.deltaTime);
         }
 #endregion
     }

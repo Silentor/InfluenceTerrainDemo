@@ -14,6 +14,17 @@ namespace TerrainDemo.Visualization
         {
             if (Actor != null) throw new InvalidOperationException("Double init is not allowed");
             Actor = actor ?? throw new ArgumentNullException(nameof(actor));
+
+            if (!Actor.IsHero)
+            {
+                var renderer = GetComponentInChildren<UnityEngine.Renderer>();
+                renderer.material.color = Color.blue;
+                gameObject.name = "Npc";
+            }
+            else
+            {
+                gameObject.name = "Hero";
+            }
         }
 
         // Start is called before the first frame update

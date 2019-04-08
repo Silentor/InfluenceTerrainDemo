@@ -47,28 +47,23 @@ namespace TerrainDemo.Hero
             if (normalizedPosition.x >= 0 && normalizedPosition.x <= 1 && normalizedPosition.y >= 0 &&
                 normalizedPosition.y <= 1)
             {
-                var mouseManualRotation = (normalizedPosition - _oldMouseNormalizedPosition).x;
+                float mouseManualRotation = Math.Sign((normalizedPosition - _oldMouseNormalizedPosition).x);
 
                 //Get simulated delta if mouse near screen edges
-                var mouseAutoRotation = 0f;
-                if (normalizedPosition.x < 0.1f && normalizedPosition.x >= 0)
-                    mouseAutoRotation = -0.01f;
-                else if (normalizedPosition.x > 0.9f && normalizedPosition.x <= 1)
-                    mouseAutoRotation = 0.01f;
-
-                if (Math.Abs(mouseAutoRotation) > Math.Abs(mouseManualRotation))
-                    mouseManualRotation = mouseAutoRotation;
-
-                if (mouseManualRotation != _lastRotationFired)
+                if (mouseManualRotation == 0)
                 {
-                    if (mouseManualRotation != 0)
-                        Rotate?.Invoke(mouseManualRotation);
-                    else
-                        StopRotating?.Invoke();
-
-                    _lastRotationFired = mouseManualRotation;
+                    if (normalizedPosition.x < 0.1f && normalizedPosition.x >= 0)
+                        mouseManualRotation = -1;
+                    else if (normalizedPosition.x > 0.9f && normalizedPosition.x <= 1)
+                        mouseManualRotation = 1;
                 }
 
+                if (mouseManualRotation != 0)
+                    Rotate?.Invoke(mouseManualRotation);
+                else if (_lastRotationFired != 0)
+                    StopRotating?.Invoke();
+
+                _lastRotationFired = mouseManualRotation;
                 _oldMouseNormalizedPosition = normalizedPosition;
             }
             else
