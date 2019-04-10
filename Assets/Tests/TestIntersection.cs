@@ -18,11 +18,11 @@ namespace TerrainDemo.Tests
         {
             _handle1 = new GameObject("Handle1");
             _handle1.transform.parent = transform;
-            _handle1.transform.localPosition = new Vector3(-10, 0, -5);
+            _handle1.transform.localPosition = new Vector3(0, 0, 1);
 
             _handle2 = new GameObject("Handle2");
             _handle2.transform.parent = transform;
-            _handle2.transform.localPosition = new Vector3(10, 1, 5);
+            _handle2.transform.localPosition = new Vector3(1, 1, 0);
 
             _handle3 = new GameObject("Handle3");
             _handle3.transform.parent = transform;
@@ -139,7 +139,7 @@ namespace TerrainDemo.Tests
 
             var from = (OpenToolkit.Mathematics.Vector2)handle1Pos;
             var to = (OpenToolkit.Mathematics.Vector2)handle2Pos;
-            var intersections = Intersections.GridIntersections(from, to);
+            var intersections = Intersections.GridIntersections(from, to).Take(30).ToArray();
 
             var ray = new UnityEngine.Ray(handle1Pos, handle2Pos - handle1Pos);
             foreach (var intersection in intersections)

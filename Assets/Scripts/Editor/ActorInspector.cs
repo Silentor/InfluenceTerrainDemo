@@ -5,6 +5,7 @@ using TerrainDemo.Tools;
 using TerrainDemo.Visualization;
 using UnityEditor;
 using UnityEngine;
+using Quaternion = UnityEngine.Quaternion;
 using Vector2 = OpenToolkit.Mathematics.Vector2;
 using Vector3 = OpenToolkit.Mathematics.Vector3;
 
@@ -86,7 +87,9 @@ namespace TerrainDemo.Editor
                             : i > _actor.Nav.WaypointIndex
                                 ? Color.white
                                 : Color.red;
-                        DebugExtension.DebugWireSphere(position, color, 0.3f);
+                        Handles.color = color;
+                        Handles.SphereHandleCap(0, position, Quaternion.identity, 1f, EventType.Repaint);
+                        //DebugExtension.DebugWireSphere(position, color, 0.3f);
                     }
                 }
             }

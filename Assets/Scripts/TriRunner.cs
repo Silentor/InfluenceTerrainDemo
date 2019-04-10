@@ -130,6 +130,7 @@ namespace TerrainDemo
 
             microtimer.Stop();
 
+            /*
             var laputaGenerator = new LaputaGenerator(5);
             var laputaData = laputaGenerator.Generate(new Vector2(-14, -14), 10);
             var laputa = new ObjectMap("Laputa", laputaData.Bounds, Micro);
@@ -138,6 +139,7 @@ namespace TerrainDemo
             Micro.AddChild(laputa);
             laputa.Snap();
             laputa.Changed += MicroOnChanged;
+            */
             
             var bridgeGenerator = new BridgeGenerator(20, 6, 6);
             var bridgeData = bridgeGenerator.Generate(new Vector2(0, 5), 4);
@@ -157,7 +159,7 @@ namespace TerrainDemo
             mount.Snap();
             mount.Changed += MicroOnChanged;
 
-            var wallGenerator = new WallGenerator(10, 5, 5, Micro);
+            var wallGenerator = new WallGenerator(10, 10, 5, Micro);
             var wallData = wallGenerator.Generate(new Vector2(0, -3), 0);
             var wall = new ObjectMap("Wall", wallData.Bounds, Micro);
             wall.SetHeights(wallData.VertexPositions, wallData.Heightmap);
@@ -165,6 +167,32 @@ namespace TerrainDemo
             Micro.AddChild(wall);
             wall.Snap();
             wall.Changed += MicroOnChanged;
+
+            wallData = wallGenerator.Generate(new Vector2(-15, 0), 0);
+            wall = new ObjectMap("Wall2", wallData.Bounds, Micro);
+            wall.SetHeights(wallData.VertexPositions, wallData.Heightmap);
+            wall.SetBlocks(wallData.BlockPositions, wallData.Blockmap);
+            Micro.AddChild(wall);
+            wall.Snap();
+            wall.Changed += MicroOnChanged;
+
+            wallData = wallGenerator.Generate(new Vector2(0, -18), 0);
+            wall = new ObjectMap("Wall3", wallData.Bounds, Micro);
+            wall.SetHeights(wallData.VertexPositions, wallData.Heightmap);
+            wall.SetBlocks(wallData.BlockPositions, wallData.Blockmap);
+            Micro.AddChild(wall);
+            wall.Snap();
+            wall.Changed += MicroOnChanged;
+
+            wallData = wallGenerator.Generate(new Vector2(-18, -20), 0);
+            wall = new ObjectMap("Wall4", wallData.Bounds, Micro);
+            wall.SetHeights(wallData.VertexPositions, wallData.Heightmap);
+            wall.SetBlocks(wallData.BlockPositions, wallData.Blockmap);
+            Micro.AddChild(wall);
+            wall.Snap();
+            wall.Changed += MicroOnChanged;
+
+
 
             _hero = new Actor(Micro, (-11, 7), Vector2.One, true);
             Micro.AddActor(_hero);

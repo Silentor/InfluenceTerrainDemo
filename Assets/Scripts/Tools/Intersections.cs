@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
+using OpenToolkit.Mathematics;
 using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
 using UnityEngine;
@@ -385,7 +386,7 @@ namespace TerrainDemo.Tools
             return null;
         }
 
-        public static IEnumerable<(Vector2i blockPosition, float distance, Vector2i normal)> GridIntersections(OpenToolkit.Mathematics.Vector2 start, OpenToolkit.Mathematics.Vector2 finish)
+        public static IEnumerable<(Vector2i blockPosition, float distance, Vector2i normal)> GridIntersections(OpenToolkit.Mathematics.Vector2 start, OpenToolkit.Mathematics.Vector2 finish, int blockLimit = 1000)
         {
             var xIncrement = Math.Sign(finish.X - start.X);
             var yIncrement = Math.Sign(finish.Y - start.Y);
@@ -396,9 +397,15 @@ namespace TerrainDemo.Tools
             if (startBlock == finishBlock)
                 yield break;
 
-            var k = (finish.Y - start.Y) / (finish.X - start.X);        //Угловой коэфициент
-            var testedXPosition = xIncrement < 0 ? startBlock.X + 1 : startBlock.X;
-            var testedYPosition = yIncrement < 0 ? startBlock.Z + 1 : startBlock.Z;
+            //var k = (finish.Y - start.Y) / (finish.X - start.X);        //Угловой коэфициент прямой
+            //Combined division severely impact accuracy for fractions like 1/3
+            var k1 = finish.Y - start.Y;
+            var k2 = finish.X - start.X;
+
+            //Debug.Log($"Start block {startBlock}, finish {finishBlock}, x inc {xIncrement}, y inc {yIncrement}, k {k1 / k2}");
+
+            var testedXPosition = xIncrement > 0 ? startBlock.X + 1 : startBlock.X;
+            var testedYPosition = yIncrement > 0 ? startBlock.Z + 1 : startBlock.Z;
 
             //Fast pass - horizontal line
             if (startBlock.X == finishBlock.X)
@@ -406,12 +413,18 @@ namespace TerrainDemo.Tools
                 while (startBlock != finishBlock)
                 {
                     var pointY = new OpenToolkit.Mathematics.Vector2(
-                        ((testedYPosition + yIncrement) - start.Y) / k + start.X,
-                        testedYPosition + yIncrement);
+                        ((testedYPosition) - start.Y) * k2 / k1 + start.X,
+                        testedYPosition);
 
                     testedYPosition += yIncrement;
                     startBlock = new Vector2i(startBlock.X, startBlock.Z + yIncrement);
                     yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointY, start), new Vector2i(0, -yIncrement));
+
+                    if (--blockLimit <= 0)
+                    {
+                        Debug.LogWarning($"Block limit on grid intersections from {start} to {finish}");
+                        yield break;
+                    }
                 }
             }
             //Fast pass - vertical line
@@ -419,45 +432,98 @@ namespace TerrainDemo.Tools
             {
                 while (startBlock != finishBlock)
                 {
-                    var pointX = new OpenToolkit.Mathematics.Vector2(testedXPosition + xIncrement,
-                        k * ((testedXPosition + xIncrement) - start.X) + start.Y);
+                    var pointX = new OpenToolkit.Mathematics.Vector2(testedXPosition,
+                        (testedXPosition - start.X) * k1 / k2 + start.Y);
 
                     testedXPosition += xIncrement;
                     startBlock = new Vector2i(startBlock.X + xIncrement, startBlock.Z);
                     yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointX, start), new Vector2i(-xIncrement, 0));
+
+                    if (--blockLimit <= 0)
+                    {
+                        Debug.LogWarning($"Block limit on grid intersections from {start} to {finish}");
+                        yield break;
+                    }
+
                 }
             }
             //Default pass - diagonal line
             else
             {
                 var testedPoint = start;
-                var pointX = new OpenToolkit.Mathematics.Vector2(testedXPosition + xIncrement,
-                    k * ((testedXPosition + xIncrement) - start.X) + start.Y);
-                var pointY = new OpenToolkit.Mathematics.Vector2(((testedYPosition + yIncrement) - start.Y) / k + start.X,
-                    testedYPosition + yIncrement);
+                var pointX = new OpenToolkit.Mathematics.Vector2(testedXPosition,
+                    (testedXPosition - start.X) * k1 / k2 + start.Y);
+                var pointY = new OpenToolkit.Mathematics.Vector2((testedYPosition - start.Y) * k2 / k1 + start.X,
+                    testedYPosition);
                 while (startBlock != finishBlock)
                 {
+                    var distanceToXPoint = OpenToolkit.Mathematics.Vector2.DistanceSquared(pointX, testedPoint);
+                    var distanceToYPoint = OpenToolkit.Mathematics.Vector2.DistanceSquared(pointY, testedPoint);
+                    //Debug.Log($"{Time.frameCount}: comparing distance ({pointX}, {testedPoint}) = {distanceToXPoint} and ({pointY}, {testedPoint}) = {distanceToYPoint}. Diff {Math.Abs(distanceToXPoint-distanceToYPoint)}");
+
                     //Compare two intersection points
-                    if (OpenToolkit.Mathematics.Vector2.DistanceSquared(pointX, testedPoint) < OpenToolkit.Mathematics.Vector2.DistanceSquared(pointY, testedPoint))
+                    if (MathHelper.ApproximatelyEquivalent(distanceToXPoint, distanceToYPoint, 0.00000001))  //Tolerance for ~1 values
                     {
+                        //Check for bad strict diagonal case, select step closer to final block
+                        //Debug.Log($"Points on equal distance");
+                        if (Vector2i.DistanceSquared(new Vector2i(startBlock.X + xIncrement, startBlock.Z), finishBlock) < Vector2i.DistanceSquared(new Vector2i(startBlock.X, startBlock.Z + yIncrement), finishBlock))
+                        {
+                            //X-increment block is closer
+                            testedXPosition += xIncrement;
+                            testedPoint = pointX;
+                            startBlock = new Vector2i(startBlock.X + xIncrement, startBlock.Z);
+                            yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointX, start), new Vector2i(-xIncrement, 0));
+                            pointX = new OpenToolkit.Mathematics.Vector2(testedXPosition,
+                                (testedXPosition - start.X) * k1 / k2 + start.Y);
+                        }
+                        else
+                        {
+                            //X-increment block is closer
+                            testedYPosition += yIncrement;
+                            testedPoint = pointY;
+                            startBlock = new Vector2i(startBlock.X, startBlock.Z + yIncrement);
+                            yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointY, start),
+                                new Vector2i(0, -yIncrement));
+                            pointY = new OpenToolkit.Mathematics.Vector2(
+                                (testedYPosition - start.Y) * k2 / k1 + start.X,
+                                testedYPosition);
+                        }
+                    }
+                    else if (distanceToXPoint < distanceToYPoint)
+                    {
+                        //Debug.Log($"First point {pointX} is nearer, step from {startBlock} to {new Vector2i(startBlock.X + xIncrement, startBlock.Z)} at {pointX}");
+
                         testedXPosition += xIncrement;
                         testedPoint = pointX;
                         startBlock = new Vector2i(startBlock.X + xIncrement, startBlock.Z);
                         yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointX, start), new Vector2i(-xIncrement, 0));
-                        pointX = new OpenToolkit.Mathematics.Vector2(testedXPosition + xIncrement,
-                            k * ((testedXPosition + xIncrement) - start.X) + start.Y);
+                        pointX = new OpenToolkit.Mathematics.Vector2(testedXPosition,
+                            (testedXPosition - start.X) * k1 / k2 + start.Y);
                     }
                     else
                     {
+                        //Debug.Log($"Second point {pointY} is nearer, step from {startBlock} to {new Vector2i(startBlock.X, startBlock.Z + yIncrement)} at {pointY}");
                         testedYPosition += yIncrement;
                         testedPoint = pointY;
                         startBlock = new Vector2i(startBlock.X, startBlock.Z + yIncrement);
                         yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointY, start), new Vector2i(0, -yIncrement));
-                        pointY = new OpenToolkit.Mathematics.Vector2(((testedYPosition + yIncrement) - start.Y) / k + start.X,
-                            testedYPosition + yIncrement);
+                        pointY = new OpenToolkit.Mathematics.Vector2((testedYPosition - start.Y) * k2 / k1 + start.X,
+                            testedYPosition);
+                    }
+
+                    if (--blockLimit <= 0)
+                    {
+                        Debug.LogWarning($"Block limit on grid intersections from {start} to {finish}");
+                        yield break;
                     }
                 }
             }
+        }
+
+        public static IEnumerable<(Vector2i blockPosition, float distance, Vector2i normal)> GridIntersections(
+            Vector2i start, Vector2i finish, int blockLimit = 1000)
+        {
+            return GridIntersections(BlockInfo.GetWorldCenter(start), BlockInfo.GetWorldCenter(finish), blockLimit);
         }
     }
 }

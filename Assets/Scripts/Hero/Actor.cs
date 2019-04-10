@@ -21,7 +21,7 @@ namespace TerrainDemo.Hero
         /// <summary>
         /// Max angular speed (deg)
         /// </summary>
-        public float RotationSpeed => 90;
+        public float RotationSpeed => 180;
 
         public Quaternion Rotation { get; private set; }
 
@@ -71,6 +71,7 @@ namespace TerrainDemo.Hero
 
         private static readonly float SafeAngle = MathHelper.DegreesToRadians(60);
         private bool _fpsLocomotion;
+        private bool _autoStop;
 
         public Actor(MicroMap map, Vector2 startPosition, Vector2 direction, bool fpsLocomotion)
         {
@@ -112,13 +113,14 @@ namespace TerrainDemo.Hero
 
         #region NPC locomotion
 
-        public void MoveTo(Vector2 worldPosition)
+        public void MoveTo(Vector2 worldPosition, bool autoStop)
         {
             if (_fpsLocomotion) return;
             _targetPosition = worldPosition;
             _inputVelocity = Vector2.Zero;
             _rotateDirection = 0;
             _isStopped = false;
+            _autoStop = autoStop;
             Rotate(worldPosition);
         }
 
@@ -139,7 +141,6 @@ namespace TerrainDemo.Hero
         public void Update(float deltaTime)
         {
             var isChanged = false;
-
             
             if (_isFalling)
                 isChanged |= UpdateFalling(deltaTime);
@@ -195,7 +196,10 @@ namespace TerrainDemo.Hero
                 if (_targetPosition.HasValue)
                 {
                     var direction = _targetPosition.Value - _mapPosition;
-                    return direction.Length > Speed ? direction.Normalized() * Speed : direction;
+                    if (_autoStop)
+                        return direction.Length > Speed ? direction.Normalized() * Speed : direction;
+                    else
+                        return direction.Normalized() * Speed;
                 }
             }
 
@@ -288,7 +292,7 @@ namespace TerrainDemo.Hero
         /// <param name="toPos"></param>
         /// <param name="toMap"></param>
         /// <returns></returns>
-        private bool IsPassable(BaseBlockMap fromMap, Vector2i fromPos, Vector2i toPos, out BaseBlockMap toMap)
+        public bool IsPassable(BaseBlockMap fromMap, Vector2i fromPos, Vector2i toPos, out BaseBlockMap toMap)
         {
             //Assume that fromPos -> toPos is small for simplicity
             /*

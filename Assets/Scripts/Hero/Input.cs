@@ -7,7 +7,7 @@ namespace TerrainDemo.Hero
     public class Input : MonoBehaviour
     {
         private Vector2 _oldMoveDirection;
-        private Vector2 _oldMouseNormalizedPosition;
+        private Vector2? _oldMouseNormalizedPosition;
         private float _lastRotationFired;
 
         private void Start()
@@ -42,39 +42,29 @@ namespace TerrainDemo.Hero
             }
 
             //Process rotation input
+            
+
             //Get horizontal mouse move
             var normalizedPosition = UnityEngine.Input.mousePosition / new Vector2(Screen.width, Screen.height);
-            if (normalizedPosition.x >= 0 && normalizedPosition.x <= 1 && normalizedPosition.y >= 0 &&
-                normalizedPosition.y <= 1)
+
+            if (UnityEngine.Input.GetMouseButtonDown(1) && normalizedPosition.x >= 0 && normalizedPosition.x <= 1 && normalizedPosition.y >= 0 && normalizedPosition.y <= 1)
             {
-                float mouseManualRotation = Math.Sign((normalizedPosition - _oldMouseNormalizedPosition).x);
-
-                //Get simulated delta if mouse near screen edges
-                if (mouseManualRotation == 0)
-                {
-                    if (normalizedPosition.x < 0.1f && normalizedPosition.x >= 0)
-                        mouseManualRotation = -1;
-                    else if (normalizedPosition.x > 0.9f && normalizedPosition.x <= 1)
-                        mouseManualRotation = 1;
-                }
-
-                if (mouseManualRotation != 0)
-                    Rotate?.Invoke(mouseManualRotation);
-                else if (_lastRotationFired != 0)
-                    StopRotating?.Invoke();
-
-                _lastRotationFired = mouseManualRotation;
                 _oldMouseNormalizedPosition = normalizedPosition;
             }
-            else
+            else if (UnityEngine.Input.GetMouseButton(1) && _oldMouseNormalizedPosition.HasValue)
             {
-                if (_lastRotationFired != 0)
-                {
-                    _lastRotationFired = 0;
-                    StopRotating?.Invoke();
-                }
-
+                float mouseManualRotation = Math.Sign((normalizedPosition - _oldMouseNormalizedPosition.Value).x);
                 _oldMouseNormalizedPosition = normalizedPosition;
+
+                if (mouseManualRotation != 0)
+                    DoRotate(mouseManualRotation);
+                else
+                    DoStopRotating();
+            }
+            else if(UnityEngine.Input.GetMouseButtonUp(1))
+            {
+                DoStopRotating();
+                _oldMouseNormalizedPosition = null;
             }
 
             /*
@@ -89,16 +79,36 @@ namespace TerrainDemo.Hero
                 Fire();
             }
 
+            /*
             if (UnityEngine.Input.GetMouseButtonUp(1))
             {
                 Build();
             }
+            */
 
 
             //Debug keys
             //Soft restart
             if (UnityEngine.Input.GetKey(KeyCode.R) && UnityEngine.Input.GetKey(KeyCode.LeftShift))
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        }
+
+        private void DoStopRotating()
+        {
+            if (_lastRotationFired != 0)
+            {
+                StopRotating?.Invoke();
+                _lastRotationFired = 0;
+            }
+        }
+
+        private void DoRotate(float value)
+        {
+            if (_lastRotationFired != value)
+            {
+                Rotate?.Invoke(value);
+                _lastRotationFired = value;
+            }
         }
 
         /// <summary>

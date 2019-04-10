@@ -47,8 +47,12 @@ namespace TerrainDemo.Hero
 
             if (Owner.BlockPosition == blockDestination)
                 return;
-            
-            var path = _pathfinder.CreatePath(Owner.Map, Owner.BlockPosition, _map, destination);
+
+            List<(BaseBlockMap, Vector2i)> path;
+            if(_pathfinder.IsStraightPathExists(Owner, (Owner.Map, Owner.BlockPosition), (Owner.Map, blockDestination)))
+                path = new List<(BaseBlockMap, Vector2i)>(){(Owner.Map, blockDestination)};
+            else
+                path = _pathfinder.CreatePath(Owner, Owner.Map, Owner.BlockPosition, _map, destination);
 
             if (path != null)
             {
@@ -63,6 +67,15 @@ namespace TerrainDemo.Hero
             }
         }
 
+        /// <summary>
+        /// Remove not needed waypoints
+        /// </summary>
+        /// <param name="path"></param>
+        private void SmoothPath(List<(BaseBlockMap, Vector2i)> path)
+        {
+
+        }
+
         private async Task NavigatePath(IReadOnlyList<(BaseBlockMap, Vector2i)> path, CancellationToken ct)
         {
             if(path.Count == 0)
@@ -75,10 +88,10 @@ namespace TerrainDemo.Hero
                 var waypoint = path[i];
                 var waypointPosition = BlockInfo.GetWorldCenter(waypoint.Item2);
 
-                while (Vector2.Distance((Vector2) Owner.Position, waypointPosition) > 1)
+                while (Vector2.Distance((Vector2) Owner.Position, waypointPosition) > 0.5f)
                 {
                     //Owner.Rotate(waypointPosition);
-                    Owner.MoveTo(waypointPosition);
+                    Owner.MoveTo(waypointPosition, i == path.Count - 1);
                     await Task.Delay(300, ct);
 
                     if (ct.IsCancellationRequested)

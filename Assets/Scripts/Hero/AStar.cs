@@ -5,6 +5,8 @@ using System.Linq;
 using OpenToolkit.Mathematics;
 using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
+using TerrainDemo.Tools;
+using UnityEditor;
 using UnityEngine.Assertions;
 using Debug = UnityEngine.Debug;
 
@@ -18,7 +20,7 @@ namespace TerrainDemo.Hero
     public interface WeightedGraph<L>
     {
         float Cost(Location a, Location b);
-        IEnumerable<Location> Neighbors(BaseBlockMap fromMap, Vector2i fromPos);
+        IEnumerable<Location> Neighbors(Actor actor, BaseBlockMap fromMap, Vector2i fromPos);
     }
 
 
@@ -86,80 +88,17 @@ namespace TerrainDemo.Hero
             _map = map;
         }
 
-        private bool Passable(BaseBlockMap fromMap, Vector2i fromPos, Vector2i toPos, out BaseBlockMap toMap)
-        {
-            var (newMap, newOverlapState) = _map.GetOverlapState(toPos);
-
-            //Check special cases with map change
-            ref readonly var fromData = ref fromMap.GetBlockData(fromPos);
-            ref readonly var toData = ref BlockData.Empty;
-            toMap = null;
-            switch (newOverlapState)
-            {
-                //Check from object map to main map transition
-                case BlockOverlapState.Under:
-                case BlockOverlapState.None:
-                    {
-                        toData = ref _map.GetBlockData(toPos);
-                        toMap = _map;
-                    }
-                    break;
-
-                case BlockOverlapState.Above:
-                    {
-                        ref readonly var aboveBlockData = ref newMap.GetBlockData(toPos);
-
-                        //Can we pass under floating block?
-                        if (aboveBlockData.MinHeight > fromData.MaxHeight + 2)
-                        {
-                            toData = ref fromMap.GetBlockData(toPos);
-                            toMap = fromMap;
-                        }
-                        else
-                        {
-                            toData = ref aboveBlockData;
-                            toMap = newMap;
-                        }
-                    }
-                    break;
-
-                case BlockOverlapState.Overlap:
-                    {
-                        toData = ref newMap.GetBlockData(toPos);
-                        toMap = newMap;
-                    }
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-
-            if (toData != BlockData.Empty)
-            {
-                if (toData.Height < fromData.Height + 1 &&
-                    Vector3.CalculateAngle(Vector3.UnitY, toData.Normal) < SafeAngle)
-                {
-                    //Can step on new block
-                    Assert.IsNotNull(toMap);
-                    return true;
-                }
-            }
-
-            //No pass 
-            return false;
-        }
-
         public float Cost(Location a, Location b)
         {
             return 1;       //Calculate true cost
         }
 
-        public IEnumerable<Location> Neighbors(BaseBlockMap fromMap, Vector2i fromPos)
+        public IEnumerable<Location> Neighbors(Actor actor, BaseBlockMap fromMap, Vector2i fromPos)
         {
             foreach (var dir in Directions.Vector2I)
             {
                 var neighborPos = fromPos + dir;
-                if (_map.Bounds.Contains(neighborPos) && Passable(fromMap, fromPos, neighborPos, out var toMap))
+                if (_map.Bounds.Contains(neighborPos) && actor.IsPassable(fromMap, fromPos, neighborPos, out var toMap))
                     yield return new Location(neighborPos, toMap);
             }
         }
@@ -239,7 +178,7 @@ namespace TerrainDemo.Hero
             _graph = graph;
         }
 
-        public IReadOnlyList<(BaseBlockMap, Vector2i)> CreatePath(BaseBlockMap fromMap, Vector2i fromPos,
+        public List<(BaseBlockMap, Vector2i)> CreatePath(Actor actor, BaseBlockMap fromMap, Vector2i fromPos,
             BaseBlockMap toMap, Vector2i toPos)
         {
             var timer = Stopwatch.StartNew();
@@ -265,7 +204,7 @@ namespace TerrainDemo.Hero
                     break;
                 }
 
-                foreach (var next in _graph.Neighbors(current.Map, current.Position))
+                foreach (var next in _graph.Neighbors(actor, current.Map, current.Position))
                 {
                     var newCost = _costSoFar[current]
                                   + _graph.Cost(current, next);
@@ -304,12 +243,64 @@ namespace TerrainDemo.Hero
                 prev = _cameFrom[prev];
                 result.Add((prev.Map, prev.Position));
             } while (prev != start);
-
             result.Reverse();
+
+            //Simplify path straight lines
+            {
+                for (int i = 1; i < result.Count - 1; i++)
+                {
+                    var dir1 = result[i - 1].Item2 - result[i].Item2;
+                    var dir2 = result[i].Item2 - result[i + 1].Item2;
+                    if (Math.Sign(dir1.X) == Math.Sign(dir2.X) && Math.Sign(dir1.Z) == Math.Sign(dir2.Z))
+                    {
+                        result.RemoveAt(i);
+                        i--;
+                    }
+                }
+            }
+
+            //Simplify corners
+            {
+                var i = 0;
+                while (i < result.Count - 2)
+                {
+                    if (IsStraightPathExists(actor, result[i], result[i + 2]))
+                    {
+                        Debug.Log(
+                            $"There is path from {result[i].Item2} to {result[i + 2].Item2}, remove {result[i + 1].Item2}");
+                        result.RemoveAt(i + 1);
+                    }
+                    else
+                        i++;
+                }
+            }
 
             Debug.Log($"Path from {fromPos} to {toPos} is found, steps {result.Count}, processed {processedLocations}, max frontier size {maxFrontierCount}, time {timer.ElapsedMilliseconds} msec");
 
             return result;
+        }
+
+        public bool IsStraightPathExists(Actor actor, (BaseBlockMap Map, Vector2i Pos) from, (BaseBlockMap Map, Vector2i Pos) to)
+        {
+            if (from == to)
+                return true;
+
+            var raster = Intersections.GridIntersections(from.Pos, to.Pos);
+            var currentMap = from.Map;
+            var currentPos = from.Pos;
+            foreach (var intersection in raster)
+            {
+                var nextPosition = intersection.blockPosition;
+                if (actor.IsPassable(currentMap, currentPos, nextPosition, out var nextMap))
+                {
+                    currentMap = nextMap;
+                    currentPos = nextPosition;
+                }
+                else
+                    return false;
+            }
+
+            return true;
         }
 
     }

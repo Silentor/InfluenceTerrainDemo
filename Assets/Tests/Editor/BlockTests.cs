@@ -9,7 +9,7 @@ namespace TerrainDemo.Tests.Editor
 {
     public class BlockTests
     {
-        [Test]
+        //[Test]
         public void TestCreateAutoFix()
         {
             throw new NotImplementedException();
