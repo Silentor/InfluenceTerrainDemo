@@ -16,7 +16,7 @@ namespace TerrainDemo.Generators
         {
             Assert.IsTrue(biome.Type == BiomeType.Mountain);
 
-            _microReliefNoise = new FastNoise(_random.Seed);
+            _microReliefNoise = new FastNoise(_zoneRandom.Seed);
             _microReliefNoise.SetFrequency(1);
         }
 
@@ -67,7 +67,8 @@ namespace TerrainDemo.Generators
                 macroHeight.Base);
         }
 
-        public override BlockLayers GenerateBlock3(Vector2i position, in Heights v00, in Heights v01, in Heights v10, in Heights v11)
+        public override BlockLayers GenerateBlock3(Vector2i position, in Heights v00, in Heights v01,
+            in Heights v10, in Heights v11)
         {
             return new BlockLayers(BlockType.Stone, BlockType.GoldOre);
         }

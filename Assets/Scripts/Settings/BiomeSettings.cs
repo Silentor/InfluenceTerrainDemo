@@ -53,6 +53,7 @@ namespace TerrainDemo.Settings
         TestBaseOreGroundColumn,
         TestBaseOrePyramidGround,
         TestTunnel,
-        TestEnd = TestTunnel,
+        TestNavigation,
+        TestEnd = TestNavigation
     }
 }

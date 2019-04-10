@@ -152,6 +152,8 @@ namespace TerrainDemo.Macro
                 var influenceBuffer = new Influence[bufferSize.Size.X + 1, bufferSize.Size.Z + 1];      //Shared block/vertex influence buffer
                 var blockBuffer2 = new List<Blocks>(microcell.BlockPositions.Length);
 
+                mainGenerator.BeginCellGeneration(microcell);
+
                 //First run - generate heights
                 foreach (var vertexPos in microcell.VertexPositions)
                 {
@@ -213,11 +215,10 @@ namespace TerrainDemo.Macro
                         !v11.IsUndergroundLayerPresent)
                         under = BlockType.Empty;
 
-                    //var calculatedHeight = (Heights)(((Vector3) v00 + (Vector3) v01 + (Vector3) v10 + (Vector3) v11) / 4);
-
-                    //Calculate block height from height vertices (todo maybe block height is not neccessary in block, move it to temporary block data)
                     blockBuffer2.Add(new Blocks(main, under));
                 }
+
+                mainGenerator.EndCellGeneration(microcell);
 
                 outputMap.SetHeights(microcell.VertexPositions, heightBuffer2);
                 outputMap.SetBlocks(microcell.BlockPositions, blockBuffer2, false);
@@ -269,6 +270,8 @@ namespace TerrainDemo.Macro
                     return new DesertGenerator(map, cells, zoneId, biome, settings);
                 case BiomeType.Caves:
                     return new CavesGenerator(map, cells, zoneId, biome, settings);
+                case BiomeType.TestNavigation:
+                    return new NavigationTestGenerator(map, cells, zoneId, biome, settings);
 
                 default:
                 {

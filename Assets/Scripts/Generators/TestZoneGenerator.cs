@@ -151,9 +151,9 @@ namespace TerrainDemo.Generators
         //            //blocks = new Blocks(BlockType.Grass, BlockType.GoldOre, new Heights(10, 5, -5));
 
         //            //All block has different heights
-        //            var baseHeight = _random.Range(0, 5);
-        //            var underHeight = baseHeight + _random.Range(0, 5);
-        //            var groundHeight = underHeight + _random.Range(0, 5);
+        //            var baseHeight = _zoneRandom.Range(0, 5);
+        //            var underHeight = baseHeight + _zoneRandom.Range(0, 5);
+        //            var groundHeight = underHeight + _zoneRandom.Range(0, 5);
 
         //            block = new Blocks(BlockType.Grass, BlockType.GoldOre, 
         //                new Heights(groundHeight, underHeight, baseHeight));

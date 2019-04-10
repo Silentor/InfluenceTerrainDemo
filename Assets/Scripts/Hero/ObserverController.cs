@@ -23,6 +23,11 @@ namespace TerrainDemo.Hero
 
         public GameObject CursorObjectPrefab;
 
+        [Header("Camera control")]
+        public float CameraHeight = 3;
+        public float CameraDistance = 5;
+        public float ZoomSpeed = 20;
+
         public float FOV { get { return _camera.fieldOfView; } }
         public Vector3 Position { get { return _camera.transform.position; } }
         public Quaternion Rotation { get { return _camera.transform.rotation; } }
@@ -30,6 +35,15 @@ namespace TerrainDemo.Hero
         public float Range { get { return AOIRange; } }
         public (OpenToolkit.Mathematics.Vector3 hitPoint, Vector2i position, BaseBlockMap source)? HitPoint { get; private set; }
 
+        public void SetTarget(Actor target)
+        {
+            _target = target;
+        }
+
+        public void SetZoomDirection(float zoomDelta)
+        {
+            _zoomDirection = zoomDelta;
+        }
 
         /// <summary>
         /// Get chunk positions order by valuable
@@ -151,6 +165,8 @@ namespace TerrainDemo.Hero
             }
         }
 
+
+
         public event Action Changed = delegate {};
 
         private Camera _camera;
@@ -163,22 +179,14 @@ namespace TerrainDemo.Hero
         private MicroMap _microMap;
 
         private GameObject _cursorObj;
+        private Actor _target;
+        private float _zoomDirection;
+        private float _fpsCameraDistance;
+        private float _fpsCameraHeight;
+        private float _distanceZoomFactor = 1;
+        private float _heightZoomFactor;
 
         //private LandLayout _land;
-
-        private void InputOnRotate(float rotateDir)
-        {
-            _currentRotation += rotateDir*RotationSpeed*Time.deltaTime;
-            var rotation = Quaternion.Euler(25, _currentRotation, 0);
-            transform.rotation = rotation;
-        }
-
-        private void InputOnMove(Vector3 moveDir)
-        {
-            moveDir = Rotation * moveDir;
-            moveDir.y = 0;
-            transform.position += moveDir*Time.deltaTime*Speed;
-        }
 
         private void InputOnFire()
         {
@@ -209,6 +217,9 @@ namespace TerrainDemo.Hero
 
         void Start()
         {
+            _fpsCameraDistance = CameraDistance;
+            _fpsCameraHeight = CameraHeight;
+
             Changed();
 
             /*
@@ -248,6 +259,34 @@ namespace TerrainDemo.Hero
                 {
                     DrawCursor(null);
                 }
+            }
+
+            if (_zoomDirection != 0)
+            {
+                _distanceZoomFactor = Mathf.Clamp(_distanceZoomFactor + _zoomDirection * Time.deltaTime * ZoomSpeed, 1, 100);
+                _heightZoomFactor = Mathf.Pow(_distanceZoomFactor, 1.25f);
+                CameraDistance = _fpsCameraDistance * _distanceZoomFactor;
+                CameraHeight = _fpsCameraHeight * _heightZoomFactor;
+            }
+        }
+
+        private void LateUpdate()
+        {
+            if (_target != null)
+            {
+                //CameraDistance = _fpsCameraDistance;
+                //CameraHeight = _fpsCameraHeight;
+
+                //DebugExtension.DebugArrow(_observed.Position + Vector3.UnitY, _observed.Forward * 2, Color.green);
+
+                //Place camera behind and above actor
+                var cameraPosition = -CameraDistance *_target.Forward + CameraHeight * OpenToolkit.Mathematics.Vector3.UnitY + _target.Position;
+
+                //Look at ground in front of actor
+                var cameraLookAt = _target.Forward * 3 + _target.Position;
+
+                _camera.transform.position = cameraPosition;
+                _camera.transform.LookAt(cameraLookAt);
             }
         }
 

@@ -20,20 +20,20 @@ namespace TerrainDemo.Generators
         {
             Assert.IsTrue(biome.Type == BiomeType.Desert);
 
-            _dunesNoise = new FastNoise(_random.Seed);
+            _dunesNoise = new FastNoise(_zoneRandom.Seed);
             _dunesNoise.SetFrequency(1);
 
-            _hillsOrientation = _random.Range(0, 180f);
+            _hillsOrientation = _zoneRandom.Range(0, 180f);
             _stoneBlock = settings.AllBlocks.First(b => b.Block == BlockType.Stone);
-            _globalZoneHeight = _random.Range(1, 3);
+            _globalZoneHeight = _zoneRandom.Range(1, 3);
         }
 
         public override Macro.Zone GenerateMacroZone()
         {
             foreach (var cell in Zone.Cells)
             {
-                var baseHeight = _random.Range(-12, -5) + _globalZoneHeight;
-                cell.DesiredHeight = new Heights(_random.Range(0, 3) + _globalZoneHeight, _random.Range(baseHeight - 5, baseHeight + 1), baseHeight);
+                var baseHeight = _zoneRandom.Range(-12, -5) + _globalZoneHeight;
+                cell.DesiredHeight = new Heights(_zoneRandom.Range(0, 3) + _globalZoneHeight, _zoneRandom.Range(baseHeight - 5, baseHeight + 1), baseHeight);
             }
 
             return Zone;
@@ -55,7 +55,8 @@ namespace TerrainDemo.Generators
             return new Heights((float)(_dunesNoise.GetSimplex(rotatedPos.X / 10f, rotatedPos.Y / 30f)) * 2 + macroHeight.Main, macroHeight.Underground, macroHeight.Base); //Вытянутые дюны
         }
 
-        public override BlockLayers GenerateBlock3(Vector2i position, in Heights v00, in Heights v01, in Heights v10, in Heights v11)
+        public override BlockLayers GenerateBlock3(Vector2i position, in Heights v00, in Heights v01,
+            in Heights v10, in Heights v11)
         {
             var normal = Vector3.Cross(                             //todo simplify
                 new Vector3(-1, v01.Nominal - v10.Nominal, 1),

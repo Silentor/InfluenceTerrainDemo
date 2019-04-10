@@ -25,27 +25,21 @@ namespace TerrainDemo.Generators
         protected readonly TriRunner _settings;
         private Cell[] _cells;
         public readonly Macro.Zone Zone;
-        protected readonly Random _random;
-        private readonly FastNoise _microReliefNoise;
-        private readonly FastNoise _resourcesNoise;
+        protected readonly Random _zoneRandom;
 
 
         public BaseZoneGenerator(MacroMap macroMap, IEnumerable<Cell> zoneCells, int id, BiomeSettings biome, TriRunner settings)
         {
             _macroMap = macroMap;
             _settings = settings;
-            _random = new Random(unchecked (settings.Seed + id));
-
-            _microReliefNoise = new FastNoise(_random.Seed);
-            _microReliefNoise.SetFrequency(1);
-
-            _resourcesNoise = new FastNoise(_random.Seed);
-            _resourcesNoise.SetFrequency(0.05);
+            _zoneRandom = new Random(unchecked (settings.Seed + id));
 
             Assert.IsTrue(zoneCells.All(c => c.ZoneId == id));
 
             Zone = new Macro.Zone(_macroMap, _macroMap.GetSubmesh(zoneCells), id, biome, settings);
         }
+
+        #region Macrolevel generation
 
         /// <summary>
         /// Generate zone layout on given mesh
@@ -56,13 +50,13 @@ namespace TerrainDemo.Generators
             {
                 if (Zone.Biome.Type == BiomeType.Plains)
                 {
-                    var baseHeight = _random.Range(-5f, -1);
-                    cell.DesiredHeight = new Heights(_random.Range(0f, 1f), _random.Value() > 0.8 ? baseHeight + 2 : baseHeight - 2, baseHeight);
+                    var baseHeight = _zoneRandom.Range(-5f, -1);
+                    cell.DesiredHeight = new Heights(_zoneRandom.Range(0f, 1f), _zoneRandom.Value() > 0.8 ? baseHeight + 2 : baseHeight - 2, baseHeight);
                 }
                 else if (Zone.Biome.Type == BiomeType.Hills)
                 {
-                    var baseHeight = _random.Range(-12f, -5);
-                    cell.DesiredHeight = new Heights(_random.Range(1f, 3), _random.Range(baseHeight - 2, baseHeight + 2), baseHeight);
+                    var baseHeight = _zoneRandom.Range(-12f, -5);
+                    cell.DesiredHeight = new Heights(_zoneRandom.Range(1f, 3), _zoneRandom.Range(baseHeight - 2, baseHeight + 2), baseHeight);
                 }
                 else if (Zone.Biome.Type == BiomeType.Lake)
                     cell.DesiredHeight = new Heights(Zone.Border.Contains(cell) ? 0f : -10, -100, Zone.Border.Contains(cell) ? -12f : -15);
@@ -71,6 +65,8 @@ namespace TerrainDemo.Generators
             return Zone;
         }
 
+        #endregion
+
         /*
         public virtual Blocks GenerateBlock2(Vector2i position, Heights macroHeight)
         {
@@ -78,7 +74,15 @@ namespace TerrainDemo.Generators
         }
         */
 
-        public virtual BlockLayers GenerateBlock3(Vector2i position, in Heights v00, in Heights v01, in Heights v10,
+        #region Microlevel generation
+
+        public virtual void BeginCellGeneration(Micro.Cell microcell)
+        {
+            //todo Add cell generation timer
+        }
+
+        public virtual BlockLayers GenerateBlock3(Vector2i position, in Heights v00, in Heights v01,
+            in Heights v10,
             in Heights v11)
         {
             return new BlockLayers(Zone.Biome.DefaultMainBlock.Block, Zone.Biome.DefaultUndergroundBlock.Block);
@@ -88,6 +92,13 @@ namespace TerrainDemo.Generators
         {
             return macroHeight;
         }
+
+        public virtual void EndCellGeneration(Micro.Cell microcell)
+        {
+            //todo Add cell generation timer
+        }
+
+        #endregion
 
         /// <summary>
         /// Zone map

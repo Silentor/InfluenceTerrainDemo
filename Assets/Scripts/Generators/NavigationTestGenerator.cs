@@ -1,0 +1,181 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using OpenToolkit.Mathematics;
+using TerrainDemo.Macro;
+using TerrainDemo.Micro;
+using TerrainDemo.Settings;
+using TerrainDemo.Spatial;
+using TerrainDemo.Tools;
+using UnityEngine;
+using UnityEngine.Assertions;
+using Cell = TerrainDemo.Macro.Cell;
+using Vector2 = OpenToolkit.Mathematics.Vector2;
+using Vector3 = OpenToolkit.Mathematics.Vector3;
+using Quaternion = OpenToolkit.Mathematics.Quaternion;
+
+namespace TerrainDemo.Generators
+{
+    public class NavigationTestGenerator : BaseZoneGenerator
+    {
+        public NavigationTestGenerator(MacroMap macroMap, IEnumerable<Cell> zoneCells, int id, BiomeSettings biome, TriRunner settings) : base(macroMap, zoneCells, id, biome, settings)
+        {
+            Assert.IsTrue(biome.Type == BiomeType.TestNavigation);
+
+            _mountNoise = new FastNoise(_zoneRandom.Seed);
+            _mountNoise.SetFrequency(0.2);
+
+            _dunesNoise = new FastNoise(_zoneRandom.Seed);
+            _dunesNoise.SetFrequency(0.1);
+
+            _hillsOrientation = _zoneRandom.Range(0, 180f);
+            _stoneBlock = settings.AllBlocks.First(b => b.Block == BlockType.Stone);
+            _globalZoneHeight = _zoneRandom.Range(1, 3);
+
+            _cellTypeStartIndex = _zoneRandom.Range(0, 1000);
+        }
+
+        public override Macro.Zone GenerateMacroZone()
+        {
+            //Random mounts, trenches and flats
+            foreach (var cell in Zone.Cells)
+            {
+                var relief = GetCellRelief();
+                var material = GetCellMaterial(relief);
+                //var cellRelief = GetCellHeight(relief);
+                //cell.DesiredHeight = new Heights(cellRelief, cellRelief - 1);
+
+                _cells[cell] = (relief, material);
+            }
+
+            foreach (var cell in Zone.Cells)
+            {
+                var cellData = _cells[cell];
+                var height = GetCellHeight(cellData.Item1);
+                var neigborsCount = 0;
+                if (cellData.Item1 == CellRelief.Mountain)
+                {
+                    foreach (var neighbor in cell.NeighborsSafe)
+                    {
+                        if (_cells.TryGetValue(neighbor, out var neighborData) &&
+                            neighborData.Item1 == CellRelief.Mountain)
+                            neigborsCount++;
+                        //height += GetCellHeight(CellRelief.Mountain);
+                    }
+
+                    if (neigborsCount >= 3)
+                        height += 20;
+                }
+                else if (cellData.Item1 == CellRelief.Trench)
+                {
+                    foreach (var neighbor in cell.NeighborsSafe)
+                    {
+                        if (_cells.TryGetValue(neighbor, out var neighborData) &&
+                            neighborData.Item1 == CellRelief.Trench)
+                            neigborsCount++;
+                        //height += GetCellHeight(CellRelief.Trench);
+                    }
+
+                    if (neigborsCount >= 3)
+                        height -= 20;
+                }
+
+                cell.DesiredHeight = cell.DesiredHeight = new Heights(height, height - 1);
+            }
+
+            return Zone;
+        }
+
+        public override void BeginCellGeneration(Micro.Cell microcell)
+        {
+            base.BeginCellGeneration(microcell);
+
+            _currentCell = microcell;
+            _currentCellData = _cells[microcell.Macro];
+        }
+
+        public override Heights GenerateHeight(Vector2i position, in Heights macroHeight)
+        {
+            if (_currentCell != null)
+            {
+                float height = macroHeight.Nominal;
+                if (_currentCellData.Item1 == CellRelief.Mountain)
+                    height = macroHeight.Nominal + (float)_mountNoise.GetSimplex(position.X, position.Z) * 4;
+                /*
+                else if(_currentCellData.Item1 == CellRelief.Trench)
+                    height = Interpolation.SmoothStep(Mathf.InverseLerp(0, -30, macroHeight.Nominal)) * -10;
+                    */
+                return new Heights(height, height - 1);
+                
+            }
+            
+
+            return base.GenerateHeight(position, in macroHeight);
+
+            //return base.GenerateHeight(position, in macroHeight);
+            //var rotatedPos = Vector2.Transform(position, Quaternion.FromEulerAngles(0, 0, _hillsOrientation));
+            //return new Heights((float)(_dunesNoise.GetSimplex(rotatedPos.X / 10f, rotatedPos.Y / 30f)) * 2 + macroHeight.Main, macroHeight.Underground, macroHeight.Base); //Вытянутые дюны
+        }
+
+        public override BlockLayers GenerateBlock3(Vector2i position, in Heights v00, in Heights v01,
+            in Heights v10, in Heights v11)
+        {
+            if(_currentCell != null)
+                return new BlockLayers(_currentCellData.Item2, BlockType.Empty);
+            else //Just defence
+                return new BlockLayers(BlockType.Empty, BlockType.Empty);
+        }
+
+        public override void EndCellGeneration(Micro.Cell microcell)
+        {
+            base.EndCellGeneration(microcell);
+
+            Assert.IsTrue(_currentCell == microcell);
+            _currentCell = null;
+        }
+
+        private readonly int _cellTypeStartIndex;
+        private readonly FastNoise _dunesNoise;
+        private readonly float _hillsOrientation;
+        private readonly BlockSettings _stoneBlock;
+        private readonly int _globalZoneHeight;
+        private Micro.Cell _currentCell;
+        private (CellRelief, BlockType) _currentCellData;
+        private readonly Dictionary<Macro.Cell, (CellRelief, BlockType)> _cells = new Dictionary<Cell, (CellRelief, BlockType)>();
+        private FastNoise _mountNoise;
+
+        private CellRelief GetCellRelief()
+        {
+            return (CellRelief) _zoneRandom.Range(Enum.GetValues(typeof(CellRelief)).Length);
+        }
+
+        private float GetCellHeight(CellRelief relief)
+        {
+            switch (relief)
+            {
+                case CellRelief.Flat: return 0;
+                case CellRelief.Mountain: return 10;
+                case CellRelief.Trench: return -10;
+                default: throw new NotImplementedException();
+            }
+        }
+
+        private BlockType GetCellMaterial(CellRelief relief)
+        {
+            return relief == CellRelief.Mountain ? BlockType.Stone :
+                relief == CellRelief.Flat ? BlockType.Grass : BlockType.Sand;
+
+            var materialIndex = _zoneRandom.Range(3);
+            BlockType material = materialIndex == 0 ? BlockType.Grass :
+                materialIndex == 1 ? BlockType.Sand : BlockType.Stone;
+            return material;
+        }
+
+        private enum CellRelief
+        {
+            Trench,
+            Flat,
+            Mountain
+        }
+    }
+}

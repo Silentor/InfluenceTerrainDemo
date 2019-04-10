@@ -168,16 +168,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfe8cbee957a471faca6d4f7bc77070c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Seed: 1047392521
+  Seed: 118615998
   RandomizeSeed: 0
-  LandSize: 70
+  LandSize: 150
   CellSide: 10
   GridPerturbFreq: 0.01
   GridPerturbPower: 10
   InfluencePerturbFreq: 0.08
   InfluencePerturbPower: 3
   Biomes:
-  - {fileID: 11400000, guid: d189b4f8006ca0b489a82c5f5ddbe6e0, type: 2}
+  - {fileID: 11400000, guid: 1f9f41e982c9413439b174f347342fc4, type: 2}
   RenderMode: 0
   RenderLayer: 2
   MacroCellInfluenceVisualization: 0
@@ -278,6 +278,9 @@ MonoBehaviour:
   DebugDraw: 0
   CursorObjectPrefab: {fileID: 1909514786901776, guid: bab1c6060d571244fbea5e98882c1d87,
     type: 3}
+  CameraHeight: 3
+  CameraDistance: 5
+  ZoomSpeed: 25
 --- !u!108 &1293065048
 Light:
   m_ObjectHideFlags: 0

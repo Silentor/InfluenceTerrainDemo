@@ -104,14 +104,6 @@ namespace TerrainDemo.Visualization
                 _renderActorCache[actor] = actorObject;
                 actor.Changed += ActorOnChanged;
             }
-
-            UpdateObserver();
-        }
-
-        public void AssingCamera(Camera camera, Actor actor)
-        {
-            _observer = camera;
-            _observed = actor;
         }
 
         public void Clear()
@@ -205,27 +197,8 @@ namespace TerrainDemo.Visualization
         {
             var actorObject = _renderActorCache[actor];
             actorObject.transform.SetPositionAndRotation(actor.Position, actor.Rotation);
-            
-            if(actor == _observed)
-                UpdateObserver();
         }
-
-        private void UpdateObserver()
-        {
-            if (_observer && _observed != null)
-            {
-                DebugExtension.DebugArrow(_observed.Position + Vector3.UnitY, _observed.Forward * 2, Color.green);
-
-                //Place camera behind and above actor
-                var cameraPosition = -5 * _observed.Forward + 3 * Vector3.UnitY + _observed.Position;
-
-                //Look at ground in front of actor
-                var cameraLookAt = _observed.Forward * 3 + _observed.Position;
-
-                _observer.transform.position = cameraPosition;
-                _observer.transform.LookAt(cameraLookAt);
-            }
-        }
+   
 
         /*
         private void ClearRenderingGameObject(GameObject renderingGO)

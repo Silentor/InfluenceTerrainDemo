@@ -9,6 +9,7 @@ namespace TerrainDemo.Hero
         private Vector2 _oldMoveDirection;
         private Vector2? _oldMouseNormalizedPosition;
         private float _lastRotationFired;
+        private float _lastZoomFired;
 
         private void Start()
         {
@@ -67,6 +68,8 @@ namespace TerrainDemo.Hero
                 _oldMouseNormalizedPosition = null;
             }
 
+            DoZoom(UnityEngine.Input.mouseScrollDelta.y);
+
             /*
             else if (UnityEngine.Input.GetKey(KeyCode.Q))
                 Rotate(-1);
@@ -106,8 +109,20 @@ namespace TerrainDemo.Hero
         {
             if (_lastRotationFired != value)
             {
-                Rotate?.Invoke(value);
+                if(value != 0)
+                    Rotate?.Invoke(value);
+                else
+                    StopRotating?.Invoke();
                 _lastRotationFired = value;
+            }
+        }
+
+        private void DoZoom(float value)
+        {
+            if (_lastZoomFired != value)
+            {
+                Zoom?.Invoke(-value);
+                _lastZoomFired = value;
             }
         }
 
@@ -130,6 +145,8 @@ namespace TerrainDemo.Hero
         /// No rotation event present
         /// </summary>
         public event Action StopRotating;
+
+        public event Action<float> Zoom;
 
         public event Action Fire = delegate { };
 

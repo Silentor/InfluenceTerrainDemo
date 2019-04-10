@@ -7,6 +7,7 @@ using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using UnityEditor;
+using UnityEngine;
 using UnityEngine.Assertions;
 using Debug = UnityEngine.Debug;
 
@@ -223,6 +224,12 @@ namespace TerrainDemo.Hero
             }
 
             timer.Stop();
+
+            //Visualize scanned blocks
+            foreach (var c in _costSoFar)
+            {
+                DebugExtension.DebugPoint(BlockInfo.GetWorldCenter(c.Key.Position), Color.red, 0.5f, 10);
+            }
 
             //Reconstruct path
             var result = new List<(BaseBlockMap, Vector2i)>();

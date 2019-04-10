@@ -22,7 +22,7 @@ namespace TerrainDemo.Generators
         {
             Assert.IsTrue(biome.Type == BiomeType.Caves);
 
-            _cavesNoise = new FastNoise(_random.Seed);
+            _cavesNoise = new FastNoise(_zoneRandom.Seed);
             _cavesNoise.SetFrequency(0.1);
         }
 
@@ -34,9 +34,9 @@ namespace TerrainDemo.Generators
                 cell.DesiredHeight = new Heights(0, -5, -10);
 #else
 
-                var baseHeight = _random.Range(-12, -5);
-                var mainHeight = _random.Range(0, 3);
-                cell.DesiredHeight = new Heights(baseHeight, _random.Range(baseHeight, mainHeight), mainHeight);
+                var baseHeight = _zoneRandom.Range(-12, -5);
+                var mainHeight = _zoneRandom.Range(0, 3);
+                cell.DesiredHeight = new Heights(baseHeight, _zoneRandom.Range(baseHeight, mainHeight), mainHeight);
 #endif
             }
 

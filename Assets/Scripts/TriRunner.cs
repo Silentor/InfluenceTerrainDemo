@@ -139,7 +139,7 @@ namespace TerrainDemo
             Micro.AddChild(laputa);
             laputa.Snap();
             laputa.Changed += MicroOnChanged;
-            */
+            
             
             var bridgeGenerator = new BridgeGenerator(20, 6, 6);
             var bridgeData = bridgeGenerator.Generate(new Vector2(0, 5), 4);
@@ -191,7 +191,7 @@ namespace TerrainDemo
             Micro.AddChild(wall);
             wall.Snap();
             wall.Changed += MicroOnChanged;
-
+            */
 
 
             _hero = new Actor(Micro, (-11, 7), Vector2.One, true);
@@ -274,6 +274,11 @@ namespace TerrainDemo
             }
         }
 
+        private void InputSourceOnZoom(float zoomDelta)
+        {
+            _observer.SetZoomDirection(zoomDelta);
+        }
+
 #region Unity
 
         void Awake()
@@ -289,7 +294,6 @@ namespace TerrainDemo
             _observer = FindObjectOfType<ObserverController>();
 
             _renderer = new Renderer(new Mesher(Macro, this), this);
-            _renderer.AssingCamera(_observer.GetComponent<Camera>(), _hero);
             Render(this);
 
             var inputSource = FindObjectOfType<Input>();
@@ -298,6 +302,9 @@ namespace TerrainDemo
             inputSource.Rotate += InputSourceOnRotate;
             inputSource.StopRotating += InputSourceOnStopRotating;
             inputSource.Fire += InputSourceOnFire;
+            inputSource.Zoom += InputSourceOnZoom;
+
+            _observer.SetTarget(_hero);
         }
 
         private void OnValidate()
