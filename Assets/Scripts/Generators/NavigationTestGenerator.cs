@@ -26,13 +26,10 @@ namespace TerrainDemo.Generators
             _mountNoise.SetFrequency(0.2);
 
             _dunesNoise = new FastNoise(_zoneRandom.Seed);
-            _dunesNoise.SetFrequency(0.1);
+            _dunesNoise.SetFrequency(1);
+            _sandDunesOrientation = Quaternion.FromEulerAngles(0, 0, _zoneRandom.Range(-MathHelper.PiOver2, MathHelper.PiOver2));
 
-            _hillsOrientation = _zoneRandom.Range(0, 180f);
-            _stoneBlock = settings.AllBlocks.First(b => b.Block == BlockType.Stone);
             _globalZoneHeight = _zoneRandom.Range(1, 3);
-
-            _cellTypeStartIndex = _zoneRandom.Range(0, 1000);
         }
 
         public override Macro.Zone GenerateMacroZone()
@@ -101,10 +98,13 @@ namespace TerrainDemo.Generators
                 float height = macroHeight.Nominal;
                 if (_currentCellData.Item1 == CellRelief.Mountain)
                     height = macroHeight.Nominal + (float)_mountNoise.GetSimplex(position.X, position.Z) * 4;
-                /*
-                else if(_currentCellData.Item1 == CellRelief.Trench)
-                    height = Interpolation.SmoothStep(Mathf.InverseLerp(0, -30, macroHeight.Nominal)) * -10;
-                    */
+                
+                else if (_currentCellData.Item2 == BlockType.Sand)
+                {
+                    var rotatedPos = Vector2.Transform(position, _sandDunesOrientation);
+                    height = macroHeight.Nominal + (float)_dunesNoise.GetSimplex(rotatedPos.X / 5, rotatedPos.Y / 30) * 2;
+                }
+                    
                 return new Heights(height, height - 1);
                 
             }
@@ -113,7 +113,7 @@ namespace TerrainDemo.Generators
             return base.GenerateHeight(position, in macroHeight);
 
             //return base.GenerateHeight(position, in macroHeight);
-            //var rotatedPos = Vector2.Transform(position, Quaternion.FromEulerAngles(0, 0, _hillsOrientation));
+            //
             //return new Heights((float)(_dunesNoise.GetSimplex(rotatedPos.X / 10f, rotatedPos.Y / 30f)) * 2 + macroHeight.Main, macroHeight.Underground, macroHeight.Base); //Вытянутые дюны
         }
 
@@ -134,15 +134,13 @@ namespace TerrainDemo.Generators
             _currentCell = null;
         }
 
-        private readonly int _cellTypeStartIndex;
         private readonly FastNoise _dunesNoise;
-        private readonly float _hillsOrientation;
-        private readonly BlockSettings _stoneBlock;
         private readonly int _globalZoneHeight;
         private Micro.Cell _currentCell;
         private (CellRelief, BlockType) _currentCellData;
         private readonly Dictionary<Macro.Cell, (CellRelief, BlockType)> _cells = new Dictionary<Cell, (CellRelief, BlockType)>();
-        private FastNoise _mountNoise;
+        private readonly FastNoise _mountNoise;
+        private readonly Quaternion _sandDunesOrientation;
 
         private CellRelief GetCellRelief()
         {

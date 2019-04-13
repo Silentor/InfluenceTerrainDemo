@@ -13,6 +13,8 @@ namespace TerrainDemo.Hero
 {
     public class Actor
     {
+        public string Name { get; }
+
         /// <summary>
         /// Max speed (m/s)
         /// </summary>
@@ -48,7 +50,7 @@ namespace TerrainDemo.Hero
 
         public Navigator Nav { get; }
 
-        public bool IsHero => _fpsLocomotion;
+        public bool IsHero => _isHero;
 
         private readonly MicroMap _mainMap;
         private Vector2 _mapPosition;
@@ -70,11 +72,12 @@ namespace TerrainDemo.Hero
         private bool _isFalling;
 
         private static readonly float SafeAngle = MathHelper.DegreesToRadians(60);
-        private bool _fpsLocomotion;
+        private bool _isHero;
         private bool _autoStop;
 
-        public Actor(MicroMap map, Vector2 startPosition, Vector2 direction, bool fpsLocomotion)
+        public Actor(MicroMap map, Vector2 startPosition, Vector2 direction, bool isHero, string name)
         {
+            Name = name;
             _mainMap = map;
             _currentMap = map;
             _mapPosition = startPosition;
@@ -82,17 +85,17 @@ namespace TerrainDemo.Hero
             Position = new Vector3(_mapPosition.X, _mainMap.GetHeight(_mapPosition), _mapPosition.Y);
             Rotation = Quaternion.FromEulerAngles(0, Vector3.CalculateAngle(Vector3.UnitZ, (Vector3)direction), 0);
             Nav = new Navigator(this, map);
-            _fpsLocomotion = fpsLocomotion;
+            _isHero = isHero;
         }
 
-        public Actor(MicroMap map, Vector2i startPosition, Vector2 direction, bool fpsMode) 
-            : this(map, BlockInfo.GetWorldCenter(startPosition), direction, fpsMode) { }
+        public Actor(MicroMap map, Vector2i startPosition, Vector2 direction, bool fpsMode, string name) 
+            : this(map, BlockInfo.GetWorldCenter(startPosition), direction, fpsMode, name) { }
 
         #region FPS locomotion
 
         public void Move(Vector2 direction)
         {
-            if (!_fpsLocomotion) return;
+            if (!_isHero) return;
             _inputVelocity = direction.LengthSquared > 1 ? Vector2.Normalize(direction) : direction;
             _isStopped = false;
             _targetPosition = null;
@@ -104,7 +107,7 @@ namespace TerrainDemo.Hero
         /// <param name="direction">-1..1</param>
         public void Rotate(float direction)
         {
-            if (!_fpsLocomotion) return;
+            if (!_isHero) return;
             direction = Mathf.Clamp(direction, -1, 1);
             _rotateDirection = direction;
         }
@@ -115,7 +118,7 @@ namespace TerrainDemo.Hero
 
         public void MoveTo(Vector2 worldPosition, bool autoStop)
         {
-            if (_fpsLocomotion) return;
+            if (_isHero) return;
             _targetPosition = worldPosition;
             _inputVelocity = Vector2.Zero;
             _rotateDirection = 0;
@@ -126,7 +129,7 @@ namespace TerrainDemo.Hero
 
         public void Rotate(Vector2 worldPosition)
         {
-            if (_fpsLocomotion) return;
+            if (_isHero) return;
             var angle = UnityEngine.Vector2.SignedAngle(worldPosition - (Vector2)Position, UnityEngine.Vector2.up);
             _targetRotation = Quaternion.FromEulerAngles(0, MathHelper.DegreesToRadians(angle), 0);
         }
@@ -148,7 +151,7 @@ namespace TerrainDemo.Hero
                 isChanged |= UpdateMovement(deltaTime);
                 
 
-            if (_fpsLocomotion)
+            if (_isHero)
             {
                 if (_rotateDirection != 0)
                 {
@@ -183,7 +186,7 @@ namespace TerrainDemo.Hero
             if(_isStopped || Speed <= 0.01)
                 return Vector2.Zero;
 
-            if (_fpsLocomotion)
+            if (_isHero)
             {
                 if (_inputVelocity != Vector2.Zero)
                 {

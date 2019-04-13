@@ -64,6 +64,16 @@ namespace TerrainDemo.Micro
             return Cells.First(c => c.Macro == cell);
         }
 
+        public Cell GetCell(Vector2i position)
+        {
+            foreach (var cell in Cells)
+                if (cell.Bounds.Contains(position) && cell.BlockPositions.Contains(position))
+                        return cell;
+
+            return null;
+        }
+
+
         /// <summary>
         /// Dig sphere from the ground (do not touch base layer)
         /// </summary>

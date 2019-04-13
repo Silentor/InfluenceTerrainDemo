@@ -12,6 +12,7 @@ namespace TerrainDemo.Micro
     /// </summary>
     public class Cell
     {
+        public readonly Coord Id;
         public readonly Macro.Cell Macro;
         private readonly MicroMap _map;
         public readonly Vector2i[] BlockPositions;
@@ -20,6 +21,7 @@ namespace TerrainDemo.Micro
 
         public Cell(Macro.Cell macro, MicroMap map)
         {
+            Id = macro.Coords;
             Macro = macro;
             _map = map;
             BlockPositions = Rasterization.ConvexToBlocks(macro.Contains, macro.Bounds);
@@ -47,5 +49,6 @@ namespace TerrainDemo.Micro
                 yield return _map.GetBlock(blockPosition).Value;
             }
         }
+
     }
 }

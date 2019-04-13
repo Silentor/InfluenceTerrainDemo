@@ -25,6 +25,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Xml.Serialization;
+using JetBrains.Annotations;
 
 namespace OpenToolkit.Mathematics
 {
@@ -1515,6 +1516,19 @@ namespace OpenToolkit.Mathematics
         public override string ToString()
         {
             return string.Format("({0}{3} {1}{3} {2})", X, Y, Z, ListSeparator);
+        }
+
+        [Pure]
+        public string ToString(int precision)
+        {
+            switch (precision)
+            {
+                case 0: return string.Format("({0:N0}{3} {1:N0}{3} {2:N0})", X, Y, Z, ListSeparator);
+                case 1: return string.Format("({0:N1}{3} {1:N1}{3} {2:N1})", X, Y, Z, ListSeparator);
+                case 2: return string.Format("({0:N2}{3} {1:N2}{3} {2:N2})", X, Y, Z, ListSeparator);
+                case 3: return string.Format("({0:N3}{3} {1:N3}{3} {2:N3})", X, Y, Z, ListSeparator);
+                default: return string.Format("({0}{3} {1}{3} {2})", X, Y, Z, ListSeparator);
+            }
         }
 
         /// <summary>

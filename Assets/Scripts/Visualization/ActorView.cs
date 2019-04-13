@@ -19,11 +19,11 @@ namespace TerrainDemo.Visualization
             {
                 var renderer = GetComponentInChildren<UnityEngine.Renderer>();
                 renderer.material.color = Color.blue;
-                gameObject.name = "Npc";
+                gameObject.name = actor.Name;
             }
             else
             {
-                gameObject.name = "Hero";
+                gameObject.name = actor.Name;
             }
         }
 

@@ -10,6 +10,7 @@ using TerrainDemo.Generators.MapObjects;
 using TerrainDemo.Hero;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
+using TerrainDemo.Navigation;
 using TerrainDemo.Settings;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
@@ -193,11 +194,12 @@ namespace TerrainDemo
             wall.Changed += MicroOnChanged;
             */
 
+            new Pathfinder(Micro, Macro, this);
 
-            _hero = new Actor(Micro, (-11, 7), Vector2.One, true);
+            _hero = new Actor(Micro, (-11, 7), Vector2.One, true, "Hero");
             Micro.AddActor(_hero);
 
-            _npc = new Actor(Micro, (-13, 12), Vector2.One, false);
+            _npc = new Actor(Micro, (-37, -57), Vector2.One, false, "Npc");
             Micro.AddActor(_npc);
 
             _npc.Rotate((Vector2)_hero.Position);

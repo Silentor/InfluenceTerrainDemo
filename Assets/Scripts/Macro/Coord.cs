@@ -51,7 +51,7 @@ namespace TerrainDemo.Macro
 
         public override int GetHashCode()
         {
-            return X | (Z << 16);
+            return (int)X | ((int)Z << 16);
         }
 
         public override bool Equals(object obj)

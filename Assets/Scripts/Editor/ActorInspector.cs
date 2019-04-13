@@ -68,28 +68,45 @@ namespace TerrainDemo.Editor
             }
             GUILayout.Label($"Real 3D speed {_real3dSpeed:N2}, 2D speed {_real2dSpeed:N2}");
 
+            GUILayout.Label("Debug controls");
+            if (!_actor.IsHero)
+            {
+                if (GUILayout.Button("Navigate to (51, 65)"))
+                {
+                    _actor.Nav.Go((51, 65));
+                }
+
+                if (GUILayout.Button("Navigate to (-49, -61)"))
+                {
+                    _actor.Nav.Go((-49, -61));
+                }
+            }
+
         }
 
         private void OnSceneGUI()
         {
             if (_actor != null)
             {
+                //Show navigation path
                 if (_actor.Nav.IsNavigated)
                 {
-                    for (int i = 0; i < _actor.Nav.Path.Count; i++)
+                    Color color = Color.gray;
+                    foreach (var wp in _actor.Nav.Path.Waypoints)
                     {
-                        var wp = _actor.Nav.Path[i];
-                        var mapPosition = BlockInfo.GetWorldCenter(wp.Item2);
-                        var position = new UnityEngine.Vector3(mapPosition.X, wp.Item1.GetBlockData(wp.Item2).Height,
+                        var mapPosition = BlockInfo.GetWorldCenter(wp.Position);
+                        var position = new UnityEngine.Vector3(mapPosition.X, wp.Map.GetBlockData(wp.Position).Height,
                             mapPosition.Y);
-                        var color = i < _actor.Nav.WaypointIndex
-                            ? Color.gray
-                            : i > _actor.Nav.WaypointIndex
-                                ? Color.white
-                                : Color.red;
+
+                        if(wp == _actor.Nav.Path.Current)
+                            color = Color.red;
+
                         Handles.color = color;
                         Handles.SphereHandleCap(0, position, Quaternion.identity, 1f, EventType.Repaint);
                         //DebugExtension.DebugWireSphere(position, color, 0.3f);
+
+                        if (wp == _actor.Nav.Path.Current)
+                            color = Color.white;
                     }
                 }
             }

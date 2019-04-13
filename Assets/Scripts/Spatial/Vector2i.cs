@@ -56,11 +56,12 @@ namespace TerrainDemo.Spatial
             return dx * dx + dz * dz;
         }
 
-        //public static int RoughDistance(Vector2i a, Vector2i b) {
-        //    int dx = Mathf.Abs(b.X - a.X);
-        //    int dz = Mathf.Abs(b.Z - a.Z);
-        //    return Mathf.Max(dx, dz);
-        //}
+        public static int RoughDistance(Vector2i a, Vector2i b)
+        {
+            int dx = Mathf.Abs(b.X - a.X);
+            int dz = Mathf.Abs(b.Z - a.Z);
+            return Mathf.Max(dx, dz);
+        }
 
         public static int ManhattanDistance(Vector2i a, Vector2i b)
         {

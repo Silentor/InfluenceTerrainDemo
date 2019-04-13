@@ -5,6 +5,7 @@ using System.Xml;
 using OpenToolkit.Mathematics;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
+using TerrainDemo.Navigation;
 using TerrainDemo.Settings;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
@@ -42,6 +43,7 @@ namespace TerrainDemo.Editor
         private readonly Dictionary<BlockType, Color> _defaultBlockColor = new Dictionary<BlockType, Color>();
         private (Vector2i position, Blocks block, BaseBlockMap source)? _selectedBlock = null;
         private (Vector2i position, Heights vertex, BaseBlockMap source)? _selectedVertex = null;
+        private static readonly float Deg90ToRadians = MathHelper.DegreesToRadians(90);
 
         [MenuItem("Land/Inspector")]
         static void Init()
@@ -149,6 +151,7 @@ namespace TerrainDemo.Editor
                     result.SelectedBlock = _selectedBlock;
                     result.SelectedHeightVertex = _selectedVertex;
 
+
                     break;
                 //Macro mode
                 case Renderer.TerrainRenderMode.Macro:
@@ -217,6 +220,9 @@ namespace TerrainDemo.Editor
                     var position = new Vector2i(roundedCursorPosition.X, roundedCursorPosition.Z);
                     input.HoveredHeightVertex = (position, hoveredBlock.Value.source.GetHeightRef(position), hoveredBlock.Value.source);
                 }
+
+                //Find hovered cell
+                input.SelectedMicroCell = MicroMap.GetCell(hoveredBlock.Value.position);
             }
 
             return input;
@@ -290,6 +296,12 @@ namespace TerrainDemo.Editor
             }
 
             //DrawNormals(input);
+            if (input.SelectedMacroCell != null)
+            {
+                var pathfinder = Pathfinder.Instance;
+            }
+            
+            
         }
 
         private void DrawNormals(Input input)
@@ -409,7 +421,7 @@ namespace TerrainDemo.Editor
             foreach (var block in cell.GetBlocks())
             {
                 //Cull backface blocks
-                if(Vector3.CalculateAngle(_input.View.Direction, block.Normal) > MathHelper.DegreesToRadians(90))
+                if(Vector3.CalculateAngle(_input.View.Direction, block.Normal) > Deg90ToRadians)
                     DrawBlock(block, color);
             }
         }
@@ -630,6 +642,12 @@ namespace TerrainDemo.Editor
 
             if (input.HoveredHeightVertex.HasValue && input.HoveredHeightVertex != input.SelectedHeightVertex)
                 ShowHeightVertexInfo(input.HoveredHeightVertex.Value, false);
+
+            if (input.SelectedMicroCell != null)
+            {
+                var navCell = Pathfinder.Instance.NavigationMap.Cells[input.SelectedMicroCell.Id];
+                ShowNavigationCellInfo(navCell);
+            }
         }
 
 
@@ -740,6 +758,13 @@ namespace TerrainDemo.Editor
             }
         }
 
+        private void ShowNavigationCellInfo(NavigationCell cell)
+        {
+            GUILayout.Label($"Navigation cell {cell.Cell.Id}", EditorStyles.boldLabel);
+            GUILayout.Label($"Avg speed {cell.SpeedModifier:G2}");
+            GUILayout.Label($"Avg normal {cell.Normal.ToString(1)}");
+            GUILayout.Label($"Roughness {cell.Rougness:G2}");
+        }
 
         #endregion
 
