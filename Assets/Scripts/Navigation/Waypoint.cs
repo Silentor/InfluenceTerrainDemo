@@ -18,6 +18,12 @@ namespace TerrainDemo.Navigation
             Position = position;
         }
 
+        public override string ToString()
+        {
+            return $"{Map.Name}-{Position}";
+        }
+
+
         public bool Equals(Waypoint other)
         {
             return Equals(Map, other.Map) && Position.Equals(other.Position);

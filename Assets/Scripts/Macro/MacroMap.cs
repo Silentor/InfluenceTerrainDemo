@@ -405,7 +405,7 @@ namespace TerrainDemo.Macro
             }
         }
 
-        private struct CellCandidate
+        private readonly struct CellCandidate
         {
             public readonly Coord Coords;
             public readonly Vector2 Center;

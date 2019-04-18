@@ -51,10 +51,10 @@ namespace TerrainDemo.Hero
                     _navigateCancel?.Cancel();
 
                 _navigateCancel = new CancellationTokenSource();
-                _navigateTask = Task.Run(() => NavigatePath(path, _navigateCancel.Token), _navigateCancel.Token);
-                _navigateTask.ContinueWith(navTask =>
-                    UnityEngine.Debug.Log($"Continuation: Navigate task {(navTask.IsCanceled ? "cancelled" : "completed")}"));
+                RunNavigatePath(path, _navigateCancel.Token);
             }
+            else
+                Owner.Stop();
         }
 
         private readonly MicroMap _map;
@@ -62,38 +62,51 @@ namespace TerrainDemo.Hero
         private Task _navigateTask;
         private CancellationTokenSource _navigateCancel;
 
+        private async void RunNavigatePath(Path path, CancellationToken ct)
+        {
+            var task = NavigatePath(path, ct);
+            _navigateTask = task;
+            await task;
+            UnityEngine.Debug.Log($"Continuation: Navigate task {task.Status}");
+
+        }
+
         private async Task NavigatePath(Path path, CancellationToken ct)
         {
-            if(!path.IsValid)
+            if (!path.IsValid)
+            {
                 Owner.Stop();
+                UnityEngine.Debug.Log($"Path invalid, do not move");
+                return;
+            }
 
             IsNavigated = true;
-            do
+            try
             {
-                var waypoint = path.Next();
-                var waypointPosition = BlockInfo.GetWorldCenter(waypoint.Position);
-                while (Vector2.Distance((Vector2) Owner.Position, waypointPosition) > 0.5f)
+                do
                 {
-                    //Owner.Rotate(waypointPosition);
-                    Owner.MoveTo(waypointPosition, waypoint == path.Finish);
-                    await Task.Delay(300, ct);
-
-                    if (ct.IsCancellationRequested)
+                    var waypoint = path.Next();
+                    var waypointPosition = BlockInfo.GetWorldCenter(waypoint.point.Position);
+                    while (Vector2.Distance((Vector2) Owner.Position, waypointPosition) > 0.1f)
                     {
-                        UnityEngine.Debug.Log($"Path cancelled");
-                        Owner.Stop();
-                        IsNavigated = false;
-                        ct.ThrowIfCancellationRequested();
+                        //Owner.Rotate(waypointPosition);
+                        Owner.MoveTo(waypointPosition, waypoint.point == path.Finish);
+                        await Task.Delay(300, ct);
                     }
-                }
-            } while (path.Current != path.Finish);
+                } while (path.CurrentPoint != path.Finish);
 
-            Owner.Stop();
-            IsNavigated = false;
-
-            UnityEngine.Debug.Log($"Path completed");
+                UnityEngine.Debug.Log($"Path completed");
+            }
+            catch (TaskCanceledException)
+            {
+                UnityEngine.Debug.Log($"Path cancelled, silently finish task");
+            }
+            finally
+            {
+                Owner.Stop();
+                IsNavigated = false;
+            }
         }
     }
-
     
 }

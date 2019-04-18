@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using JetBrains.Annotations;
 using TerrainDemo.Hero;
@@ -8,8 +9,8 @@ using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using UnityEditorInternal;
-using UnityEngine;
 using Cell = TerrainDemo.Macro.Cell;
+using Debug = UnityEngine.Debug;
 
 namespace TerrainDemo.Navigation
 {
@@ -30,6 +31,10 @@ namespace TerrainDemo.Navigation
 
         public NavigationMap NavigationMap => _navmap;
 
+#if UNITY_EDITOR
+        public NavigationMapMacroGraph NavMapMacroGraph => _navigationMapMacroGraph;
+#endif
+
         public Pathfinder([NotNull] MicroMap micromap, [NotNull] MacroMap macromap, TriRunner settings)
         {
             if (_instance != null)
@@ -44,7 +49,8 @@ namespace TerrainDemo.Navigation
             _microAStar = new AStarSearch<MicroMapGraph, Waypoint>(new MicroMapGraph(micromap));
 
             _navmap = new NavigationMap(macromap, micromap, settings);
-            _macroNavAstar = new AStarSearch<NavigationMapMacroGraph, NavigationCell>(new NavigationMapMacroGraph(_navmap));
+            _navigationMapMacroGraph = new NavigationMapMacroGraph(_navmap);
+            _macroNavAstar = new AStarSearch<NavigationMapMacroGraph, NavigationCell>(_navigationMapMacroGraph);
         }
 
         /// <summary>
@@ -56,11 +62,14 @@ namespace TerrainDemo.Navigation
         /// <returns></returns>
         public Path CreatePath(Vector2i from, Vector2i to, Actor actor)
         {
+            var timer = Stopwatch.StartNew();
             Path result;
-            if (IsStraightPathExists(actor, new Waypoint(actor.Map, from), new Waypoint(actor.Map, to)))
-                result = new Path(new Waypoint(actor.Map, from), new Waypoint(actor.Map, to), actor, true);
-            else
+            //Simple path
+            //if (IsStraightPathExists(actor, new Waypoint(actor.Map, from), new Waypoint(actor.Map, to)))
+                //result = new Path(new Waypoint(actor.Map, from), new Waypoint(actor.Map, to), actor);
+            //else
             {
+                //Complex path
 
                 //DEBUG
                 
@@ -68,28 +77,49 @@ namespace TerrainDemo.Navigation
                 var startNavCell = _navmap.Cells[startCell.Coords];
                 var finishCell = _macromap.Cells.First(c => c.Contains(to));
                 var finishNavCell = _navmap.Cells[finishCell.Coords];
-                var path = _macroNavAstar.CreatePath(actor, startNavCell, finishNavCell);
-                if (path == null || path.Count < 2)
-                    return new Path(new Waypoint(actor.Map, from), new Waypoint(actor.Map, to), actor, false);
-                result = new Path(new Waypoint(actor.Map, from), new Waypoint(actor.Map, to), actor, true);
-                result.AddSegment(result.Start, result.Finish, path.Select(cell => new Waypoint(_map, (Vector2i)cell.Cell.Macro.Center)));
+                var macroPath = _macroNavAstar.CreatePath(actor, startNavCell, finishNavCell);
+
+                if (macroPath == null || macroPath.Count < 2)
+                    return Path.CreateInvalidPath(new Waypoint(actor.Map, from), new Waypoint(actor.Map, to), actor);
+
+                result = new Path(new Waypoint(actor.Map, from), new Waypoint(actor.Map, to), actor, 
+                    macroPath.Select(p => new Waypoint(_map, (Vector2i)p.Cell.Macro.Center)));
+
+                //Refine all segments at once
+                foreach (var segment in result.EnumerateSegments())
+                {
+                    var intraPath = _microAStar.CreatePath(actor, segment.segment.From, segment.to);
+
+                    if (intraPath == null)
+                    {
+                        Debug.LogWarning($"Path cant be refined");
+                        continue;
+                    }
+
+                    intraPath = SimplifyStraightLines(intraPath);
+                    intraPath = SimplifyCorners(intraPath, actor);
+                    segment.segment.Refine(intraPath);
+                }
 
                 //DEBUG
 
-                /*
-                var astarPoints = _microAStar.CreatePath(actor, new Waypoint(actor.Map, actor.BlockPosition), new Waypoint(_map, to));
-                if (astarPoints == null || astarPoints.Count < 2)
-                    return new Path(new Waypoint(actor.Map, from), new Waypoint(actor.Map, to), actor, false);
+                
+                //var startPoint = new Waypoint(actor.Map, from);
+                //var finishPoint = new Waypoint(_map, to);
+                //var astarPoints = _microAStar.CreatePath(actor, startPoint, finishPoint);
+                //if (astarPoints == null || astarPoints.Count < 2)
+                //    return Path.CreateInvalidPath(new Waypoint(actor.Map, from), new Waypoint(actor.Map, to), actor);
 
-                //A* on grid produces very blocky pass and many redundant waypoints, need smoothing
-                astarPoints = SimplifyStraightLines(astarPoints);
-                astarPoints = SimplifyCorners(astarPoints, actor);
-                result = new Path(new Waypoint(actor.Map, from), new Waypoint(actor.Map, to), actor, true);
-                result.AddSegment(result.Start, result.Finish, astarPoints);
-                */
+                ////A* on grid produces very blocky pass and many redundant waypoints, need smoothing
+                //astarPoints = SimplifyStraightLines(astarPoints);
+                //astarPoints = SimplifyCorners(astarPoints, actor);
+                //result = new Path(startPoint, finishPoint, actor, new[]{startPoint, finishPoint});
+                //result.Segments.First().Refine(astarPoints);
+                
             }
 
-            Debug.Log($"Valid path created for {actor.Name}: wps {result.Waypoints.Count()}, length {result.GetPathLength()}");
+            timer.Stop();
+            Debug.Log($"Valid path created for {actor.Name}: wps {result.Waypoints.Count()}, length {result.GetPathLength()}, total time {timer.ElapsedMilliseconds}");
 
             return result;
         }
@@ -125,6 +155,7 @@ namespace TerrainDemo.Navigation
         private readonly AStarSearch<MacroMapGraph, Cell> _macroAstar;
         private readonly NavigationMap _navmap;
         private readonly AStarSearch<NavigationMapMacroGraph, NavigationCell> _macroNavAstar;
+        private readonly NavigationMapMacroGraph _navigationMapMacroGraph;
 
         /// <summary>
         /// Simplify path straight lines

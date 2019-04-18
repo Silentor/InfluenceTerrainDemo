@@ -44,6 +44,7 @@ namespace TerrainDemo.Editor
         private (Vector2i position, Blocks block, BaseBlockMap source)? _selectedBlock = null;
         private (Vector2i position, Heights vertex, BaseBlockMap source)? _selectedVertex = null;
         private static readonly float Deg90ToRadians = MathHelper.DegreesToRadians(90);
+        private InspectorMode _inspectorMode;
 
         [MenuItem("Land/Inspector")]
         static void Init()
@@ -223,6 +224,7 @@ namespace TerrainDemo.Editor
 
                 //Find hovered cell
                 input.SelectedMicroCell = MicroMap.GetCell(hoveredBlock.Value.position);
+                input.SelectedMacroCell = input.SelectedMicroCell.Macro;
             }
 
             return input;
@@ -302,6 +304,28 @@ namespace TerrainDemo.Editor
             }
             
             
+        }
+
+        private void DrawNavigationModeHandles(Input input)
+        {
+            //Draw navigation cells
+            var navMap = Pathfinder.Instance.NavigationMap;
+            foreach (var navCell in navMap.Cells)
+            {
+                DrawMacroCell(navCell.Value.Cell.Macro, Color.blue, 0, false, false);
+            }
+
+            //Draw paths to neighbor cells
+            if (input.SelectedMacroCell != null)
+            {
+                var navCell = Pathfinder.Instance.NavigationMap.Cells[input.SelectedMicroCell.Id];
+                foreach (var cell in input.SelectedMacroCell.NeighborsSafe)
+                {
+                    var neighborNavCell = Pathfinder.Instance.NavigationMap.Cells[cell.Coords];
+                    DrawArrow.ForDebug(input.SelectedMacroCell.CenterPoint, neighborNavCell.Cell.Macro.CenterPoint - input.SelectedMacroCell.CenterPoint, Color.blue, 0, false);
+                }
+
+            }
         }
 
         private void DrawNormals(Input input)
@@ -392,22 +416,22 @@ namespace TerrainDemo.Editor
 
             if (cellDistance < 80 && cellDistance > 3 && fontSize > 0)
             {
-                var contrastLabelStyle = new GUIStyle(GUI.skin.label);
-                var contrastColor = (new Color(1, 1, 1, 2) - cell.Biome.LayoutColor) * 2;
-                contrastLabelStyle.normal.textColor = contrastColor;
-                contrastLabelStyle.fontSize = fontSize;
-                Handles.Label( cell.CenterPoint, cell.Coords.ToString(), contrastLabelStyle);
-                Handles.color = contrastColor;
+                var colorLabelStyle = new GUIStyle(GUI.skin.label);
+                //var contrastColor = (new Color(1, 1, 1, 2) - cell.Biome.LayoutColor) * 2;
+                colorLabelStyle.normal.textColor = color;
+                colorLabelStyle.fontSize = fontSize;
+                Handles.Label(cell.CenterPoint, cell.Coords.ToString(), colorLabelStyle);
+                Handles.color = color;
                 Handles.DrawWireDisc(cell.CenterPoint, _input.View.Direction, 0.1f);
 
                 if (labelVertices)
                 {
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[0]), cell.CenterPoint, 0.2f), cell.Vertices[0].Id.ToString(), contrastLabelStyle);
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[1]), cell.CenterPoint, 0.2f), cell.Vertices[1].Id.ToString(), contrastLabelStyle);
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[2]), cell.CenterPoint, 0.2f), cell.Vertices[2].Id.ToString(), contrastLabelStyle);
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[3]), cell.CenterPoint, 0.2f), cell.Vertices[3].Id.ToString(), contrastLabelStyle);
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[4]), cell.CenterPoint, 0.2f), cell.Vertices[4].Id.ToString(), contrastLabelStyle);
-                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[5]), cell.CenterPoint, 0.2f), cell.Vertices[5].Id.ToString(), contrastLabelStyle);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[0]), cell.CenterPoint, 0.2f), cell.Vertices[0].Id.ToString(), colorLabelStyle);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[1]), cell.CenterPoint, 0.2f), cell.Vertices[1].Id.ToString(), colorLabelStyle);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[2]), cell.CenterPoint, 0.2f), cell.Vertices[2].Id.ToString(), colorLabelStyle);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[3]), cell.CenterPoint, 0.2f), cell.Vertices[3].Id.ToString(), colorLabelStyle);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[4]), cell.CenterPoint, 0.2f), cell.Vertices[4].Id.ToString(), colorLabelStyle);
+                    Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[5]), cell.CenterPoint, 0.2f), cell.Vertices[5].Id.ToString(), colorLabelStyle);
                 }
             }
 
@@ -642,11 +666,22 @@ namespace TerrainDemo.Editor
 
             if (input.HoveredHeightVertex.HasValue && input.HoveredHeightVertex != input.SelectedHeightVertex)
                 ShowHeightVertexInfo(input.HoveredHeightVertex.Value, false);
+        }
 
-            if (input.SelectedMicroCell != null)
+        private void ShowNavigationModeContent(Input input)
+        {
+            if (input.SelectedMacroCell != null)
             {
-                var navCell = Pathfinder.Instance.NavigationMap.Cells[input.SelectedMicroCell.Id];
+                var navCell = Pathfinder.Instance.NavigationMap.Cells[input.SelectedMacroCell.Coords];
                 ShowNavigationCellInfo(navCell);
+
+                //Show macro navigate cost info
+                foreach (var cell in input.SelectedMacroCell.NeighborsSafe)
+                {
+                    var neighborNavCell = Pathfinder.Instance.NavigationMap.Cells[cell.Coords];
+                    var cost = Pathfinder.Instance.NavMapMacroGraph.Cost(navCell, neighborNavCell);
+                    GUILayout.Label($"Cost to {neighborNavCell.Cell.Id} is {cost}");
+                }
             }
         }
 
@@ -883,15 +918,45 @@ namespace TerrainDemo.Editor
             }
         }
 
+        private InspectorMode GetInspectorMode(InspectorMode oldMode)
+        {
+            GUILayout.BeginHorizontal();
+            var navMode = GUILayout.Toggle(oldMode == InspectorMode.Navigation, "Navigation");
+            GUILayout.EndHorizontal();
+
+            if (navMode)
+                oldMode = InspectorMode.Navigation;
+            else
+                oldMode = InspectorMode.Default;
+
+            return oldMode;
+        }
+
 #region Unity
+
+        private void Awake()
+        {
+            _inspectorMode = (InspectorMode)PlayerPrefs.GetInt("InspectorMode", (int)InspectorMode.Default);
+        }
 
         private void OnEnable()
         {
-            SceneView.onSceneGUIDelegate -= OnSceneGUI;
-            SceneView.onSceneGUIDelegate += OnSceneGUI;
+            SceneView.duringSceneGui -= OnSceneGUI;
+            SceneView.duringSceneGui += OnSceneGUI;
 
             EditorApplication.playModeStateChanged -= EditorApplicationOnPlayModeStateChanged;
             EditorApplication.playModeStateChanged += EditorApplicationOnPlayModeStateChanged;
+        }
+
+        private void OnDisable()
+        {
+            SceneView.duringSceneGui -= OnSceneGUI;
+            EditorApplication.playModeStateChanged -= EditorApplicationOnPlayModeStateChanged;
+        }
+
+        private void OnDestroy()
+        {
+            PlayerPrefs.SetInt("InspectorMode", (int)_inspectorMode);
         }
 
         /// <summary>
@@ -912,7 +977,10 @@ namespace TerrainDemo.Editor
             }
             else if(_runner.RenderMode == Renderer.TerrainRenderMode.Terrain)
             {
-                DrawTerrainModeHandles(_input);
+                if(_inspectorMode == InspectorMode.Navigation)
+                    DrawNavigationModeHandles(_input);
+                else
+                    DrawTerrainModeHandles(_input);
                 return;
             }
             else
@@ -983,6 +1051,8 @@ namespace TerrainDemo.Editor
             if (!_enabled)
                 return;
 
+            _inspectorMode = GetInspectorMode(_inspectorMode);
+
             if (!Application.isPlaying || _runner == null || !_enabled || _input == null)
                 return;
 
@@ -1002,7 +1072,10 @@ namespace TerrainDemo.Editor
             }
             else if (_runner.RenderMode == Renderer.TerrainRenderMode.Terrain)
             {
-                ShowTerrainModeContent(_input);
+                if(_inspectorMode == InspectorMode.Default)
+                    ShowTerrainModeContent(_input);
+                else if(_inspectorMode == InspectorMode.Navigation)
+                    ShowNavigationModeContent(_input);
             }
             else
             {
@@ -1050,13 +1123,6 @@ namespace TerrainDemo.Editor
             {
                 Repaint();
             }
-        }
-
-        private void OnDestroy()
-        {
-            _runner = null;
-            SceneView.onSceneGUIDelegate -= OnSceneGUI;
-            EditorApplication.playModeStateChanged -= EditorApplicationOnPlayModeStateChanged;
         }
 
         #endregion
@@ -1109,6 +1175,12 @@ namespace TerrainDemo.Editor
             public (Vector2i position, Heights vertex, BaseBlockMap source)? SelectedHeightVertex;
 
             public int FrameCount;
+        }
+
+        private enum InspectorMode
+        {
+            Default,
+            Navigation
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using OpenToolkit.Mathematics;
 using TerrainDemo.Micro;
+using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using UnityEngine;
 using Vector3 = UnityEngine.Vector3;
@@ -150,7 +151,7 @@ namespace TerrainDemo.Tests
                 var hitPoint = ray.GetPoint(intersection.distance);
                 DebugExtension.DrawPoint(hitPoint, Color.green,0.1f);
 
-                DrawArrow.ForGizmo(hitPoint, ((Vector3)intersection.normal) / 5, Color.yellow, 0.1f);
+                DrawArrow.ForGizmo(hitPoint, intersection.normal.ToVector2() / 5, Color.yellow, 0.1f);
             }
 
             Debug.Log($"Intersections {intersections.Count()}");

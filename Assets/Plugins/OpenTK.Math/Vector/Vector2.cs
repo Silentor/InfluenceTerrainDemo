@@ -955,6 +955,11 @@ namespace OpenToolkit.Mathematics
             return new Vector3(input.X, 0, input.Y);
         }
 
+        public Vector3 ToVector3(float yValue)
+        {
+            return new Vector3(X, yValue, Y);
+        }
+
         #endregion
 
 

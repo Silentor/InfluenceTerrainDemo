@@ -1,4 +1,5 @@
-﻿using OpenToolkit.Mathematics;
+﻿using System.Linq;
+using OpenToolkit.Mathematics;
 using TerrainDemo.Hero;
 using TerrainDemo.Micro;
 using TerrainDemo.Tools;
@@ -20,6 +21,9 @@ namespace TerrainDemo.Editor
         private float _real3dSpeed;
         private float _real2dSpeed;
         private bool _wasStopped = true;
+        private GUIStyle _currentWaypointStyle;
+        private GUIStyle _nextWaypointStyle;
+        private GUIStyle _oldWaypointStyle;
 
         private void OnEnable()
         {
@@ -30,10 +34,24 @@ namespace TerrainDemo.Editor
         {
             base.OnInspectorGUI();
 
+            if (_currentWaypointStyle == null)
+            {
+                _currentWaypointStyle = new GUIStyle(GUI.skin.label) {normal = {textColor = Color.red}};
+                _nextWaypointStyle = new GUIStyle(GUI.skin.label) {normal = {textColor = Color.white}};
+                _oldWaypointStyle = new GUIStyle(GUI.skin.label) {normal = {textColor = Color.gray}};
+            }
+
             var debugInternals = _actor.GetDebugState();
 
             GUILayout.Label($"Map: {_actor.Map.Name}");
             GUILayout.Label($"Block: {_actor.BlockPosition}");
+
+            GUILayout.Label("Locomotor", EditorStyles.centeredGreyMiniLabel);
+
+            EditorGUI.BeginChangeCheck();
+            var newSpeed = EditorGUILayout.DelayedFloatField("Speed", _actor.Speed);
+            if (EditorGUI.EndChangeCheck())
+                _actor.Speed = newSpeed;
 
             ref readonly var block = ref _actor.Map.GetBlockRef(_actor.BlockPosition);
             var blockNormal = _actor.Map.GetBlockData(_actor.BlockPosition).Normal;
@@ -68,19 +86,54 @@ namespace TerrainDemo.Editor
             }
             GUILayout.Label($"Real 3D speed {_real3dSpeed:N2}, 2D speed {_real2dSpeed:N2}");
 
-            GUILayout.Label("Debug controls");
-            if (!_actor.IsHero)
-            {
-                if (GUILayout.Button("Navigate to (51, 65)"))
-                {
-                    _actor.Nav.Go((51, 65));
-                }
+            _actor.DebugLocomotion = GUILayout.Toggle(_actor.DebugLocomotion, "Debug locomotion");
 
-                if (GUILayout.Button("Navigate to (-49, -61)"))
+            //Navigation component
+            GUILayout.Label("Navigator", EditorStyles.centeredGreyMiniLabel);
+            GUILayout.Label($"Is navigated: {_actor.Nav.IsNavigated}");
+
+            //List path
+            if (_actor.Nav.Path != null)
+            {
+                var path = _actor.Nav.Path;
+                GUILayout.Label($"Path from {path.Start} to {path.Finish}, is valid {path.IsValid}, total length {path.GetPathLength()}");
+                var segmentStyle = _oldWaypointStyle;
+                foreach (var segment in path.Segments)
                 {
-                    _actor.Nav.Go((-49, -61));
+                    GUIStyle waypointStyle;
+                    if (segment == path.CurrentSegment)
+                    {
+                        segmentStyle = _currentWaypointStyle;
+                        waypointStyle = _oldWaypointStyle;
+                    }
+                    else
+                        waypointStyle = segmentStyle;
+
+                    GUILayout.Label($"  {segment.ToString()}", segmentStyle);
+                    foreach (var waypoint in segment.InterWaypoints)
+                    {
+                        if (waypoint == path.CurrentPoint)
+                            waypointStyle = _currentWaypointStyle;
+                        GUILayout.Label($"    {waypoint.ToString()}", waypointStyle);
+                        if (waypoint == path.CurrentPoint)
+                            waypointStyle = _nextWaypointStyle;
+                    }
+
+                    if (segment == path.CurrentSegment)
+                        segmentStyle = _nextWaypointStyle;
                 }
             }
+            
+            //Easy debug navigation
+            if (!_actor.IsHero)
+            {
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Navigate to (51, 65)")) _actor.Nav.Go((51, 65));
+                if (GUILayout.Button("Navigate to (-49, -61)")) _actor.Nav.Go((-49, -61));
+                GUILayout.EndHorizontal();
+            }
+
+            _actor.DebugNavigation = GUILayout.Toggle(_actor.DebugNavigation, "Debug navigation");
 
         }
 
@@ -91,21 +144,22 @@ namespace TerrainDemo.Editor
                 //Show navigation path
                 if (_actor.Nav.IsNavigated)
                 {
-                    Color color = Color.gray;
+                    var color = Color.gray;
                     foreach (var wp in _actor.Nav.Path.Waypoints)
                     {
                         var mapPosition = BlockInfo.GetWorldCenter(wp.Position);
                         var position = new UnityEngine.Vector3(mapPosition.X, wp.Map.GetBlockData(wp.Position).Height,
                             mapPosition.Y);
 
-                        if(wp == _actor.Nav.Path.Current)
+                        if(wp == _actor.Nav.Path.CurrentPoint)
                             color = Color.red;
 
                         Handles.color = color;
-                        Handles.SphereHandleCap(0, position, Quaternion.identity, 1f, EventType.Repaint);
+                        var markSize = _actor.Nav.Path.Segments.Any(s => s.From == wp) ? 1 : 0.5f;
+                        Handles.SphereHandleCap(0, position, Quaternion.identity, markSize, EventType.Repaint);
                         //DebugExtension.DebugWireSphere(position, color, 0.3f);
 
-                        if (wp == _actor.Nav.Path.Current)
+                        if (wp == _actor.Nav.Path.CurrentPoint)
                             color = Color.white;
                     }
                 }

@@ -7,10 +7,23 @@ namespace TerrainDemo.Spatial
     /// </summary>
     public enum Side2d
     {
+        /// <summary>
+        /// Z+ direction
+        /// </summary>
         Forward,        //Z+
+        /// <summary>
+        /// X+ direction
+        /// </summary>
         Right,          //X+
+        /// <summary>
+        /// Z- direction
+        /// </summary>
         Back,           //Z-
-        Left            //X-
+        /// <summary>
+        /// X- direction
+        /// </summary>
+        Left,            //X-
+
     }
 
     public static class Directions
@@ -38,5 +51,21 @@ namespace TerrainDemo.Spatial
         {
             OpenToolkit.Mathematics.Vector2.UnitY, OpenToolkit.Mathematics.Vector2.UnitX, -OpenToolkit.Mathematics.Vector2.UnitY, -OpenToolkit.Mathematics.Vector2.UnitX,
         };
+
+        public static readonly (Vector2, Vector2)[] BlockSide =
+        {
+            (new Vector2(0, 1), new Vector2(1, 1)),
+            (new Vector2(1, 1), new Vector2(1, 0)),
+            (new Vector2(1, 0), new Vector2(0, 0)),
+            (new Vector2(0, 0), new Vector2(0, 1)),
+        };
+    }
+
+    public static class DirectionsExtensions
+    {
+        public static Vector2 ToVector2(this Side2d direction)
+        {
+            return Directions.Vector2[(int) direction];
+        }
     }
 }

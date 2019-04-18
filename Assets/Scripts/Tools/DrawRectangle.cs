@@ -76,12 +76,32 @@ namespace TerrainDemo.Tools
         }
 
         [Conditional("UNITY_EDITOR")]
-        public static void ForDebug(Vector3 r1, Vector3 r2, Vector3 r3, Vector3 r4, Color color, float duration = 0)
+        public static void ForDebug(Bounds2i rectangle, float yValue, Color color, float duration = 0)
+        {
+            var corner1 = new Vector3(rectangle.Min.X, yValue, rectangle.Min.Z);
+            var corner2 = new Vector3(rectangle.Min.X, yValue, rectangle.Max.Z + 1);
+            var corner3 = new Vector3(rectangle.Max.X + 1, yValue, rectangle.Max.Z + 1);
+            var corner4 = new Vector3(rectangle.Max.X + 1, yValue, rectangle.Min.Z);
+
+            Debug.DrawLine(corner1, corner2, color, duration);
+            Debug.DrawLine(corner2, corner3, color, duration);
+            Debug.DrawLine(corner3, corner4, color, duration);
+            Debug.DrawLine(corner4, corner1, color, duration);
+        }
+
+        [Conditional("UNITY_EDITOR")]
+        public static void ForDebug(Vector3 r1, Vector3 r2, Vector3 r3, Vector3 r4, Color color, float duration = 0, bool filled = false)
         {
             Debug.DrawLine(r1, r2, color, duration);
             Debug.DrawLine(r2, r3, color, duration);
             Debug.DrawLine(r3, r4, color, duration);
             Debug.DrawLine(r4, r1, color, duration);
+
+            if (filled)
+            {
+                Debug.DrawLine(r1, r3, color, duration);
+                Debug.DrawLine(r2, r4, color, duration);
+            }
         }
 
 #if UNITY_EDITOR

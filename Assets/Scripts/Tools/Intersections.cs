@@ -386,7 +386,7 @@ namespace TerrainDemo.Tools
             return null;
         }
 
-        public static IEnumerable<(Vector2i blockPosition, float distance, Vector2i normal)> GridIntersections(OpenToolkit.Mathematics.Vector2 start, OpenToolkit.Mathematics.Vector2 finish, int blockLimit = 1000)
+        public static IEnumerable<(Vector2i blockPosition, float distance, Side2d normal)> GridIntersections(OpenToolkit.Mathematics.Vector2 start, OpenToolkit.Mathematics.Vector2 finish, int blockLimit = 1000)
         {
             var xIncrement = Math.Sign(finish.X - start.X);
             var yIncrement = Math.Sign(finish.Y - start.Y);
@@ -407,7 +407,7 @@ namespace TerrainDemo.Tools
             var testedXPosition = xIncrement > 0 ? startBlock.X + 1 : startBlock.X;
             var testedYPosition = yIncrement > 0 ? startBlock.Z + 1 : startBlock.Z;
 
-            //Fast pass - horizontal line
+            //Fast pass - vertical line
             if (startBlock.X == finishBlock.X)
             {
                 while (startBlock != finishBlock)
@@ -418,7 +418,7 @@ namespace TerrainDemo.Tools
 
                     testedYPosition += yIncrement;
                     startBlock = new Vector2i(startBlock.X, startBlock.Z + yIncrement);
-                    yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointY, start), new Vector2i(0, -yIncrement));
+                    yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointY, start), yIncrement > 0 ? Side2d.Back : Side2d.Forward);
 
                     if (--blockLimit <= 0)
                     {
@@ -427,7 +427,7 @@ namespace TerrainDemo.Tools
                     }
                 }
             }
-            //Fast pass - vertical line
+            //Fast pass - horizontal line
             else if (startBlock.Z == finishBlock.Z)
             {
                 while (startBlock != finishBlock)
@@ -437,7 +437,7 @@ namespace TerrainDemo.Tools
 
                     testedXPosition += xIncrement;
                     startBlock = new Vector2i(startBlock.X + xIncrement, startBlock.Z);
-                    yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointX, start), new Vector2i(-xIncrement, 0));
+                    yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointX, start), xIncrement > 0 ? Side2d.Left : Side2d.Right);
 
                     if (--blockLimit <= 0)
                     {
@@ -472,7 +472,7 @@ namespace TerrainDemo.Tools
                             testedXPosition += xIncrement;
                             testedPoint = pointX;
                             startBlock = new Vector2i(startBlock.X + xIncrement, startBlock.Z);
-                            yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointX, start), new Vector2i(-xIncrement, 0));
+                            yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointX, start), xIncrement > 0 ? Side2d.Left : Side2d.Right);
                             pointX = new OpenToolkit.Mathematics.Vector2(testedXPosition,
                                 (testedXPosition - start.X) * k1 / k2 + start.Y);
                         }
@@ -482,8 +482,7 @@ namespace TerrainDemo.Tools
                             testedYPosition += yIncrement;
                             testedPoint = pointY;
                             startBlock = new Vector2i(startBlock.X, startBlock.Z + yIncrement);
-                            yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointY, start),
-                                new Vector2i(0, -yIncrement));
+                            yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointY, start), yIncrement > 0 ? Side2d.Back : Side2d.Forward);
                             pointY = new OpenToolkit.Mathematics.Vector2(
                                 (testedYPosition - start.Y) * k2 / k1 + start.X,
                                 testedYPosition);
@@ -496,7 +495,7 @@ namespace TerrainDemo.Tools
                         testedXPosition += xIncrement;
                         testedPoint = pointX;
                         startBlock = new Vector2i(startBlock.X + xIncrement, startBlock.Z);
-                        yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointX, start), new Vector2i(-xIncrement, 0));
+                        yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointX, start), xIncrement > 0 ? Side2d.Left : Side2d.Right);
                         pointX = new OpenToolkit.Mathematics.Vector2(testedXPosition,
                             (testedXPosition - start.X) * k1 / k2 + start.Y);
                     }
@@ -506,7 +505,7 @@ namespace TerrainDemo.Tools
                         testedYPosition += yIncrement;
                         testedPoint = pointY;
                         startBlock = new Vector2i(startBlock.X, startBlock.Z + yIncrement);
-                        yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointY, start), new Vector2i(0, -yIncrement));
+                        yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointY, start), yIncrement > 0 ? Side2d.Back : Side2d.Forward);
                         pointY = new OpenToolkit.Mathematics.Vector2((testedYPosition - start.Y) * k2 / k1 + start.X,
                             testedYPosition);
                     }
@@ -520,7 +519,7 @@ namespace TerrainDemo.Tools
             }
         }
 
-        public static IEnumerable<(Vector2i blockPosition, float distance, Vector2i normal)> GridIntersections(
+        public static IEnumerable<(Vector2i blockPosition, float distance, Side2d normal)> GridIntersections(
             Vector2i start, Vector2i finish, int blockLimit = 1000)
         {
             return GridIntersections(BlockInfo.GetWorldCenter(start), BlockInfo.GetWorldCenter(finish), blockLimit);

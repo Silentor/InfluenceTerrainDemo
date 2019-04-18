@@ -18,7 +18,7 @@ namespace TerrainDemo.Hero
         /// <summary>
         /// Max speed (m/s)
         /// </summary>
-        public float Speed => 6;
+        public float Speed;
 
         /// <summary>
         /// Max angular speed (deg)
@@ -51,6 +51,9 @@ namespace TerrainDemo.Hero
         public Navigator Nav { get; }
 
         public bool IsHero => _isHero;
+
+        public bool DebugLocomotion = true;
+        public bool DebugNavigation = true;
 
         private readonly MicroMap _mainMap;
         private Vector2 _mapPosition;
@@ -86,6 +89,8 @@ namespace TerrainDemo.Hero
             Rotation = Quaternion.FromEulerAngles(0, Vector3.CalculateAngle(Vector3.UnitZ, (Vector3)direction), 0);
             Nav = new Navigator(this, map);
             _isHero = isHero;
+
+            Speed = 6;
         }
 
         public Actor(MicroMap map, Vector2i startPosition, Vector2 direction, bool fpsMode, string name) 
@@ -235,6 +240,12 @@ namespace TerrainDemo.Hero
                 //-0.66666666666f * incline * incline + 1.66666666666f * incline + 1, 0, 2);
                 //var blockMat = _currentMap.GetBlockRef(_currentBlockPos).Top;
                 //_currentBlockMaterialSpeedModifier = _mainMap.GetBlockSettings(blockMat).SpeedModifier;
+            }
+
+            if (DebugLocomotion)
+            {
+                var currentBlockBounds = BlockInfo.GetBounds(_currentBlockPos);
+                DrawRectangle.ForDebug(currentBlockBounds, Position.Y, Color.blue);
             }
 
             if (newMapPosition != _mapPosition)
@@ -398,21 +409,30 @@ namespace TerrainDemo.Hero
 
                         //Debug.Log($"{Time.frameCount} - {i}: Inpassable block {intersection.blockPosition}, hit {hitPoint}, normal {intersection.normal}");
 
-                        DebugExtension.DebugPoint(hitPoint, Color.red, 0.1f);
-
                         var collisionVector = toPos - hitPoint;
 
-                        DrawArrow.ForDebug(hitPoint, collisionVector.Normalized(), Color.red);
+                        if (DebugLocomotion)
+                        {
+                            var yPosition = Position.Y + 1;
+                            DebugExtension.DebugPoint(hitPoint.ToVector3(yPosition), Color.red, 0.1f);
+                            Debug.DrawLine(fromPos.ToVector3(yPosition), hitPoint.ToVector3(yPosition), Color.white);
+                            DrawArrow.ForDebug(hitPoint.ToVector3(yPosition), collisionVector.Normalized(), Color.red);
+                            //Draw collision plane
+                            var blockSide = Directions.BlockSide[(int) intersection.normal];
+                            DrawRectangle.ForDebug(
+                                (blockSide.Item1 + intersection.blockPosition).ToVector3(yPosition + 1),
+                                (blockSide.Item2 + intersection.blockPosition).ToVector3(yPosition + 1),
+                                (blockSide.Item2 + intersection.blockPosition).ToVector3(yPosition - 1),
+                                (blockSide.Item1 + intersection.blockPosition).ToVector3(yPosition - 1),
+                                Color.red, 0, true
+                                );
+                        }
 
-                        var projectedCollisionVector = collisionVector -
-                                                      Vector2.Dot(collisionVector, intersection.normal) *
-                                                      (Vector2) intersection.normal;
-
-                        DrawArrow.ForDebug(hitPoint, projectedCollisionVector.Normalized(), Color.green);
-                        DrawArrow.ForDebug(fromPos, hitPoint - fromPos, Color.white);
+                        var normal = intersection.normal.ToVector2();
+                        var projectedCollisionVector = collisionVector - Vector2.Dot(collisionVector, normal) * normal;
 
                         //Recheck resolved point for another collision (one more time only)
-                        fromPos = hitPoint + (Vector2)intersection.normal * 0.01f; // a little bit inside into "from block" 
+                        fromPos = hitPoint + normal * 0.01f; // a little bit inside into "from block" 
 
                         if (projectedCollisionVector == Vector2.Zero) //Resolving finished, return calculated toPos and toMap
                         {
@@ -423,6 +443,9 @@ namespace TerrainDemo.Hero
                         }
                         else
                         {
+                            if(DebugLocomotion)
+                                DrawArrow.ForDebug(hitPoint.ToVector3(Position.Y + 1), projectedCollisionVector.Normalized(), Color.green);
+
                             if (i < 1)
                             {
                                 //Debug.Log($"{Time.frameCount} - {i}: Projected vector {projectedCollisionVector} not zero, make next iter");
