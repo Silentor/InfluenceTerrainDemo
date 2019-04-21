@@ -113,5 +113,41 @@ namespace TerrainDemo.Tools
         {
             return Math.Pow(4.0 * x * (1.0 - x), k);
         }
+
+        /// <summary>
+        /// Linear remap value from input to output ranges
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="inputFrom"></param>
+        /// <param name="inputTo"></param>
+        /// <param name="outputFrom"></param>
+        /// <param name="outputTo"></param>
+        /// <returns></returns>
+        public static float RemapUnclamped(float value, float inputFrom, float inputTo, float outputFrom, float outputTo)
+        {
+            if (inputFrom == inputTo)
+                return outputFrom;
+
+            var t = (value - inputFrom) / (inputTo - inputFrom);
+            return outputFrom + (outputTo - outputFrom) * t;
+        }
+
+        /// <summary>
+        /// Linear remap value from input to output ranges
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="inputFrom"></param>
+        /// <param name="inputTo"></param>
+        /// <param name="outputFrom"></param>
+        /// <param name="outputTo"></param>
+        /// <returns></returns>
+        public static float Remap(float value, float inputFrom, float inputTo, float outputFrom, float outputTo)
+        {
+            if (inputFrom == inputTo)
+                return outputFrom;
+
+            var t = MathHelper.Clamp((value - inputFrom) / (inputTo - inputFrom), 0, 1);
+            return outputFrom + (outputTo - outputFrom) * t;
+        }
     }
 }

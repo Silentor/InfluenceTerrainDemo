@@ -1,5 +1,6 @@
 ﻿using System;
 using JetBrains.Annotations;
+using OpenToolkit.Mathematics;
 using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
 
@@ -16,6 +17,12 @@ namespace TerrainDemo.Navigation
         {
             Map = map ?? throw new ArgumentNullException(nameof(map));
             Position = position;
+        }
+
+        public Vector3 GetPosition()
+        {
+            var centerPosition = BlockInfo.GetWorldCenter(Position);
+            return new Vector3(centerPosition.X, Map.GetHeight(centerPosition), centerPosition.Y);
         }
 
         public override string ToString()

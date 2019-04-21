@@ -77,7 +77,8 @@ namespace TerrainDemo.Navigation
                 var startNavCell = _navmap.Cells[startCell.Coords];
                 var finishCell = _macromap.Cells.First(c => c.Contains(to));
                 var finishNavCell = _navmap.Cells[finishCell.Coords];
-                var macroPath = _macroNavAstar.CreatePath(actor, startNavCell, finishNavCell);
+                var macroPath = _macroNavAstar.CreatePath(actor, startNavCell, finishNavCell, 
+                    n => n.Cell.Id == new Coord(-1, -2));
 
                 if (macroPath == null || macroPath.Count < 2)
                     return Path.CreateInvalidPath(new Waypoint(actor.Map, from), new Waypoint(actor.Map, to), actor);
@@ -85,10 +86,13 @@ namespace TerrainDemo.Navigation
                 result = new Path(new Waypoint(actor.Map, from), new Waypoint(actor.Map, to), actor, 
                     macroPath.Select(p => new Waypoint(_map, (Vector2i)p.Cell.Macro.Center)));
 
+                /*
                 //Refine all segments at once
-                foreach (var segment in result.EnumerateSegments())
+                foreach (var segment in result.Segments)
                 {
-                    var intraPath = _microAStar.CreatePath(actor, segment.segment.From, segment.to);
+                    //todo also check for straight path
+
+                    var intraPath = _microAStar.CreatePath(actor, segment.From, segment.To);
 
                     if (intraPath == null)
                     {
@@ -98,9 +102,9 @@ namespace TerrainDemo.Navigation
 
                     intraPath = SimplifyStraightLines(intraPath);
                     intraPath = SimplifyCorners(intraPath, actor);
-                    segment.segment.Refine(intraPath);
+                    segment.Refine(intraPath);
                 }
-
+                */
                 //DEBUG
 
                 

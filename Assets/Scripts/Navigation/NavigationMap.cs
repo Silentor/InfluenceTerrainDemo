@@ -76,7 +76,7 @@ namespace TerrainDemo.Navigation
 
     public class NavigationCell : IEquatable<NavigationCell>
     {
-        public readonly Micro.Cell Cell;
+        public readonly Cell Cell;
 
         /// <summary>
         /// Average speed modifier of all blocks
@@ -97,8 +97,13 @@ namespace TerrainDemo.Navigation
         {
             Cell = cell ?? throw new ArgumentNullException(nameof(cell));
             SpeedModifier = speedModifier;
-            Normal = normal;
+            Normal = normal.Normalized();
             Rougness = rougness;
+        }
+
+        public override string ToString()
+        {
+            return $"{Cell.Id}";
         }
 
         public bool Equals(NavigationCell other)

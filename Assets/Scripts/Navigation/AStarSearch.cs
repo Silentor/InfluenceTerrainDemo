@@ -123,17 +123,27 @@ namespace TerrainDemo.Navigation
 
         public float Cost(NavigationCell from, NavigationCell to)
         {
-            var speedCost = 1 / ((from.SpeedModifier + to.SpeedModifier) / 2);
-            var rougnessCost = 1 + (from.Rougness + to.Rougness) / 2;
+            var speedCost = 1 / to.SpeedModifier;
+            //var rougnessCost = 1 + (from.Rougness + to.Rougness) / 2;
+            var rougnessCost = 1 + (5 * to.Rougness);
 
-            var moveDirection = ((Vector3)(to.Cell.Macro.Center - to.Cell.Macro.Center)).Normalized();      
-            var upTheHillCost = Math.Min(Vector3.Dot(moveDirection, from.Normal), Vector3.Dot(moveDirection, to.Normal));
-            if (upTheHillCost < 0)
-                upTheHillCost = 1 + -upTheHillCost;
+            var moveVector = to.Cell.Macro.CenterPoint - from.Cell.Macro.CenterPoint;
+            var height = moveVector.Y;              //Ascend/descent
+            moveVector.Y = 0;                       
+            var distance = moveVector.Length;
+            var heightCost = 0f;
+
+            //Climb height = severe movement cost penalty
+            if (height > 0)
+                heightCost = Interpolation.RemapUnclamped(height / distance, 0, 1, 1, 3);
             else
-                upTheHillCost = 1;
-            return Vector3.Distance(from.Cell.Macro.CenterPoint, to.Cell.Macro.CenterPoint) * speedCost * rougnessCost * upTheHillCost;
+                //Drop height = some movement cost bonus, but not so much
+                heightCost = Interpolation.RemapUnclamped(-height / distance, 0, 1, 1, 0.5f);
+
+            return Vector3.Distance(from.Cell.Macro.CenterPoint, to.Cell.Macro.CenterPoint) * speedCost * rougnessCost * heightCost;
         }
+
+        
 
         public void DebugVisualize(IEnumerable<NavigationCell> nodes, Color color)
         {
@@ -212,7 +222,7 @@ namespace TerrainDemo.Navigation
             _graph = graph;
         }
 
-        public List<TNode> CreatePath(Actor actor, TNode from, TNode to)
+        public List<TNode> CreatePath(Actor actor, TNode from, TNode to, Predicate<TNode> debugBreakOn = null)
         {
             var timer = Stopwatch.StartNew();
             int processedLocations = 0, maxFrontierCount = 0;
@@ -238,15 +248,24 @@ namespace TerrainDemo.Navigation
                     break;
                 }
 
+                if(debugBreakOn != null && debugBreakOn(current))
+                    Debug.Log($"break on {current}");
+
+                Debug.Log($"Check {current}...");
+
                 foreach (var next in _graph.Neighbors(actor, current))
                 {
                     var newCost = _costSoFar[current] + _graph.Cost(current, next);
+                    Debug.Log($"..to {next} cost is {newCost}..");
+
                     if (!_costSoFar.TryGetValue(next, out var storedNextCost) || newCost < storedNextCost)
                     {
                         _costSoFar[next] = newCost;
-                        var priority = newCost + _graph.Heuristic(next, goal);
+                        var h = _graph.Heuristic(next, goal);
+                        var priority = newCost + h;
                         frontier.Enqueue(next, priority);
                         _cameFrom[next] = current;
+                        Debug.Log($"..Its a good cost. P = g + h, {priority}={newCost}+{h}");
                     }
                 }
 

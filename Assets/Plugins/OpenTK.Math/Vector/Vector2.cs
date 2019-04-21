@@ -874,6 +874,24 @@ namespace OpenToolkit.Mathematics
             return string.Format("({0}{2} {1})", X, Y, ListSeparator);
         }
 
+        public string ToString(int precision)
+        {
+            switch (precision)
+            {
+                case 0:
+                    return $"({X:F0}, {Y:F0})";
+                case 1:
+                    return $"({X:F1}, {Y:F1})";
+                case 2:
+                    return $"({X:F2}, {Y:F2})";
+                case 3:
+                    return $"({X:F3}, {Y:F3})";
+                default:
+                    return ToString();
+            }
+
+        }
+
         /// <summary>
         /// Returns the hashcode for this instance.
         /// </summary>

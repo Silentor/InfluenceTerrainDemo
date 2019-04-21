@@ -54,19 +54,6 @@ namespace TerrainDemo.Navigation
         }
 
         /// <summary>
-        /// Helper segment enumerator for segment's target point access
-        /// </summary>
-        /// <returns></returns>
-        public IEnumerable<(Segment segment, Waypoint to)> EnumerateSegments()
-        {
-            if (_segments.Count > 0)
-            {
-                for (int i = 0; i < _segments.Count - 1; i++)
-                    yield return (_segments[i], _segments[i + 1].From);
-            }
-        }
-
-        /// <summary>
         /// Simple linear path
         /// </summary>
         /// <param name="from"></param>
@@ -193,7 +180,7 @@ namespace TerrainDemo.Navigation
         }
         */
 
-        private Segment _finishSegment;
+        private readonly Segment _finishSegment;
         private readonly List<Segment> _segments = new List<Segment>();
         private int _segmentIndex;
         private int _pointIndex;

@@ -24,10 +24,12 @@ namespace TerrainDemo.Editor
         private GUIStyle _currentWaypointStyle;
         private GUIStyle _nextWaypointStyle;
         private GUIStyle _oldWaypointStyle;
+        private MicroMap _microMap;
 
         private void OnEnable()
         {
             _actor = ((ActorView) target).Actor;
+            _microMap = FindObjectOfType<TriRunner>().Micro;
         }
 
         public override void OnInspectorGUI()
@@ -109,12 +111,28 @@ namespace TerrainDemo.Editor
                     else
                         waypointStyle = segmentStyle;
 
+                    GUILayout.BeginHorizontal();
                     GUILayout.Label($"  {segment.ToString()}", segmentStyle);
+                    if (GUILayout.Button("ʘ", GUILayout.Height(15), GUILayout.Width(15)))
+                    {
+                        var segmentBounds = new Bounds(segment.From.GetPosition(), UnityEngine.Vector3.zero);
+                        segmentBounds.Encapsulate(segment.To.GetPosition());
+                        SceneView.lastActiveSceneView.Frame(segmentBounds);
+                    }
+                    GUILayout.EndHorizontal();
+
                     foreach (var waypoint in segment.InterWaypoints)
                     {
                         if (waypoint == path.CurrentPoint)
                             waypointStyle = _currentWaypointStyle;
+                        GUILayout.BeginHorizontal();
                         GUILayout.Label($"    {waypoint.ToString()}", waypointStyle);
+                        if (GUILayout.Button("ʘ", GUILayout.Height(15), GUILayout.Width(15)))
+                        {
+                            SceneView.lastActiveSceneView.Frame(new Bounds(waypoint.GetPosition(),
+                                UnityEngine.Vector3.one * 5));
+                        }
+                        GUILayout.EndHorizontal();
                         if (waypoint == path.CurrentPoint)
                             waypointStyle = _nextWaypointStyle;
                     }
@@ -128,7 +146,7 @@ namespace TerrainDemo.Editor
             if (!_actor.IsHero)
             {
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Navigate to (51, 65)")) _actor.Nav.Go((51, 65));
+                if (GUILayout.Button("Navigate to (45, 23)")) _actor.Nav.Go((45, 23));
                 if (GUILayout.Button("Navigate to (-49, -61)")) _actor.Nav.Go((-49, -61));
                 GUILayout.EndHorizontal();
             }

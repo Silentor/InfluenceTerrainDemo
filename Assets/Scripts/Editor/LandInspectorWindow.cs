@@ -308,11 +308,19 @@ namespace TerrainDemo.Editor
 
         private void DrawNavigationModeHandles(Input input)
         {
+            //Draw hovered block
+            if (input.HoveredBlock.HasValue)
+            {
+                var blockInfo = input.HoveredBlock.Value.source.GetBlock(input.HoveredBlock.Value.position);
+                if(blockInfo != null)
+                    DrawBlock(blockInfo.Value, Color.blue, 0, true);
+            }
+
             //Draw navigation cells
             var navMap = Pathfinder.Instance.NavigationMap;
-            foreach (var navCell in navMap.Cells)
+            foreach (var navCell in navMap.Cells.Values)
             {
-                DrawMacroCell(navCell.Value.Cell.Macro, Color.blue, 0, false, false);
+                DrawNavigationCell(navCell, Color.blue);
             }
 
             //Draw paths to neighbor cells
@@ -374,33 +382,44 @@ namespace TerrainDemo.Editor
 
         private void DrawMacroCell(Cell cell, Color color, int width, bool labelVertices, bool filled)
         {
+            var oldzTest = Handles.zTest;
+            
             Handles.color = color;
 
+            var perimeter = new[]
+            {
+                VertexToPosition(cell.Vertices[0]),
+                VertexToPosition(cell.Vertices[1]),
+                VertexToPosition(cell.Vertices[2]),
+                VertexToPosition(cell.Vertices[3]),
+                VertexToPosition(cell.Vertices[4]),
+                VertexToPosition(cell.Vertices[5]),
+                VertexToPosition(cell.Vertices[0])
+            };
+
             //Draw perimeter
-            if(width == 0)
-                Handles.DrawPolyLine(
-                    VertexToPosition(cell.Vertices[0]),
-                    VertexToPosition(cell.Vertices[1]),
-                    VertexToPosition(cell.Vertices[2]),
-                    VertexToPosition(cell.Vertices[3]),
-                    VertexToPosition(cell.Vertices[4]),
-                    VertexToPosition(cell.Vertices[5]),
-                    VertexToPosition(cell.Vertices[0]));
+            if (width == 0)
+            {
+                Handles.zTest = CompareFunction.LessEqual;
+                Handles.color = color;
+                Handles.DrawPolyLine(perimeter);
+                Handles.zTest = CompareFunction.Greater;
+                Handles.color = color / 2;
+                Handles.DrawPolyLine(perimeter);
+            }
             else
             {
-                Handles.DrawAAPolyLine(width,
-                    VertexToPosition(cell.Vertices[0]),
-                    VertexToPosition(cell.Vertices[1]),
-                    VertexToPosition(cell.Vertices[2]),
-                    VertexToPosition(cell.Vertices[3]),
-                    VertexToPosition(cell.Vertices[4]),
-                    VertexToPosition(cell.Vertices[5]),
-                    VertexToPosition(cell.Vertices[0]));
+                Handles.zTest = CompareFunction.LessEqual;
+                Handles.color = color;
+                Handles.DrawAAPolyLine(width, perimeter);
+                Handles.zTest = CompareFunction.Greater;
+                Handles.color = color / 2;
+                Handles.DrawAAPolyLine(width, perimeter);
             }
 
             if (filled)
             {
-                Handles.DrawLines(new UnityEngine.Vector3[]
+                var fill = new UnityEngine.Vector3[]
                 {
                     VertexToPosition(cell.Vertices[0]), cell.CenterPoint,
                     VertexToPosition(cell.Vertices[1]), cell.CenterPoint,
@@ -408,14 +427,18 @@ namespace TerrainDemo.Editor
                     VertexToPosition(cell.Vertices[3]), cell.CenterPoint,
                     VertexToPosition(cell.Vertices[4]), cell.CenterPoint,
                     VertexToPosition(cell.Vertices[5]), cell.CenterPoint,
-                });
+                };
+                Handles.DrawLines(fill);
             }
 
             var cellDistance = Vector3.Distance((Vector3)cell.Center, _input.View.Origin);
-            var fontSize = Mathf.RoundToInt(-cellDistance * 1 / 8 + 15);
+
+            //Scale font size based on cell-camera distance
+            var fontSize = Mathf.RoundToInt(Mathf.Lerp(10, 25, Mathf.InverseLerp(100, 3, cellDistance)));
 
             if (cellDistance < 80 && cellDistance > 3 && fontSize > 0)
             {
+                Handles.zTest = CompareFunction.LessEqual;
                 var colorLabelStyle = new GUIStyle(GUI.skin.label);
                 //var contrastColor = (new Color(1, 1, 1, 2) - cell.Biome.LayoutColor) * 2;
                 colorLabelStyle.normal.textColor = color;
@@ -424,8 +447,16 @@ namespace TerrainDemo.Editor
                 Handles.color = color;
                 Handles.DrawWireDisc(cell.CenterPoint, _input.View.Direction, 0.1f);
 
+                Handles.zTest = CompareFunction.Greater;
+                colorLabelStyle.normal.textColor /= 3;
+                Handles.Label(cell.CenterPoint, cell.Coords.ToString(), colorLabelStyle);
+                Handles.color /= 3;
+                Handles.DrawWireDisc(cell.CenterPoint, _input.View.Direction, 0.1f);
+
                 if (labelVertices)
                 {
+                    Handles.zTest = CompareFunction.Always;
+                    Handles.color = color;
                     Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[0]), cell.CenterPoint, 0.2f), cell.Vertices[0].Id.ToString(), colorLabelStyle);
                     Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[1]), cell.CenterPoint, 0.2f), cell.Vertices[1].Id.ToString(), colorLabelStyle);
                     Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[2]), cell.CenterPoint, 0.2f), cell.Vertices[2].Id.ToString(), colorLabelStyle);
@@ -435,8 +466,13 @@ namespace TerrainDemo.Editor
                 }
             }
 
-            
+            Handles.zTest = oldzTest;
+        }
 
+        private void DrawNavigationCell(NavigationCell cell, Color color)
+        {
+            DrawMacroCell(cell.Cell.Macro, color, 0, false, false);
+            DrawArrow.ForDebug(cell.Cell.Macro.CenterPoint, cell.Normal * 5, color);
         }
 
         private void DrawMicroCell(Micro.Cell cell, Color color)
@@ -450,6 +486,8 @@ namespace TerrainDemo.Editor
             }
         }
 
+
+
         private void DrawLandBounds(Box2 bounds, Color color)
         {
             DrawRectangle.ForHandle(bounds, color);
@@ -461,7 +499,13 @@ namespace TerrainDemo.Editor
             Handles.DrawWireDisc(new Vector3(vert.Position.X, vert.Height.Nominal, vert.Position.Y), _input.View.Direction, 1);
         }
         
-
+        /// <summary>
+        /// Draw flat 2d block rectangle
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="color"></param>
+        /// <param name="width"></param>
+        /// <param name="normal"></param>
         private void DrawBlock(Vector2i position, Color color, uint width = 0, Vector3? normal = null)
         {
             Handles.color = color;
@@ -670,6 +714,11 @@ namespace TerrainDemo.Editor
 
         private void ShowNavigationModeContent(Input input)
         {
+            if (input.HoveredBlock != null)
+            {
+                ShowBlockInfo(input.HoveredBlock.Value, false, false);
+            }
+
             if (input.SelectedMacroCell != null)
             {
                 var navCell = Pathfinder.Instance.NavigationMap.Cells[input.SelectedMacroCell.Coords];
@@ -703,7 +752,7 @@ namespace TerrainDemo.Editor
         private void ShowTriVertInfo(MacroVert vert, float distance)
         {
             GUILayout.Label("MacroVert", EditorStyles.boldLabel);
-            GUILayout.Label($"Id: {vert.Id}, pos: {VectorToString(vert.Position, GetZoomLevel(distance))}");
+            GUILayout.Label($"Id: {vert.Id}, pos: {vert.Position.ToString(GetZoomLevel(distance))}");
             GUILayout.Label($"Cells: {vert.Cells.Select(c => c.Coords).ToJoinedString()}");
             GUILayout.Label($"Influence: {vert.Influence}");
         }
@@ -711,13 +760,13 @@ namespace TerrainDemo.Editor
         private void ShowCursorInfo(Input input)
         {
             GUILayout.Label("Cursor", EditorStyles.boldLabel);
-            GUILayout.Label($"World pos: {VectorToString(input.CursorPosition, GetZoomLevel(input.Distance))}");
-            GUILayout.Label($"Camera dist: {Vector3.Distance(input.CursorPosition, input.View.Origin):N0} m");
+            GUILayout.Label($"World pos: {input.CursorPosition.ToString(GetZoomLevel(input.Distance))}");
+            GUILayout.Label($"Camera dist: {Vector3.Distance(input.CursorPosition, input.View.Origin):N} m");
             if (input.HoveredBlock.HasValue)
             {
                 GUILayout.Label(
                     $"Influence: {MacroMap.GetInfluence((Vector2) input.CursorPosition)}");
-                GUILayout.Label($"Height: {MacroMap.GetHeight((Vector2) input.CursorPosition):N}");
+                GUILayout.Label($"Height: {MacroMap.GetHeight((Vector2) input.CursorPosition).Nominal:N}");
             }
         }
 
@@ -823,45 +872,11 @@ namespace TerrainDemo.Editor
             return 0;
         }
 
-        private static Vector3 VertexToPosition(MacroVert vertex)
+        private static UnityEngine.Vector3 VertexToPosition(MacroVert vertex)
         {
             return new Vector3(vertex.Position.X, vertex.Height.Nominal, vertex.Position.Y);
         }
 
-
-        private string VectorToString(Vector3 vector, int precision)
-        {
-            switch (precision)
-            {
-                case 0:
-                    return $"({vector.X:F0}, {vector.Y:F0}, {vector.Z:F0})";
-                case 1:
-                    return $"({vector.X:F1}, {vector.Y:F1}, {vector.Z:F1})";
-                case 2:
-                    return $"({vector.X:F2}, {vector.Y:F2}, {vector.Z:F2})";
-                case 3:
-                    return $"({vector.X:F3}, {vector.Y:F3}, {vector.Z:F3})";
-                default:
-                    return ToString();
-            }
-        }
-
-        public string VectorToString(Vector2 vector, int precision)
-        {
-            switch (precision)
-            {
-                case 0:
-                    return $"({vector.X:F0}, {vector.Y:F0})";
-                case 1:
-                    return $"({vector.X:F1}, {vector.Y:F1})";
-                case 2:
-                    return $"({vector.X:F2}, {vector.Y:F2})";
-                case 3:
-                    return $"({vector.X:F3}, {vector.Y:F3})";
-                default:
-                    return ToString();
-            }
-        }
 
         private string MicroHeightToString(Heights heights)
         {
