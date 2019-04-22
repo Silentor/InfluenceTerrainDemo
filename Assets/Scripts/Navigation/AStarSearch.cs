@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using OpenToolkit.Mathematics;
 using TerrainDemo.Hero;
 using TerrainDemo.Macro;
@@ -24,8 +25,6 @@ namespace TerrainDemo.Navigation
         IEnumerable<TNode> Neighbors(Actor actor, TNode node);
 
         float Heuristic(TNode @from, TNode to);
-
-        void DebugVisualize(IEnumerable<TNode> nodes, Color color);
     }
 
     public class MicroMapGraph : IWeightedGraph<Waypoint>
@@ -59,14 +58,6 @@ namespace TerrainDemo.Navigation
             //return Vector2i.RoughDistance(from.Position, to.Position);  //11703 blocks, 198 msec, 171 meters
             //return Vector2i.DistanceSquared(from.Position, to.Position); //231 blocks, 8 msec, 177 meters
         }
-
-        public void DebugVisualize(IEnumerable<Waypoint> nodes, Color color)
-        {
-            foreach (var node in nodes)
-            {
-                DebugExtension.DebugPoint(BlockInfo.GetWorldCenter(node.Position), color, 0.5f, 10, false);
-            }
-        }
     }
 
     public class MacroMapGraph : IWeightedGraph<Cell>
@@ -84,13 +75,19 @@ namespace TerrainDemo.Navigation
                 return 0;
 
             var moveVector = to.CenterPoint - from.CenterPoint;
-            var heightDiff = moveVector.Y;
+            var height = moveVector.Y;              //Ascend/descent
             moveVector.Y = 0;
-            var flatDistance = moveVector.Length;
+            var distance = moveVector.Length;
+            var heightCost = 0f;
 
-            //Remap distance based on height difference. Prefer down slopes
-            var inclinationCoeff = (heightDiff / flatDistance) * 2;
-            return Mathf.Clamp(flatDistance + inclinationCoeff, flatDistance / 2, float.MaxValue) ;
+            //Climb height = severe movement cost penalty
+            if (height > 0)
+                heightCost = Interpolation.RemapUnclamped(height / distance, 0, 1, 1, 3);
+            else
+                //Drop height = some movement cost bonus, but not so much
+                heightCost = Interpolation.RemapUnclamped(-height / distance, 0, 1, 1, 0.5f);
+
+            return distance + heightCost;
         }
 
         public IEnumerable<Cell> Neighbors(Actor actor, Cell node)
@@ -101,14 +98,6 @@ namespace TerrainDemo.Navigation
         public float Heuristic(Cell @from, Cell to)
         {
             return Vector3.Distance(@from.CenterPoint, to.CenterPoint);
-        }
-
-        public void DebugVisualize(IEnumerable<Cell> nodes, Color color)
-        {
-            foreach (var node in nodes)
-            {
-                DebugExtension.DebugPoint(node.CenterPoint, color, 2f, 10, false);
-            }
         }
     }
 
@@ -125,7 +114,9 @@ namespace TerrainDemo.Navigation
         {
             var speedCost = 1 / to.SpeedModifier;
             //var rougnessCost = 1 + (from.Rougness + to.Rougness) / 2;
-            var rougnessCost = 1 + (5 * to.Rougness);
+            var rougnessCost = to.Rougness < 0.7f 
+                ? Interpolation.Remap(to.Rougness, 0, 0.7f, 1, 2)
+                : Interpolation.RemapUnclamped(to.Rougness, 0.7f, 1, 2, 10);
 
             var moveVector = to.Cell.Macro.CenterPoint - from.Cell.Macro.CenterPoint;
             var height = moveVector.Y;              //Ascend/descent
@@ -143,16 +134,9 @@ namespace TerrainDemo.Navigation
             return Vector3.Distance(from.Cell.Macro.CenterPoint, to.Cell.Macro.CenterPoint) * speedCost * rougnessCost * heightCost;
         }
 
-        
-
-        public void DebugVisualize(IEnumerable<NavigationCell> nodes, Color color)
-        {
-            foreach (var node in nodes) DebugExtension.DebugPoint(node.Cell.Macro.CenterPoint, color, 2f, 10, false);
-        }
-
         public float Heuristic(NavigationCell from, NavigationCell to)
         {
-            //todo add height diff coefficient
+            //todo add height diff coefficient?
             return Vector3.Distance(from.Cell.Macro.CenterPoint, to.Cell.Macro.CenterPoint);
         }
 
@@ -222,7 +206,7 @@ namespace TerrainDemo.Navigation
             _graph = graph;
         }
 
-        public List<TNode> CreatePath(Actor actor, TNode from, TNode to, Predicate<TNode> debugBreakOn = null)
+        public List<TNode> CreatePath(Actor actor, TNode from, TNode to, bool bestPossibleSearch, Predicate<TNode> isValidNode = null)
         {
             var timer = Stopwatch.StartNew();
             int processedLocations = 0, maxFrontierCount = 0;
@@ -242,21 +226,15 @@ namespace TerrainDemo.Navigation
             {
                 var current = frontier.Dequeue();
 
-                //Do not search for best path
-                if (current.Equals(to))
-                {
+                if(!bestPossibleSearch && current.Equals(to))
                     break;
-                }
-
-                if(debugBreakOn != null && debugBreakOn(current))
-                    Debug.Log($"break on {current}");
-
-                Debug.Log($"Check {current}...");
 
                 foreach (var next in _graph.Neighbors(actor, current))
                 {
+                    if(isValidNode != null && !isValidNode(next))
+                        continue;
+
                     var newCost = _costSoFar[current] + _graph.Cost(current, next);
-                    Debug.Log($"..to {next} cost is {newCost}..");
 
                     if (!_costSoFar.TryGetValue(next, out var storedNextCost) || newCost < storedNextCost)
                     {
@@ -265,7 +243,6 @@ namespace TerrainDemo.Navigation
                         var priority = newCost + h;
                         frontier.Enqueue(next, priority);
                         _cameFrom[next] = current;
-                        Debug.Log($"..Its a good cost. P = g + h, {priority}={newCost}+{h}");
                     }
                 }
 
@@ -275,9 +252,6 @@ namespace TerrainDemo.Navigation
             }
 
             timer.Stop();
-
-            //Visualize scanned blocks
-            _graph.DebugVisualize(_costSoFar.Keys, Color.red);
 
             //Reconstruct path
             var result = new List<TNode>();
@@ -290,6 +264,7 @@ namespace TerrainDemo.Navigation
             else
             {
                 Debug.Log($"Path from {from} to {to} cant be found, processed {processedLocations}, max frontier size {maxFrontierCount}, time {timer.ElapsedMilliseconds} msec");
+                DebugCompleted?.Invoke(_cameFrom, _costSoFar);
                 return null;
             }
 
@@ -301,9 +276,62 @@ namespace TerrainDemo.Navigation
             result.Reverse();
 
             Debug.Log($"AStar path from {from} to {to} is found, steps {result.Count}, processed {processedLocations}, max frontier size {maxFrontierCount}, time {timer.ElapsedMilliseconds} msec");
-
+            DebugCompleted?.Invoke(_cameFrom, _costSoFar);
             return result;
         }
+
+        /// <summary>
+        /// Step-by-step path creation
+        /// </summary>
+        /// <param name="actor"></param>
+        /// <param name="from"></param>
+        /// <param name="to"></param>
+        /// <param name="cameFrom"></param>
+        /// <param name="costSoFar"></param>
+        /// <returns></returns>
+        public IEnumerable<(TNode current, TNode next)> CreatePathDebug(Actor actor, TNode from, TNode to, Dictionary<TNode, TNode> cameFrom, Dictionary<TNode, float> costSoFar)
+        {
+            cameFrom.Clear();
+            costSoFar.Clear();
+
+            var frontier = new PriorityQueue<TNode>();
+            var start = from;
+            var goal = to;
+            frontier.Enqueue(start, 0);
+
+            cameFrom[start] = start;
+            costSoFar[start] = 0;
+
+            while (frontier.Count > 0)
+            {
+                var current = frontier.Dequeue();
+
+                //Do not search for best path
+                if (current.Equals(to))
+                {
+                    break;
+                }
+
+                foreach (var next in _graph.Neighbors(actor, current))
+                {
+                    var newCost = costSoFar[current] + _graph.Cost(current, next);
+                    if (!costSoFar.TryGetValue(next, out var storedNextCost) || newCost < storedNextCost)
+                    {
+                        costSoFar[next] = newCost;
+                        var h = _graph.Heuristic(next, goal);
+                        var priority = newCost + h;
+                        frontier.Enqueue(next, priority);
+                        cameFrom[next] = current;
+                    }
+
+                    yield return (current, next);
+                }
+            }
+
+            DebugCompleted?.Invoke(cameFrom, costSoFar);
+        }
+
+        public event Action<Dictionary<TNode, TNode>, Dictionary<TNode, float>> DebugCompleted;
 
     }
 }

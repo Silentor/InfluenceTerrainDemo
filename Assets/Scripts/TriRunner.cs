@@ -18,6 +18,7 @@ using TerrainDemo.Visualization;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Assertions;
+using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 using Input = TerrainDemo.Hero.Input;
 using Renderer = TerrainDemo.Visualization.Renderer;
@@ -307,7 +308,63 @@ namespace TerrainDemo
             inputSource.Zoom += InputSourceOnZoom;
 
             _observer.SetTarget(_hero);
+
+            //StartCoroutine(DebugAStar());
         }
+
+        //DEBUG
+        private Dictionary<NavigationCell, NavigationCell> _cameFrom = new Dictionary<NavigationCell, NavigationCell>();
+        private Dictionary<NavigationCell, float> _cost = new Dictionary<NavigationCell, float>();
+        private NavigationCell _current, _next;
+        private GUIStyle _currentStyle, _defaultStyle;
+
+        private IEnumerator DebugAStar()
+        {
+            SceneView.duringSceneGui += SceneViewOnDuringSceneGui;
+            _cost.Clear();
+            _cameFrom.Clear();
+
+            var astar = new AStarSearch<NavigationMapMacroGraph, NavigationCell>(Pathfinder.Instance.NavMapMacroGraph);
+            var startCell = Macro.Cells.First(c => c.Contains((Vector2)_npc.Position));
+            var startNavCell = Pathfinder.Instance.NavigationMap.Cells[startCell.Coords];
+            var finishCell = Macro.Cells.First(c => c.Contains(new Vector2(45.5f, 23.5f)));
+            var finishNavCell = Pathfinder.Instance.NavigationMap.Cells[finishCell.Coords];
+
+            foreach (var (current, next) in astar.CreatePathDebug(_npc, startNavCell, finishNavCell, _cameFrom, _cost))
+            {
+                _current = current;
+                _next = next;
+                yield return new WaitForSeconds(0.1f);
+            }
+
+            //SceneView.duringSceneGui -= SceneViewOnDuringSceneGui;
+        }
+
+        private void SceneViewOnDuringSceneGui(SceneView obj)
+        {
+            _currentStyle = new GUIStyle(GUI.skin.label);
+            _currentStyle.normal.textColor = Color.red;
+
+            _defaultStyle = new GUIStyle(GUI.skin.label);
+            _defaultStyle.normal.textColor = Color.white;
+
+
+            Handles.color = Color.white;
+            foreach (var cost in _cost)
+            {
+                Handles.Label(cost.Key.Cell.Macro.CenterPoint, cost.Value.ToString(), 
+                    cost.Key == _current || cost.Key == _next ?
+                    _currentStyle : _defaultStyle);
+            }
+
+            foreach (var cameFrom in _cameFrom)
+            {
+                var from = cameFrom.Value.Cell.Macro.CenterPoint;
+                var to = cameFrom.Key.Cell.Macro.CenterPoint;
+                DrawArrow.ForDebug(from, to - from, Color.white, 0, false, 3);
+            }
+        }
+        //DEBUG
 
         private void OnValidate()
         {
