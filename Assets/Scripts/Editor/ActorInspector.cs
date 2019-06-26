@@ -39,8 +39,8 @@ namespace TerrainDemo.Editor
             if (_currentWaypointStyle == null)
             {
                 _currentWaypointStyle = new GUIStyle(GUI.skin.label) {normal = {textColor = Color.red}};
-                _nextWaypointStyle = new GUIStyle(GUI.skin.label) {normal = {textColor = Color.white}};
-                _oldWaypointStyle = new GUIStyle(GUI.skin.label) {normal = {textColor = Color.gray}};
+                _nextWaypointStyle    = new GUIStyle(GUI.skin.label) {normal = {textColor = Color.white}};
+                _oldWaypointStyle     = new GUIStyle(GUI.skin.label) {normal = {textColor = Color.gray}};
             }
 
             var debugInternals = _actor.GetDebugState();
@@ -50,10 +50,12 @@ namespace TerrainDemo.Editor
 
             GUILayout.Label("Locomotor", EditorStyles.centeredGreyMiniLabel);
 
-            EditorGUI.BeginChangeCheck();
-            var newSpeed = EditorGUILayout.DelayedFloatField("Speed", _actor.Speed);
-            if (EditorGUI.EndChangeCheck())
-                _actor.Speed = newSpeed;
+            using (var speedScope = new EditorGUI.ChangeCheckScope())
+            {
+                var newSpeed = EditorGUILayout.DelayedFloatField("Speed", _actor.Speed);
+                if (speedScope.changed)
+                    _actor.Speed = newSpeed;
+            }
 
             ref readonly var block = ref _actor.Map.GetBlockRef(_actor.BlockPosition);
             var blockNormal = _actor.Map.GetBlockData(_actor.BlockPosition).Normal;
@@ -111,28 +113,32 @@ namespace TerrainDemo.Editor
                     else
                         waypointStyle = segmentStyle;
 
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label($"  {segment.ToString()}", segmentStyle);
-                    if (GUILayout.Button("ʘ", GUILayout.Height(15), GUILayout.Width(15)))
+                    using (var h = new GUILayout.HorizontalScope())
                     {
-                        var segmentBounds = new Bounds(segment.From.GetPosition(), UnityEngine.Vector3.zero);
-                        segmentBounds.Encapsulate(segment.To.GetPosition());
-                        SceneView.lastActiveSceneView.Frame(segmentBounds);
+                        GUILayout.Label($"  {segment.ToString()}", segmentStyle);
+                        if (GUILayout.Button("ʘ", GUILayout.Height(15), GUILayout.Width(15)))
+                        {
+                            var segmentBounds = new Bounds(segment.From.GetPosition(), UnityEngine.Vector3.zero);
+                            segmentBounds.Encapsulate(segment.To.GetPosition());
+                            SceneView.lastActiveSceneView.Frame(segmentBounds);
+                        }
                     }
-                    GUILayout.EndHorizontal();
 
                     foreach (var waypoint in segment.InterWaypoints)
                     {
                         if (waypoint == path.CurrentPoint)
                             waypointStyle = _currentWaypointStyle;
-                        GUILayout.BeginHorizontal();
-                        GUILayout.Label($"    {waypoint.ToString()}", waypointStyle);
-                        if (GUILayout.Button("ʘ", GUILayout.Height(15), GUILayout.Width(15)))
+
+                        using (var h = new GUILayout.HorizontalScope())
                         {
-                            SceneView.lastActiveSceneView.Frame(new Bounds(waypoint.GetPosition(),
-                                UnityEngine.Vector3.one * 5));
+                            GUILayout.Label($"    {waypoint.ToString()}", waypointStyle);
+                            if (GUILayout.Button("ʘ", GUILayout.Height(15), GUILayout.Width(15)))
+                            {
+                                SceneView.lastActiveSceneView.Frame(new Bounds(waypoint.GetPosition(),
+                                                                               UnityEngine.Vector3.one * 5));
+                            }
                         }
-                        GUILayout.EndHorizontal();
+
                         if (waypoint == path.CurrentPoint)
                             waypointStyle = _nextWaypointStyle;
                     }
@@ -180,6 +186,16 @@ namespace TerrainDemo.Editor
                         if (wp == _actor.Nav.Path.CurrentPoint)
                             color = Color.white;
                     }
+
+                    //Show all processed blocks
+                    foreach (var wp in _actor.Nav.Path.TotalProcessed)
+                    {
+                        var mapPosition = BlockInfo.GetWorldCenter(wp.Position);
+                        var position = new UnityEngine.Vector3(mapPosition.X, wp.Map.GetBlockData(wp.Position).Height,
+                            mapPosition.Y);
+                        DrawPoint.ForFebug2D(position, 0.5f, Color.blue, false);
+                    }
+                    
                 }
             }
         }

@@ -121,6 +121,7 @@ namespace TerrainDemo.Hero
 
         #region NPC locomotion
 
+        //todo consider move to Locomotor/Navigator component
         public void MoveTo(Vector2 worldPosition, bool autoStop)
         {
             if (_isHero) return;
@@ -129,10 +130,10 @@ namespace TerrainDemo.Hero
             _rotateDirection = 0;
             _isStopped = false;
             _autoStop = autoStop;
-            Rotate(worldPosition);
+            RotateTo(worldPosition);
         }
 
-        public void Rotate(Vector2 worldPosition)
+        public void RotateTo(Vector2 worldPosition)
         {
             if (_isHero) return;
             var angle = UnityEngine.Vector2.SignedAngle(worldPosition - (Vector2)Position, UnityEngine.Vector2.up);
@@ -182,7 +183,7 @@ namespace TerrainDemo.Hero
 #if UNITY_EDITOR
         public (Vector2 moveDirection, float blockInclinationSpeedMod, float blockMaterialSpeedMod) GetDebugState()
         {
-            return (_moveDirection: _inputVelocity,  _currentBlockInclinationSpeedModifier,  _currentBlockMaterialSpeedModifier);
+            return (moveDirection: _inputVelocity,  blockInclinationSpeedMod: _currentBlockInclinationSpeedModifier,  blockMaterialSpeedMod: _currentBlockMaterialSpeedModifier);
         }
 
 #endif
@@ -306,7 +307,7 @@ namespace TerrainDemo.Hero
         /// <param name="toPos"></param>
         /// <param name="toMap"></param>
         /// <returns></returns>
-        public bool IsPassable(BaseBlockMap fromMap, Vector2i fromPos, Vector2i toPos, out BaseBlockMap toMap)
+        public bool IsPassable(BaseBlockMap fromMap, Vector2i fromPos, Vector2i toPos, out BaseBlockMap toMap) //todo move to Locomotor component
         {
             //Assume that fromPos -> toPos is small for simplicity
             /*

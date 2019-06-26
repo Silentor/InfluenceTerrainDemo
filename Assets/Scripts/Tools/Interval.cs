@@ -53,11 +53,11 @@ namespace TerrainDemo.Tools
         {
             var result = Subtract(other);
 
-            if (!result.Item1.IsEmpty)
-                yield return result.Item1;
+            if (!result.minPart.IsEmpty)
+                yield return result.minPart;
 
-            if (!result.Item2.IsEmpty)
-                yield return result.Item2;
+            if (!result.maxPart.IsEmpty)
+                yield return result.maxPart;
         }
 
         public (Interval minPart, Interval maxPart) Subtract(Interval other)

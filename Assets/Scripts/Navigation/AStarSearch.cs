@@ -206,10 +206,13 @@ namespace TerrainDemo.Navigation
             _graph = graph;
         }
 
-        public List<TNode> CreatePath(Actor actor, TNode from, TNode to, bool bestPossibleSearch, Predicate<TNode> isValidNode = null)
+        public (List<TNode> result, IReadOnlyDictionary<TNode, TNode> cameFromDebug, IReadOnlyDictionary<TNode, float> costs) CreatePath(Actor actor, TNode from, TNode to, bool bestPossibleSearch, Predicate<TNode> isValidNode = null)
         {
+            if (from.Equals(to))
+                return (new List<TNode>() {from, to}, new Dictionary<TNode, TNode>(0), new Dictionary<TNode, float>(0));
+
             var timer = Stopwatch.StartNew();
-            int processedLocations = 0, maxFrontierCount = 0;
+            int processedNodes = 0, maxFrontierCount = 0;
 
             _cameFrom.Clear();
             _costSoFar.Clear();
@@ -224,6 +227,7 @@ namespace TerrainDemo.Navigation
 
             while (frontier.Count > 0)
             {
+                processedNodes++;
                 var current = frontier.Dequeue();
 
                 if(!bestPossibleSearch && current.Equals(to))
@@ -245,8 +249,7 @@ namespace TerrainDemo.Navigation
                         _cameFrom[next] = current;
                     }
                 }
-
-                processedLocations++;
+                
                 if (frontier.Count > maxFrontierCount)
                     maxFrontierCount = frontier.Count;
             }
@@ -263,9 +266,8 @@ namespace TerrainDemo.Navigation
             }
             else
             {
-                Debug.Log($"Path from {from} to {to} cant be found, processed {processedLocations}, max frontier size {maxFrontierCount}, time {timer.ElapsedMilliseconds} msec");
-                DebugCompleted?.Invoke(_cameFrom, _costSoFar);
-                return null;
+                DebugCompleted?.Invoke(null, processedNodes, maxFrontierCount, (int)timer.ElapsedMilliseconds);
+                return (null, _cameFrom, _costSoFar);
             }
 
             do
@@ -275,9 +277,8 @@ namespace TerrainDemo.Navigation
             } while (!prev.Equals(start));
             result.Reverse();
 
-            Debug.Log($"AStar path from {from} to {to} is found, steps {result.Count}, processed {processedLocations}, max frontier size {maxFrontierCount}, time {timer.ElapsedMilliseconds} msec");
-            DebugCompleted?.Invoke(_cameFrom, _costSoFar);
-            return result;
+            DebugCompleted?.Invoke(result, processedNodes, maxFrontierCount, (int)timer.ElapsedMilliseconds);
+            return (result, _cameFrom, _costSoFar);
         }
 
         /// <summary>
@@ -289,49 +290,79 @@ namespace TerrainDemo.Navigation
         /// <param name="cameFrom"></param>
         /// <param name="costSoFar"></param>
         /// <returns></returns>
-        public IEnumerable<(TNode current, TNode next)> CreatePathDebug(Actor actor, TNode from, TNode to, Dictionary<TNode, TNode> cameFrom, Dictionary<TNode, float> costSoFar)
+        public IEnumerable<(TNode current, TNode next, Dictionary<TNode, TNode>, Dictionary<TNode, float>)> 
+            CreatePathDebug(Actor actor, TNode from, TNode to, bool bestPossibleSearch, Predicate<TNode> isValidNode = null)
         {
-            cameFrom.Clear();
-            costSoFar.Clear();
+            int processedNodes = 0, maxFrontierCount = 0;
+            _cameFrom.Clear();
+            _costSoFar.Clear();
 
             var frontier = new PriorityQueue<TNode>();
             var start = from;
             var goal = to;
             frontier.Enqueue(start, 0);
 
-            cameFrom[start] = start;
-            costSoFar[start] = 0;
+            _cameFrom[start] = start;
+            _costSoFar[start] = 0;
 
             while (frontier.Count > 0)
             {
+                processedNodes++;
                 var current = frontier.Dequeue();
 
-                //Do not search for best path
-                if (current.Equals(to))
-                {
+                if (!bestPossibleSearch && current.Equals(to))
                     break;
-                }
 
                 foreach (var next in _graph.Neighbors(actor, current))
                 {
-                    var newCost = costSoFar[current] + _graph.Cost(current, next);
-                    if (!costSoFar.TryGetValue(next, out var storedNextCost) || newCost < storedNextCost)
+                    if (isValidNode != null && !isValidNode(next))
+                        continue;
+
+                    var newCost = _costSoFar[current] + _graph.Cost(current, next);
+                    if (!_costSoFar.TryGetValue(next, out var storedNextCost) || newCost < storedNextCost)
                     {
-                        costSoFar[next] = newCost;
+                        _costSoFar[next] = newCost;
                         var h = _graph.Heuristic(next, goal);
                         var priority = newCost + h;
                         frontier.Enqueue(next, priority);
-                        cameFrom[next] = current;
+                        _cameFrom[next] = current;
                     }
 
-                    yield return (current, next);
+                    yield return (current, next, _cameFrom, _costSoFar);
                 }
+
+                if (frontier.Count > maxFrontierCount)
+                    maxFrontierCount = frontier.Count;
             }
 
-            DebugCompleted?.Invoke(cameFrom, costSoFar);
+            //Reconstruct path
+            var result = new List<TNode>();
+            TNode prev;
+            if (_cameFrom.ContainsKey(goal))
+            {
+                prev = goal;
+                result.Add(prev);
+            }
+            else
+            {
+                DebugCompleted?.Invoke(null, processedNodes, maxFrontierCount, -1);
+                yield break;
+            }
+
+            do
+            {
+                prev = _cameFrom[prev];
+                result.Add(prev);
+            } while (!prev.Equals(start));
+            result.Reverse();
+
+            DebugCompleted?.Invoke(result, processedNodes, maxFrontierCount, -1);
         }
 
-        public event Action<Dictionary<TNode, TNode>, Dictionary<TNode, float>> DebugCompleted;
+        /// <summary>
+        /// Transfers, costs, processed nodes, max frontier count, timer (msec)
+        /// </summary>
+        public event Action<List<TNode>, int, int, int> DebugCompleted;
 
     }
 }

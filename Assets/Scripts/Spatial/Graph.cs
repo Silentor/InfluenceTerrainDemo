@@ -1,69 +1,91 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using NUnit.Framework.Constraints;
 
 namespace TerrainDemo.Spatial
 {
     /// <summary>
     /// Supports unique edges only
     /// </summary>
-    /// <typeparam name="TData"></typeparam>
-    public class Graph<TData> : Network<Graph<TData>, Graph<TData>.Node>
+    /// <typeparam name="TNode"></typeparam>
+    public class Graph<TNode, TEdge>
     {
-        public Graph()
+        public Graph(  )
         {
-            //Nodes = _nodes;
         }
 
-        public Node Add(TData data)
+        public Node AddNode(TNode data)
         {
-            var newNode = new Node(_nodes.Count, this);
-            _nodes.Add(newNode);
+            var newNode = new Node(this);
+            _nodes[data] = newNode;
             newNode.Data = data;
             return newNode;
         }
 
-        public void AddEdge(Node from, Node to)
+        public Edge AddEdge(Node from, Node to, TEdge data)
         {
             if(from.Parent != this || to.Parent != this)
                 throw new InvalidOperationException();
 
             if (from == to)
-                return;
+                throw new InvalidOperationException();
 
-            //if ((from.Neighbors.Contains(from) && to.Neighbors.Contains(to))
-              //  || (from.Neighbors.Contains(to) && to.Neighbors.Contains(from)))
-                //return;
-
-                //from.Neighbors.Add(to);
-            //to.Neighbors.Add(from);
+            var newEdge = new Edge( this, from, to );
+            newEdge.Data = data;
+            _edges[data] = newEdge;
+            return newEdge;
         }
 
-        public Graph<C> Convert<C>()
+        //public Graph<C> Convert<C>()
+        //{
+        //    var result = new Graph<C>();
+        //    var resultNodes = new Graph<C>.Node[Nodes.Count()];
+        //    for (int i = 0; i < Nodes.Count(); i++)
+        //    {
+        //        var source = Nodes.ElementAt(i);
+        //        resultNodes[i] = new Graph<C>.Node(source.Id, result);
+        //    }
+
+        //    //Convert edges info
+        //    for (int i = 0; i < resultNodes.Length; i++)
+        //        //foreach (var sourceNeighbor in Nodes.ElementAt(i).Neighbors)
+        //            //resultNodes[i].Neighbors.Add(resultNodes[sourceNeighbor.Id]);
+        //            ;
+
+        //    return result;
+        //}
+
+        private readonly Dictionary<TNode, Node> _nodes = new Dictionary<TNode, Node>();
+        private readonly Dictionary<TEdge, Edge> _edges = new Dictionary<TEdge, Edge>();
+
+        public class Node
         {
-            var result = new Graph<C>();
-            var resultNodes = new Graph<C>.Node[Nodes.Count()];
-            for (int i = 0; i < Nodes.Count(); i++)
+            public TNode Data;
+            public readonly Graph<TNode, TEdge> Parent;
+			public readonly List<Edge> Edges = new List<Edge>();
+
+            internal Node(Graph<TNode, TEdge> parentGraph)
             {
-                var source = Nodes.ElementAt(i);
-                resultNodes[i] = new Graph<C>.Node(source.Id, result);
+	            Parent = parentGraph;
             }
-
-            //Convert edges info
-            for (int i = 0; i < resultNodes.Length; i++)
-                //foreach (var sourceNeighbor in Nodes.ElementAt(i).Neighbors)
-                    //resultNodes[i].Neighbors.Add(resultNodes[sourceNeighbor.Id]);
-                    ;
-
-            return result;
         }
 
-        public class Node : BaseNode
+        public class Edge
         {
-            public TData Data;
+	        public TEdge        Data;
+	        public Node        From;
+	        public Node        To;
 
-            public Node(int id, Graph<TData> parentGraph) : base(parentGraph, id)
-            {
-            }
+	        public readonly Graph<TNode, TEdge> Parent;
+
+	        internal Edge( Graph<TNode, TEdge> parent, Node from, Node to )
+	        {
+		        Parent = parent;
+		        From = from;
+		        To = to;
+				from.Edges.Add( this );
+	        }
         }
     }
 }

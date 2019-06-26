@@ -368,15 +368,14 @@ namespace TerrainDemo.OldCodeToRevision
         /// <returns></returns>
         private ChunkMaskBlock[,] GetChunkBlocks(Chunk chunk, int border, Dictionary<Vector2i, Chunk> map)
         {
-            Chunk top, bottom, left, right, topleft, bottomleft, topright, bottomright;
-            map.TryGetValue(chunk.Position + Vector2i.Forward, out top);
-            map.TryGetValue(chunk.Position + Vector2i.Back, out bottom);
-            map.TryGetValue(chunk.Position + Vector2i.Left, out left);
-            map.TryGetValue(chunk.Position + Vector2i.Right, out right);
-            map.TryGetValue(chunk.Position + Vector2i.Forward + Vector2i.Left, out topleft);
-            map.TryGetValue(chunk.Position + Vector2i.Back + Vector2i.Left, out bottomleft);
-            map.TryGetValue(chunk.Position + Vector2i.Forward + Vector2i.Right, out topright);
-            map.TryGetValue(chunk.Position + Vector2i.Back + Vector2i.Right, out bottomright);
+            map.TryGetValue(chunk.Position + Vector2i.Forward, out var top);
+            map.TryGetValue(chunk.Position + Vector2i.Back, out var bottom);
+            map.TryGetValue(chunk.Position + Vector2i.Left, out var left);
+            map.TryGetValue(chunk.Position + Vector2i.Right, out var right);
+            map.TryGetValue(chunk.Position + Vector2i.Forward + Vector2i.Left, out var topleft);
+            map.TryGetValue(chunk.Position + Vector2i.Back + Vector2i.Left, out var bottomleft);
+            map.TryGetValue(chunk.Position + Vector2i.Forward + Vector2i.Right, out var topright);
+            map.TryGetValue(chunk.Position + Vector2i.Back + Vector2i.Right, out var bottomright);
 
             var bc = chunk.BlocksCount;
             var blocks = new ChunkMaskBlock[chunk.BlocksCount + 2*border, chunk.BlocksCount + 2*border];
@@ -422,12 +421,10 @@ namespace TerrainDemo.OldCodeToRevision
 
         Vector3[] CalculateNormals(Chunk chunk, Dictionary<Vector2i, Chunk> map)
         {
-            Chunk top, bottom, left, right;
-
-            map.TryGetValue(chunk.Position + Vector2i.Forward, out top);
-            map.TryGetValue(chunk.Position + Vector2i.Back, out bottom);
-            map.TryGetValue(chunk.Position + Vector2i.Left, out left);
-            map.TryGetValue(chunk.Position + Vector2i.Right, out right);
+            map.TryGetValue(chunk.Position + Vector2i.Forward, out var top);
+            map.TryGetValue(chunk.Position + Vector2i.Back, out var bottom);
+            map.TryGetValue(chunk.Position + Vector2i.Left, out var left);
+            map.TryGetValue(chunk.Position + Vector2i.Right, out var right);
 
             Vector3[] result = new Vector3[chunk.GridSize * chunk.GridSize];
 

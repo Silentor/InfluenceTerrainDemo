@@ -9,13 +9,14 @@ using TerrainDemo.Micro;
 using TerrainDemo.Navigation;
 using TerrainDemo.Spatial;
 using UnityEngine;
+using UnityEngine.Assertions;
 using Debug = System.Diagnostics.Debug;
 using Vector2 = OpenToolkit.Mathematics.Vector2;
 
 namespace TerrainDemo.Hero
 {
     /// <summary>
-    /// Pathfinding component of Actor
+    /// Pathfinding component of Actor, maybe will have Locomotor functions also
     /// </summary>
     public class Navigator
     {
@@ -44,43 +45,60 @@ namespace TerrainDemo.Hero
 
             var path = _pathfinder.CreatePath( Owner.BlockPosition, destination, Owner);
 
+            if (IsNavigated)
+                Cancel(false);
+
+            Path = path;
             if (path.IsValid)
             {
-                Path = path;
-                if(_navigateTask != null && !_navigateTask.IsCompleted)
-                    _navigateCancel?.Cancel();
-
+                IsNavigated = true;
                 _navigateCancel = new CancellationTokenSource();
-                RunNavigatePath(path, _navigateCancel.Token);
+                _navigateTask = RunNavigatePath(path, _navigateCancel);
             }
-            else
-                Owner.Stop();
+        }
+
+        /// <summary>
+        /// Stop navigation on current path
+        /// </summary>
+        public void Cancel(bool stopOwner = true)
+        {
+            if (IsNavigated)
+            {
+                _navigateCancel?.Cancel();
+                IsNavigated = false;
+
+                if(stopOwner)
+                    Owner.Stop();
+            }
         }
 
         private readonly MicroMap _map;
         private readonly Pathfinder _pathfinder;
-        private Task _navigateTask;
         private CancellationTokenSource _navigateCancel;
+        private Task _navigateTask;
 
-        private async void RunNavigatePath(Path path, CancellationToken ct)
+        private async Task RunNavigatePath(Path path, CancellationTokenSource ct)
         {
-            var task = NavigatePath(path, ct);
-            _navigateTask = task;
-            await task;
-            UnityEngine.Debug.Log($"Continuation: Navigate task {task.Status}");
+            var task = NavigatePath(path, ct.Token);
 
+            using (ct)
+            {
+                await task;
+            }
         }
 
         private async Task NavigatePath(Path path, CancellationToken ct)
         {
+            Assert.IsTrue(IsNavigated);
+
             if (!path.IsValid)
             {
                 Owner.Stop();
+                IsNavigated = false;
                 UnityEngine.Debug.Log($"Path invalid, do not move");
                 return;
             }
 
-            IsNavigated = true;
             try
             {
                 do
@@ -95,16 +113,15 @@ namespace TerrainDemo.Hero
                     }
                 } while (path.CurrentPoint != path.Finish);
 
+                //Finish path
+                Owner.Stop();
+                IsNavigated = false;
+
                 UnityEngine.Debug.Log($"Path completed");
             }
             catch (TaskCanceledException)
             {
-                UnityEngine.Debug.Log($"Path cancelled, silently finish task");
-            }
-            finally
-            {
-                Owner.Stop();
-                IsNavigated = false;
+                UnityEngine.Debug.Log($"Path cancelled");
             }
         }
     }

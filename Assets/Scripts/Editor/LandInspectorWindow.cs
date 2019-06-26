@@ -780,26 +780,30 @@ namespace TerrainDemo.Editor
                 GUILayout.Label("Type                   Height");
 
                 GUILayout.BeginVertical("box", GUILayout.Width(150));
-                GUILayout.BeginHorizontal();
+                //GUILayout.BeginHorizontal();
                 GUILayout.Label($"{block.Ground}", GUILayout.Width(100));
                 //GUILayout.Label(block.Ground != BlockType.Empty ? $"{block.Height.Main:N1}" : "-");
-                GUILayout.EndHorizontal();
+                //GUILayout.EndHorizontal();
 
-                GUILayout.BeginHorizontal();
+                //GUILayout.BeginHorizontal();
                 GUILayout.Label($"{block.Underground}", GUILayout.Width(100));
                 //GUILayout.Label(block.Underground != BlockType.Empty ? $"{block.Height.Underground:N1}" : "-");
-                GUILayout.EndHorizontal();
+                //GUILayout.EndHorizontal();
 
-                GUILayout.BeginHorizontal();
+                //GUILayout.BeginHorizontal();
                 GUILayout.Label($"{block.Base}", GUILayout.Width(100));
                 //GUILayout.Label($"{block.Height.Base:N1}");
-                GUILayout.EndHorizontal();
+                //GUILayout.EndHorizontal();
                 GUILayout.EndVertical();
 
                 var occlusion = MicroMap.GetOverlapState(position);
                 GUILayout.Label(occlusion.state != BlockOverlapState.None 
                     ? $"{occlusion.map.Name} block is {occlusion.state}"
                     : "No overlap");
+
+                ref readonly var data = ref source.GetBlockData(position);
+                var angle = MathHelper.RadiansToDegrees(Vector3.CalculateAngle(data.Normal, Vector3.UnitY));
+                GUILayout.Label($"Angle {angle} °");
 
                 if (showHeightmap)
                 {

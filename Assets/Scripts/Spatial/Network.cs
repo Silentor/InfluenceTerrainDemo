@@ -68,9 +68,7 @@ namespace TerrainDemo.Spatial
 
             public BaseNode([NotNull] TParent parent, int id)
             {
-                if (parent == null) throw new ArgumentNullException(nameof(parent));
-
-                Parent = parent;
+                Parent = parent ?? throw new ArgumentNullException(nameof(parent));
                 Id = id;
             }
 

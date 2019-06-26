@@ -32,7 +32,7 @@ namespace TerrainDemo.Macro
         {
             get
             {
-                if (_cell1 == null)
+                if (_cell2 == null)
                 {
                     var faces = _mesh.GetAdjacentFaces(this);
                     _cell1 = faces.Item1;
@@ -45,10 +45,8 @@ namespace TerrainDemo.Macro
 
         public MacroEdge([NotNull] MacroMap map, MacroMap.CellMesh mesh, MacroMap.CellMesh.Edge edge, MacroVert vertex1, MacroVert vertex2)
         {
-            if (map == null) throw new ArgumentNullException(nameof(map));
-
             _edge = edge;
-            _map = map;
+            _map = map ?? throw new ArgumentNullException(nameof(map));
             _mesh = mesh;
             Vertex1 = vertex1;
             Vertex2 = vertex2;

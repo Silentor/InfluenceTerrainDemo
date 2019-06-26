@@ -196,7 +196,7 @@ namespace TerrainDemo.Hero
                 var hitPoint = _microMap.RaycastHeightmap(worldRay);
 
                 if(hitPoint.HasValue)
-                    _microMap.DigSphere(hitPoint.Value.Item1, 5);
+                    _microMap.DigSphere(hitPoint.Value.hitPoint, 5);
             }
         }
 
@@ -208,7 +208,7 @@ namespace TerrainDemo.Hero
                 var hitPoint = _microMap.RaycastHeightmap(worldRay);
 
                 if (hitPoint.HasValue)
-                    _microMap.Build(hitPoint.Value.Item1, 5);
+                    _microMap.Build(hitPoint.Value.hitPoint, 5);
             }
 
         }

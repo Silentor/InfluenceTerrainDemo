@@ -50,8 +50,13 @@ namespace TerrainDemo.Navigation
 
                 yield return _finishSegment;
             }
-
         }
+
+        #region Debug
+
+        public readonly HashSet<Waypoint> TotalProcessed = new HashSet<Waypoint>();
+
+        #endregion
 
         /// <summary>
         /// Simple linear path

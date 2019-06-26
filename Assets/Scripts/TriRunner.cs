@@ -30,8 +30,6 @@ namespace TerrainDemo
 {
     public class TriRunner : MonoBehaviour
     {
-#region Generator
-
         [Header("Generator settings")]
         public int Seed;
         public bool RandomizeSeed;
@@ -43,38 +41,20 @@ namespace TerrainDemo
         public float InfluencePerturbPower = 4;
         public BiomeSettings[] Biomes = new BiomeSettings[0];
 
-        #endregion
-
-#region Visualization
-
         [Header("Visualizer settings")]
         public Renderer.TerrainRenderMode RenderMode = Renderer.TerrainRenderMode.Terrain;
         public Renderer.TerrainLayerToRender RenderLayer = Renderer.TerrainLayerToRender.Main;
-
-        #endregion
-
-#region Macro
 
         [Header("Macro")]
         public Renderer.MacroCellInfluenceMode MacroCellInfluenceVisualization;
         public Material VertexColoredMat;
 
-        #endregion
-
-#region Micro
-
         [Header("Micro")]
         public Renderer.BlockTextureMode TextureMode;
         public Material TexturedMat;
 
-        #endregion
-
-        #region New region
-
         [Header("Actors")]
         public GameObject ActorPrefab;
-
-        #endregion
 
         public Box2 LandBounds { get; private set; }
 
@@ -84,10 +64,28 @@ namespace TerrainDemo
         public MacroTemplate Land { get; private set; }
 
         public IReadOnlyCollection<BlockSettings> AllBlocks => _allBlocks;
+        public IReadOnlyDictionary<BlockType, BlockSettings> AllBlocksDict 
+        {
+	        get
+	        {
+		        if ( _allBlocksDict == null )
+		        {
+			        _allBlocksDict = new Dictionary<BlockType, BlockSettings>();
+			        foreach (var blockSettings in AllBlocks)
+			        {
+				        _allBlocksDict[blockSettings.Block] = blockSettings;
+			        }
+                }
+
+		        return _allBlocksDict;
+	        }
+		} 
 
         private Tools.Random _random;
         private Renderer _renderer;
         private BlockSettings[] _allBlocks;
+        private Dictionary<BlockType, BlockSettings> _allBlocksDict;
+        private GUIStyle _defaultStyle;
         private ObjectMap _bridge;
         private Actor _hero;
         private ObserverController _observer;
@@ -203,7 +201,7 @@ namespace TerrainDemo
             _npc = new Actor(Micro, (-37, -57), Vector2.One, false, "Npc");
             Micro.AddActor(_npc);
 
-            _npc.Rotate((Vector2)_hero.Position);
+            _npc.RotateTo((Vector2)_hero.Position);
 
             Micro.Changed += MicroOnChanged;
 
@@ -316,7 +314,7 @@ namespace TerrainDemo
         private Dictionary<NavigationCell, NavigationCell> _cameFrom = new Dictionary<NavigationCell, NavigationCell>();
         private Dictionary<NavigationCell, float> _cost = new Dictionary<NavigationCell, float>();
         private NavigationCell _current, _next;
-        private GUIStyle _currentStyle, _defaultStyle;
+        private GUIStyle _currentStyle;
 
         private IEnumerator DebugAStar()
         {
@@ -330,10 +328,12 @@ namespace TerrainDemo
             var finishCell = Macro.Cells.First(c => c.Contains(new Vector2(45.5f, 23.5f)));
             var finishNavCell = Pathfinder.Instance.NavigationMap.Cells[finishCell.Coords];
 
-            foreach (var (current, next) in astar.CreatePathDebug(_npc, startNavCell, finishNavCell, _cameFrom, _cost))
+            foreach (var (current, next, came, cost) in astar.CreatePathDebug(_npc, startNavCell, finishNavCell, true))
             {
                 _current = current;
                 _next = next;
+                _cameFrom = came;
+                _cost = cost;
                 yield return new WaitForSeconds(0.1f);
             }
 

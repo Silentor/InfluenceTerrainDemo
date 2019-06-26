@@ -48,11 +48,14 @@ namespace TerrainDemo.Navigation
 
             _macroAstar = new AStarSearch<MacroMapGraph, Macro.Cell>(new MacroMapGraph(macromap));
             _microAStar = new AStarSearch<MicroMapGraph, Waypoint>(new MicroMapGraph(micromap));
+            _microAStar.DebugCompleted += MicroAStarOnDebugCompleted;
 
             _navmap = new NavigationMap(macromap, micromap, settings);
             _navigationMapMacroGraph = new NavigationMapMacroGraph(_navmap);
             _macroNavAstar = new AStarSearch<NavigationMapMacroGraph, NavigationCell>(_navigationMapMacroGraph);
+            _macroNavAstar.DebugCompleted += MacroNavAstarOnDebugCompleted;
         }
+
 
         /// <summary>
         /// Create path on micromap for given actor
@@ -79,13 +82,27 @@ namespace TerrainDemo.Navigation
                 var finishCell = _macromap.Cells.First(c => c.Contains(to));
                 var finishNavCell = _navmap.Cells[finishCell.Coords];
 
-                var macroPath = _macroNavAstar.CreatePath(actor, startNavCell, finishNavCell, true);
+                var (macroPath, _, _) = _macroNavAstar.CreatePath(actor, startNavCell, finishNavCell, true);
 
                 if (macroPath == null || macroPath.Count < 2)
+                {
+                    Debug.Log($"Path is invalid");
                     return Path.CreateInvalidPath(new Waypoint(actor.Map, from), new Waypoint(actor.Map, to), actor);
+                }
+
+                //Prepare list of inter points
+                var interPoints = new List<Vector2i>();
+                for (int i = 0; i < macroPath.Count - 1; i++)
+                {
+                    var fromCell = macroPath[i].Cell;
+                    var toCell = macroPath[i + 1].Cell;
+
+                    var transferEdge = fromCell.Macro.Edges.First(e => e.GetOppositeOf(fromCell.Macro) == toCell.Macro);
+                    interPoints.Add((Vector2i)(transferEdge.Vertex1.Position + transferEdge.Vertex2.Position) / 2);
+                }
 
                 result = new Path(new Waypoint(actor.Map, from), new Waypoint(actor.Map, to), actor, 
-                    macroPath.Select(p => new Waypoint(_map, (Vector2i)p.Cell.Macro.Center)));
+                    interPoints.Select(p => new Waypoint(_map, p)));
 
                 
                 //Refine all segments at once
@@ -93,8 +110,10 @@ namespace TerrainDemo.Navigation
                 {
                     //todo also check for straight path
 
-                    var intraPath = _microAStar.CreatePath(actor, segment.From, segment.To, false, 
+                    var (intraPath, _, costs) = _microAStar.CreatePath(actor, segment.From, segment.To, false, 
                         w => Vector2i.Distance(w.Position, segment.From.Position) < 20 || Vector2i.Distance(w.Position, segment.To.Position) < 20);
+
+                    result.TotalProcessed.UnionWith(costs.Keys);
 
                     if (intraPath == null)
                     {
@@ -205,6 +224,30 @@ namespace TerrainDemo.Navigation
             }
 
             return waypoints;
+        }
+
+        private void MicroAStarOnDebugCompleted(List<Waypoint> path, int processedNodes, int frontierCount, int timer)
+        {
+            if (path != null)
+            {
+                Debug.Log($"Micro path search ok from {path.First()} to {path.Last()} length {path.Count}, frontier {frontierCount}, total nodes processed {processedNodes}, time {timer} msec");
+            }
+            else
+            {
+                Debug.Log($"Micro path search FAILED, fronties {frontierCount}, total nodes {processedNodes}, time {timer} msec");
+            }
+        }
+
+        private void MacroNavAstarOnDebugCompleted(List<NavigationCell> path, int processedNodes, int frontierCount, int timer)
+        {
+            if (path != null)
+            {
+                Debug.Log($"Macro path search ok from {path.First()} to {path.Last()} length {path.Count}, frontier {frontierCount}, total nodes processed {processedNodes}, time {timer} msec");
+            }
+            else
+            {
+                Debug.Log($"Macro path search FAILED, fronties {frontierCount}, total nodes {processedNodes}, time {timer} msec");
+            }
         }
     }
 }

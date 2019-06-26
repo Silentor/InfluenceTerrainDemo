@@ -33,12 +33,12 @@ namespace TerrainDemo.Navigation
 
         public bool Equals(Waypoint other)
         {
-            return Equals(Map, other.Map) && Position.Equals(other.Position);
+            return Map.Equals(other.Map) && Position.Equals(other.Position);
         }
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
+            if (obj is null) return false;
             return obj is Waypoint other && Equals(other);
         }
 

@@ -474,7 +474,7 @@ namespace TerrainDemo.Spatial
             public int CompareTo(Face other)
             {
                 if (ReferenceEquals(this, other)) return 0;
-                if (ReferenceEquals(null, other)) return 1;
+                if (other is null) return 1;
                 return Id.CompareTo(other.Id);
             }
 
