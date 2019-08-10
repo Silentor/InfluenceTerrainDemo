@@ -1,152 +1,121 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
-using JetBrains.Annotations;
+using TerrainDemo.Hero;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
 using UnityEngine;
-using Cell = TerrainDemo.Micro.Cell;
-using Vector3 = OpenToolkit.Mathematics.Vector3;
 
 namespace TerrainDemo.Navigation
 {
-    /// <summary>
-    /// Storage for navigational data of land
-    /// </summary>
-    public class NavigationMap
-    {
-        public IReadOnlyDictionary<Coord, NavigationCell> Cells => _cells;
-		public Graph<NavigationCellBase, bool> MacroMap = new Graph<NavigationCellBase, bool>(  );
+	/// <summary>
+	/// Storage for navigational data of land
+	/// </summary>
+	public class NavigationMap
+	{
+		public IReadOnlyDictionary<Coord, NavigationCell> Nodes => _nodes;
+		public readonly NavGraph MacroGraph;
 
-        private readonly MacroMap _macromap;
-        private readonly MicroMap _micromap;
-        private readonly Dictionary<Coord, NavigationCell> _cells = new Dictionary<Coord, NavigationCell>();
+		public NavigationMap(MacroMap macromap, MicroMap micromap, TriRunner settings)
+		{
+			var timer = Stopwatch.StartNew();
 
-        public NavigationMap(MacroMap macromap, MicroMap micromap, TriRunner settings)
-        {
-            var timer = Stopwatch.StartNew();
+			_macromap = macromap;
+			_micromap = micromap;
+			MacroGraph = new NavGraph();
+			var navCells = new List<NavigationCell>();
 
-            _macromap = macromap;
-            _micromap = micromap;
-			MacroMap = new Graph<NavigationCellBase, bool>(  );
+			//Prepare navigation graph
+			foreach (var micromapCell in micromap.Cells)
+			{
+				var navCell = (NavigationCell)NavigationNodeBase.CreateMicroCellNavigation(micromapCell, micromap, settings);
+				MacroGraph.AddNode(navCell);
+				navCells.Add(navCell);
+				_nodes[micromapCell.Id] = navCell;
+			}
 
-            foreach ( var micromapCell in micromap.Cells )
-            {
-	            var navCell = NavigationCellBase.CreateMicroCellNavigation( micromapCell, micromap, settings );
-	            MacroMap.AddNode( navCell );
-            }
+			foreach (var fromCell in MacroGraph.Nodes)
+			{
+				foreach (var neighbor in fromCell.Cell.Macro.NeighborsSafe)
+				{
+					var toCell = navCells.Find(nc => nc.Cell.Macro == neighbor);
+					MacroGraph.AddEdge(fromCell, toCell, new NavEdge(fromCell, toCell));
+				}
+			}
 
+			foreach ( var edge in MacroGraph.Edges )
+			{
+				var from     = edge.from.Cell.Macro.CenterPoint;
+				var to       = edge.to.Cell.Macro.CenterPoint;
+				var distance = Vector2.Distance( @from.Xz, to.Xz );
+				var slope    = ( to.Y - from.Y ) / distance;
+				edge.edge.Slopeness = slope;
+				edge.edge.Distance  = distance;
+			}
 
-            timer.Stop();
+			timer.Stop();
 
-            UnityEngine.Debug.Log($"Prepared navigation map in {timer.ElapsedMilliseconds} msec");
-        }
-    }
+			Pathfinder = new Pathfinder(this, settings);
 
-    public class NavigationCell : NavigationCellBase, IEquatable<NavigationCell>
-    {
-        public readonly Cell Cell;
+			UnityEngine.Debug.Log($"Prepared navigation map in {timer.ElapsedMilliseconds} msec, macrograph nodes {MacroGraph.NodesCount}, macrograph edges {MacroGraph.EdgesCount}");
+		}
 
-        public NavigationCell([NotNull] Cell cell, float speedModifier, Vector3 normal, float rougness) : base(speedModifier, normal, rougness)
-        {
-            Cell = cell ?? throw new ArgumentNullException(nameof(cell));
-        }
+		public NavigationCell GetNavNode(Vector2i position)
+		{
+			var microCell = _micromap.GetCell(position);
+			return Nodes[microCell.Id];
+		}
 
-        public override string ToString()
-        {
-            return $"{Cell.Id}";
-        }
+		public Path CreatePath(Vector2i from, Vector2i to, Actor actor)
+		{
+			return new Path(from, to, actor, this);
+		}
 
-        public bool Equals(NavigationCell other)
-        {
-            if (other is null) return false;
-            if (ReferenceEquals(this, other)) return true;
-            return Cell.Equals(other.Cell);
-        }
+		private readonly Dictionary<Coord, NavigationCell> _nodes = new Dictionary<Coord, NavigationCell>();
+		private readonly MicroMap _micromap;
 
-        public override bool Equals(object obj)
-        {
-            if (obj is null) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            return obj.GetType() == GetType() && Equals((NavigationCell) obj);
-        }
+		private readonly MacroMap _macromap;
+		public readonly Pathfinder Pathfinder;
+	}
 
-        public override int GetHashCode()
-        {
-            return Cell.GetHashCode();
-        }
+	//public class NavigationCellBorderNode : NavigationNodeBase, IEquatable<NavigationCellBorderNode>
+	//{
+	// public MacroEdge Edge { get; }
+	// public readonly Vector2i Position;
 
-        public static bool operator ==(NavigationCell left, NavigationCell right)
-        {
-            return Equals(left, right);
-        }
+	// public NavigationCellBorderNode( Macro.MacroEdge edge ) : base( 1, Vector3.UnitY, 0.5f )
+	// {
+	//  Edge = edge;
+	//  Position = (Vector2i)(( edge.Vertex1.Position + edge.Vertex2.Position ) / 2);
+	// }
+	//    public bool Equals( NavigationCellBorderNode other )
+	//    {
+	//        if ( ReferenceEquals( null, other ) ) return false;
+	//        if ( ReferenceEquals( this, other ) ) return true;
 
-        public static bool operator !=(NavigationCell left, NavigationCell right)
-        {
-            return !Equals(left, right);
-        }
-    }
+	//        return Equals( Edge, other.Edge );
+	//    }
+	//    public override bool Equals( object obj )
+	//    {
+	//        if ( ReferenceEquals( null, obj ) ) return false;
+	//        if ( ReferenceEquals( this, obj ) ) return true;
+	//        if ( obj.GetType( ) != this.GetType( ) ) return false;
 
-    public abstract class NavigationCellBase
-    {
-	    /// <summary>
-	    /// Average speed modifier of all blocks
-	    /// </summary>
-	    public readonly float SpeedModifier;
-
-	    /// <summary>
-	    /// Average normal of all blocks
-	    /// </summary>
-	    public readonly Vector3 Normal;
-
-	    /// <summary>
-	    /// Standart deviation of block's normals (in radians)
-	    /// </summary>
-	    public readonly float Rougness;
-
-	    protected NavigationCellBase(float speedModifier, Vector3 normal, float rougness)
-	    {
-		    SpeedModifier = speedModifier;
-		    Normal        = normal.Normalized();
-		    Rougness      = rougness;
-	    }
-
-	    public static NavigationCellBase CreateMicroCellNavigation( Micro.Cell cell, MicroMap map, TriRunner settings )
-	    {
-		    var avgSpeedModifier = 0f;
-		    var avgNormal        = Vector3.Zero;
-		    var normalDeviation = 0f;
-
-		    foreach (var blockPosition in cell.BlockPositions)
-		    {
-			    //Calculate average movement cost for cell
-			    ref readonly var block = ref map.GetBlockRef(blockPosition);
-			    avgSpeedModifier += settings.AllBlocksDict[block.Top].SpeedModifier;
-
-			    //Calculate average normal
-			    ref readonly var blockData = ref map.GetBlockData(blockPosition);
-			    avgNormal += blockData.Normal;
-		    }
-
-		    avgSpeedModifier /= cell.BlockPositions.Length;
-		    avgNormal        =  (avgNormal / cell.BlockPositions.Length).Normalized();
-
-		    float normalDispersion = 0f;
-		    foreach (var blockPosition in cell.BlockPositions)
-		    {
-			    //Calculate micro rougness of cell
-			    ref readonly var blockData = ref map.GetBlockData(blockPosition);
-			    var              disp      = Vector3.CalculateAngle(blockData.Normal, avgNormal);
-			    normalDispersion += disp * disp;
-		    }
-
-		    normalDeviation = Mathf.Sqrt(normalDispersion / cell.BlockPositions.Length);
-
-			return new NavigationCell( cell, avgSpeedModifier, avgNormal, normalDeviation );
-        }
-
-    }
+	//        return Equals( (NavigationCellBorderNode) obj );
+	//    }
+	//    public override int GetHashCode( )
+	//    {
+	//        return ( Edge != null ? Edge.GetHashCode( ) : 0 );
+	//    }
+	//    public static bool operator ==( NavigationCellBorderNode left, NavigationCellBorderNode right )
+	//    {
+	//        return Equals( left, right );
+	//    }
+	//    public static bool operator !=( NavigationCellBorderNode left, NavigationCellBorderNode right )
+	//    {
+	//        return !Equals( left, right );
+	//    }
+	//}
 
 
 }

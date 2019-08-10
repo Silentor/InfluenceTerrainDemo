@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework.Constraints;
 
 namespace TerrainDemo.Spatial
 {
@@ -11,6 +10,20 @@ namespace TerrainDemo.Spatial
     /// <typeparam name="TNode"></typeparam>
     public class Graph<TNode, TEdge>
     {
+	    public IEnumerable<TNode> Nodes => _nodes.Keys;
+		public IEnumerable<(TNode from, TEdge edge, TNode to)> Edges
+		{
+			get
+			{
+				foreach ( var edge in _edges )
+				{
+					yield return ( edge.Value.From.Data, edge.Key, edge.Value.To.Data );
+				}
+			}
+		}
+        public int NodesCount => _nodes.Count;
+        public int EdgesCount => _edges.Count;
+
         public Graph(  )
         {
         }
@@ -21,6 +34,32 @@ namespace TerrainDemo.Spatial
             _nodes[data] = newNode;
             newNode.Data = data;
             return newNode;
+        }
+
+        public Edge AddEdge(TNode from, TNode to, TEdge data)
+        {
+	        if (from.Equals( to ))
+		        throw new InvalidOperationException();
+
+	        var from2 = _nodes[from];
+	        var to2 = _nodes[to];
+	        var newEdge = new Edge( this, from2, to2 );
+	        newEdge.Data = data;
+	        _edges[data] = newEdge;
+	        return newEdge;
+        }
+
+        public Edge AddEdge(TNode from, TNode to, Func<Edge, TEdge> dataGenerator)
+        {
+	        if (from.Equals( to ))
+		        throw new InvalidOperationException();
+
+	        var from2   = _nodes[from];
+	        var to2     = _nodes[to];
+	        var newEdge = new Edge( this, from2, to2 );
+	        newEdge.Data = dataGenerator(newEdge);
+	        _edges[newEdge.Data] = newEdge;
+	        return newEdge;
         }
 
         public Edge AddEdge(Node from, Node to, TEdge data)
@@ -35,6 +74,20 @@ namespace TerrainDemo.Spatial
             newEdge.Data = data;
             _edges[data] = newEdge;
             return newEdge;
+        }
+
+        private Node GetNode( TNode data )
+        {
+            return _nodes[data];
+        }
+
+        public IEnumerable<(TEdge edge, TNode neighbor)> GetNeighbors( TNode @from )
+        {
+            var internalNode = GetNode( @from );
+            foreach ( var internalEdge in internalNode.Edges )
+            {
+                yield return ( internalEdge.Data, internalEdge.To.Data );
+            }
         }
 
         //public Graph<C> Convert<C>()
@@ -74,9 +127,8 @@ namespace TerrainDemo.Spatial
         public class Edge
         {
 	        public TEdge        Data;
-	        public Node        From;
-	        public Node        To;
-
+	        public readonly Node        From;
+	        public readonly Node        To;
 	        public readonly Graph<TNode, TEdge> Parent;
 
 	        internal Edge( Graph<TNode, TEdge> parent, Node from, Node to )

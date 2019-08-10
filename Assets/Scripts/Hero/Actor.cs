@@ -1,6 +1,7 @@
 ﻿using System;
 using OpenToolkit.Mathematics;
 using TerrainDemo.Micro;
+using TerrainDemo.Navigation;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using UnityEngine;
@@ -78,7 +79,7 @@ namespace TerrainDemo.Hero
         private bool _isHero;
         private bool _autoStop;
 
-        public Actor(MicroMap map, Vector2 startPosition, Vector2 direction, bool isHero, string name)
+        public Actor(MicroMap map, NavigationMap navMap, Vector2 startPosition, Vector2 direction, bool isHero, string name)
         {
             Name = name;
             _mainMap = map;
@@ -87,17 +88,21 @@ namespace TerrainDemo.Hero
             _currentBlockPos = (Vector2i) _mapPosition;
             Position = new Vector3(_mapPosition.X, _mainMap.GetHeight(_mapPosition), _mapPosition.Y);
             Rotation = Quaternion.FromEulerAngles(0, Vector3.CalculateAngle(Vector3.UnitZ, (Vector3)direction), 0);
-            Nav = new Navigator(this, map);
+            Nav = new Navigator(this, map, navMap);
             _isHero = isHero;
 
             Speed = 6;
         }
 
-        public Actor(MicroMap map, Vector2i startPosition, Vector2 direction, bool fpsMode, string name) 
-            : this(map, BlockInfo.GetWorldCenter(startPosition), direction, fpsMode, name) { }
+        public Actor(MicroMap map, NavigationMap navMap, Vector2i startPosition, Vector2 direction, bool fpsMode, string name) 
+            : this(map, navMap, BlockInfo.GetWorldCenter(startPosition), direction, fpsMode, name) { }
 
         #region FPS locomotion
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="direction">magnitude 0..1 = 0..max speed</param>
         public void Move(Vector2 direction)
         {
             if (!_isHero) return;

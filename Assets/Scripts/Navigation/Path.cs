@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using JetBrains.Annotations;
-using OpenToolkit.Mathematics;
 using TerrainDemo.Hero;
 using TerrainDemo.Spatial;
-using UnityEngine.Assertions;
+using TerrainDemo.Tools;
 
 namespace TerrainDemo.Navigation
 {
@@ -15,71 +12,25 @@ namespace TerrainDemo.Navigation
     /// </summary>
     public class Path
     {
-        public Waypoint Start { get; }
-        public Waypoint Finish { get; }
-        public Actor Actor { get; }
+	    public Vector2i Start  { get; }
+	    public Vector2i Finish { get; }
+	    public Actor    Actor  { get; }
 
-        public Segment CurrentSegment { get; private set; }
-        public Waypoint CurrentPoint { get; private set; }
+	    public (NavigationCell node, Vector2i position)			Current { get; private set; }
 
-        public bool IsValid { get; }
+	    public bool IsValid { get; }
 
-        public IEnumerable<Waypoint> Waypoints
-        {
-            get
-            {
-                if(!IsValid)
-                    yield break;
+	    public IEnumerable<Segment> Segments => _path;		//Mostly for debug, use Next() and Current
 
-                yield return Start;
+        public NavigationCell FinishNavNode => _path[_path.Length - 1].Node;
 
-                foreach (var segment in _segments)
-                    foreach (var waypoint in segment.AllWaypoints)
-                        yield return waypoint;
-
-                yield return Finish;
-            }
-        }
-
-        public IEnumerable<Segment> Segments
-        {
-            get
-            {
-                foreach (var segment in _segments)
-                    yield return segment;
-
-                yield return _finishSegment;
-            }
-        }
+        public NavigationCell StartNavNode => _path[0].Node;
 
         #region Debug
 
-        public readonly HashSet<Waypoint> TotalProcessed = new HashSet<Waypoint>();
+		public IEnumerable<(NavigationCell, float)> ProcessedCosts => _processCosts;
 
         #endregion
-
-        /// <summary>
-        /// Simple linear path
-        /// </summary>
-        /// <param name="from"></param>
-        /// <param name="to"></param>
-        /// <param name="actor"></param>
-        public Path(Waypoint from, Waypoint to, Actor actor)
-        {
-            Start = from;
-            Finish = to;
-            Actor = actor;
-            IsValid = true;
-
-            var startSegment = new Segment(from);
-            _segments.Add(startSegment);
-
-            _finishSegment = new Segment(to);
-            startSegment.SetNextSegment(_finishSegment);
-            
-            CurrentSegment = startSegment;
-            CurrentPoint = CurrentSegment.AllWaypoints.First();
-        }
 
         /// <summary>
         /// Complex segmented path
@@ -88,33 +39,60 @@ namespace TerrainDemo.Navigation
         /// <param name="to"></param>
         /// <param name="actor"></param>
         /// <param name="segments"></param>
-        public Path(Waypoint from, Waypoint to, Actor actor, IEnumerable<Waypoint> segments)
+        //public Path(Vector2i from, Vector2i to, Actor actor, IEnumerable<Vector2i> segments)
+        //{
+        //    Start = from;
+        //    Finish = to;
+        //    Actor = actor;
+        //    IsValid = true;
+
+        //    _segments.Add(new Segment(from));
+        //    _segments.AddRange(segments.Where(p => p != from && p != to).Select(startPoint => new Segment(startPoint)));
+        //    _finishSegment = new Segment(to);
+
+        //    _segments.Last().SetNextSegment(_finishSegment);
+        //    for (var i = _segments.Count - 2; i >= 0; i--)
+        //        _segments[i].SetNextSegment(_segments[i + 1]);
+
+        //    CurrentSegment = _segments.First();
+        //    CurrentPoint = CurrentSegment.From;
+        //}
+
+        /// <summary>
+        /// Complex segmented path
+        /// </summary>
+        /// <param name="from"></param>
+        /// <param name="to"></param>
+        /// <param name="actor"></param>
+        /// <param name="segments"></param>
+        public Path(Vector2i from, Vector2i to, Actor actor, NavigationMap map)
         {
-            Start = from;
-            Finish = to;
-            Actor = actor;
+            Start   = from;
+            Finish  = to;
+            Actor   = actor;
+            
+            _map = map;
+
+            var startNode = map.GetNavNode( @from );
+            var finishNode = map.GetNavNode( to );
+
+            Current = ( startNode, from );
+
+            var searchResult =  map.Pathfinder.GetMacroPath( startNode, finishNode, actor );
+            var macroPath = searchResult.Path;
+            _processCosts = searchResult.CostsDebug.Select( c => (c.Key, c.Value)).ToArray(  );
+
+            if ( macroPath.Count < 2 )
+            {
+	            IsValid = false;
+				return;
+            }
+
             IsValid = true;
-
-            _segments.Add(new Segment(from));
-            _segments.AddRange(segments.Where(p => p != from && p != to).Select(startPoint => new Segment(startPoint)));
-            _finishSegment = new Segment(to);
-
-            _segments.Last().SetNextSegment(_finishSegment);
-            for (var i = _segments.Count - 2; i >= 0; i--)
-                _segments[i].SetNextSegment(_segments[i + 1]);
-
-            CurrentSegment = _segments.First();
-            CurrentPoint = CurrentSegment.From;
+            _path   = macroPath.Select( mp => new Segment( mp ) ).ToArray( );
+            _path[0].Points.Add( Start );
+            _path[_path.Length - 1].Points.Add( Finish );
         }
-
-        private Path(Waypoint from, Waypoint to, Actor actor, bool isInvalid)
-        {
-            Start = from;
-            Finish = to;
-            Actor = actor;
-            IsValid = false;
-        }
-
 
         public float GetPathLength()
         {
@@ -122,55 +100,68 @@ namespace TerrainDemo.Navigation
                 return 0;
 
             var result = 0f;
-            foreach (var segment in Segments)
+            foreach (var segment in _path)
                 result += segment.GetLength();
 
             return result;
         }
 
-        public static Path CreateInvalidPath(Waypoint from, Waypoint to, Actor actor)
+        public (NavigationCell navNode, Vector2i point) Next()
         {
-            return new Path(from, to, actor, true);
-        }
+	        if ( !IsValid )
+	        {
+		        Current = ( StartNavNode, Start );
+		        return Current;
+	        }
 
-        public (Segment segment, Waypoint point) Next()
-        {
-            if(!IsValid)
-                return (CurrentSegment, CurrentPoint);
+	        if ( _isFinished )
+	        {
+		        return Current;
+	        }
 
-            if (CurrentSegment == _finishSegment)
-                return (CurrentSegment, CurrentPoint);
+	        return Current;
 
-            _pointIndex++;
+	        //var curSegment = _path[_segmentIndex];
+	        //var nextPoint = _pointIndex + 1;
+	        //if ( nextPoint >= curSegment.Points.Count )
+	        //{
+	        // nextPoint = 0;
+	        // curSegment = Math.Min( curSegment + 1, _path.Length - 1 );
+	        //}
 
-            if (_pointIndex > CurrentSegment.InterWaypoints.Count)
-            {
-                _segmentIndex++;
-                _pointIndex = 0;
+	        //if (CurrentSegment == _finishSegment)
+	        //    return (CurrentSegment, CurrentPoint);
 
-                if (_segmentIndex < _segments.Count)
-                    CurrentSegment = _segments[_segmentIndex];
-                else
-                {
-                    CurrentSegment = _finishSegment;
-                    CurrentPoint = CurrentSegment.From;
-                    return (CurrentSegment, CurrentPoint);
-                }
-            }
+	        //_pointIndex++;
 
-            if (_pointIndex < CurrentSegment.InterWaypoints.Count)
-            {
-                CurrentPoint = CurrentSegment.InterWaypoints[_pointIndex];
-                return (CurrentSegment, CurrentPoint);
-            }
-            else if (_pointIndex == CurrentSegment.InterWaypoints.Count)
-            {
-                CurrentPoint = CurrentSegment.To;
-                return (CurrentSegment, CurrentPoint);
-            }
+	        //if (_pointIndex > CurrentSegment.InterWaypoints.Count)
+	        //{
+	        //    _segmentIndex++;
+	        //    _pointIndex = 0;
 
-            //Should not execute
-            return (CurrentSegment, CurrentPoint);
+	        //    if (_segmentIndex < _segments.Count)
+	        //        CurrentSegment = _segments[_segmentIndex];
+	        //    else
+	        //    {
+	        //        CurrentSegment = _finishSegment;
+	        //        CurrentPoint = CurrentSegment.From;
+	        //        return (CurrentSegment, CurrentPoint);
+	        //    }
+	        //}
+
+	        //if (_pointIndex < CurrentSegment.InterWaypoints.Count)
+	        //{
+	        //    CurrentPoint = CurrentSegment.InterWaypoints[_pointIndex];
+	        //    return (CurrentSegment, CurrentPoint);
+	        //}
+	        //else if (_pointIndex == CurrentSegment.InterWaypoints.Count)
+	        //{
+	        //    CurrentPoint = CurrentSegment.To;
+	        //    return (CurrentSegment, CurrentPoint);
+	        //}
+
+	        ////Should not execute
+	        //return (CurrentSegment, CurrentPoint);
         }
 
         /*
@@ -186,78 +177,60 @@ namespace TerrainDemo.Navigation
         */
 
         private readonly Segment _finishSegment;
-        private readonly List<Segment> _segments = new List<Segment>();
+		private readonly Segment[] _path;
+		private Vector2i[][] _waypoints;
         private int _segmentIndex;
         private int _pointIndex;
+        private readonly NavigationMap _map;
+        private bool _isFinished;
+        private readonly (NavigationCell, float)[] _processCosts;
+
+        //Calculate micro path for given nav node
+        private void RefinePath( int nodeIndex )
+        {
+	        Vector2i prevPoint, myPoint, nextPoint;
+
+	        var prevIndex = Math.Max( nodeIndex - 1, 0 );
+	        var nextIndex = Math.Min( nodeIndex + 1, _path.Length - 1 );
+
+	        prevPoint = prevIndex == 0 ? Start : _path[prevIndex].Node.Cell.Center;
+	        nextPoint = nextIndex == _path.Length - 1 ? Finish : _path[nextIndex].Node.Cell.Center;
+	        myPoint = _path[nextIndex].Node.Cell.Center;
+
+	        var from = ( prevPoint + myPoint ) / 2;
+	        var to = ( myPoint + nextPoint ) / 2;
+
+			_waypoints[nodeIndex] = new[]{from, to};//todo call pathfinding here
+        }
     }
 
     public class Segment
     {
-        public Waypoint From { get; }
-        public Waypoint To => _next.From;
+	    public readonly NavigationCell Node;
+	    public readonly List<Vector2i> Points = new List<Vector2i>();
+	    public bool IsRefined;
 
-        public Segment Next => _next;
-
-        public IReadOnlyList<Waypoint> InterWaypoints => _interPoints;
-
-        public IEnumerable<Waypoint> AllWaypoints
-        {
-            get
-            {
-                yield return From;
-                foreach (var point in _interPoints)
-                    yield return point;
-            }
-        }
-
-        public bool IsRefined { get; private set; }
-
-        public Segment(Waypoint from)
-        {
-            From = from;
-            _next = this;
-        }
-
-        public void SetNextSegment([NotNull] Segment nextSegment)
-        {
-            _next = nextSegment ?? throw new ArgumentNullException(nameof(nextSegment));
-        }
-
-        /// <summary>
-        /// Add intermediate point between <see cref="From"/> and <see cref="To"/> points
-        /// </summary>
-        /// <param name="interPoints"></param>
-        public void Refine(IEnumerable<Waypoint> interPoints)
-        {
-            _interPoints.AddRange(interPoints.Where(p => p != From && p != To));
-            IsRefined = true;
-        }
+	    public Segment( NavigationCell node )
+	    {
+		    Node = node;
+	    }
 
         public float GetLength()
         {
             var result = 0f;
-            var prevPoint = From;
 
-            foreach (var point in _interPoints)
+            for ( var i = 0; i < Points.Count - 1; i++ )
             {
-                result += Vector2i.Distance(prevPoint.Position, point.Position);
-                prevPoint = point;
+	            result    += Vector2i.Distance( Points[i], Points[i+1] );
             }
-
-            result += Vector2i.Distance(prevPoint.Position, To.Position);
 
             return result;
         }
 
         public override string ToString()
         {
-            if (Next == this)
-                return $"Final segment {From}";
-            else
-                return $"From {From} to {To}, refined {IsRefined}, length {GetLength()}";
-        }
+	        return $"{Node} ({Points.ToJoinedString( )})";
 
-        private readonly List<Waypoint> _interPoints = new List<Waypoint>();
-        private Segment _next;
+        }
     }
 }

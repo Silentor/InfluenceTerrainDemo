@@ -174,13 +174,13 @@ namespace TerrainDemo.Macro
             Cells.Clear();
 
             _mesh.AssignData(
-                delegate(Mesh<Cell, MacroEdge, MacroVert>.Vertex vertex)
+                delegate(CellMesh.Vertex vertex)
                 {
                     var vert = new MacroVert(this, _mesh, vertex, _settings);
                     Vertices.Add(vert);
                     return vert;
                 },
-                delegate(Mesh<Cell, MacroEdge, MacroVert>.Edge edge, MacroVert vert1, MacroVert vert2)
+                delegate(CellMesh.Edge edge, MacroVert vert1, MacroVert vert2)
                 {
                     var macroEdge = new MacroEdge(this, _mesh, edge, vert1, vert2);
                     Edges.Add(macroEdge);

@@ -20,40 +20,17 @@ namespace TerrainDemo.Navigation
     /// </summary>
     public class Pathfinder
     {
-        public static Pathfinder Instance
+        public Pathfinder([NotNull] NavigationMap navMap, TriRunner settings)
         {
-            get
-            {
-                if(_instance == null)
-                    throw new InvalidOperationException("Pathfinder do not created properly");
-                return _instance;
-            }
-        }
+            //_map = micromap ?? throw new ArgumentNullException(nameof(micromap));
+            //_macromap = macromap ?? throw new ArgumentNullException(nameof(macromap));
 
-        public NavigationMap NavigationMap => _navmap;
+            //_microAStar = new AStarSearch<MicroMapGraph, Waypoint>(new MicroMapGraph(micromap));
+            //_microAStar.DebugCompleted += MicroAStarOnDebugCompleted;
 
-#if UNITY_EDITOR
-        public NavigationMapMacroGraph NavMapMacroGraph => _navigationMapMacroGraph;
-#endif
+            //_navmap = new NavigationMap(macromap, micromap, settings);
 
-        public Pathfinder([NotNull] MicroMap micromap, [NotNull] MacroMap macromap, TriRunner settings)
-        {
-            if (_instance != null)
-                throw new InvalidOperationException("Pathfinder double creation");
-
-            _instance = this;
-
-            _map = micromap ?? throw new ArgumentNullException(nameof(micromap));
-            _macromap = macromap ?? throw new ArgumentNullException(nameof(macromap));
-
-            _macroAstar = new AStarSearch<MacroMapGraph, Macro.Cell>(new MacroMapGraph(macromap));
-            _microAStar = new AStarSearch<MicroMapGraph, Waypoint>(new MicroMapGraph(micromap));
-            _microAStar.DebugCompleted += MicroAStarOnDebugCompleted;
-
-            _navmap = new NavigationMap(macromap, micromap, settings);
-            _navigationMapMacroGraph = new NavigationMapMacroGraph(_navmap);
-            _macroNavAstar = new AStarSearch<NavigationMapMacroGraph, NavigationCell>(_navigationMapMacroGraph);
-            _macroNavAstar.DebugCompleted += MacroNavAstarOnDebugCompleted;
+            _macroNavAstar2 = new AStarSearch<NavGraph, NavigationCell>( navMap.MacroGraph );
         }
 
 
@@ -77,54 +54,53 @@ namespace TerrainDemo.Navigation
 
                 //DEBUG
                 
-                var startCell =  _macromap.Cells.First(c => c.Contains(from));
-                var startNavCell = _navmap.Cells[startCell.Coords];
-                var finishCell = _macromap.Cells.First(c => c.Contains(to));
-                var finishNavCell = _navmap.Cells[finishCell.Coords];
+                //var startCell =  _macromap.Cells.First(c => c.Contains(from));
+                //var startNavCell = _navmap.Cells[startCell.Coords];
+                //var finishCell = _macromap.Cells.First(c => c.Contains(to));
+                //var finishNavCell = _navmap.Cells[finishCell.Coords];
 
-                var (macroPath, _, _) = _macroNavAstar.CreatePath(actor, startNavCell, finishNavCell, true);
+                //var (macroPath, _, _) = _macroNavAstar2.CreatePath(actor, startNavCell, finishNavCell, true);
 
-                if (macroPath == null || macroPath.Count < 2)
-                {
-                    Debug.Log($"Path is invalid");
-                    return Path.CreateInvalidPath(new Waypoint(actor.Map, from), new Waypoint(actor.Map, to), actor);
-                }
+                //if (macroPath == null || macroPath.Count < 2)
+                //{
+                //    Debug.Log($"Path is invalid");
+                //    return Path.CreateInvalidPath(from, to, actor);
+                //}
 
-                //Prepare list of inter points
-                var interPoints = new List<Vector2i>();
-                for (int i = 0; i < macroPath.Count - 1; i++)
-                {
-                    var fromCell = macroPath[i].Cell;
-                    var toCell = macroPath[i + 1].Cell;
+                ////Prepare list of inter points
+                //var interPoints = new List<Vector2i>();
+                //for (int i = 0; i < macroPath.Count - 1; i++)
+                //{
+                //    var fromCell = macroPath[i].Cell;
+                //    var toCell = macroPath[i + 1].Cell;
 
-                    var transferEdge = fromCell.Macro.Edges.First(e => e.GetOppositeOf(fromCell.Macro) == toCell.Macro);
-                    interPoints.Add((Vector2i)(transferEdge.Vertex1.Position + transferEdge.Vertex2.Position) / 2);
-                }
+                //    var transferEdge = fromCell.Macro.Edges.First(e => e.GetOppositeOf(fromCell.Macro) == toCell.Macro);
+                //    interPoints.Add((Vector2i)(transferEdge.Vertex1.Position + transferEdge.Vertex2.Position) / 2);
+                //}
 
-                result = new Path(new Waypoint(actor.Map, from), new Waypoint(actor.Map, to), actor, 
-                    interPoints.Select(p => new Waypoint(_map, p)));
+                //result = new Path(from, to, actor, interPoints.Select(p => new Waypoint(_map, p)));
 
                 
-                //Refine all segments at once
-                foreach (var segment in result.Segments)
-                {
-                    //todo also check for straight path
+                ////Refine all segments at once
+                //foreach (var segment in result.Segments)
+                //{
+                //    //todo also check for straight path
 
-                    var (intraPath, _, costs) = _microAStar.CreatePath(actor, segment.From, segment.To, false, 
-                        w => Vector2i.Distance(w.Position, segment.From.Position) < 20 || Vector2i.Distance(w.Position, segment.To.Position) < 20);
+                //    var (intraPath, _, costs) = _microAStar.CreatePath(actor, segment.From, segment.To, false, 
+                //        w => Vector2i.Distance(w.Position, segment.From.Position) < 20 || Vector2i.Distance(w.Position, segment.To.Position) < 20);
 
-                    result.TotalProcessed.UnionWith(costs.Keys);
+                //    result.TotalProcessed.UnionWith(costs.Keys);
 
-                    if (intraPath == null)
-                    {
-                        Debug.LogWarning($"Path cant be refined");
-                        continue;
-                    }
+                //    if (intraPath == null)
+                //    {
+                //        Debug.LogWarning($"Path cant be refined");
+                //        continue;
+                //    }
 
-                    intraPath = SimplifyStraightLines(intraPath);
-                    intraPath = SimplifyCorners(intraPath, actor);
-                    segment.Refine(intraPath);
-                }
+                //    intraPath = SimplifyStraightLines(intraPath);
+                //    intraPath = SimplifyCorners(intraPath, actor);
+                //    segment.Refine(intraPath);
+                //}
                 
                 //DEBUG
 
@@ -143,10 +119,12 @@ namespace TerrainDemo.Navigation
                 
             }
 
-            timer.Stop();
-            Debug.Log($"Valid path created for {actor.Name}: wps {result.Waypoints.Count()}, length {result.GetPathLength()}, total time {timer.ElapsedMilliseconds}");
+            //timer.Stop();
+            //Debug.Log($"Valid path created for {actor.Name}: wps {result.Waypoints.Count()}, length {result.GetPathLength()}, total time {timer.ElapsedMilliseconds}");
 
-            return result;
+            //return result;
+
+            return null;
         }
 
         public static bool IsStraightPathExists(Actor actor, Waypoint from, Waypoint to)
@@ -172,14 +150,17 @@ namespace TerrainDemo.Navigation
             return true;
         }
 
+        public AStarSearch<NavGraph, NavigationCell>.SearchResult GetMacroPath( NavigationCell from, NavigationCell to, Actor actor )
+        {
+	        var result = _macroNavAstar2.CreatePath( actor, from, to );
+	        return result;
+        }
+
         private readonly MicroMap _map;
         private readonly MacroMap _macromap;
         private readonly AStarSearch<MicroMapGraph, Waypoint> _microAStar;
-        private static Pathfinder _instance;
-        private readonly AStarSearch<MacroMapGraph, Cell> _macroAstar;
         private readonly NavigationMap _navmap;
-        private readonly AStarSearch<NavigationMapMacroGraph, NavigationCell> _macroNavAstar;
-        private readonly NavigationMapMacroGraph _navigationMapMacroGraph;
+        private readonly AStarSearch<NavGraph, NavigationCell> _macroNavAstar2;
 
         /// <summary>
         /// Simplify path straight lines
@@ -226,28 +207,5 @@ namespace TerrainDemo.Navigation
             return waypoints;
         }
 
-        private void MicroAStarOnDebugCompleted(List<Waypoint> path, int processedNodes, int frontierCount, int timer)
-        {
-            if (path != null)
-            {
-                Debug.Log($"Micro path search ok from {path.First()} to {path.Last()} length {path.Count}, frontier {frontierCount}, total nodes processed {processedNodes}, time {timer} msec");
-            }
-            else
-            {
-                Debug.Log($"Micro path search FAILED, fronties {frontierCount}, total nodes {processedNodes}, time {timer} msec");
-            }
-        }
-
-        private void MacroNavAstarOnDebugCompleted(List<NavigationCell> path, int processedNodes, int frontierCount, int timer)
-        {
-            if (path != null)
-            {
-                Debug.Log($"Macro path search ok from {path.First()} to {path.Last()} length {path.Count}, frontier {frontierCount}, total nodes processed {processedNodes}, time {timer} msec");
-            }
-            else
-            {
-                Debug.Log($"Macro path search FAILED, fronties {frontierCount}, total nodes {processedNodes}, time {timer} msec");
-            }
-        }
     }
 }

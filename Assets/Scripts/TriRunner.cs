@@ -61,6 +61,7 @@ namespace TerrainDemo
         public MacroMap Macro { get; private set; }
         public MicroMap Micro { get; private set; }
 
+        public NavigationMap NavMap { get; private set; }
         public MacroTemplate Land { get; private set; }
 
         public IReadOnlyCollection<BlockSettings> AllBlocks => _allBlocks;
@@ -193,12 +194,12 @@ namespace TerrainDemo
             wall.Changed += MicroOnChanged;
             */
 
-            new Pathfinder(Micro, Macro, this);
+			NavMap = new NavigationMap( Macro, Micro, this );            
 
-            _hero = new Actor(Micro, (-11, 7), Vector2.One, true, "Hero");
+            _hero = new Actor(Micro, NavMap, (-11, 7), Vector2.One, true, "Hero");
             Micro.AddActor(_hero);
 
-            _npc = new Actor(Micro, (-37, -57), Vector2.One, false, "Npc");
+            _npc = new Actor(Micro, NavMap, (-37, -57), Vector2.One, false, "Npc");
             Micro.AddActor(_npc);
 
             _npc.RotateTo((Vector2)_hero.Position);
@@ -316,29 +317,28 @@ namespace TerrainDemo
         private NavigationCell _current, _next;
         private GUIStyle _currentStyle;
 
-        private IEnumerator DebugAStar()
-        {
-            SceneView.duringSceneGui += SceneViewOnDuringSceneGui;
-            _cost.Clear();
-            _cameFrom.Clear();
+        //private IEnumerator DebugAStar()
+        //{
+        //    SceneView.duringSceneGui += SceneViewOnDuringSceneGui;
+        //    _cost.Clear();
+        //    _cameFrom.Clear();
 
-            var astar = new AStarSearch<NavigationMapMacroGraph, NavigationCell>(Pathfinder.Instance.NavMapMacroGraph);
-            var startCell = Macro.Cells.First(c => c.Contains((Vector2)_npc.Position));
-            var startNavCell = Pathfinder.Instance.NavigationMap.Cells[startCell.Coords];
-            var finishCell = Macro.Cells.First(c => c.Contains(new Vector2(45.5f, 23.5f)));
-            var finishNavCell = Pathfinder.Instance.NavigationMap.Cells[finishCell.Coords];
+        //    var astar         = new AStarSearch<NavGraph, NavigationCell>( NavMap.MacroGraph );
+        //    var startNavCell  = (NavigationCell)NavMap.GetNavNode( _npc.BlockPosition );
+        //    var finishPos     = new Vector2i( 45.5f, 23.5f );
+        //    var finishNavCell = (NavigationCell)NavMap.GetNavNode( finishPos );
 
-            foreach (var (current, next, came, cost) in astar.CreatePathDebug(_npc, startNavCell, finishNavCell, true))
-            {
-                _current = current;
-                _next = next;
-                _cameFrom = came;
-                _cost = cost;
-                yield return new WaitForSeconds(0.1f);
-            }
+        //    foreach (var (current, next, came, cost) in astar.CreatePathStepByStep(_npc, startNavCell, finishNavCell, true))
+        //    {
+        //        _current = current;
+        //        _next = next;
+        //        _cameFrom = came;
+        //        _cost = cost;
+        //        yield return new WaitForSeconds(0.1f);
+        //    }
 
-            //SceneView.duringSceneGui -= SceneViewOnDuringSceneGui;
-        }
+        //    //SceneView.duringSceneGui -= SceneViewOnDuringSceneGui;
+        //}
 
         private void SceneViewOnDuringSceneGui(SceneView obj)
         {

@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
-using OpenToolkit.Mathematics;
 using TerrainDemo.Micro;
 using TerrainDemo.Navigation;
 using TerrainDemo.Spatial;
-using UnityEngine;
 using UnityEngine.Assertions;
-using Debug = System.Diagnostics.Debug;
 using Vector2 = OpenToolkit.Mathematics.Vector2;
 
 namespace TerrainDemo.Hero
@@ -25,11 +18,12 @@ namespace TerrainDemo.Hero
 
         public Path Path { get; private set; }
 
-        public Navigator(Actor owner, MicroMap map)
+        public Navigator(Actor owner, MicroMap map, NavigationMap navMap)
         {
             _map = map;
+            _navMap = navMap;
             Owner = owner;
-            _pathfinder = Pathfinder.Instance;
+            //_pathfinder = Pathfinder.Instance;
         }
 
         /// <summary>
@@ -43,7 +37,7 @@ namespace TerrainDemo.Hero
             if (Owner.BlockPosition == blockDestination)
                 return;
 
-            var path = _pathfinder.CreatePath( Owner.BlockPosition, destination, Owner);
+            var path = _navMap.CreatePath( Owner.BlockPosition, destination, Owner);
 
             if (IsNavigated)
                 Cancel(false);
@@ -73,7 +67,8 @@ namespace TerrainDemo.Hero
         }
 
         private readonly MicroMap _map;
-        private readonly Pathfinder _pathfinder;
+        private readonly NavigationMap _navMap;
+        //private readonly Pathfinder _pathfinder;
         private CancellationTokenSource _navigateCancel;
         private Task _navigateTask;
 
@@ -95,7 +90,7 @@ namespace TerrainDemo.Hero
             {
                 Owner.Stop();
                 IsNavigated = false;
-                UnityEngine.Debug.Log($"Path invalid, do not move");
+                UnityEngine.Debug.Log($"{Owner} path invalid, do not move");
                 return;
             }
 
@@ -104,24 +99,26 @@ namespace TerrainDemo.Hero
                 do
                 {
                     var waypoint = path.Next();
-                    var waypointPosition = BlockInfo.GetWorldCenter(waypoint.point.Position);
+                    var waypointPosition = BlockInfo.GetWorldCenter(waypoint.point);
                     while (Vector2.Distance((Vector2) Owner.Position, waypointPosition) > 0.1f)
                     {
                         //Owner.Rotate(waypointPosition);
                         Owner.MoveTo(waypointPosition, waypoint.point == path.Finish);
                         await Task.Delay(300, ct);
                     }
-                } while (path.CurrentPoint != path.Finish);
 
-                //Finish path
-                Owner.Stop();
+                    await Task.Delay(300, ct);
+                } while (path.Current.position != path.Finish);
+
+				//Finish path
+				Owner.Stop();
                 IsNavigated = false;
 
-                UnityEngine.Debug.Log($"Path completed");
+                UnityEngine.Debug.Log($"{Owner} path completed, stop");
             }
             catch (TaskCanceledException)
             {
-                UnityEngine.Debug.Log($"Path cancelled");
+                UnityEngine.Debug.Log($"{Owner} navigation is cancelled");
             }
         }
     }

@@ -105,7 +105,7 @@ namespace TerrainDemo.Editor
                 foreach (var segment in path.Segments)
                 {
                     GUIStyle waypointStyle;
-                    if (segment == path.CurrentSegment)
+                    if (segment.Node == path.Current.node)
                     {
                         segmentStyle = _currentWaypointStyle;
                         waypointStyle = _oldWaypointStyle;
@@ -118,15 +118,15 @@ namespace TerrainDemo.Editor
                         GUILayout.Label($"  {segment.ToString()}", segmentStyle);
                         if (GUILayout.Button("ʘ", GUILayout.Height(15), GUILayout.Width(15)))
                         {
-                            var segmentBounds = new Bounds(segment.From.GetPosition(), UnityEngine.Vector3.zero);
-                            segmentBounds.Encapsulate(segment.To.GetPosition());
+                            var segmentBounds = new Bounds(segment.Points.First(), UnityEngine.Vector3.zero);
+                            segmentBounds.Encapsulate(segment.Points.Last());
                             SceneView.lastActiveSceneView.Frame(segmentBounds);
                         }
                     }
 
-                    foreach (var waypoint in segment.InterWaypoints)
+                    foreach (var waypoint in segment.Points)
                     {
-                        if (waypoint == path.CurrentPoint)
+                        if (waypoint == path.Current.position)
                             waypointStyle = _currentWaypointStyle;
 
                         using (var h = new GUILayout.HorizontalScope())
@@ -134,16 +134,15 @@ namespace TerrainDemo.Editor
                             GUILayout.Label($"    {waypoint.ToString()}", waypointStyle);
                             if (GUILayout.Button("ʘ", GUILayout.Height(15), GUILayout.Width(15)))
                             {
-                                SceneView.lastActiveSceneView.Frame(new Bounds(waypoint.GetPosition(),
-                                                                               UnityEngine.Vector3.one * 5));
+                                SceneView.lastActiveSceneView.Frame(new Bounds(waypoint, UnityEngine.Vector3.one * 5));
                             }
                         }
 
-                        if (waypoint == path.CurrentPoint)
+                        if (waypoint == path.Current.position)
                             waypointStyle = _nextWaypointStyle;
                     }
 
-                    if (segment == path.CurrentSegment)
+                    if (segment.Node == path.Current.node)
                         segmentStyle = _nextWaypointStyle;
                 }
             }
@@ -168,33 +167,41 @@ namespace TerrainDemo.Editor
                 //Show navigation path
                 if (_actor.Nav.IsNavigated)
                 {
-                    var color = Color.gray;
-                    foreach (var wp in _actor.Nav.Path.Waypoints)
+	                //Show all processed cells
+	                foreach (var navCell in _actor.Nav.Path.ProcessedCosts)
+	                {
+		                if(_actor.Nav.Path.Segments.All(s => s.Node != navCell.Item1))
+			                HandleMap.DrawNavigationNode( navCell.Item1, 20, Color.red, false );
+
+		                //var mapPosition = BlockInfo.GetWorldCenter(wp.Position);
+		                //var position = new UnityEngine.Vector3(mapPosition.X, wp.Map.GetBlockData(wp.Position).Height,
+		                //    mapPosition.Y);
+		                //DrawPoint.ForFebug2D(position, 0.5f, Color.blue, false);
+	                }
+
+                    foreach (var node in _actor.Nav.Path.Segments)
                     {
-                        var mapPosition = BlockInfo.GetWorldCenter(wp.Position);
-                        var position = new UnityEngine.Vector3(mapPosition.X, wp.Map.GetBlockData(wp.Position).Height,
-                            mapPosition.Y);
+						//Draw node
+						HandleMap.DrawNavigationNode( node.Node, 20, true );
 
-                        if(wp == _actor.Nav.Path.CurrentPoint)
-                            color = Color.red;
 
-                        Handles.color = color;
-                        var markSize = _actor.Nav.Path.Segments.Any(s => s.From == wp) ? 1 : 0.5f;
-                        Handles.SphereHandleCap(0, position, Quaternion.identity, markSize, EventType.Repaint);
-                        //DebugExtension.DebugWireSphere(position, color, 0.3f);
+                        //var mapPosition = BlockInfo.GetWorldCenter(node);
+                        //var position = new UnityEngine.Vector3(mapPosition.X, _actor.Map.GetBlockData(node).Height,
+                        //    mapPosition.Y);
 
-                        if (wp == _actor.Nav.Path.CurrentPoint)
-                            color = Color.white;
+                        ////if(wp == _actor.Nav.Path.CurrentPoint)
+                        //    //color = Color.red;
+
+                        //Handles.color = color;
+                        ////var markSize = _actor.Nav.Path.Segments.Any(s => s.From == wp) ? 1 : 0.5f;
+                        //Handles.SphereHandleCap(0, position, Quaternion.identity, /*markSize*/0.5f, EventType.Repaint);
+                        ////DebugExtension.DebugWireSphere(position, color, 0.3f);
+
+                        ////if (wp == _actor.Nav.Path.CurrentPoint)
+                        //    //color = Color.white;
                     }
 
-                    //Show all processed blocks
-                    foreach (var wp in _actor.Nav.Path.TotalProcessed)
-                    {
-                        var mapPosition = BlockInfo.GetWorldCenter(wp.Position);
-                        var position = new UnityEngine.Vector3(mapPosition.X, wp.Map.GetBlockData(wp.Position).Height,
-                            mapPosition.Y);
-                        DrawPoint.ForFebug2D(position, 0.5f, Color.blue, false);
-                    }
+                    
                     
                 }
             }

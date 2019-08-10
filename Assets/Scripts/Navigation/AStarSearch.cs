@@ -1,18 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading.Tasks;
-using OpenToolkit.Mathematics;
 using TerrainDemo.Hero;
-using TerrainDemo.Macro;
-using TerrainDemo.Micro;
-using TerrainDemo.Spatial;
-using TerrainDemo.Tools;
-using UnityEngine;
-using Cell = TerrainDemo.Macro.Cell;
-using Debug = UnityEngine.Debug;
-using Vector2 = OpenToolkit.Mathematics.Vector2;
-using Vector3 = OpenToolkit.Mathematics.Vector3;
 
 //Based on https://www.redblobgames.com/pathfinding/from-star/implementation.html#csharp
 
@@ -20,135 +9,12 @@ namespace TerrainDemo.Navigation
 {
     public interface IWeightedGraph<TNode> where TNode : IEquatable<TNode>
     {
-        float Cost(TNode @from, TNode to);
-
-        IEnumerable<TNode> Neighbors(Actor actor, TNode node);
+        IEnumerable<(TNode neighbor, float neighborCost)> Neighbors(Actor actor, TNode from);
 
         float Heuristic(TNode @from, TNode to);
     }
 
-    public class MicroMapGraph : IWeightedGraph<Waypoint>
-    {
-        private readonly MicroMap _map;
-
-        public MicroMapGraph(MicroMap map)
-        {
-            _map = map;
-        }
-
-        public float Cost(Waypoint @from, Waypoint to)
-        {
-            return 1;       //Calculate true cost
-        }
-
-        public IEnumerable<Waypoint> Neighbors(Actor actor, Waypoint node)
-        {
-            foreach (var dir in Directions.Vector2I)
-            {
-                var neighborPos = node.Position + dir;
-                if (_map.Bounds.Contains(neighborPos) && actor.IsPassable(node.Map, node.Position, neighborPos, out var toMap))
-                    yield return new Waypoint(toMap, neighborPos);
-            }
-        }
-
-        public float Heuristic(Waypoint @from, Waypoint to)
-        {
-            //return Vector2i.ManhattanDistance(from.Position, to.Position); //7980 blocks, 186 msec, 203 meters
-            return Vector2i.Distance(@from.Position, to.Position); //11463 blocks, 194 msec, 171 meters
-            //return Vector2i.RoughDistance(from.Position, to.Position);  //11703 blocks, 198 msec, 171 meters
-            //return Vector2i.DistanceSquared(from.Position, to.Position); //231 blocks, 8 msec, 177 meters
-        }
-    }
-
-    public class MacroMapGraph : IWeightedGraph<Cell>
-    {
-        private MacroMap _map;
-
-        public MacroMapGraph(MacroMap map)
-        {
-            _map = map;
-        }
-
-        public float Cost(Cell @from, Cell to)
-        {
-            if (from.Equals(to))
-                return 0;
-
-            var moveVector = to.CenterPoint - from.CenterPoint;
-            var height = moveVector.Y;              //Ascend/descent
-            moveVector.Y = 0;
-            var distance = moveVector.Length;
-            var heightCost = 0f;
-
-            //Climb height = severe movement cost penalty
-            if (height > 0)
-                heightCost = Interpolation.RemapUnclamped(height / distance, 0, 1, 1, 3);
-            else
-                //Drop height = some movement cost bonus, but not so much
-                heightCost = Interpolation.RemapUnclamped(-height / distance, 0, 1, 1, 0.5f);
-
-            return distance + heightCost;
-        }
-
-        public IEnumerable<Cell> Neighbors(Actor actor, Cell node)
-        {
-            return node.NeighborsSafe;
-        }
-
-        public float Heuristic(Cell @from, Cell to)
-        {
-            return Vector3.Distance(@from.CenterPoint, to.CenterPoint);
-        }
-    }
-
-    public class NavigationMapMacroGraph : IWeightedGraph<NavigationCell>
-    {
-        private readonly NavigationMap _map;
-
-        public NavigationMapMacroGraph(NavigationMap map)
-        {
-            _map = map;
-        }
-
-        public float Cost(NavigationCell from, NavigationCell to)
-        {
-            var speedCost = 1 / to.SpeedModifier;
-            //var rougnessCost = 1 + (from.Rougness + to.Rougness) / 2;
-            var rougnessCost = to.Rougness < 0.7f 
-                ? Interpolation.Remap(to.Rougness, 0, 0.7f, 1, 2)
-                : Interpolation.RemapUnclamped(to.Rougness, 0.7f, 1, 2, 10);
-
-            var moveVector = to.Cell.Macro.CenterPoint - from.Cell.Macro.CenterPoint;
-            var height = moveVector.Y;              //Ascend/descent
-            moveVector.Y = 0;                       
-            var distance = moveVector.Length;
-            var heightCost = 0f;
-
-            //Climb height = severe movement cost penalty
-            if (height > 0)
-                heightCost = Interpolation.RemapUnclamped(height / distance, 0, 1, 1, 3);
-            else
-                //Drop height = some movement cost bonus, but not so much
-                heightCost = Interpolation.RemapUnclamped(-height / distance, 0, 1, 1, 0.5f);
-
-            return Vector3.Distance(from.Cell.Macro.CenterPoint, to.Cell.Macro.CenterPoint) * speedCost * rougnessCost * heightCost;
-        }
-
-        public float Heuristic(NavigationCell from, NavigationCell to)
-        {
-            //todo add height diff coefficient?
-            return Vector3.Distance(from.Cell.Macro.CenterPoint, to.Cell.Macro.CenterPoint);
-        }
-
-        public IEnumerable<NavigationCell> Neighbors(Actor actor, NavigationCell node)
-        {
-            foreach (var macroCell in node.Cell.Macro.NeighborsSafe)
-                yield return _map.Cells[macroCell.Coords];
-        }
-    }
-
-
-    public class PriorityQueue<T>
+    public class NaivePriorityQueue<T>
     {
         // I'm using an unsorted array for this example, but ideally this
         // would be a binary heap. There's an open issue for adding a binary
@@ -190,7 +56,9 @@ namespace TerrainDemo.Navigation
         }
     }
 
-    public class AStarSearch<TGraph, TNode> where TGraph : IWeightedGraph<TNode> where TNode : IEquatable<TNode>
+    public class AStarSearch<TGraph, TNode> 
+	    where TGraph : IWeightedGraph<TNode> 
+	    where TNode : IEquatable<TNode>	
     {
         private TGraph _graph;
 
@@ -206,10 +74,10 @@ namespace TerrainDemo.Navigation
             _graph = graph;
         }
 
-        public (List<TNode> result, IReadOnlyDictionary<TNode, TNode> cameFromDebug, IReadOnlyDictionary<TNode, float> costs) CreatePath(Actor actor, TNode from, TNode to, bool bestPossibleSearch, Predicate<TNode> isValidNode = null)
+        public SearchResult CreatePath(Actor actor, TNode from, TNode to, Predicate<TNode> isValidNode = null)
         {
             if (from.Equals(to))
-                return (new List<TNode>() {from, to}, new Dictionary<TNode, TNode>(0), new Dictionary<TNode, float>(0));
+				return new SearchResult( new List<TNode>(), 0, new Dictionary<TNode, TNode>(), new Dictionary<TNode, float>());
 
             var timer = Stopwatch.StartNew();
             int processedNodes = 0, maxFrontierCount = 0;
@@ -217,7 +85,7 @@ namespace TerrainDemo.Navigation
             _cameFrom.Clear();
             _costSoFar.Clear();
 
-            var frontier = new PriorityQueue<TNode>();
+            var frontier = new NaivePriorityQueue<TNode>();
             var start = from;
             var goal = to;
             frontier.Enqueue(start, 0);
@@ -230,23 +98,23 @@ namespace TerrainDemo.Navigation
                 processedNodes++;
                 var current = frontier.Dequeue();
 
-                if(!bestPossibleSearch && current.Equals(to))
+                if(current.Equals(to))
                     break;
 
-                foreach (var next in _graph.Neighbors(actor, current))
+                foreach (var (neighbor, neighborCost) in _graph.Neighbors(actor, current))
                 {
-                    if(isValidNode != null && !isValidNode(next))
+                    if(isValidNode != null && !isValidNode(neighbor))
                         continue;
 
-                    var newCost = _costSoFar[current] + _graph.Cost(current, next);
+                    var newCost = _costSoFar[current] + neighborCost;
 
-                    if (!_costSoFar.TryGetValue(next, out var storedNextCost) || newCost < storedNextCost)
+                    if (!_costSoFar.TryGetValue(neighbor, out var storedNextCost) || newCost < storedNextCost)
                     {
-                        _costSoFar[next] = newCost;
-                        var h = _graph.Heuristic(next, goal);
+                        _costSoFar[neighbor] = newCost;
+                        var h = _graph.Heuristic(neighbor, goal);
                         var priority = newCost + h;
-                        frontier.Enqueue(next, priority);
-                        _cameFrom[next] = current;
+                        frontier.Enqueue(neighbor, priority);
+                        _cameFrom[neighbor] = current;
                     }
                 }
                 
@@ -266,8 +134,7 @@ namespace TerrainDemo.Navigation
             }
             else
             {
-                DebugCompleted?.Invoke(null, processedNodes, maxFrontierCount, (int)timer.ElapsedMilliseconds);
-                return (null, _cameFrom, _costSoFar);
+	            return new SearchResult( null, timer.ElapsedMilliseconds, _cameFrom, _costSoFar );
             }
 
             do
@@ -277,8 +144,7 @@ namespace TerrainDemo.Navigation
             } while (!prev.Equals(start));
             result.Reverse();
 
-            DebugCompleted?.Invoke(result, processedNodes, maxFrontierCount, (int)timer.ElapsedMilliseconds);
-            return (result, _cameFrom, _costSoFar);
+            return new SearchResult(result, timer.ElapsedMilliseconds, _cameFrom, _costSoFar);
         }
 
         /// <summary>
@@ -290,14 +156,14 @@ namespace TerrainDemo.Navigation
         /// <param name="cameFrom"></param>
         /// <param name="costSoFar"></param>
         /// <returns></returns>
-        public IEnumerable<(TNode current, TNode next, Dictionary<TNode, TNode>, Dictionary<TNode, float>)> 
-            CreatePathDebug(Actor actor, TNode from, TNode to, bool bestPossibleSearch, Predicate<TNode> isValidNode = null)
+        public IEnumerable<SearchResult> 
+            CreatePathStepByStep(Actor actor, TNode from, TNode to, Predicate<TNode> isValidNode = null)
         {
             int processedNodes = 0, maxFrontierCount = 0;
             _cameFrom.Clear();
             _costSoFar.Clear();
 
-            var frontier = new PriorityQueue<TNode>();
+            var frontier = new NaivePriorityQueue<TNode>();
             var start = from;
             var goal = to;
             frontier.Enqueue(start, 0);
@@ -310,25 +176,25 @@ namespace TerrainDemo.Navigation
                 processedNodes++;
                 var current = frontier.Dequeue();
 
-                if (!bestPossibleSearch && current.Equals(to))
+                if ( current.Equals(to) )
                     break;
 
-                foreach (var next in _graph.Neighbors(actor, current))
+                foreach (var (neighbor, neighborCost) in _graph.Neighbors(actor, current))
                 {
-                    if (isValidNode != null && !isValidNode(next))
+                    if (isValidNode != null && !isValidNode(neighbor))
                         continue;
 
-                    var newCost = _costSoFar[current] + _graph.Cost(current, next);
-                    if (!_costSoFar.TryGetValue(next, out var storedNextCost) || newCost < storedNextCost)
+                    var newCost = _costSoFar[current] + neighborCost;
+                    if (!_costSoFar.TryGetValue(neighbor, out var storedNextCost) || newCost < storedNextCost)
                     {
-                        _costSoFar[next] = newCost;
-                        var h = _graph.Heuristic(next, goal);
+                        _costSoFar[neighbor] = newCost;
+                        var h = _graph.Heuristic(neighbor, goal);
                         var priority = newCost + h;
-                        frontier.Enqueue(next, priority);
-                        _cameFrom[next] = current;
+                        frontier.Enqueue(neighbor, priority);
+                        _cameFrom[neighbor] = current;
                     }
 
-                    yield return (current, next, _cameFrom, _costSoFar);
+                    yield return new SearchResult(null, 0, _cameFrom, _costSoFar);
                 }
 
                 if (frontier.Count > maxFrontierCount)
@@ -345,7 +211,6 @@ namespace TerrainDemo.Navigation
             }
             else
             {
-                DebugCompleted?.Invoke(null, processedNodes, maxFrontierCount, -1);
                 yield break;
             }
 
@@ -356,13 +221,24 @@ namespace TerrainDemo.Navigation
             } while (!prev.Equals(start));
             result.Reverse();
 
-            DebugCompleted?.Invoke(result, processedNodes, maxFrontierCount, -1);
+            yield return new SearchResult(result, 0, _cameFrom, _costSoFar);
         }
 
-        /// <summary>
-        /// Transfers, costs, processed nodes, max frontier count, timer (msec)
-        /// </summary>
-        public event Action<List<TNode>, int, int, int> DebugCompleted;
+        public readonly struct SearchResult
+        {
+	        public readonly List<TNode> Path;
+	        public readonly uint ElapsedTime;	
+	        public readonly IReadOnlyDictionary<TNode, TNode> CameFromDebug;
+	        public readonly IReadOnlyDictionary<TNode, float> CostsDebug;
+
+	        public SearchResult( List<TNode> path, long elapsedTime, IReadOnlyDictionary<TNode, TNode> cameFromDebug, IReadOnlyDictionary<TNode, float> costsDebug )
+	        {
+		        Path = path;
+		        ElapsedTime = (uint)elapsedTime;
+		        CameFromDebug = cameFromDebug;
+		        CostsDebug = costsDebug;
+	        }
+        }
 
     }
 }
