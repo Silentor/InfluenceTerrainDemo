@@ -7,7 +7,6 @@ namespace TerrainDemo.Macro
     /// <summary>
     /// Coordinates of Macro Cell in hexagonal grid. https://www.redblobgames.com/grids/hexagons/#coordinates-axial
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct Coord : IEquatable<Coord>
     {
         public readonly short X;
@@ -49,10 +48,7 @@ namespace TerrainDemo.Macro
             return X == other.X && Z == other.Z;
         }
 
-        public override int GetHashCode()
-        {
-            return (int)X | ((int)Z << 16);
-        }
+        public override int GetHashCode() => X | (Z << 16);
 
         public override bool Equals(object obj)
         {
@@ -75,7 +71,7 @@ namespace TerrainDemo.Macro
             return new Coord(left.X + right.X, left.Z + right.Z);
         }
 
-        public override string ToString() => $"({X}; {Z})";
+        public override string ToString() => $"<{X}, {Z}>";
 
         public enum Sides
         {

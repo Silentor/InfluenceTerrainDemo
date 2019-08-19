@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using TerrainDemo.Micro;
 using TerrainDemo.Navigation;
 using TerrainDemo.Spatial;
@@ -17,6 +18,8 @@ namespace TerrainDemo.Hero
         public bool IsNavigated { get; private set; }
 
         public Path Path { get; private set; }
+
+		public Path.Iterator DebugPathIterator { get; private set; }
 
         public Navigator(Actor owner, MicroMap map, NavigationMap navMap)
         {
@@ -72,7 +75,7 @@ namespace TerrainDemo.Hero
         private CancellationTokenSource _navigateCancel;
         private Task _navigateTask;
 
-        private async Task RunNavigatePath(Path path, CancellationTokenSource ct)
+        private async Task RunNavigatePath([NotNull] Path path, [NotNull] CancellationTokenSource ct)
         {
             var task = NavigatePath(path, ct.Token);
 
@@ -82,7 +85,7 @@ namespace TerrainDemo.Hero
             }
         }
 
-        private async Task NavigatePath(Path path, CancellationToken ct)
+        private async Task NavigatePath([NotNull] Path path, CancellationToken ct)
         {
             Assert.IsTrue(IsNavigated);
 
@@ -94,21 +97,24 @@ namespace TerrainDemo.Hero
                 return;
             }
 
+            var pathIterator = path.Go( );
+            DebugPathIterator = pathIterator;
+
             try
             {
-                do
+                while( pathIterator.Next(  ) )
                 {
-                    var waypoint = path.Next();
-                    var waypointPosition = BlockInfo.GetWorldCenter(waypoint.point);
+                    var waypoint = pathIterator.Current;
+                    var waypointPosition = BlockInfo.GetWorldCenter(waypoint.position);
                     while (Vector2.Distance((Vector2) Owner.Position, waypointPosition) > 0.1f)
                     {
                         //Owner.Rotate(waypointPosition);
-                        Owner.MoveTo(waypointPosition, waypoint.point == path.Finish);
+                        Owner.MoveTo(waypointPosition, waypoint.position == path.Finish);
                         await Task.Delay(300, ct);
                     }
 
                     await Task.Delay(300, ct);
-                } while (path.Current.position != path.Finish);
+                };
 
 				//Finish path
 				Owner.Stop();

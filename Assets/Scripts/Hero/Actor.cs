@@ -210,21 +210,56 @@ namespace TerrainDemo.Hero
                 if (_targetPosition.HasValue)
                 {
                     var direction = _targetPosition.Value - _mapPosition;
-                    if (_autoStop)
-                        return direction.Length > Speed ? direction.Normalized() * Speed : direction;
-                    else
-                        return direction.Normalized() * Speed;
+					if(direction == Vector2.Zero)
+						return Vector2.Zero;
+					else
+					{
+						if ( _autoStop )
+							return direction.Length > Speed ? direction.Normalized( ) * Speed : direction;
+						else
+							return direction.Normalized( ) * Speed;
+					}
                 }
             }
 
             return Vector2.Zero;
         }
 
+        private Vector2 GetNewPosition(Vector2 oldPosition, Vector2 velocity, float deltaTime)
+        {
+	        if(_isStopped || Speed <= 0.01)
+		        return oldPosition;
+
+	        if (_isHero)
+	        {
+		        if (velocity != Vector2.Zero)
+		        {
+			        return oldPosition + velocity * deltaTime;
+		        }
+	        }
+	        else
+	        {
+		        if (_targetPosition.HasValue)
+		        {
+			        var step = velocity * deltaTime;
+			        var directionToTarget = _targetPosition.Value - oldPosition;
+			        if ( step.LengthSquared >= directionToTarget.LengthSquared )
+			        {
+				        return _targetPosition.Value;
+			        }
+			        else
+				        return oldPosition + step;
+		        }
+	        }
+
+	        return oldPosition;
+        }
+
         private bool UpdateMovement(float deltaTime)
         {
             var thrustVelocity = GetThrustVelocity();
-            var step = thrustVelocity * deltaTime;
-            var newMapPosition = _mapPosition + step;
+            //var newMapPosition = _mapPosition + thrustVelocity * deltaTime;
+            var newMapPosition = GetNewPosition( _mapPosition, thrustVelocity, deltaTime );
 
             //Check change block(and map maybe)
             var newBlockPosition = (Vector2i)newMapPosition;

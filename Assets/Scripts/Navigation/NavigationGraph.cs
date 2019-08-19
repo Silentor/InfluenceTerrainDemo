@@ -36,7 +36,7 @@ namespace TerrainDemo.Navigation
 
         public override string ToString()
         {
-            return $"{Cell.Id}";
+            return $"<{Cell.Id}>";
         }
 
         public bool Equals(NavigationCell other)

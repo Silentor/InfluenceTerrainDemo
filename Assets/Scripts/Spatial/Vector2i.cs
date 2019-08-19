@@ -103,7 +103,7 @@ namespace TerrainDemo.Spatial
 
         public override string ToString()
         {
-            return $"({X}, {Z})";
+            return $"[{X}, {Z}]";
         }
 
         public static bool operator ==(Vector2i a, Vector2i b)
