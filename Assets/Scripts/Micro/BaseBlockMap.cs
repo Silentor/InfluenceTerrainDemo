@@ -332,6 +332,15 @@ namespace TerrainDemo.Micro
             return ref _blockData[localPos.X, localPos.Z];
         }
 
+        internal ref readonly BlockData GetBlockDataLocal(Vector2i localBlockPos)
+        {
+	        if (localBlockPos.X >= _blockData.GetLength( 0 ) || localBlockPos.Z >= _blockData.GetLength( 1 ))
+		        return ref BlockData.Empty;
+
+	        return ref _blockData[localBlockPos.X, localBlockPos.Z];
+        }
+
+
 
         public NeighborBlocks GetNeighborBlocks(Vector2i worldBlockPos)
         {

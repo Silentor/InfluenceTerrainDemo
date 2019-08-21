@@ -44,7 +44,8 @@ namespace TerrainDemo.Micro
                 Cells[i] = microCell;
             }
 
-            foreach (var blockSettingse in settings.AllBlocks) _blockSettings[blockSettingse.Block] = blockSettingse;
+            foreach (var blockSettingse in settings.AllBlocks) 
+	            _blockSettings[blockSettingse.Block] = blockSettingse;
         }
 
         public void AddChild(ObjectMap childMap)

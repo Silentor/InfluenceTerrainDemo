@@ -15,6 +15,7 @@ namespace TerrainDemo.Navigation
 	{
 		public IReadOnlyDictionary<Coord, NavigationCell> Nodes => _nodes;
 		public readonly NavGraph MacroGraph;
+		public readonly NavigationGrid NavGrid;
 
 		public NavigationMap(MacroMap macromap, MicroMap micromap, TriRunner settings)
 		{
@@ -22,6 +23,9 @@ namespace TerrainDemo.Navigation
 
 			_macromap = macromap;
 			_micromap = micromap;
+
+			NavGrid = new NavigationGrid( micromap );
+
 			MacroGraph = new NavGraph();
 			var navCells = new List<NavigationCell>();
 

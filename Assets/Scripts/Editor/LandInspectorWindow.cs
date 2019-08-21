@@ -24,8 +24,9 @@ namespace TerrainDemo.Editor
 		public Color Active = Color.white;
 
 		private TriRunner _runner;
-		private MacroMap MacroMap => _runner ? _runner.Macro : null;
+		private MacroMap MacroMap => _runner? _runner.Macro : null;
 		private MicroMap MicroMap => _runner ? _runner.Micro : null;
+		private NavigationMap NavMap => _runner ? _runner.NavMap : null;
 
 		private MacroTemplate _land;
 		private Input _input;
@@ -706,6 +707,7 @@ namespace TerrainDemo.Editor
 			if (input.HoveredBlock != null)
 			{
 				ShowBlockInfo(input.HoveredBlock.Value, false, false);
+				ShowNavigationBlockInfo( input.HoveredBlock.Value.position, false );
 			}
 
 			if (input.HoveredMacroCell != null)
@@ -814,6 +816,15 @@ namespace TerrainDemo.Editor
 			}
 			else
 				GUILayout.Label("Empty block");
+		}
+
+		private void ShowNavigationBlockInfo( Vector2i position, bool isSelected )
+		{
+			GUILayout.Label(isSelected ? $"Selected nav block {position}" : $"Hovered nav block {position}", EditorStyles.boldLabel);
+
+			ref readonly var navBlock = ref NavMap.NavGrid.GetBlock( position );
+			
+			GUILayout.Label( $"Slope: {navBlock.Normal.Slope}, orientation: {navBlock.Normal.Orientation}" );
 		}
 
 		private void ShowHeightVertexInfo((Vector2i position, Heights vertex, BaseBlockMap source) vertex, bool isSelected)

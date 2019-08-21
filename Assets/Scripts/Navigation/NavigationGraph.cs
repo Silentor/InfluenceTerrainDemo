@@ -29,7 +29,7 @@ namespace TerrainDemo.Navigation
     {
         public readonly Cell Cell;
 
-        public NavigationCell([NotNull] Cell cell, float speedModifier, OpenToolkit.Mathematics.Vector3 normal, float rougness) : base(speedModifier, normal, rougness)
+        public NavigationCell([NotNull] Cell cell, float speedModifier, Vector3 normal, float rougness) : base(speedModifier, normal, rougness)
         {
             Cell = cell ?? throw new ArgumentNullException(nameof(cell));
         }
@@ -79,14 +79,14 @@ namespace TerrainDemo.Navigation
 	    /// <summary>
 	    /// Average normal of all blocks
 	    /// </summary>
-	    public readonly OpenToolkit.Mathematics.Vector3 Normal;
+	    public readonly Vector3 Normal;
 
-	    /// <summary>
-	    /// Standart deviation of block's normals (in radians)
-	    /// </summary>
-	    public readonly float Rougness;
+		/// <summary>
+		/// Ratio of hard to pass blocks (steep slope or impassable) to total blocks count
+		/// </summary>
+		public readonly float Rougness;
 
-	    protected NavigationNodeBase(float speedModifier, OpenToolkit.Mathematics.Vector3 normal, float rougness)
+	    protected NavigationNodeBase(float speedModifier, Vector3 normal, float rougness)
 	    {
 		    SpeedModifier = speedModifier;
 		    Normal        = normal.Normalized();
