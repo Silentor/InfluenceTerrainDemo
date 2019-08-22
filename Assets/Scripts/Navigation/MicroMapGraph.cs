@@ -19,7 +19,7 @@ namespace TerrainDemo.Navigation
 			foreach (var dir in Directions.Vector2I)
 			{
 				var neighborPos = node.Position + dir;
-				if (_map.Bounds.Contains(neighborPos) && actor.IsPassable(node.Map, node.Position, neighborPos, out var toMap))
+				if (_map.Bounds.Contains(neighborPos) && actor.Locomotor.IsPassable(node.Map, node.Position, neighborPos, out var toMap))
 					yield return (new Waypoint(toMap, neighborPos), 1);
 			}
 		}

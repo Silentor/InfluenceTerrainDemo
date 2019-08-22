@@ -50,6 +50,7 @@ namespace TerrainDemo.Hero
         }
 
         public Navigator Nav { get; }
+        public Locomotor Locomotor { get; }
 
         public bool IsHero => _isHero;
 
@@ -79,7 +80,7 @@ namespace TerrainDemo.Hero
         private bool _isHero;
         private bool _autoStop;
 
-        public Actor(MicroMap map, NavigationMap navMap, Vector2 startPosition, Vector2 direction, bool isHero, string name)
+        public Actor(MicroMap map, NavigationMap navMap, Vector2 startPosition, Vector2 direction, bool isHero, string name, Locomotor.Type loco)
         {
             Name = name;
             _mainMap = map;
@@ -88,14 +89,15 @@ namespace TerrainDemo.Hero
             _currentBlockPos = (Vector2i) _mapPosition;
             Position = new Vector3(_mapPosition.X, _mainMap.GetHeight(_mapPosition), _mapPosition.Y);
             Rotation = Quaternion.FromEulerAngles(0, Vector3.CalculateAngle(Vector3.UnitZ, (Vector3)direction), 0);
+			Locomotor = new Locomotor( loco, this, map, navMap );
             Nav = new Navigator(this, map, navMap);
             _isHero = isHero;
 
             Speed = 6;
         }
 
-        public Actor(MicroMap map, NavigationMap navMap, Vector2i startPosition, Vector2 direction, bool fpsMode, string name) 
-            : this(map, navMap, BlockInfo.GetWorldCenter(startPosition), direction, fpsMode, name) { }
+        public Actor(MicroMap map, NavigationMap navMap, Vector2i startPosition, Vector2 direction, bool fpsMode, string name, Locomotor.Type loco) 
+            : this(map, navMap, BlockInfo.GetWorldCenter(startPosition), direction, fpsMode, name, loco) { }
 
         #region FPS locomotion
 
@@ -265,7 +267,7 @@ namespace TerrainDemo.Hero
             var newBlockPosition = (Vector2i)newMapPosition;
             if (newBlockPosition != _currentBlockPos)
             {
-                var collidedPos = CheckPass(_currentMap, _mapPosition, newMapPosition, out _currentMap);
+                var collidedPos = Locomotor.Step(_currentMap, _mapPosition, newMapPosition, out _currentMap);
                 newMapPosition = collidedPos;
                 _currentBlockPos = (Vector2i) collidedPos;
 
@@ -339,187 +341,7 @@ namespace TerrainDemo.Hero
             return true;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="fromMap"></param>
-        /// <param name="fromPos"></param>
-        /// <param name="toPos"></param>
-        /// <param name="toMap"></param>
-        /// <returns></returns>
-        public bool IsPassable(BaseBlockMap fromMap, Vector2i fromPos, Vector2i toPos, out BaseBlockMap toMap) //todo move to Locomotor component
-        {
-            //Assume that fromPos -> toPos is small for simplicity
-            /*
-            if (Vector2i.ManhattanDistance(fromPos, toPos) > 1)
-            {
-                toMap = null;
-                return false;
-            }
-            */
 
-            var (newMap, newOverlapState) = _mainMap.GetOverlapState(toPos);
-
-            //Check special cases with map change
-            ref readonly var fromData = ref fromMap.GetBlockData(fromPos);
-            ref readonly var toData = ref BlockData.Empty;
-            toMap = null;
-            switch (newOverlapState)
-            {
-                //Check from object map to main map transition
-                case BlockOverlapState.Under:
-                case BlockOverlapState.None:
-                {
-                    toData = ref _mainMap.GetBlockData(toPos);
-                    toMap = _mainMap;
-                }
-                    break;
-
-                case BlockOverlapState.Above:
-                {
-                    ref readonly var aboveBlockData = ref newMap.GetBlockData(toPos);
-
-                    //Can we pass under floating block?
-                    if (aboveBlockData.MinHeight > fromData.MaxHeight + 2)
-                    {
-                        toData = ref fromMap.GetBlockData(toPos);
-                        toMap = fromMap;
-                    }
-                    else
-                    {
-                        toData = ref aboveBlockData;
-                        toMap = newMap;
-                    }
-                }
-                    break;
-
-                case BlockOverlapState.Overlap:
-                {
-                    toData = ref newMap.GetBlockData(toPos);
-                    toMap = newMap;
-                }
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-
-            if (toData != BlockData.Empty)
-            {
-                if (toData.Height < fromData.Height + 1 &&
-                    Vector3.CalculateAngle(Vector3.UnitY, toData.Normal) < SafeAngle)
-                {
-                    //Can step on new block
-                    Assert.IsNotNull(toMap);
-                    return true;
-                }
-            }
-
-            //No pass 
-            return false;
-        }
-
-        private Vector2 CheckPass(BaseBlockMap fromMap, Vector2 fromPos, Vector2 toPos, out BaseBlockMap toMap)
-        {
-            for (var i = 0; i < 2; i++)
-            {
-                var fromBlock = (Vector2i) fromPos;
-                var toBlock = (Vector2i) toPos;
-
-                //Debug.Log($"{Time.frameCount} - {i}: From pos {fromPos} block {fromBlock} to pos {toPos} block {toBlock}");
-
-                //Count from block as passable apriori
-                if (fromBlock == toBlock)
-                {
-                    //Debug.Log($"{Time.frameCount} - {i}: Blocks are equal");
-
-                    toMap = fromMap;
-                    return toPos;
-                }
-
-                var intersections = Intersections.GridIntersections(fromPos, toPos);
-                var pathRay = new Ray2(fromPos, toPos - fromPos);
-                foreach (var intersection in intersections)
-                {
-                    toBlock = intersection.blockPosition;
-                    //Debug.Log($"{Time.frameCount} - {i}: Check pass from {fromBlock} to {toBlock}");
-                    if (!IsPassable(fromMap, fromBlock, toBlock, out var toMap2))
-                    {
-                        //Respond to collision
-                        var hitPoint = pathRay.GetPoint(intersection.distance);
-
-                        //Debug.Log($"{Time.frameCount} - {i}: Inpassable block {intersection.blockPosition}, hit {hitPoint}, normal {intersection.normal}");
-
-                        var collisionVector = toPos - hitPoint;
-
-                        if (DebugLocomotion)
-                        {
-                            var yPosition = Position.Y + 1;
-                            DebugExtension.DebugPoint(hitPoint.ToVector3(yPosition), Color.red, 0.1f);
-                            Debug.DrawLine(fromPos.ToVector3(yPosition), hitPoint.ToVector3(yPosition), Color.white);
-                            DrawArrow.ForDebug(hitPoint.ToVector3(yPosition), collisionVector.Normalized(), Color.red);
-                            //Draw collision plane
-                            var blockSide = Directions.BlockSide[(int) intersection.normal];
-                            DrawRectangle.ForDebug(
-                                (blockSide.Item1 + intersection.blockPosition).ToVector3(yPosition + 1),
-                                (blockSide.Item2 + intersection.blockPosition).ToVector3(yPosition + 1),
-                                (blockSide.Item2 + intersection.blockPosition).ToVector3(yPosition - 1),
-                                (blockSide.Item1 + intersection.blockPosition).ToVector3(yPosition - 1),
-                                Color.red, 0, true
-                                );
-                        }
-
-                        var normal = intersection.normal.ToVector2();
-                        var projectedCollisionVector = collisionVector - Vector2.Dot(collisionVector, normal) * normal;
-
-                        //Recheck resolved point for another collision (one more time only)
-                        fromPos = hitPoint + normal * 0.01f; // a little bit inside into "from block" 
-
-                        if (projectedCollisionVector == Vector2.Zero) //Resolving finished, return calculated toPos and toMap
-                        {
-                            //Debug.Log($"{Time.frameCount} - {i}: Resolving completed, result {toPos}");
-
-                            toMap = fromMap;
-                            return fromPos;
-                        }
-                        else
-                        {
-                            if(DebugLocomotion)
-                                DrawArrow.ForDebug(hitPoint.ToVector3(Position.Y + 1), projectedCollisionVector.Normalized(), Color.green);
-
-                            if (i < 1)
-                            {
-                                //Debug.Log($"{Time.frameCount} - {i}: Projected vector {projectedCollisionVector} not zero, make next iter");
-                                toPos = fromPos + projectedCollisionVector;
-                                break;
-                            }
-                            else
-                            {
-                                //Debug.LogWarning($"{Time.frameCount} - {i} Actor collision still not resolved completely on second check, use last good hit point");
-
-                                toMap = fromMap;
-                                return fromPos;
-                            }
-
-                        }
-                    }
-                    else
-                    {
-                        //Debug.Log($"{Time.frameCount} - {i}: There is pass from {fromBlock} to {toBlock}, check next pass");
-                        //Continue check intersections
-                        fromBlock = toBlock;
-                        fromMap = toMap2;
-                    }
-                }
-
-                if (fromBlock == toBlock)
-                    break;
-            }
-
-            //No collision, pass is clear
-            toMap = fromMap;
-            return toPos;
-        }
 
         public event Action<Actor> Changed;
 

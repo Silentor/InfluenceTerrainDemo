@@ -138,7 +138,7 @@ namespace TerrainDemo.Navigation
             foreach (var intersection in raster)
             {
                 var nextPosition = intersection.blockPosition;
-                if (actor.IsPassable(currentMap, currentPos, nextPosition, out var nextMap))
+                if (actor.Locomotor.IsPassable(currentMap, currentPos, nextPosition, out var nextMap))
                 {
                     currentMap = nextMap;
                     currentPos = nextPosition;
