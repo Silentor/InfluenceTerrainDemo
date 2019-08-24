@@ -91,6 +91,7 @@ namespace TerrainDemo
         private Actor _hero;
         private ObserverController _observer;
         private Actor _npc;
+        private Actor _npc2;
 
         public void Render(TriRunner renderSettings)
         {
@@ -199,10 +200,12 @@ namespace TerrainDemo
             _hero = new Actor(Micro, NavMap, (-11, 7), Vector2.One, true, "Hero", Locomotor.Type.Biped);
             Micro.AddActor(_hero);
 
-            _npc = new Actor(Micro, NavMap, (-37, -57), Vector2.One, false, "Npc", Locomotor.Type.Wheeled);
+            _npc = new Actor(Micro, NavMap, (-37, -57), Vector2.One, false, "Npc", Locomotor.Type.Biped);
             Micro.AddActor(_npc);
+            _npc2 = new Actor(Micro, NavMap, (-36, -58), Vector2.One, false, "Npc2", Locomotor.Type.Wheeled);
+            Micro.AddActor(_npc2);
 
-            _npc.RotateTo((Vector2)_hero.Position);
+			_npc.RotateTo((Vector2)_hero.Position);
 
             Micro.Changed += MicroOnChanged;
 
@@ -273,6 +276,7 @@ namespace TerrainDemo
             if (hitPoint.HasValue)
             {
                 _npc.Nav.Go(hitPoint.Value.position);
+                _npc2.Nav.Go(hitPoint.Value.position);
             }
         }
 
@@ -312,11 +316,6 @@ namespace TerrainDemo
         }
 
         //DEBUG
-        private Dictionary<NavigationCell, NavigationCell> _cameFrom = new Dictionary<NavigationCell, NavigationCell>();
-        private Dictionary<NavigationCell, float> _cost = new Dictionary<NavigationCell, float>();
-        private NavigationCell _current, _next;
-        private GUIStyle _currentStyle;
-
         //private IEnumerator DebugAStar()
         //{
         //    SceneView.duringSceneGui += SceneViewOnDuringSceneGui;
@@ -340,30 +339,6 @@ namespace TerrainDemo
         //    //SceneView.duringSceneGui -= SceneViewOnDuringSceneGui;
         //}
 
-        private void SceneViewOnDuringSceneGui(SceneView obj)
-        {
-            _currentStyle = new GUIStyle(GUI.skin.label);
-            _currentStyle.normal.textColor = Color.red;
-
-            _defaultStyle = new GUIStyle(GUI.skin.label);
-            _defaultStyle.normal.textColor = Color.white;
-
-
-            Handles.color = Color.white;
-            foreach (var cost in _cost)
-            {
-                Handles.Label(cost.Key.Cell.Macro.CenterPoint, cost.Value.ToString(), 
-                    cost.Key == _current || cost.Key == _next ?
-                    _currentStyle : _defaultStyle);
-            }
-
-            foreach (var cameFrom in _cameFrom)
-            {
-                var from = cameFrom.Value.Cell.Macro.CenterPoint;
-                var to = cameFrom.Key.Cell.Macro.CenterPoint;
-                DrawArrow.ForDebug(from, to - from, Color.white, 0, false, 3);
-            }
-        }
         //DEBUG
 
         private void OnValidate()
@@ -375,6 +350,7 @@ namespace TerrainDemo
         {
             _hero?.Update(Time.deltaTime);
             _npc?.Update(Time.deltaTime);
+            _npc2?.Update(Time.deltaTime);
         }
 #endregion
     }

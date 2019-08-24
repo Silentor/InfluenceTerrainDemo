@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using OpenToolkit.Mathematics;
 using TerrainDemo.Hero;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
-using UnityEngine;
+using Vector2 = UnityEngine.Vector2;
 
 namespace TerrainDemo.Navigation
 {
@@ -32,7 +34,7 @@ namespace TerrainDemo.Navigation
 			//Prepare navigation graph
 			foreach (var micromapCell in micromap.Cells)
 			{
-				var navCell = (NavigationCell)NavigationNodeBase.CreateMicroCellNavigation(micromapCell, micromap, settings);
+				var navCell = (NavigationCell)NavigationNodeBase.CreateMicroCellNavigation(micromapCell, micromap, NavGrid, settings);
 				MacroGraph.AddNode(navCell);
 				navCells.Add(navCell);
 				_nodes[micromapCell.Id] = navCell;
@@ -52,8 +54,8 @@ namespace TerrainDemo.Navigation
 				var from     = edge.from.Cell.Macro.CenterPoint;
 				var to       = edge.to.Cell.Macro.CenterPoint;
 				var distance = Vector2.Distance( @from.Xz, to.Xz );
-				var slope    = ( to.Y - from.Y ) / distance;
-				edge.edge.Slopeness = slope;
+				var slopeRatio    = ( to.Y - from.Y ) / distance;
+				edge.edge.Slopeness = SlopeRatioToLocalIncline( slopeRatio );
 				edge.edge.Distance  = distance;
 			}
 
@@ -79,6 +81,56 @@ namespace TerrainDemo.Navigation
 		private readonly MicroMap _micromap;
 
 		private readonly MacroMap _macromap;
+
+
+		internal static readonly float MostlyFlat  = MathHelper.DegreesToRadians(10);
+		internal static readonly float SmallSlope  = MathHelper.DegreesToRadians(40);
+		internal static readonly float MediumSlope = MathHelper.DegreesToRadians(70);
+		internal static readonly float SteepSlope  = MathHelper.DegreesToRadians(90);
+
+
+		private static readonly float MostyFlatSin = (float)Math.Sin(MostlyFlat);
+		private static readonly float SmallSlopeSin = (float)Math.Sin(SmallSlope);
+		private static readonly float MediumSlopeSin = (float)Math.Sin(MediumSlope);
+		private static readonly float SteepSlopeSin = (float)Math.Sin(SteepSlope);
+
+		internal static LocalIncline SlopeRatioToLocalIncline( float slopeRatio )
+		{
+			if ( Math.Abs( slopeRatio ) < MostyFlatSin )
+				return LocalIncline.Flat;
+			else if ( slopeRatio > 0 )
+			{
+				if ( slopeRatio < SmallSlopeSin )
+					return LocalIncline.SmallUphill;
+				else if ( slopeRatio < MediumSlopeSin )
+					return LocalIncline.MediumUphill;
+				else
+					return LocalIncline.SteepUphill;
+			}
+			else
+			{
+				slopeRatio = -slopeRatio;
+				if (slopeRatio < SmallSlopeSin)
+					return LocalIncline.SmallDownhill;
+				else if (slopeRatio < MediumSlopeSin)
+					return LocalIncline.MediumDownhill;
+				else
+					return LocalIncline.SteepDownhill;
+			}
+		}
+
+		internal static Incline AngleToIncline( float angleRad )
+		{
+			if (angleRad < NavigationMap.MostlyFlat)
+				return Incline.Flat;
+			else if (angleRad < NavigationMap.SmallSlope)
+				return Incline.Small;
+			else if (angleRad < NavigationMap.MediumSlope)
+				return Incline.Medium;
+			else
+				return Incline.Steep;
+		}
+
 		public readonly Pathfinder Pathfinder;
 	}
 

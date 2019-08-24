@@ -14,12 +14,12 @@ namespace TerrainDemo.Navigation
 			_map = map;
 		}
 
-		public IEnumerable<(Waypoint neighbor, float neighborCost)> Neighbors(Actor actor, Waypoint node)
+		public IEnumerable<(Waypoint neighbor, float neighborCost)> Neighbors(Locomotor loco, Waypoint node)
 		{
 			foreach (var dir in Directions.Vector2I)
 			{
 				var neighborPos = node.Position + dir;
-				if (_map.Bounds.Contains(neighborPos) && actor.Locomotor.IsPassable(node.Map, node.Position, neighborPos, out var toMap))
+				if (_map.Bounds.Contains(neighborPos) && loco.IsPassable(node.Map, node.Position, neighborPos, out var toMap))
 					yield return (new Waypoint(toMap, neighborPos), 1);
 			}
 		}

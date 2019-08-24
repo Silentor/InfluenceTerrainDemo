@@ -9,17 +9,6 @@ namespace TerrainDemo.Navigation
 	{
 		public readonly Bounds2i Bounds;
 
-		public ref readonly Block GetBlock( Vector2i worldPosition )
-		{
-			if ( Bounds.Contains( worldPosition ) )
-			{
-				var localPos = World2Local( worldPosition );
-				return ref _grid[localPos.X, localPos.Z];
-			}
-
-			return ref Block.Default;
-		}
-
 		public NavigationGrid( MicroMap map )
 		{
 			Bounds = map.Bounds;
@@ -38,18 +27,9 @@ namespace TerrainDemo.Navigation
 					if (block.IsEmpty)
 						continue;
 
-					var normal = block.Normal;
-					Incline slope;
-					var angle = Vector3.CalculateAngle( Vector3.UnitY, normal );
-					if ( angle < MostlyFlat )
-						slope = Incline.Flat;
-					else if ( angle < SmallSlope )
-						slope = Incline.Small;
-					else if ( angle < MediumSlope )
-						slope = Incline.Medium;
-					else 
-						slope = Incline.Steep;
-
+					var     normal = block.Normal;
+					var     angle = Vector3.CalculateAngle( Vector3.UnitY, normal );
+					var slope = NavigationMap.AngleToIncline( angle );
 					Side2d orientation;
 					if ( Math.Abs( normal.Z ) > Math.Abs( normal.X ) )
 					{
@@ -72,12 +52,18 @@ namespace TerrainDemo.Navigation
 
 
 		}
+		public ref readonly Block GetBlock( Vector2i worldPosition )
+		{
+			if ( Bounds.Contains( worldPosition ) )
+			{
+				var localPos = World2Local( worldPosition );
+				return ref _grid[localPos.X, localPos.Z];
+			}
 
-		private Block[,] _grid;
-		private static readonly float MostlyFlat = MathHelper.DegreesToRadians( 10 );
-		private static readonly float SmallSlope = MathHelper.DegreesToRadians( 40 );
-		private static readonly float MediumSlope = MathHelper.DegreesToRadians( 70 );
-		private static readonly float SteepSlope = MathHelper.DegreesToRadians( 90 );
+			return ref Block.Default;
+		}
+
+		private readonly Block[,] _grid;
 
 		protected Vector2i World2Local(Vector2i worldPosition)
 		{
@@ -118,7 +104,17 @@ namespace TerrainDemo.Navigation
 		Steep
 	}
 
+	public enum LocalIncline : byte
+	{
+		Flat,
+		SmallUphill,
+		MediumUphill,
+		SteepUphill,
+		SmallDownhill,
+		MediumDownhill,
+		SteepDownhill
+	}
 
 
-	
+
 }

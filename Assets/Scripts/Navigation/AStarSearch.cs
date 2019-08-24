@@ -9,7 +9,7 @@ namespace TerrainDemo.Navigation
 {
     public interface IWeightedGraph<TNode> where TNode : IEquatable<TNode>
     {
-        IEnumerable<(TNode neighbor, float neighborCost)> Neighbors(Actor actor, TNode from);
+        IEnumerable<(TNode neighbor, float neighborCost)> Neighbors(Locomotor loco, TNode from);
 
         float Heuristic(TNode @from, TNode to);
     }
@@ -90,7 +90,7 @@ namespace TerrainDemo.Navigation
             var goal = to;
             frontier.Enqueue(start, 0);
 
-            _cameFrom[start] = start;
+            _cameFrom[start] = start;		//consider store tuple in one dicionary
             _costSoFar[start] = 0;
 
             while (frontier.Count > 0)
@@ -101,12 +101,13 @@ namespace TerrainDemo.Navigation
                 if(current.Equals(to))
                     break;
 
-                foreach (var (neighbor, neighborCost) in _graph.Neighbors(actor, current))
+                var currentCost = _costSoFar[current];
+				foreach (var (neighbor, neighborCost) in _graph.Neighbors(actor.Locomotor, current))
                 {
                     if(isValidNode != null && !isValidNode(neighbor))
                         continue;
-
-                    var newCost = _costSoFar[current] + neighborCost;
+                    
+                    var newCost = currentCost + neighborCost;
 
                     if (!_costSoFar.TryGetValue(neighbor, out var storedNextCost) || newCost < storedNextCost)
                     {
@@ -179,7 +180,7 @@ namespace TerrainDemo.Navigation
                 if ( current.Equals(to) )
                     break;
 
-                foreach (var (neighbor, neighborCost) in _graph.Neighbors(actor, current))
+                foreach (var (neighbor, neighborCost) in _graph.Neighbors(actor.Locomotor, current))
                 {
                     if (isValidNode != null && !isValidNode(neighbor))
                         continue;

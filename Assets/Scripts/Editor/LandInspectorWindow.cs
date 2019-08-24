@@ -716,9 +716,9 @@ namespace TerrainDemo.Editor
 				ShowNavigationCellInfo(hoveredNode);
 
 				//Show macro navigate cost info
-				foreach (var (neighborNode, neighborCost) in _runner.NavMap.MacroGraph.Neighbors( null, hoveredNode ))
+				foreach (var (edge, neighbor) in _runner.NavMap.MacroGraph.GetNeighbors( hoveredNode ))
 				{
-					GUILayout.Label($"Cost to {neighborNode.Cell.Id} is {neighborCost}");
+					GUILayout.Label($"Edge to {neighbor.Cell.Id}, distance {edge.Distance:N2}, slope {edge.Slopeness}");
 				}
 			}
 		}
@@ -847,9 +847,9 @@ namespace TerrainDemo.Editor
 		private void ShowNavigationCellInfo(NavigationCell cell)
 		{
 			GUILayout.Label($"Navigation cell {cell.Cell.Id}", EditorStyles.boldLabel);
-			GUILayout.Label($"Avg speed {cell.SpeedModifier:G2}");
+			GUILayout.Label($"Avg speed {cell.SpeedModifier:N2}");
 			GUILayout.Label($"Avg normal {cell.Normal.ToString(1)}");
-			GUILayout.Label($"Roughness {cell.Rougness:G2}");
+			GUILayout.Label($"Roughness {cell.Rougness:N2}");
 		}
 
 		#endregion
@@ -858,7 +858,7 @@ namespace TerrainDemo.Editor
 		{
 			var biomes = from biome in _runner.Biomes
 						 where influence[biome.Index] > 0
-						 select $"{biome.name}: {influence[biome.Index]:G3}";
+						 select $"{biome.name}: {influence[biome.Index]:N3}";
 			return string.Join(", ", biomes.ToArray());
 		}
 

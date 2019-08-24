@@ -11,11 +11,19 @@ namespace TerrainDemo.Navigation
 {
 	public class NavGraph : Graph<NavigationCell, NavEdge>, IWeightedGraph<NavigationCell>
 	{
-		public IEnumerable<(NavigationCell neighbor, float neighborCost)> Neighbors( Actor actor, NavigationCell node )
+		public IEnumerable<(NavigationCell neighbor, float neighborCost)> Neighbors( Locomotor loco, NavigationCell node )
 		{
 			foreach ( var (edge, neighbor) in GetNeighbors(node) )
 			{
-				yield return (neighbor, Math.Max(edge.Distance * edge.Slopeness, 0));
+				var edgeSlopeCost = loco.GetCost( edge.Slopeness );
+				var roughnessCost = neighbor.Rougness;
+				var speedCost = neighbor.SpeedModifier;
+
+				var result = edge.Distance * edgeSlopeCost * roughnessCost * speedCost;
+				if ( float.IsNaN( result ) )
+					continue;
+
+				yield return (neighbor, Math.Max(result, 0));
 			}
 		}
 		public float Heuristic( NavigationCell @from, NavigationCell to )
@@ -93,13 +101,14 @@ namespace TerrainDemo.Navigation
 		    Rougness      = rougness;
 	    }
 
-	    public static NavigationNodeBase CreateMicroCellNavigation( Micro.Cell cell, MicroMap map, TriRunner settings )
+	    public static NavigationNodeBase CreateMicroCellNavigation( Micro.Cell cell, MicroMap map, NavigationGrid navGrid, TriRunner settings )
 	    {
 		    var avgSpeedModifier = 0f;
 		    var avgNormal        = OpenToolkit.Mathematics.Vector3.Zero;
 		    var normalDeviation = 0f;
+		    float roughness = 0;
 
-		    foreach (var blockPosition in cell.BlockPositions)
+			foreach (var blockPosition in cell.BlockPositions)
 		    {
 			    //Calculate average movement cost for cell
 			    ref readonly var block = ref map.GetBlockRef(blockPosition);
@@ -108,23 +117,36 @@ namespace TerrainDemo.Navigation
 			    //Calculate average normal
 			    ref readonly var blockData = ref map.GetBlockData(blockPosition);
 			    avgNormal += blockData.Normal;
-		    }
 
-		    avgSpeedModifier /= cell.BlockPositions.Length;
+			    ref readonly var navBlock = ref navGrid.GetBlock(blockPosition);
+			    switch (navBlock.Normal.Slope)
+			    {
+				    case Incline.Flat:   roughness += 1; break;
+				    case Incline.Small:  roughness += 2; break;
+				    case Incline.Medium: roughness += 10; break;
+				    case Incline.Steep:  roughness += 100; break;
+				    default:             throw new ArgumentOutOfRangeException();
+			    }
+
+			}
+
+			avgSpeedModifier /= cell.BlockPositions.Length;
 		    avgNormal        =  (avgNormal / cell.BlockPositions.Length).Normalized();
+		    roughness /= cell.BlockPositions.Length;
 
-		    float normalDispersion = 0f;
-		    foreach (var blockPosition in cell.BlockPositions)
-		    {
+			//float normalDispersion = 0f;
+
+			//foreach (var blockPosition in cell.BlockPositions)
+			{
 			    //Calculate micro rougness of cell
-			    ref readonly var blockData = ref map.GetBlockData(blockPosition);
-			    var              disp      = Vector3.CalculateAngle(blockData.Normal, avgNormal);
-			    normalDispersion += disp * disp;
+			    //ref readonly var blockData = ref map.GetBlockData(blockPosition);
+			    //var              disp      = Vector3.CalculateAngle(blockData.Normal, avgNormal);
+			    //normalDispersion += disp * disp;
 		    }
 
-		    normalDeviation = Mathf.Sqrt(normalDispersion / cell.BlockPositions.Length);
+		    //normalDeviation = Mathf.Sqrt(normalDispersion / cell.BlockPositions.Length);
 
-			return new NavigationCell( cell, avgSpeedModifier, avgNormal, normalDeviation );
+			return new NavigationCell( cell, avgSpeedModifier, avgNormal, roughness );
         }
 
     }
@@ -132,7 +154,7 @@ namespace TerrainDemo.Navigation
     public class NavEdge
     {
 	    public float Distance;
-	    public float Slopeness;
+	    public LocalIncline Slopeness;
 
 	    public readonly NavigationCell From;
 	    public readonly NavigationCell To;

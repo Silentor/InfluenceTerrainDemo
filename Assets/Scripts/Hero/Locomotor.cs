@@ -11,14 +11,9 @@ namespace TerrainDemo.Hero
 {
 	public class Locomotor
 	{
-		private readonly Type _type;
-		private readonly Actor _owner;
-		private readonly MicroMap _map;
-		private readonly NavigationMap _navMap;
-
 		public Locomotor( Type type, Actor owner, MicroMap map, NavigationMap navMap )
 		{
-			_type = type;
+			_type   = type;
 			_owner  = owner;
 			_map    = map;
 			_navMap = navMap;
@@ -138,17 +133,17 @@ namespace TerrainDemo.Hero
 		}
 
 		/// <summary>
-        /// 
-        /// </summary>
-        /// <param name="fromMap"></param>
-        /// <param name="fromPos"></param>
-        /// <param name="toPos"></param>
-        /// <param name="toMap"></param>
-        /// <returns></returns>
-        public bool IsPassable(BaseBlockMap fromMap, Vector2i fromPos, Vector2i toPos, out BaseBlockMap toMap) //todo move to Locomotor component
-        {
-            //Assume that fromPos -> toPos is small for simplicity
-            /*
+		/// 
+		/// </summary>
+		/// <param name="fromMap"></param>
+		/// <param name="fromPos"></param>
+		/// <param name="toPos"></param>
+		/// <param name="toMap"></param>
+		/// <returns></returns>
+		public bool IsPassable(BaseBlockMap fromMap, Vector2i fromPos, Vector2i toPos, out BaseBlockMap toMap) //todo move to Locomotor component
+		{
+			//Assume that fromPos -> toPos is small for simplicity
+			/*
             if (Vector2i.ManhattanDistance(fromPos, toPos) > 1)
             {
                 toMap = null;
@@ -156,71 +151,102 @@ namespace TerrainDemo.Hero
             }
             */
 
-            //var (newMap, newOverlapState) = _mainMap.GetOverlapState(toPos);
+			//var (newMap, newOverlapState) = _mainMap.GetOverlapState(toPos);
 
-            //Check special cases with map change
-            //ref readonly var fromData = ref fromMap.GetBlockData(fromPos);
-            //ref readonly var toData = ref BlockData.Empty;
-            //toMap = null;
-            //switch (newOverlapState)
-            //{
-            //    //Check from object map to main map transition
-            //    case BlockOverlapState.Under:
-            //    case BlockOverlapState.None:
-            //    {
-            //        toData = ref _mainMap.GetBlockData(toPos);
-            //        toMap = _mainMap;
-            //    }
-            //        break;
+			//Check special cases with map change
+			//ref readonly var fromData = ref fromMap.GetBlockData(fromPos);
+			//ref readonly var toData = ref BlockData.Empty;
+			//toMap = null;
+			//switch (newOverlapState)
+			//{
+			//    //Check from object map to main map transition
+			//    case BlockOverlapState.Under:
+			//    case BlockOverlapState.None:
+			//    {
+			//        toData = ref _mainMap.GetBlockData(toPos);
+			//        toMap = _mainMap;
+			//    }
+			//        break;
 
-            //    case BlockOverlapState.Above:
-            //    {
-            //        ref readonly var aboveBlockData = ref newMap.GetBlockData(toPos);
+			//    case BlockOverlapState.Above:
+			//    {
+			//        ref readonly var aboveBlockData = ref newMap.GetBlockData(toPos);
 
-            //        //Can we pass under floating block?
-            //        if (aboveBlockData.MinHeight > fromData.MaxHeight + 2)
-            //        {
-            //            toData = ref fromMap.GetBlockData(toPos);
-            //            toMap = fromMap;
-            //        }
-            //        else
-            //        {
-            //            toData = ref aboveBlockData;
-            //            toMap = newMap;
-            //        }
-            //    }
-            //        break;
+			//        //Can we pass under floating block?
+			//        if (aboveBlockData.MinHeight > fromData.MaxHeight + 2)
+			//        {
+			//            toData = ref fromMap.GetBlockData(toPos);
+			//            toMap = fromMap;
+			//        }
+			//        else
+			//        {
+			//            toData = ref aboveBlockData;
+			//            toMap = newMap;
+			//        }
+			//    }
+			//        break;
 
-            //    case BlockOverlapState.Overlap:
-            //    {
-            //        toData = ref newMap.GetBlockData(toPos);
-            //        toMap = newMap;
-            //    }
-            //        break;
+			//    case BlockOverlapState.Overlap:
+			//    {
+			//        toData = ref newMap.GetBlockData(toPos);
+			//        toMap = newMap;
+			//    }
+			//        break;
 
-            //    default:
-            //        throw new ArgumentOutOfRangeException();
-            //}
+			//    default:
+			//        throw new ArgumentOutOfRangeException();
+			//}
 
-            //ref readonly var fromData = ref fromMap.GetBlockData(fromPos);
-            ref readonly var toData = ref fromMap.GetBlockData(toPos);
-            ref readonly var toNavBlock = ref _navMap.NavGrid.GetBlock( toPos );
+			//ref readonly var fromData = ref fromMap.GetBlockData(fromPos);
+			ref readonly var toData     = ref fromMap.GetBlockData(toPos);
+			ref readonly var toNavBlock = ref _navMap.NavGrid.GetBlock( toPos );
 
-            toMap = fromMap;
+			toMap = fromMap;
 
-            if (toData != BlockData.Empty)
-            {
-                if (toNavBlock.Normal.Slope < Incline.Medium)
-                {
-                    //Can step on new block
-                    //Assert.IsNotNull(toMap);
-                    return true;
-                }
-            }
+			if (toData != BlockData.Empty)
+			{
+				if (CheckBlock( toNavBlock))
+				{
+					//Can step on new block
+					//Assert.IsNotNull(toMap);
+					return true;
+				}
+			}
 
-            //No pass 
-            return false;
-        }
+			//No pass 
+			return false;
+		}
+		public float GetCost( LocalIncline edgeSlopeness )
+		{
+			return LocalInclinationCost[(int)_type, (int)edgeSlopeness];
+		}
+
+		private readonly Type _type;
+		private readonly Actor _owner;
+		private readonly MicroMap _map;
+		private readonly NavigationMap _navMap;
+		private static readonly float[,] LocalInclinationCost = {
+																	//Biped
+			                                                        {
+				                                                        1, 
+				                                                        1.5f, 
+				                                                        10, 
+				                                                        float.NaN,
+																		0.5f,
+																		2,
+																		float.NaN
+																	},
+																	//Wheel
+			                                                        {
+				                                                        1,
+				                                                        1.5f,
+				                                                        float.NaN,
+				                                                        float.NaN,
+				                                                        1f,
+				                                                        10,
+				                                                        float.NaN
+																	}
+																};
 
 		protected bool CheckBlock( in NavigationGrid.Block block )
 		{

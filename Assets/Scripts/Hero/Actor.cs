@@ -93,7 +93,7 @@ namespace TerrainDemo.Hero
             Nav = new Navigator(this, map, navMap);
             _isHero = isHero;
 
-            Speed = 6;
+            Speed = 3f;
         }
 
         public Actor(MicroMap map, NavigationMap navMap, Vector2i startPosition, Vector2 direction, bool fpsMode, string name, Locomotor.Type loco) 
@@ -270,19 +270,6 @@ namespace TerrainDemo.Hero
                 var collidedPos = Locomotor.Step(_currentMap, _mapPosition, newMapPosition, out _currentMap);
                 newMapPosition = collidedPos;
                 _currentBlockPos = (Vector2i) collidedPos;
-
-                //return false;
-
-                //Cache new block properties
-                //_currentBlockPos = newBlockPosition;
-                //_currentOverlapState = newOverlapState;
-                //var currentBlockNormal = _currentMap.GetBlockData(_currentBlockPos).Normal;           
-                //var incline  = Vector3.Dot((Vector3) rotatedDirection, currentBlockNormal);
-                //Remap dot value to speed modifier -0.5 = 0, 0 = 1, 1 = 2 (prevent climb to over 60 deg)
-                //_currentBlockInclinationSpeedModifier = Mathf.Clamp(
-                //-0.66666666666f * incline * incline + 1.66666666666f * incline + 1, 0, 2);
-                //var blockMat = _currentMap.GetBlockRef(_currentBlockPos).Top;
-                //_currentBlockMaterialSpeedModifier = _mainMap.GetBlockSettings(blockMat).SpeedModifier;
             }
 
             if (DebugLocomotion)
