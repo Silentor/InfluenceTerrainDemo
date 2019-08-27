@@ -19,7 +19,7 @@ namespace TerrainDemo.Micro
             _originalHeightmap = new Heights[Bounds.Size.X + 1, Bounds.Size.Z + 1];
         }
 
-        public override void SetHeights(IEnumerable<Vector2i> positions, IEnumerable<Heights> heights)
+        public override void SetHeights(IEnumerable<GridPos> positions, IEnumerable<Heights> heights)
         {
             var posEnumerator = positions.GetEnumerator();
             var infEnumerator = heights.GetEnumerator();
@@ -293,10 +293,10 @@ namespace TerrainDemo.Micro
             var timer = Stopwatch.StartNew();
 
             //Modify heightmap to proper blend with parent map
-            for (int x = 0; x < Bounds.Size.X; x++)
-                for (int z = 0; z < Bounds.Size.Z; z++)
+            for (var x = 0; x < Bounds.Size.X; x++)
+                for (var z = 0; z < Bounds.Size.Z; z++)
                 {
-                    var worldBlockPos = Local2World((x, z));
+                    var worldBlockPos = Local2World(x, z);
                     ref readonly var parentBlock = ref ParentMap.GetBlockRef(worldBlockPos);
 
                     if (!parentBlock.IsEmpty && !_blocks[x, z].IsEmpty)
@@ -431,7 +431,7 @@ namespace TerrainDemo.Micro
             UnityEngine.Debug.Log($"{Name} snapped in {timer.ElapsedMilliseconds}");
         }
 
-        public override (ObjectMap map, BlockOverlapState state) GetOverlapState(Vector2i worldPosition)
+        public override (ObjectMap map, BlockOverlapState state) GetOverlapState(GridPos worldPosition)
         {
             return ParentMap.GetOverlapState(worldPosition);
         }

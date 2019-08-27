@@ -9,11 +9,11 @@ namespace TerrainDemo.Navigation
     public readonly struct Waypoint : IEquatable<Waypoint>
     {
         public readonly BaseBlockMap Map;
-        public readonly Vector2i Position;
+        public readonly GridPos Position;
 
         public static readonly Waypoint Empty = new Waypoint();
 
-        public Waypoint([NotNull] BaseBlockMap map, Vector2i position)
+        public Waypoint([NotNull] BaseBlockMap map, GridPos position)
         {
             Map = map ?? throw new ArgumentNullException(nameof(map));
             Position = position;

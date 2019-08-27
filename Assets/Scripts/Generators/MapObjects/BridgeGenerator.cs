@@ -27,19 +27,19 @@ namespace TerrainDemo.Generators.MapObjects
             var start = -_length / 2;
             var finish = _length / 2;
             var result = new Bounds2i(
-                new Vector2i(start + instancePosition.X, instancePosition.Y), 
-                new Vector2i(finish + instancePosition.X, _width - 1 + instancePosition.Y));
+                new GridPos(start + instancePosition.X, instancePosition.Y), 
+                new GridPos(finish + instancePosition.X, _width - 1 + instancePosition.Y));
             _bridgeMiddle = (result.Min.X + result.Max.X) / 2;
             return result;
         }
 
-        protected override bool IsBlockExist(Vector2i blockPosition)
+        protected override bool IsBlockExist(GridPos blockPosition)
         {
             //Bounds is described bridge blocks perfectly
             return true;
         }
 
-        protected override void GenerateHeight(Vector2i vertexPosition, float instanceHeight, out Heights heightVertex)
+        protected override void GenerateHeight(GridPos vertexPosition, float instanceHeight, out Heights heightVertex)
         {
             var bounds = InstanceBounds;
             var stairwayBlockHeight =
@@ -59,7 +59,7 @@ namespace TerrainDemo.Generators.MapObjects
             heightVertex = new Heights(stairwayBlockHeight, baseBlockHeight, baseBlockHeight);
         }
 
-        protected override void GenerateBlock(Vector2i blockPosition, out Blocks block)
+        protected override void GenerateBlock(GridPos blockPosition, out Blocks block)
         {
             block = new Blocks(BlockType.Stone, BlockType.Empty);
         }

@@ -31,8 +31,8 @@ namespace TerrainDemo.Hero
 		{
 			for (var i = 0; i < 2; i++)
 			{
-				var fromBlock = (Vector2i) fromPos;
-				var toBlock   = (Vector2i) toPos;
+				var fromBlock = (GridPos) fromPos;
+				var toBlock   = (GridPos) toPos;
 
 				//Debug.Log($"{Time.frameCount} - {i}: From pos {fromPos} block {fromBlock} to pos {toPos} block {toBlock}");
 
@@ -140,7 +140,7 @@ namespace TerrainDemo.Hero
 		/// <param name="toPos"></param>
 		/// <param name="toMap"></param>
 		/// <returns></returns>
-		public bool IsPassable(BaseBlockMap fromMap, Vector2i fromPos, Vector2i toPos, out BaseBlockMap toMap) //todo move to Locomotor component
+		public bool IsPassable(BaseBlockMap fromMap, GridPos fromPos, GridPos toPos, out BaseBlockMap toMap) //todo move to Locomotor component
 		{
 			//Assume that fromPos -> toPos is small for simplicity
 			/*

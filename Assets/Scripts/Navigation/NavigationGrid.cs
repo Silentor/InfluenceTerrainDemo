@@ -52,7 +52,7 @@ namespace TerrainDemo.Navigation
 
 
 		}
-		public ref readonly Block GetBlock( Vector2i worldPosition )
+		public ref readonly Block GetBlock(GridPos worldPosition )
 		{
 			if ( Bounds.Contains( worldPosition ) )
 			{
@@ -65,9 +65,9 @@ namespace TerrainDemo.Navigation
 
 		private readonly Block[,] _grid;
 
-		protected Vector2i World2Local(Vector2i worldPosition)
+		protected GridPos World2Local(GridPos worldPosition)
 		{
-			return worldPosition - Bounds.Min;
+			return new GridPos(worldPosition.X - Bounds.Min.X, worldPosition.Z - Bounds.Min.Z);
 		}
 
 

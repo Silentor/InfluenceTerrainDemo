@@ -59,7 +59,7 @@ namespace TerrainDemo.Visualization
                     var meshGO = new GameObject("MicroMapChunk");
                     meshGO.transform.SetParent(GetMeshRoot());
 
-                    var chunkBound = new Bounds2i(new Vector2i(x, z), ChunkSize, ChunkSize);
+                    var chunkBound = new Bounds2i(new GridPos(x, z), ChunkSize, ChunkSize);
                     if (renderSettings.RenderMode == TerrainRenderMode.Blocks)
                     {
                         var chunkMeshes = _mesher.CreateMinecraftMesh(map, chunkBound, renderSettings);

@@ -33,9 +33,9 @@ namespace TerrainDemo.Hero
         /// Find the path to destination and start moving
         /// </summary>
         /// <param name="destination"></param>
-        public void Go(Vector2i destination)
+        public void Go(GridPos destination)
         {
-            var blockDestination = (Vector2i) destination;
+            var blockDestination = (GridPos) destination;
 
             if (Owner.BlockPosition == blockDestination)
                 return;

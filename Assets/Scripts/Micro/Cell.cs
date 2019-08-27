@@ -14,22 +14,22 @@ namespace TerrainDemo.Micro
     {
         public readonly Coord Id;
         public readonly Macro.Cell Macro;
-        public readonly Vector2i Center;
-        public readonly Vector2i[] BlockPositions;
-        public readonly Vector2i[] VertexPositions;
+        public readonly GridPos Center;
+        public readonly GridPos[] BlockPositions;
+        public readonly GridPos[] VertexPositions;
         public readonly Bounds2i Bounds;
 
         public Cell(Macro.Cell macro, MicroMap map)
         {
             Id = macro.Coords;
             Macro = macro;
-            Center = (Vector2i)macro.Center;
+            Center = (GridPos)macro.Center;
             _map = map;
             BlockPositions = Rasterization.ConvexToBlocks(macro.Contains, macro.Bounds);
 
             Bounds = (Bounds2i) macro.Bounds;
 
-            var vertices = new List<Vector2i>(BlockPositions);
+            var vertices = new List<GridPos>(BlockPositions);
             foreach (var blockPosition in BlockPositions)
             {
                 if (!vertices.Contains(blockPosition + Vector2i.Forward))

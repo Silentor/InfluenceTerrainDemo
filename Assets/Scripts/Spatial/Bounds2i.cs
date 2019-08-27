@@ -10,25 +10,25 @@ using Vector3 = UnityEngine.Vector3;
 
 namespace TerrainDemo.Spatial
 {
-    public readonly struct Bounds2i : IEnumerable<Vector2i>, IEquatable<Bounds2i>
+    public readonly struct Bounds2i : IEnumerable<GridPos>, IEquatable<Bounds2i>
     {
-        public readonly Vector2i Min;
-        public readonly Vector2i Max;
+        public readonly GridPos Min;
+        public readonly GridPos Max;
 
         public Vector2i Size => Max - Min + Vector2i.One;
-        public Vector2i Corner1 => Min;
-        public Vector2i Corner2 => new Vector2i(Min.X, Max.Z);
-        public Vector2i Corner3 => Max;
-        public Vector2i Corner4 => new Vector2i(Max.X, Min.Z);
+        public GridPos Corner1 => Min;
+        public GridPos Corner2 => new GridPos(Min.X, Max.Z);
+        public GridPos Corner3 => Max;
+        public GridPos Corner4 => new GridPos(Max.X, Min.Z);
 
         public bool IsEmpty => Size == Vector2i.Zero;
 
-        public static readonly Bounds2i Empty = new Bounds2i(Vector2i.Zero, Vector2i.Zero);
-        public static readonly Bounds2i Infinite = new Bounds2i(new Vector2i(-10000, -10000), new Vector2i(10000, 10000));
+        public static readonly Bounds2i Empty = new Bounds2i(GridPos.Zero, GridPos.Zero);
+        public static readonly Bounds2i Infinite = new Bounds2i(GridPos.Min, GridPos.Max);
         private const float RoundBiasValue = 0.5f;
         //private static readonly Vector3 RoundBias = new Vector3(RoundBiasValue, RoundBiasValue);
 
-        public Bounds2i(Vector2i min, Vector2i max)
+        public Bounds2i(GridPos min, GridPos max)
         {
             if(min.X > max.X || min.Z > max.Z) throw new ArgumentException($"Min point {min} greater then Max {max} ");
 
@@ -41,22 +41,22 @@ namespace TerrainDemo.Spatial
         /// </summary>
         /// <param name="center"></param>
         /// <param name="extends"></param>
-        public Bounds2i(Vector2i center, int extends) : this(center - Vector2i.One * extends, center + Vector2i.One * extends)
+        public Bounds2i(GridPos center, int extends) : this(center - Vector2i.One * extends, center + Vector2i.One * extends)
         {
         }
 
-        public Bounds2i(Vector2i min, int xSize, int zSize) : this(min, new Vector2i(min.X + xSize - 1, min.Z + zSize - 1))
+        public Bounds2i(GridPos min, int xSize, int zSize) : this(min, new GridPos(min.X + xSize - 1, min.Z + zSize - 1))
         {
         }
     
         [Pure]
-        public bool Contains(Vector2i pos)
+        public bool Contains(GridPos pos)
         {
             return pos.X >= Min.X && pos.X <= Max.X &&
                    pos.Z >= Min.Z && pos.Z <= Max.Z;
         }
 
-        public IEnumerable<Vector2i> Substract(Bounds2i b)
+        public IEnumerable<GridPos> Substract(Bounds2i b)
         {
             return this.Where(v => !b.Contains(v));
         }
@@ -70,7 +70,7 @@ namespace TerrainDemo.Spatial
             int num4 = Math.Min(Min.Z + Size.Z, b.Min.Z + b.Size.Z);
 
             if ((num2 > x) && (num4 > z))
-                return new Bounds2i(new Vector2i(x, z), num2 - x, num4 - z);
+                return new Bounds2i(new GridPos(x, z), num2 - x, num4 - z);
 
             return Empty;
         }
@@ -119,11 +119,6 @@ namespace TerrainDemo.Spatial
 
         #endregion
 
-        public static Bounds2i operator *(Bounds2i a, int b)
-        {
-            return new Bounds2i(a.Min * b, a.Max*b);
-        }
-
         public static explicit operator Bounds(Bounds2i input)
         {
             var size = new Vector3(input.Max.X - input.Min.X + 1, 0, input.Max.Z - input.Min.Z + 1);
@@ -138,17 +133,17 @@ namespace TerrainDemo.Spatial
             var xMax = input.max.x % 1 == 0 ? input.max.x - RoundBiasValue : input.max.x;
             var yMax = input.max.z % 1 == 0 ? input.max.z - RoundBiasValue : input.max.z;
 
-            return new Bounds2i((Vector2i)(new Vector2(xMin, yMin)), (Vector2i)(new Vector2(xMax, yMax)));         //To bias float bounds values to integer
+            return new Bounds2i((GridPos)(new Vector2(xMin, yMin)), (GridPos)(new Vector2(xMax, yMax)));         //To bias float bounds values to integer
         }
 
         public static explicit operator Bounds2i(Box2 input)
         {
-            var xMin = input.Left % 1 == 0 ? input.Left + RoundBiasValue : input.Left;
+            var xMin = input.Left % 1 == 0 ? input.Left + RoundBiasValue : input.Left;				//todo is it need?
             var yMin = input.Bottom % 1 == 0 ? input.Bottom + RoundBiasValue : input.Bottom;
             var xMax = input.Right % 1 == 0 ? input.Right - RoundBiasValue : input.Right;
             var yMax = input.Top % 1 == 0 ? input.Top - RoundBiasValue : input.Top;
 
-            return new Bounds2i((Vector2i)(new Vector2(xMin, yMin)), (Vector2i)(new Vector2(xMax, yMax)));         //To bias float bounds values to integer
+            return new Bounds2i((GridPos)(new Vector2(xMin, yMin)), (GridPos)(new Vector2(xMax, yMax)));         //To bias float bounds values to integer
         }
 
         #region Enumerable
@@ -157,11 +152,11 @@ namespace TerrainDemo.Spatial
         /// Enumerate all containing blocks
         /// </summary>
         /// <returns></returns>
-        public IEnumerator<Vector2i> GetEnumerator()
+        public IEnumerator<GridPos> GetEnumerator()
         {
             for (var x = Min.X; x <= Max.X; x++)
-            for (var z = Min.Z; z <= Max.Z; z++)
-                yield return new Vector2i(x, z);
+	            for (var z = Min.Z; z <= Max.Z; z++)
+		            yield return new GridPos(x, z);
         }
 
 

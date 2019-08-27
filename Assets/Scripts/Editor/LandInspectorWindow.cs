@@ -39,8 +39,8 @@ namespace TerrainDemo.Editor
 		private Renderer.TerrainRenderMode _oldRenderMode;
 		private Renderer.TerrainLayerToRender _oldRenderLayer;
 		private readonly Dictionary<BlockType, Color> _defaultBlockColor = new Dictionary<BlockType, Color>();
-		private (Vector2i position, Blocks block, BaseBlockMap source)? _selectedBlock = null;
-		private (Vector2i position, Heights vertex, BaseBlockMap source)? _selectedVertex = null;
+		private (GridPos position, Blocks block, BaseBlockMap source)? _selectedBlock = null;
+		private (GridPos position, Heights vertex, BaseBlockMap source)? _selectedVertex = null;
 		private static readonly float Deg90ToRadians = MathHelper.DegreesToRadians(90);
 		private InspectorMode _inspectorMode;
 
@@ -216,7 +216,7 @@ namespace TerrainDemo.Editor
 					Mathf.Round(input.CursorPosition.Z));
 				if (Vector3.Distance(input.CursorPosition, roundedCursorPosition) < 0.2f)
 				{
-					var position = new Vector2i(roundedCursorPosition.X, roundedCursorPosition.Z);
+					var position = new GridPos(roundedCursorPosition.X, roundedCursorPosition.Z);
 					input.HoveredHeightVertex = (position, hoveredBlock.Value.source.GetHeightRef(position), hoveredBlock.Value.source);
 				}
 
@@ -330,7 +330,7 @@ namespace TerrainDemo.Editor
 		{
 			//Find near blocks
 			const int visualizeRadius = 20;
-			var bounds = new Bounds2i((Vector2i)input.CursorRay.Origin.ConvertTo2D(), visualizeRadius);
+			var bounds = new Bounds2i((GridPos)input.CursorRay.Origin.ConvertTo2D(), visualizeRadius);
 			foreach (var position in bounds)
 			{
 				var overlap = MicroMap.GetOverlapState(position);
@@ -348,7 +348,7 @@ namespace TerrainDemo.Editor
 					DrawBlockNormal(position, in MicroMap.GetBlockData(position), Color.blue);
 				}
 
-				void DrawBlockNormal(Vector2i pos, in BlockData blockData, Color color)
+				void DrawBlockNormal(GridPos pos, in BlockData blockData, Color color)
 				{
 					var blockCenterPoint = new Vector3(pos.X + 0.5f, blockData.Height, pos.Z + 0.5f);
 					if (Vector3.Distance(input.CursorRay.Origin, blockCenterPoint) < visualizeRadius)
@@ -496,7 +496,7 @@ namespace TerrainDemo.Editor
 		/// <param name="color"></param>
 		/// <param name="width"></param>
 		/// <param name="normal"></param>
-		private void DrawBlock(Vector2i position, Color color, uint width = 0, Vector3? normal = null)
+		private void DrawBlock(GridPos position, Color color, uint width = 0, Vector3? normal = null)
 		{
 			Handles.color = color;
 			DrawRectangle.ForHandle(BlockInfo.GetBounds(position), color, width);
@@ -562,7 +562,7 @@ namespace TerrainDemo.Editor
         }
         */
 
-		private void DrawBlock(Vector2i position, in Blocks block, in Heights c00, in Heights c01, in Heights c11, in Heights c10, Color32? overrideColor = null)
+		private void DrawBlock(GridPos position, in Blocks block, in Heights c00, in Heights c01, in Heights c11, in Heights c10, Color32? overrideColor = null)
 		{
 			if (block.IsEmpty)
 				return;
@@ -583,7 +583,7 @@ namespace TerrainDemo.Editor
 				DrawQuad(position, color, c00.Base, c01.Base, c11.Base, c10.Base);
 			}
 
-			void DrawQuad(Vector2i pos, Color32 color, float h00, float h01, float h11, float h10)
+			void DrawQuad(GridPos pos, Color32 color, float h00, float h01, float h11, float h10)
 			{
 				var (min, max) = BlockInfo.GetWorldBounds(pos);
 
@@ -610,7 +610,7 @@ namespace TerrainDemo.Editor
 			}
 		}
 
-		private void DrawHeightVertex((Vector2i position, Heights vertex, BaseBlockMap source) vertex, Color32? overrideColor = null)
+		private void DrawHeightVertex((GridPos position, Heights vertex, BaseBlockMap source) vertex, Color32? overrideColor = null)
 		{
 			if (Event.current.type == EventType.Repaint)
 			{
@@ -759,7 +759,7 @@ namespace TerrainDemo.Editor
 			}
 		}
 
-		private void ShowBlockInfo((Vector2i position, Blocks block, BaseBlockMap source) block2, bool isSelected, bool showHeightmap)
+		private void ShowBlockInfo((GridPos position, Blocks block, BaseBlockMap source) block2, bool isSelected, bool showHeightmap)
 		{
 			var (position, block, source) = block2;
 			GUILayout.Label(isSelected ? $"Selected block {position} - {source.Name}" : $"Hovered block {position} - {source.Name}", EditorStyles.boldLabel);
@@ -818,7 +818,7 @@ namespace TerrainDemo.Editor
 				GUILayout.Label("Empty block");
 		}
 
-		private void ShowNavigationBlockInfo( Vector2i position, bool isSelected )
+		private void ShowNavigationBlockInfo(GridPos position, bool isSelected )
 		{
 			GUILayout.Label(isSelected ? $"Selected nav block {position}" : $"Hovered nav block {position}", EditorStyles.boldLabel);
 
@@ -827,7 +827,7 @@ namespace TerrainDemo.Editor
 			GUILayout.Label( $"Slope: {navBlock.Normal.Slope}, orientation: {navBlock.Normal.Orientation}" );
 		}
 
-		private void ShowHeightVertexInfo((Vector2i position, Heights vertex, BaseBlockMap source) vertex, bool isSelected)
+		private void ShowHeightVertexInfo((GridPos position, Heights vertex, BaseBlockMap source) vertex, bool isSelected)
 		{
 			if (isSelected)
 				GUILayout.Label($"Selected height {vertex.position} - {vertex.source.Name}", EditorStyles.boldLabel);
@@ -1169,12 +1169,12 @@ namespace TerrainDemo.Editor
 			/// <summary>
 			/// Mouse hovered block
 			/// </summary>
-			public (Vector2i position, Blocks block, BaseBlockMap source)? HoveredBlock;
+			public (GridPos position, Blocks block, BaseBlockMap source)? HoveredBlock;
 
 			/// <summary>
 			/// Selected block position
 			/// </summary>
-			public (Vector2i position, Blocks block, BaseBlockMap source)? SelectedBlock;
+			public (GridPos position, Blocks block, BaseBlockMap source)? SelectedBlock;
 
 			/// <summary>
 			/// Distance between <see cref="View"/> and <see cref="CursorPosition"/>
@@ -1187,9 +1187,9 @@ namespace TerrainDemo.Editor
 
 			public MacroVert SelectedVert;
 
-			public (Vector2i position, Heights vertex, BaseBlockMap source)? HoveredHeightVertex;
+			public (GridPos position, Heights vertex, BaseBlockMap source)? HoveredHeightVertex;
 
-			public (Vector2i position, Heights vertex, BaseBlockMap source)? SelectedHeightVertex;
+			public (GridPos position, Heights vertex, BaseBlockMap source)? SelectedHeightVertex;
 
 			public int FrameCount;
 		}

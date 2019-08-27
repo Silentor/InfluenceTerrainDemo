@@ -24,15 +24,15 @@ namespace TerrainDemo.Generators.MapObjects
 
         protected override Bounds2i CalculateBounds(Vector2 instancePosition)
         {
-            return new Bounds2i((Vector2i)instancePosition, _radius);
+            return new Bounds2i((GridPos)instancePosition, _radius);
         }
 
-        protected override bool IsBlockExist(Vector2i blockPosition)
+        protected override bool IsBlockExist(GridPos blockPosition)
         {
             return Vector2.Distance(BlockInfo.GetWorldCenter(blockPosition), InstancePosition) < _radius;
         }
 
-        protected override void GenerateHeight(Vector2i vertexPosition, float instanceHeight, out Heights heightVertex)
+        protected override void GenerateHeight(GridPos vertexPosition, float instanceHeight, out Heights heightVertex)
         {
             ref readonly var parentHeightVertex = ref _parentMap.GetHeightRef(vertexPosition);
             var mainMapBlockHeight = parentHeightVertex.Nominal;
@@ -41,7 +41,7 @@ namespace TerrainDemo.Generators.MapObjects
             heightVertex = new Heights(mainHeight, mainMapBlockHeight - 3);
         }
 
-        protected override void GenerateBlock(Vector2i blockPosition, out Blocks block)
+        protected override void GenerateBlock(GridPos blockPosition, out Blocks block)
         {
             block = new Blocks(BlockType.Grass, BlockType.Empty);
         }

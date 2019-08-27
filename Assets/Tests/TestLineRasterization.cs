@@ -37,8 +37,8 @@ namespace TerrainDemo.Tests
                 //var p2 = new Vector2i(_handle2.transform.position.x, _handle2.transform.position.z);
                 var p1 = new Vector2(_handle1.transform.position.x, _handle1.transform.position.z);
                 var p2 = new Vector2(_handle2.transform.position.x, _handle2.transform.position.z);
-                var pi1 = (Vector2i) p1;
-                var pi2 = (Vector2i)p2;
+                var pi1 = (GridPos) p1;
+                var pi2 = (GridPos)p2;
 
                 //var points = Rasterization.DDA(p1, p2, true).ToArray();     Debug.Log("Rasterization.DDA conservative");
                 var pointsDDA = Rasterization.DDA(p1, p2, false).ToArray(); 

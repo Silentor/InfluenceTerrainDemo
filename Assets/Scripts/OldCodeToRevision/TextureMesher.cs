@@ -380,32 +380,32 @@ namespace TerrainDemo.OldCodeToRevision
             var bc = chunk.BlocksCount;
             var blocks = new ChunkMaskBlock[chunk.BlocksCount + 2*border, chunk.BlocksCount + 2*border];
 
-            CopyBlocks(chunk, blocks, new Bounds2i(Vector2i.Zero, Vector2i.One*(bc - 1)), Vector2i.One*border);
+            CopyBlocks(chunk, blocks, new Bounds2i(GridPos.Zero, new GridPos(bc - 1)), new GridPos(border));
 
             if (border > 0)
             {
                 if(bottomleft != null)
-                    CopyBlocks(bottomleft, blocks, new Bounds2i(Vector2i.One * (bc - border), border, border), Vector2i.Zero);
+                    CopyBlocks(bottomleft, blocks, new Bounds2i(new GridPos (bc - border), border, border), GridPos.Zero);
                 if (bottom != null)
-                    CopyBlocks(bottom, blocks, new Bounds2i(new Vector2i(0, bc - border), bc, border), new Vector2i(border, 0));
+                    CopyBlocks(bottom, blocks, new Bounds2i(new GridPos(0, bc - border), bc, border), new GridPos(border, 0));
                 if (bottomright != null)
-                    CopyBlocks(bottomright, blocks, new Bounds2i(new Vector2i(0, bc - border), border, border), new Vector2i(bc + border, 0));
+                    CopyBlocks(bottomright, blocks, new Bounds2i(new GridPos(0, bc - border), border, border), new GridPos(bc + border, 0));
                 if (left != null)
-                    CopyBlocks(left, blocks, new Bounds2i(new Vector2i(bc - border, 0), border, bc), new Vector2i(0, border));
+                    CopyBlocks(left, blocks, new Bounds2i(new GridPos(bc - border, 0), border, bc), new GridPos(0, border));
                 if (right != null)
-                    CopyBlocks(right, blocks, new Bounds2i(new Vector2i(0, 0), border, bc), new Vector2i(bc+border, border));
+                    CopyBlocks(right, blocks, new Bounds2i(new GridPos(0, 0), border, bc), new GridPos(bc+border, border));
                 if (topleft != null)
-                    CopyBlocks(topleft, blocks, new Bounds2i(new Vector2i(bc - border, 0), border, border), new Vector2i(0, bc + border));
+                    CopyBlocks(topleft, blocks, new Bounds2i(new GridPos(bc - border, 0), border, border), new GridPos(0, bc + border));
                 if (top != null)
-                    CopyBlocks(top, blocks, new Bounds2i(new Vector2i(0, 0), bc, border), new Vector2i(border, bc+border));
+                    CopyBlocks(top, blocks, new Bounds2i(new GridPos(0, 0), bc, border), new GridPos(border, bc+border));
                 if (topright != null)
-                    CopyBlocks(topright, blocks, new Bounds2i(Vector2i.Zero, border, border), new Vector2i(bc + border));
+                    CopyBlocks(topright, blocks, new Bounds2i(GridPos.Zero, border, border), new GridPos(bc + border));
             }
 
             return blocks;
         }
 
-        private void CopyBlocks(Chunk src, ChunkMaskBlock[,] dest, Bounds2i srcBounds, Vector2i destPosition)
+        private void CopyBlocks(Chunk src, ChunkMaskBlock[,] dest, Bounds2i srcBounds, GridPos destPosition)
         {
             for (int z = srcBounds.Min.Z; z <= srcBounds.Max.Z; z++)
             {

@@ -27,7 +27,7 @@ namespace TerrainDemo.Navigation
 		public float Heuristic(Waypoint @from, Waypoint to)
 		{
 			//return Vector2i.ManhattanDistance(from.Position, to.Position); //7980 blocks, 186 msec, 203 meters
-			return Vector2i.Distance(@from.Position, to.Position); //11463 blocks, 194 msec, 171 meters
+			return GridPos.Distance(@from.Position, to.Position); //11463 blocks, 194 msec, 171 meters
 			//return Vector2i.RoughDistance(from.Position, to.Position);  //11703 blocks, 198 msec, 171 meters
 			//return Vector2i.DistanceSquared(from.Position, to.Position); //231 blocks, 8 msec, 177 meters
 		}

@@ -81,14 +81,14 @@ namespace TerrainDemo.Generators
             //todo Add cell generation timer
         }
 
-        public virtual BlockLayers GenerateBlock3(Vector2i position, in Heights v00, in Heights v01,
+        public virtual BlockLayers GenerateBlock3(GridPos position, in Heights v00, in Heights v01,
             in Heights v10,
             in Heights v11)
         {
             return new BlockLayers(Zone.Biome.DefaultMainBlock.Block, Zone.Biome.DefaultUndergroundBlock.Block);
         }
 
-        public virtual Heights GenerateHeight(Vector2i position, in Heights macroHeight)
+        public virtual Heights GenerateHeight(GridPos position, in Heights macroHeight)
         {
             return macroHeight;
         }

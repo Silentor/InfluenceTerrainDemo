@@ -30,7 +30,7 @@ namespace TerrainDemo.Micro
             Debug.Log($"Created {Name} blockmap {Bounds.Size.X} x {Bounds.Size.Z} = {Bounds.Size.X * Bounds.Size.Z} blocks");
         }
 
-        public virtual void SetHeights(IEnumerable<Vector2i> positions, IEnumerable<Heights> heights)
+        public virtual void SetHeights(IEnumerable<GridPos> positions, IEnumerable<Heights> heights)
         {
             var posEnumerator = positions.GetEnumerator();
             var infEnumerator = heights.GetEnumerator();
@@ -96,7 +96,7 @@ namespace TerrainDemo.Micro
             }
         }
 
-        public void SetBlocks(IEnumerable<Vector2i> positions, IEnumerable<Blocks> blocks, bool regenerateHeightmap)
+        public void SetBlocks(IEnumerable<GridPos> positions, IEnumerable<Blocks> blocks, bool regenerateHeightmap)
         {
             var posEnumerator = positions.GetEnumerator();
             var blockEnumerator = blocks.GetEnumerator();
@@ -122,7 +122,7 @@ namespace TerrainDemo.Micro
             DoChanged();
         }
 
-        public void SetBlocks(IEnumerable<Vector2i> positions, Blocks[,] blocks)
+        public void SetBlocks(IEnumerable<GridPos> positions, Blocks[,] blocks)
         {
             var posEnumerator = positions.GetEnumerator();
             using (posEnumerator)
@@ -144,24 +144,24 @@ namespace TerrainDemo.Micro
             return _heightMap;
         }
 
-        public ref readonly Heights GetHeightRef(Vector2i worldPos)
+        public ref readonly Heights GetHeightRef(GridPos worldPos)
         {
             if (worldPos.X >= Bounds.Min.X && worldPos.X <= Bounds.Max.X + 1
                                            && worldPos.Z >= Bounds.Min.Z && worldPos.Z <= Bounds.Max.Z + 1)
             {
-                var localPos = worldPos - Bounds.Min;
+                var localPos = World2Local( worldPos );
                 return ref _heightMap[localPos.X, localPos.Z];
             }
 
             return ref Heights.Empty;
         }
 
-        public bool GetHeights(Vector2i worldPos, out Heights h00, out Heights h01, out Heights h10, out Heights h11)
+        public bool GetHeights(GridPos worldPos, out Heights h00, out Heights h01, out Heights h10, out Heights h11)
         {
             if (worldPos.X >= Bounds.Min.X && worldPos.X <= Bounds.Max.X + 1
                                            && worldPos.Z >= Bounds.Min.Z && worldPos.Z <= Bounds.Max.Z + 1)
             {
-                var localPos = worldPos - Bounds.Min;
+                var localPos = World2Local(worldPos);
                 h00 = _heightMap[localPos.X, localPos.Z];
                 h01 = _heightMap[localPos.X, localPos.Z + 1];
                 h10 = _heightMap[localPos.X + 1, localPos.Z];
@@ -177,7 +177,7 @@ namespace TerrainDemo.Micro
             return false;
         }
 
-        public BlockHeights? GetBlockHeights(Vector2i worldPos)
+        public BlockHeights? GetBlockHeights(GridPos worldPos)
         {
             if (!Bounds.Contains(worldPos))
                 return null;
@@ -198,11 +198,11 @@ namespace TerrainDemo.Micro
         /// <returns></returns>
         public float GetHeight(Vector2 position)
         {
-            var blockPos = (Vector2i) position;
+            var blockPos = (GridPos) position;
             var cornersResult = GetBlockHeights(blockPos);
             if (cornersResult.HasValue)
             {
-                var localPos = position - blockPos;
+                var localPos = new Vector2(position.X - blockPos.X, position.Y - blockPos.Z);
                 var corners = cornersResult.Value;
                 if (Math.Abs(corners.H00.Nominal - corners.H11.Nominal) <
                     Math.Abs(corners.H10.Nominal - corners.H01.Nominal))
@@ -244,7 +244,7 @@ namespace TerrainDemo.Micro
             return 0;
         }
 
-        public BlockNominalHeights? GetBlockNominalHeights(Vector2i worldPos)
+        public BlockNominalHeights? GetBlockNominalHeights(GridPos worldPos)
         {
             if (!Bounds.Contains(worldPos))
                 return null;
@@ -297,7 +297,7 @@ namespace TerrainDemo.Micro
             return result;
         }
 
-        public BlockInfo? GetBlock(Vector2i blockPos)
+        public BlockInfo? GetBlock(GridPos blockPos)
         {
             if (!Bounds.Contains(blockPos))
                 return null;
@@ -306,7 +306,7 @@ namespace TerrainDemo.Micro
             return result;
         }
 
-        public ref readonly Blocks GetBlockRef(Vector2i worldBlockPos)
+        public ref readonly Blocks GetBlockRef(GridPos worldBlockPos)
         {
             if (!Bounds.Contains(worldBlockPos))
                 return ref Blocks.Empty;
@@ -323,7 +323,7 @@ namespace TerrainDemo.Micro
             return ref _blocks[xWorldBlockPos - Bounds.Min.X, zWorldBlockPos - Bounds.Min.Z];
         }
 
-        public ref readonly BlockData GetBlockData(Vector2i worldBlockPos)
+        public ref readonly BlockData GetBlockData(GridPos worldBlockPos)
         {
             if (!Bounds.Contains(worldBlockPos))
                 return ref BlockData.Empty;
@@ -342,10 +342,10 @@ namespace TerrainDemo.Micro
 
 
 
-        public NeighborBlocks GetNeighborBlocks(Vector2i worldBlockPos)
+        public NeighborBlocks GetNeighborBlocks(GridPos worldBlockPos)
         {
             //Blocks forward = Blocks.Empty, right = Blocks.Empty, back = Blocks.Empty, left = Blocks.Empty;
-            var localPos = worldBlockPos - Bounds.Min;
+            var localPos = World2Local(worldBlockPos );
             var blocksSize = Bounds.Size;
 
             return new NeighborBlocks(
@@ -364,7 +364,7 @@ namespace TerrainDemo.Micro
             );
         }
 
-        public (float distance, Vector2i position, BaseBlockMap source)? RaycastBlockmap(in Ray ray)
+        public (float distance, GridPos position, BaseBlockMap source)? RaycastBlockmap(in Ray ray)
         {
             //Get raycasted blocks
             var raycastedBlocks = Rasterization.DDA((Vector2)ray.Origin, (Vector2)ray.GetPoint(300), true);
@@ -411,7 +411,7 @@ namespace TerrainDemo.Micro
             return null;
         }
 
-        public (OpenToolkit.Mathematics.Vector3 hitPoint, Vector2i position, BaseBlockMap source)? RaycastHeightmap(in Ray ray)
+        public (Vector3 hitPoint, GridPos position, BaseBlockMap source)? RaycastHeightmap(in Ray ray)
         {
             //Get raycasted blocks
             var rayBlocks = Rasterization.DDA((Vector2)ray.Origin, (Vector2)ray.GetPoint(300), true);
@@ -457,7 +457,7 @@ namespace TerrainDemo.Micro
 
             return null;
 
-            float CheckBlockIntersection(in Ray ray2, BaseBlockMap map, in Vector2i position)
+            float CheckBlockIntersection(in Ray ray2, BaseBlockMap map, in GridPos position)
             {
                 const float NoIntersection = -1f;
                 if (!map.Bounds.Contains(position)) return NoIntersection;
@@ -502,23 +502,23 @@ namespace TerrainDemo.Micro
             }
         }
 
-        protected Vector2i Local2World(Vector2i localPosition)
+        protected GridPos Local2World(GridPos localPosition)
         {
-            return localPosition + Bounds.Min;
+            return new GridPos(localPosition.X + Bounds.Min.X, localPosition.Z + Bounds.Min.Z);
         }
 
-        protected Vector2i Local2World(int x, int z)
+        protected GridPos Local2World(int x, int z)
         {
-            return new Vector2i(x, z) + Bounds.Min;
-        }
+			return new GridPos(x + Bounds.Min.X, z + Bounds.Min.Z);
+		}
 
 
-        protected Vector2i World2Local(Vector2i worldPosition)
+        protected GridPos World2Local(GridPos worldPosition)
         {
-            return worldPosition - Bounds.Min;
-        }
+	        return new GridPos(worldPosition.X - Bounds.Min.X, worldPosition.Z - Bounds.Min.Z);
+		}
 
-        public abstract (ObjectMap map, BlockOverlapState state) GetOverlapState(Vector2i worldPosition);
+        public abstract (ObjectMap map, BlockOverlapState state) GetOverlapState(GridPos worldPosition);
 
 
         public event Action Changed;

@@ -66,13 +66,13 @@ namespace TerrainDemo.Navigation
 			UnityEngine.Debug.Log($"Prepared navigation map in {timer.ElapsedMilliseconds} msec, macrograph nodes {MacroGraph.NodesCount}, macrograph edges {MacroGraph.EdgesCount}");
 		}
 
-		public NavigationCell GetNavNode(Vector2i position)
+		public NavigationCell GetNavNode(GridPos position)
 		{
 			var microCell = _micromap.GetCell(position);
 			return Nodes[microCell.Id];
 		}
 
-		public Path CreatePath(Vector2i from, Vector2i to, Actor actor)
+		public Path CreatePath(GridPos from, GridPos to, Actor actor)
 		{
 			return new Path(from, to, actor, this);
 		}

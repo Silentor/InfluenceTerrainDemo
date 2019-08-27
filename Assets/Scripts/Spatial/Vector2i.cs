@@ -44,29 +44,29 @@ namespace TerrainDemo.Spatial
 
         public static float Distance(Vector2i a, Vector2i b)
         {
-            int dx = b.X - a.X;
-            int dz = b.Z - a.Z;
+            var dx = b.X - a.X;
+            var dz = b.Z - a.Z;
             return Mathf.Sqrt(dx * dx + dz * dz);
         }
 
         public static int DistanceSquared(Vector2i a, Vector2i b)
         {
-            int dx = b.X - a.X;
-            int dz = b.Z - a.Z;
+            var dx = b.X - a.X;
+            var dz = b.Z - a.Z;
             return dx * dx + dz * dz;
         }
 
         public static int RoughDistance(Vector2i a, Vector2i b)
         {
-            int dx = Mathf.Abs(b.X - a.X);
-            int dz = Mathf.Abs(b.Z - a.Z);
+            var dx = Mathf.Abs(b.X - a.X);
+            var dz = Mathf.Abs(b.Z - a.Z);
             return Mathf.Max(dx, dz);
         }
 
         public static int ManhattanDistance(Vector2i a, Vector2i b)
         {
-            int dx = Mathf.Abs(b.X - a.X);
-            int dz = Mathf.Abs(b.Z - a.Z);
+            var dx = Mathf.Abs(b.X - a.X);
+            var dz = Mathf.Abs(b.Z - a.Z);
             return dx + dz;
         }
 

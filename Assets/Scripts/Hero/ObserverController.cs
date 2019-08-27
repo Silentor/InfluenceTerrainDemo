@@ -33,7 +33,7 @@ namespace TerrainDemo.Hero
         public Quaternion Rotation { get { return _camera.transform.rotation; } }
 
         public float Range { get { return AOIRange; } }
-        public (OpenToolkit.Mathematics.Vector3 hitPoint, Vector2i position, BaseBlockMap source)? HitPoint { get; private set; }
+        public (OpenToolkit.Mathematics.Vector3 hitPoint, GridPos position, BaseBlockMap source)? HitPoint { get; private set; }
 
         public void SetTarget(Actor target)
         {
@@ -57,7 +57,7 @@ namespace TerrainDemo.Hero
             var result = new List<ChunkPositionValue>();
             //Get all chunk positions in a range
             foreach (var chunkPos in new Bounds2i(chunkCenterPos, chunkRange))
-                if (Vector2i.Distance(chunkCenterPos, chunkPos)*Chunk.Size < range)
+                if (GridPos.Distance(chunkCenterPos, chunkPos)*Chunk.Size < range)
                     result.Add(new ChunkPositionValue()
                     {
                         Position = chunkPos,
@@ -99,7 +99,7 @@ namespace TerrainDemo.Hero
         /// <param name="chunkPos"></param>
         /// <param name="range"></param>
         /// <returns></returns>
-        public float GetChunkPositionValue(Vector2i chunkPos, float range)
+        public float GetChunkPositionValue(GridPos chunkPos, float range)
         {
             //Fast pass
             if (chunkPos == Chunk.GetPositionFromWorld(Position))
@@ -331,7 +331,7 @@ namespace TerrainDemo.Hero
 
         public struct ChunkPositionValue : IComparable<ChunkPositionValue>
         {
-            public Vector2i Position;
+            public GridPos Position;
             public float Value;
             public int CompareTo(ChunkPositionValue other)
             {

@@ -12,7 +12,7 @@ namespace TerrainDemo.Tools
 {
     public static class Rasterization
     {
-        public static IEnumerable<Vector2i> DDA(Vector2i p1, Vector2i p2, bool conservative)
+        public static IEnumerable<GridPos> DDA(GridPos p1, GridPos p2, bool conservative)
         {
             return DDA(new Vector2(p1.X + 0.5f, p1.Z + 0.5f), new Vector2(p2.X + 0.5f, p2.Z + 0.5f), conservative);
         }
@@ -25,7 +25,7 @@ namespace TerrainDemo.Tools
         /// <param name="p2"></param>
         /// <param name="conservative"></param>
         /// <returns></returns>
-        public static IEnumerable<Vector2i> DDA(Vector2 p1, Vector2 p2, bool conservative)
+        public static IEnumerable<GridPos> DDA(Vector2 p1, Vector2 p2, bool conservative)
         {
             //Based on http://www.sunshine2k.de/coding/java/Bresenham/RasterisingLinesCircles.pdf
             double len = Math.Max(Math.Abs(p2.X - p1.X), Math.Abs(p2.Y - p1.Y));
@@ -33,7 +33,7 @@ namespace TerrainDemo.Tools
             //Short path
             if (Math.Abs(len) < 0.000001)
             {
-                yield return (Vector2i)p1;
+                yield return (GridPos)p1;
                 yield break;
             }
 
@@ -49,10 +49,10 @@ namespace TerrainDemo.Tools
             var addX = new Vector2i(Math.Sign(dx), 0);
             var addZ = new Vector2i(0, Math.Sign(dy));
 
-            var result = (Vector2i)p1;
+            var result = (GridPos)p1;
             for (var i = 0; i < len; i++)
             {
-                var newResult = new Vector2i(x, y);
+                var newResult = new GridPos(x, y);
 
                 //Add conservative blocks todo improve, calculate only one additional block
                 if (conservative && newResult.X != result.X && newResult.Z != result.Z)
@@ -69,8 +69,8 @@ namespace TerrainDemo.Tools
             }
 
             // set final pixel
-            if (result != (Vector2i) p2)
-                yield return (Vector2i) p2;
+            if (result != (GridPos) p2)
+                yield return (GridPos) p2;
         }
 
         public static IEnumerable<Vector3i> DDA(Vector3 p1, Vector3 p2)
@@ -118,13 +118,13 @@ namespace TerrainDemo.Tools
         /// <param name="p1"></param>
         /// <param name="p2"></param>
         /// <returns></returns>
-        public static IEnumerable<Vector2i> BresenhamInt(Vector2i p1, Vector2i p2)
+        public static IEnumerable<GridPos> BresenhamInt(GridPos p1, GridPos p2)
         {
             //Based http://www.sunshine2k.de/coding/java/Bresenham/RasterisingLinesCircles.pdf
 
             var changed = false;
-            var x = p1.X;
-            var y = p1.Z;
+            int x = p1.X;
+            int y = p1.Z;
             var dx = Math.Abs(p2.X - p1.X);
             var dy = Math.Abs(p2.Z - p1.Z);
             var signx = Math.Sign(p2.X - p1.X);
@@ -137,7 +137,7 @@ namespace TerrainDemo.Tools
             var e = 2 * dy - dx;
             for (var i = 1; i <= dx; i++)
             {
-                yield return new Vector2i(x, y);
+                yield return new GridPos(x, y);
                 while (e >= 0)
                 {
                     if (changed)
@@ -244,7 +244,7 @@ namespace TerrainDemo.Tools
         /// <param name="x2"></param>
         /// <param name="y2"></param>
         /// <returns></returns>
-        public static IEnumerable<Vector2i> BresenhamFloat(float x1, float y1, float x2, float y2)
+        public static IEnumerable<GridPos> BresenhamFloat(float x1, float y1, float x2, float y2)
         {
             //Based http://www.sunshine2k.de/coding/java/Bresenham/RasterisingLinesCircles.pdf
 
@@ -255,7 +255,7 @@ namespace TerrainDemo.Tools
             var e = (dy / dx) - 0.5f;
             for (int i = 1; i <= dx; i++)
             {
-                yield return new Vector2i(x, y);
+                yield return new GridPos(x, y);
                 while (e >= 0)
                 {
                     y = y + 1;
@@ -266,9 +266,9 @@ namespace TerrainDemo.Tools
             }
         }
 
-        public static IEnumerable<Vector2i> Polygon(Macro.Cell cell)
+        public static IEnumerable<GridPos> Polygon(Macro.Cell cell)
         {
-            var edges = new List<Vector2i>();
+            var edges = new List<GridPos>();
             foreach (var edge in cell.Edges)
                 edges.AddRange(DDA(edge.Vertex1.Position, edge.Vertex2.Position, false));
 
@@ -293,7 +293,7 @@ namespace TerrainDemo.Tools
                     j++;
 
                 for (var x = edges[i].X; x <= edges[j].X; x++)
-                    yield return new Vector2i(x, z1);
+                    yield return new GridPos(x, z1);
 
                 i = j + 1;
             }
@@ -303,9 +303,9 @@ namespace TerrainDemo.Tools
         /// Bounds scan algorithm for convex polygon. Not very fast but accurate. As fast as bounding box is tight
         /// </summary>
         /// <returns>Collection of blocks coords</returns>
-        public static Vector2i[] ConvexToBlocks(Predicate<Vector2> contains, Box2 bounds)
+        public static GridPos[] ConvexToBlocks(Predicate<Vector2> contains, Box2 bounds)
         {
-            var result = new List<Vector2i>();
+            var result = new List<GridPos>();
             var minZ = (int)Math.Round(bounds.Bottom);
             var maxZ = (int)Math.Round(bounds.Top);
             var minX = (int)Math.Round(bounds.Left);
@@ -346,7 +346,7 @@ namespace TerrainDemo.Tools
                     //Add block pos from left to right
                     for (int x = leftContainingPos.Value; x <= rightContainingPos.Value; x++)
                     {
-                        result.Add(new Vector2i(x, z));
+                        result.Add(new GridPos(x, z));
                     }
                 }
             }
@@ -358,9 +358,9 @@ namespace TerrainDemo.Tools
         /// Bounds scan algorithm for convex polygon. Not very fast but accurate. As fast as bounding box is tight
         /// </summary>
         /// <returns>Collection of vertex coords</returns>
-        public static Vector2i[] ConvexToVertices(Predicate<Vector2> contains, Box2 bounds)
+        public static GridPos[] ConvexToVertices(Predicate<Vector2> contains, Box2 bounds)
         {
-            var result = new List<Vector2i>();
+            var result = new List<GridPos>();
             var minZ = (int)Math.Ceiling(bounds.Bottom);
             var maxZ = (int)Math.Floor(bounds.Top);
             var minX = (int)Math.Ceiling(bounds.Left);
@@ -369,13 +369,13 @@ namespace TerrainDemo.Tools
             //DrawRectangle.ForGizmo(new Box2(minX, maxZ, maxX, minZ), Color.blue / 2);
 
             //Scan bound from bottom  to top
-            for (int z = minZ; z <= maxZ; z++)
+            for (var z = minZ; z <= maxZ; z++)
             {
                 int? leftContainingPos = null;
                 int? rightContainingPos = null;
 
                 //Find left and right blocks in cell
-                for (int x = minX; x <= maxX; x++)
+                for (var x = minX; x <= maxX; x++)
                 {
                     if (contains(new Vector2(x, z)))
                     {
@@ -386,7 +386,7 @@ namespace TerrainDemo.Tools
 
                 if (leftContainingPos != null)
                 {
-                    for (int x = maxX; x >= minX; x--)
+                    for (var x = maxX; x >= minX; x--)
                     {
                         if (leftContainingPos.Value == x || contains(new Vector2(x, z)))
                         {
@@ -399,9 +399,9 @@ namespace TerrainDemo.Tools
                 if (leftContainingPos.HasValue && rightContainingPos.HasValue)
                 {
                     //Add block pos from left to right
-                    for (int x = leftContainingPos.Value; x <= rightContainingPos.Value; x++)
+                    for (var x = leftContainingPos.Value; x <= rightContainingPos.Value; x++)
                     {
-                        result.Add(new Vector2i(x, z));
+                        result.Add(new GridPos(x, z));
                     }
                 }
             }

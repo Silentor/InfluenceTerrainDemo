@@ -13,7 +13,7 @@ namespace TerrainDemo.Micro
     /// </summary>
     public readonly struct BlockInfo : IEquatable<BlockInfo>
     {
-        public readonly Vector2i Position;
+        public readonly GridPos Position;
         public readonly Blocks Block;
         public readonly Heights Corner00;
         public readonly Heights Corner01;
@@ -23,7 +23,7 @@ namespace TerrainDemo.Micro
         public readonly float Height;
         private readonly BaseBlockMap _map;
 
-        public BlockInfo(Vector2i position, BaseBlockMap map)
+        public BlockInfo(GridPos position, BaseBlockMap map)
         {
             Position = position;
             Block = map.GetBlockRef(position);
@@ -37,18 +37,18 @@ namespace TerrainDemo.Micro
             _map = map;
         }
 
-        public static Bounds2i GetBounds(Vector2i worldPosition)
+        public static Bounds2i GetBounds(GridPos worldPosition)
         {
             return new Bounds2i(worldPosition, 1, 1);
         }
 
-        public static (Vector2 min, Vector2 max) GetWorldBounds(Vector2i worldPosition)
+        public static (Vector2 min, Vector2 max) GetWorldBounds(GridPos worldPosition)
         {
             return (new Vector2(worldPosition.X, worldPosition.Z),
                 new Vector2(worldPosition.X + 1, worldPosition.Z + 1));
         }
 
-        public static Vector2 GetWorldCenter(Vector2i blockPosition)
+        public static Vector2 GetWorldCenter(GridPos blockPosition)
         {
             return new Vector2(blockPosition.X + 0.5f, blockPosition.Z + 0.5f);
         }

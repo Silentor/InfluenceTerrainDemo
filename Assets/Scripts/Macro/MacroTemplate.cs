@@ -158,7 +158,7 @@ namespace TerrainDemo.Macro
                 foreach (var vertexPos in microcell.VertexPositions)
                 {
                     var heightMixBuffer = Vector3.Zero;
-                    var localPos = vertexPos - microcell.Bounds.Min;
+                    var localPos = World2Local( vertexPos, microcell.Bounds);
                     var influence = inputMap.GetInfluence(vertexPos);
                     var macroHeight = inputMap.GetHeight(vertexPos);
 
@@ -346,10 +346,15 @@ namespace TerrainDemo.Macro
             Debug.LogFormat("Average diff {0}, max diff {1} on cell {2}", averageDiff, maxDiff, maxDiffCell?.Coords);
         }
 
-        /// <summary>
-        /// Helper data type to mix different zones in given vertex
-        /// </summary>
-        public class CellMixVertex
+        protected GridPos World2Local(GridPos worldPosition, Bounds2i bounds)
+        {
+	        return new GridPos(worldPosition.X - bounds.Min.X, worldPosition.Z - bounds.Min.Z);
+        }
+
+		/// <summary>
+		/// Helper data type to mix different zones in given vertex
+		/// </summary>
+		public class CellMixVertex
         {
             //1) Prepare buffer
             public Influence Influence;

@@ -238,14 +238,14 @@ namespace TerrainDemo.Visualization
             var uvXCoeff = 1f / bounds.Size.X;
             var uvYCoeff = 1f / bounds.Size.Z;
 
-            for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
-                for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
+            for (var worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
+                for (var worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
                 {
                     var mapLocalX = worldX - map.Bounds.Min.X;
                     var mapLocalZ = worldZ - map.Bounds.Min.Z;
                     var chunkLocalX = worldX - bounds.Min.X;
                     var chunkLocalZ = worldZ - bounds.Min.Z;
-                    var worldPosition = new Vector2i(worldX, worldZ);
+                    var worldPosition = new GridPos(worldX, worldZ);
 
                     var block = blockMap[mapLocalX, mapLocalZ];
                     //var block = chunk[chunkLocalX, chunkLocalZ];
@@ -434,8 +434,8 @@ namespace TerrainDemo.Visualization
             var commonUv = new List<Vector2>(groundVertices.Count) { Vector2.zero };
 
             //Set quads
-            for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
-                for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
+            for (var worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
+                for (var worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
                 {
                     var mapLocalX = worldX - bounds.Min.X;
                     var mapLocalZ = worldZ - bounds.Min.Z;
@@ -447,7 +447,7 @@ namespace TerrainDemo.Visualization
                         continue;
 
                     //Block culling
-                    var occlusionState = mapObject.GetOverlapState(new Vector2i(worldX, worldZ));
+                    var occlusionState = mapObject.GetOverlapState((worldX, worldZ));
                     if (occlusionState.state == BlockOverlapState.Under && occlusionState.map == mapObject)
                         continue;
 
@@ -583,7 +583,7 @@ namespace TerrainDemo.Visualization
                     }
 
                     //Draw sides if needed
-                    var neighbors = mapObject.GetNeighborBlocks(new Vector2i(worldX, worldZ));
+                    var neighbors = mapObject.GetNeighborBlocks(new GridPos(worldX, worldZ));
                     foreach (var dir in Directions.Cardinal)
                     {
                         if (neighbors[dir].IsEmpty)

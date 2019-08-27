@@ -34,7 +34,7 @@ namespace TerrainDemo.Hero
 
         public BaseBlockMap Map => _currentMap;
 
-        public Vector2i BlockPosition => _currentBlockPos;
+        public GridPos BlockPosition => _currentBlockPos;
 
         public NavState State
         {
@@ -65,7 +65,7 @@ namespace TerrainDemo.Hero
         private Vector2? _targetPosition;
         private Quaternion _targetRotation;
 
-        private Vector2i _currentBlockPos;
+        private GridPos _currentBlockPos;
         private BaseBlockMap _currentMap;
         private BlockOverlapState _currentOverlapState;
         private float _currentBlockInclinationSpeedModifier = 1;
@@ -86,7 +86,7 @@ namespace TerrainDemo.Hero
             _mainMap = map;
             _currentMap = map;
             _mapPosition = startPosition;
-            _currentBlockPos = (Vector2i) _mapPosition;
+            _currentBlockPos = (GridPos) _mapPosition;
             Position = new Vector3(_mapPosition.X, _mainMap.GetHeight(_mapPosition), _mapPosition.Y);
             Rotation = Quaternion.FromEulerAngles(0, Vector3.CalculateAngle(Vector3.UnitZ, (Vector3)direction), 0);
 			Locomotor = new Locomotor( loco, this, map, navMap );
@@ -96,7 +96,7 @@ namespace TerrainDemo.Hero
             Speed = 3f;
         }
 
-        public Actor(MicroMap map, NavigationMap navMap, Vector2i startPosition, Vector2 direction, bool fpsMode, string name, Locomotor.Type loco) 
+        public Actor(MicroMap map, NavigationMap navMap, GridPos startPosition, Vector2 direction, bool fpsMode, string name, Locomotor.Type loco) 
             : this(map, navMap, BlockInfo.GetWorldCenter(startPosition), direction, fpsMode, name, loco) { }
 
         #region FPS locomotion
@@ -264,12 +264,12 @@ namespace TerrainDemo.Hero
             var newMapPosition = GetNewPosition( _mapPosition, thrustVelocity, deltaTime );
 
             //Check change block(and map maybe)
-            var newBlockPosition = (Vector2i)newMapPosition;
+            var newBlockPosition = (GridPos)newMapPosition;
             if (newBlockPosition != _currentBlockPos)
             {
                 var collidedPos = Locomotor.Step(_currentMap, _mapPosition, newMapPosition, out _currentMap);
                 newMapPosition = collidedPos;
-                _currentBlockPos = (Vector2i) collidedPos;
+                _currentBlockPos = (GridPos) collidedPos;
             }
 
             if (DebugLocomotion)

@@ -74,7 +74,7 @@ namespace TerrainDemo.OldCodeToRevision
         /// </summary>
         /// <param name="chunkPosition">Chunk position</param>
         /// <returns>World position</returns>
-        public static Vector2 GetCenter(Vector2i chunkPosition)
+        public static Vector2 GetCenter(GridPos chunkPosition)
         {
             return new Vector2((chunkPosition.X << Shift) + Size / 2, (chunkPosition.Z << Shift) + Size / 2);
         }
@@ -93,17 +93,17 @@ namespace TerrainDemo.OldCodeToRevision
         /// <summary>
         /// Get chunk position for belonging world position
         /// </summary>
-        public static Vector2i GetPositionFromWorld(Vector2 worldPosition)
+        public static GridPos GetPositionFromWorld(Vector2 worldPosition)
         {
-            return GetPositionFromBlock((Vector2i)worldPosition);
+            return GetPositionFromBlock((GridPos)worldPosition);
         }
 
         /// <summary>
         /// Get chunk position for belonging world position
         /// </summary>
-        public static Vector2i GetPositionFromWorld(Vector3 worldPosition)
+        public static GridPos GetPositionFromWorld(Vector3 worldPosition)
         {
-            return GetPositionFromBlock((Vector2i)worldPosition);
+            return GetPositionFromBlock((GridPos)worldPosition);
         }
 
         /// <summary>
@@ -111,9 +111,9 @@ namespace TerrainDemo.OldCodeToRevision
         /// </summary>
         /// <param name="blockPosition"></param>
         /// <returns></returns>
-        public static Vector2i GetPositionFromBlock(Vector2i blockPosition)
+        public static GridPos GetPositionFromBlock(GridPos blockPosition)
         {
-            return new Vector2i(blockPosition.X >> Shift, blockPosition.Z >> Shift);
+            return new GridPos(blockPosition.X >> Shift, blockPosition.Z >> Shift);
         }
 
         /// <summary>
@@ -121,10 +121,10 @@ namespace TerrainDemo.OldCodeToRevision
         /// </summary>
         /// <param name="position">Chunk position</param>
         /// <returns>World bounds in blocks</returns>
-        public static Bounds2i GetBounds(Vector2i position)
+        public static Bounds2i GetBounds(GridPos position)
         {
-            var min = new Vector2i(position.X << Shift, position.Z << Shift);
-            var max = new Vector2i(min.X + Size - 1, min.Z + Size - 1);
+            var min = new GridPos(position.X << Shift, position.Z << Shift);
+            var max = new GridPos(min.X + Size - 1, min.Z + Size - 1);
             return new Bounds2i(min, max);
         }
 

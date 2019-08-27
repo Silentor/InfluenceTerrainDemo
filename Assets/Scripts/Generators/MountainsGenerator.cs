@@ -57,7 +57,7 @@ namespace TerrainDemo.Generators
             return Zone;
         }
 
-        public override Heights GenerateHeight(Vector2i position, in Heights macroHeight)
+        public override Heights GenerateHeight(GridPos position, in Heights macroHeight)
         {
             var mainLayer =
                 +(float)System.Math.Pow(_microReliefNoise.GetSimplex(position.X / 10f, position.Z / 10f) + 1, 2) - 2 //Вытянутые пики средней частоты
@@ -67,7 +67,7 @@ namespace TerrainDemo.Generators
                 macroHeight.Base);
         }
 
-        public override BlockLayers GenerateBlock3(Vector2i position, in Heights v00, in Heights v01,
+        public override BlockLayers GenerateBlock3(GridPos position, in Heights v00, in Heights v01,
             in Heights v10, in Heights v11)
         {
             return new BlockLayers(BlockType.Stone, BlockType.GoldOre);

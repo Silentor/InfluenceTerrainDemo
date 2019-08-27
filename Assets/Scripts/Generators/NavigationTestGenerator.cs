@@ -91,7 +91,7 @@ namespace TerrainDemo.Generators
             _currentCellData = _cells[microcell.Macro];
         }
 
-        public override Heights GenerateHeight(Vector2i position, in Heights macroHeight)
+        public override Heights GenerateHeight(GridPos position, in Heights macroHeight)
         {
             if (_currentCell != null)
             {
@@ -117,7 +117,7 @@ namespace TerrainDemo.Generators
             //return new Heights((float)(_dunesNoise.GetSimplex(rotatedPos.X / 10f, rotatedPos.Y / 30f)) * 2 + macroHeight.Main, macroHeight.Underground, macroHeight.Base); //Вытянутые дюны
         }
 
-        public override BlockLayers GenerateBlock3(Vector2i position, in Heights v00, in Heights v01,
+        public override BlockLayers GenerateBlock3(GridPos position, in Heights v00, in Heights v01,
             in Heights v10, in Heights v11)
         {
             if(_currentCell != null)

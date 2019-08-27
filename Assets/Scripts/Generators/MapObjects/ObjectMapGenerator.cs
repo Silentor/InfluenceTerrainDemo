@@ -15,15 +15,15 @@ namespace TerrainDemo.Generators.MapObjects
             var preliminaryBounds = CalculateBounds(instancePosition);
             InstanceBounds = preliminaryBounds;
 
-            var blockPositions = new List<Vector2i>();
+            var blockPositions = new List<GridPos>();
             var blocks = new Blocks[preliminaryBounds.Size.X, preliminaryBounds.Size.Z];
-            var heightPositions = new List<Vector2i>();
+            var heightPositions = new List<GridPos>();
             var heights = new Heights[preliminaryBounds.Size.X + 1, preliminaryBounds.Size.Z + 1];
 
-            for (int x = preliminaryBounds.Min.X; x <= preliminaryBounds.Max.X; x++)
-                for (int z = preliminaryBounds.Min.Z; z <= preliminaryBounds.Max.Z; z++)
+            for (var x = preliminaryBounds.Min.X; x <= preliminaryBounds.Max.X; x++)
+                for (var z = preliminaryBounds.Min.Z; z <= preliminaryBounds.Max.Z; z++)
                 {
-                    var worldBlockPos = new Vector2i(x, z);
+                    var worldBlockPos = new GridPos(x, z);
                     var localX = x - preliminaryBounds.Min.X;
                     var localZ = z - preliminaryBounds.Min.Z;
                     if (IsBlockExist(worldBlockPos))
@@ -36,19 +36,19 @@ namespace TerrainDemo.Generators.MapObjects
                         }
                         if (heights[localX, localZ + 1].IsEmpty)
                         {
-                            var worldBlockPos01 = new Vector2i(x, z + 1);
+                            var worldBlockPos01 = new GridPos(x, z + 1);
                             GenerateHeight(worldBlockPos01, instanceHeight, out heights[localX, localZ + 1]);
                             heightPositions.Add(worldBlockPos01);
                         }
                         if (heights[localX + 1, localZ].IsEmpty)
                         {
-                            var worldBlockPos10 = new Vector2i(x + 1, z);
+                            var worldBlockPos10 = new GridPos(x + 1, z);
                             GenerateHeight(worldBlockPos10, instanceHeight, out heights[localX + 1, localZ]);
                             heightPositions.Add(worldBlockPos10);
                         }
                         if (heights[localX + 1, localZ + 1].IsEmpty)
                         {
-                            var worldBlockPos11 = new Vector2i(x + 1, z + 1);
+                            var worldBlockPos11 = new GridPos(x + 1, z + 1);
                             GenerateHeight(worldBlockPos11, instanceHeight, out heights[localX + 1, localZ + 1]);
                             heightPositions.Add(worldBlockPos11);
                         }
@@ -73,23 +73,23 @@ namespace TerrainDemo.Generators.MapObjects
         /// <returns></returns>
         protected abstract Bounds2i CalculateBounds(Vector2 instancePosition);
 
-        protected abstract bool IsBlockExist(Vector2i blockPosition);
+        protected abstract bool IsBlockExist(GridPos blockPosition);
 
-        protected abstract void GenerateHeight(Vector2i vertexPosition, float instanceHeight, out Heights heightVertex);
+        protected abstract void GenerateHeight(GridPos vertexPosition, float instanceHeight, out Heights heightVertex);
 
-        protected abstract void GenerateBlock(Vector2i blockPosition, out Blocks block);
+        protected abstract void GenerateBlock(GridPos blockPosition, out Blocks block);
 
     }
 
     public readonly struct MapObjectContent
     {
         public readonly Bounds2i Bounds;
-        public readonly IEnumerable<Vector2i> VertexPositions;
+        public readonly IEnumerable<GridPos> VertexPositions;
         public readonly Heights[,] Heightmap;
-        public readonly IEnumerable<Vector2i> BlockPositions;
+        public readonly IEnumerable<GridPos> BlockPositions;
         public readonly Blocks[,] Blockmap;
 
-        public MapObjectContent(Bounds2i bounds, IEnumerable<Vector2i> vertexPositions, Heights[,] heightmap, IEnumerable<Vector2i> blockPositions, Blocks[,] blockmap)
+        public MapObjectContent(Bounds2i bounds, IEnumerable<GridPos> vertexPositions, Heights[,] heightmap, IEnumerable<GridPos> blockPositions, Blocks[,] blockmap)
         {
             Bounds = bounds;
             VertexPositions = vertexPositions;

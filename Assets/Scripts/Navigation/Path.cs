@@ -15,8 +15,8 @@ namespace TerrainDemo.Navigation
     /// </summary>
     public class Path
     {
-	    public Vector2i Start  { get; }
-	    public Vector2i Finish { get; }
+	    public GridPos Start  { get; }
+	    public GridPos Finish { get; }
 	    public Actor    Actor  { get; }
 
 	    public bool IsValid { get; }
@@ -40,7 +40,7 @@ namespace TerrainDemo.Navigation
         /// <param name="to"></param>
         /// <param name="actor"></param>
         /// <param name="segments"></param>
-        public Path(Vector2i from, Vector2i to, Actor actor, [NotNull] NavigationMap map)
+        public Path(GridPos from, GridPos to, Actor actor, [NotNull] NavigationMap map)
         {
             Start   = from;
             Finish  = to;
@@ -89,7 +89,7 @@ namespace TerrainDemo.Navigation
         //Calculate micro path for given nav node
         private void RefinePath( int nodeIndex )
         {
-	        Vector2i prevPoint, myPoint, nextPoint;
+	        GridPos prevPoint, myPoint, nextPoint;
 
 	        var prevIndex = Math.Max( nodeIndex - 1, 0 );
 	        var nextIndex = Math.Min( nodeIndex + 1, _segments.Length - 1 );
@@ -102,8 +102,8 @@ namespace TerrainDemo.Navigation
 			        ? Finish 
 			        : _segments[nodeIndex].Node.Cell.Center;
 
-	        var from = ( prevPoint + myPoint ) / 2;
-	        var to = ( myPoint + nextPoint ) / 2;
+	        var from = GridPos.Average( prevPoint, myPoint );
+	        var to = GridPos.Average(myPoint, nextPoint);
 
 			_segments[nodeIndex].Points.AddRange( new[]{from, to});//todo call pathfinding here
 			_segments[nodeIndex].IsRefined = true;
@@ -112,7 +112,7 @@ namespace TerrainDemo.Navigation
         public class Segment
         {
 	        public readonly NavigationCell Node;
-	        public readonly List<Vector2i> Points = new List<Vector2i>();
+	        public readonly List<GridPos> Points = new List<GridPos>();
 	        public          bool           IsRefined;
 
 	        public Segment( NavigationCell node )
@@ -126,7 +126,7 @@ namespace TerrainDemo.Navigation
 
 		        for ( var i = 0; i < Points.Count - 1; i++ )
 		        {
-			        result += Vector2i.Distance( Points[i], Points[i +1] );
+			        result += GridPos.Distance( Points[i], Points[i +1] );
 		        }
 
 		        return result;
@@ -149,7 +149,7 @@ namespace TerrainDemo.Navigation
 		        _lastPosition = path.Finish;
 	        }
 
-	        public (NavigationCell node, Vector2i position) Current
+	        public (NavigationCell node, GridPos position) Current
 	        {
 		        get
 		        {
@@ -211,7 +211,7 @@ namespace TerrainDemo.Navigation
 		        }
 	        }
 	        private readonly Path _path;
-	        private Vector2i _lastPosition;
+	        private GridPos _lastPosition;
 	        private          int  _segmentIndex, _pointIndex = -1;
 	        private          bool _isFinished;
         }

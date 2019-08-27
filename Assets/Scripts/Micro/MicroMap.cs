@@ -65,7 +65,7 @@ namespace TerrainDemo.Micro
             return Cells.First(c => c.Macro == cell);
         }
 
-        public Cell GetCell(Vector2i position)
+        public Cell GetCell(GridPos position)
         {
             foreach (var cell in Cells)
                 if (cell.Bounds.Contains(position) && cell.BlockPositions.Contains(position))
@@ -83,10 +83,10 @@ namespace TerrainDemo.Micro
         public void DigSphere(Vector3 position, float radius)
         {
             //Get influenced vertices
-            var flatPosition = (OpenToolkit.Mathematics.Vector2)position;
+            var flatPosition = (Vector2)position;
             var flatBound = new Box2(flatPosition.X - radius, flatPosition.Y + radius, flatPosition.X + radius, flatPosition.Y - radius);
             var sqrRadius = radius * radius;
-            var flatVertices = Rasterization.ConvexToVertices(v => OpenToolkit.Mathematics.Vector2.DistanceSquared(v, flatPosition) < sqrRadius, flatBound);
+            var flatVertices = Rasterization.ConvexToVertices(v => Vector2.DistanceSquared(v, flatPosition) < sqrRadius, flatBound);
 
             //Modify vertices
             var vertexCounter = 0;
@@ -108,7 +108,7 @@ namespace TerrainDemo.Micro
             }
 
             //Update adjoined blocks
-            var changedBlocks = new HashSet<Vector2i>(flatVertices);
+            var changedBlocks = new HashSet<GridPos>(flatVertices);
             foreach (var vertex in flatVertices)
             {
                 //Add adjoined blocks (except vertex own block)
@@ -160,10 +160,10 @@ namespace TerrainDemo.Micro
         public void Build(Vector3 position, float radius)
         {
             //Get influenced vertices
-            var flatPosition = (OpenToolkit.Mathematics.Vector2)position;
+            var flatPosition = (Vector2)position;
             var flatBound = new Box2(flatPosition.X - radius, flatPosition.Y + radius, flatPosition.X + radius, flatPosition.Y - radius);
             var sqrRadius = radius * radius;
-            var flatVertices = Rasterization.ConvexToBlocks(v => OpenToolkit.Mathematics.Vector2.DistanceSquared(v, flatPosition) < sqrRadius, flatBound);
+            var flatVertices = Rasterization.ConvexToBlocks(v => Vector2.DistanceSquared(v, flatPosition) < sqrRadius, flatBound);
 
             //Modify vertices
             var vertexCounter = 0;
@@ -185,7 +185,7 @@ namespace TerrainDemo.Micro
             }
 
             //Update adjoined blocks
-            var changedBlocks = new HashSet<Vector2i>(flatVertices);
+            var changedBlocks = new HashSet<GridPos>(flatVertices);
             foreach (var vertex in flatVertices)
             {
                 //Add adjoined blocks (except vertex own block)
@@ -284,7 +284,7 @@ namespace TerrainDemo.Micro
             */
         }
 
-        public void SetOverlapState(Vector2i worldPosition, ObjectMap childMap, BlockOverlapState state)
+        public void SetOverlapState(GridPos worldPosition, ObjectMap childMap, BlockOverlapState state)
         {
             var localPos = World2Local(worldPosition);
             var objectMapId = _childs.IndexOf(childMap);
@@ -292,7 +292,7 @@ namespace TerrainDemo.Micro
             block = block.MutateOverlapState(objectMapId, state);
         }
 
-        public override (ObjectMap map, BlockOverlapState state) GetOverlapState(Vector2i worldPosition)
+        public override (ObjectMap map, BlockOverlapState state) GetOverlapState(GridPos worldPosition)
         {
             if (!Bounds.Contains(worldPosition))
                 return (null, BlockOverlapState.None);

@@ -49,13 +49,13 @@ namespace TerrainDemo.Generators
         }
         */
 
-        public override Heights GenerateHeight(Vector2i position, in Heights macroHeight)
+        public override Heights GenerateHeight(GridPos position, in Heights macroHeight)
         {
             var rotatedPos = Vector2.Transform(position, Quaternion.FromEulerAngles(0, 0, _hillsOrientation));
             return new Heights((float)(_dunesNoise.GetSimplex(rotatedPos.X / 10f, rotatedPos.Y / 30f)) * 2 + macroHeight.Main, macroHeight.Underground, macroHeight.Base); //Вытянутые дюны
         }
 
-        public override BlockLayers GenerateBlock3(Vector2i position, in Heights v00, in Heights v01,
+        public override BlockLayers GenerateBlock3(GridPos position, in Heights v00, in Heights v01,
             in Heights v10, in Heights v11)
         {
             var normal = Vector3.Cross(                             //todo simplify
