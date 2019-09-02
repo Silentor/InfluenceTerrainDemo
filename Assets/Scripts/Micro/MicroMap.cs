@@ -312,6 +312,14 @@ namespace TerrainDemo.Micro
             return "Main map";
         }
 
+        public void Update( float deltaTime )
+        {
+	        foreach ( var actor in _actors )
+	        {
+		        actor.Update( deltaTime );
+	        }
+        }
+
         private readonly MacroMap _macromap;
         private readonly TriRunner _settings;
         private readonly Dictionary<BlockType, BlockSettings> _blockSettings = new Dictionary<BlockType, BlockSettings>();

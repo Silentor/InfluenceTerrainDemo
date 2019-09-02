@@ -12,7 +12,7 @@ namespace TerrainDemo.Micro
     /// </summary>
     public class Cell
     {
-        public readonly Coord Id;
+        public readonly HexPos Id;
         public readonly Macro.Cell Macro;
         public readonly GridPos Center;
         public readonly GridPos[] BlockPositions;
@@ -21,7 +21,7 @@ namespace TerrainDemo.Micro
 
         public Cell(Macro.Cell macro, MicroMap map)
         {
-            Id = macro.Coords;
+            Id = macro.HexPoses;
             Macro = macro;
             Center = (GridPos)macro.Center;
             _map = map;

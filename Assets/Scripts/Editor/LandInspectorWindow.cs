@@ -433,13 +433,13 @@ namespace TerrainDemo.Editor
 				//var contrastColor = (new Color(1, 1, 1, 2) - cell.Biome.LayoutColor) * 2;
 				colorLabelStyle.normal.textColor = color;
 				colorLabelStyle.fontSize = fontSize;
-				Handles.Label(cell.CenterPoint, cell.Coords.ToString(), colorLabelStyle);
+				Handles.Label(cell.CenterPoint, cell.HexPoses.ToString(), colorLabelStyle);
 				Handles.color = color;
 				Handles.DrawWireDisc(cell.CenterPoint, _input.View.Direction, 0.1f);
 
 				Handles.zTest = CompareFunction.Greater;
 				colorLabelStyle.normal.textColor /= 3;
-				Handles.Label(cell.CenterPoint, cell.Coords.ToString(), colorLabelStyle);
+				Handles.Label(cell.CenterPoint, cell.HexPoses.ToString(), colorLabelStyle);
 				Handles.color /= 3;
 				Handles.DrawWireDisc(cell.CenterPoint, _input.View.Direction, 0.1f);
 
@@ -712,7 +712,7 @@ namespace TerrainDemo.Editor
 
 			if (input.HoveredMacroCell != null)
 			{
-				var hoveredNode = _runner.NavMap.Nodes[input.HoveredMacroCell.Coords];
+				var hoveredNode = _runner.NavMap.Nodes[input.HoveredMacroCell.HexPoses];
 				ShowNavigationCellInfo(hoveredNode);
 
 				//Show macro navigate cost info
@@ -727,13 +727,13 @@ namespace TerrainDemo.Editor
 		private void ShowMacroZoneInfo(Macro.Zone zone)
 		{
 			GUILayout.Label($"Macro.Zone {zone.Id}", EditorStyles.boldLabel);
-			GUILayout.Label($"Cells: {zone.Cells.ToJoinedString(c => c.Coords.ToString())}");
+			GUILayout.Label($"Cells: {zone.Cells.ToJoinedString(c => c.HexPoses.ToString())}");
 			GUILayout.Label($"Biome: {zone.Biome.name}");
 		}
 
 		private void ShowMacroCellInfo(Cell cell)
 		{
-			GUILayout.Label($"Macro.Cell {cell.Coords}", EditorStyles.boldLabel);
+			GUILayout.Label($"Macro.Cell {cell.HexPoses}", EditorStyles.boldLabel);
 			GUILayout.Label($"Zone: {cell.ZoneId} - {cell.Biome.name}");
 			GUILayout.Label($"Height: {cell.DesiredHeight} desired, {cell.CenterPoint.Y:F1} true");
 		}
@@ -742,7 +742,7 @@ namespace TerrainDemo.Editor
 		{
 			GUILayout.Label("MacroVert", EditorStyles.boldLabel);
 			GUILayout.Label($"Id: {vert.Id}, pos: {vert.Position.ToString(GetZoomLevel(distance))}");
-			GUILayout.Label($"Cells: {vert.Cells.Select(c => c.Coords).ToJoinedString()}");
+			GUILayout.Label($"Cells: {vert.Cells.Select(c => c.HexPoses).ToJoinedString()}");
 			GUILayout.Label($"Influence: {vert.Influence}");
 		}
 

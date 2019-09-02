@@ -7,6 +7,7 @@ using JetBrains.Annotations;
 using TerrainDemo.Hero;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
+using UnityEngine.Assertions;
 
 namespace TerrainDemo.Navigation
 {
@@ -21,15 +22,24 @@ namespace TerrainDemo.Navigation
 
 	    public bool IsValid { get; }
 
-	    public IEnumerable<Segment> Segments => _segments;		//Mostly for debug, use Path Iterator to retrieve waypoints along path
+	    public IEnumerable<Segment> Segments
+	    {
+		    get
+		    {
+			    for ( var i = 0; i < _segmentsCount; i++ )
+			    {
+				    yield return GetSegment( i );
+			    }
+		    }
+	    }
 
-        public NavigationCell FinishNavNode => _segments[_segments.Length - 1].Node;
+	    public NavigationCell FinishNavNode => _finishSegment.Node;
 
-        public NavigationCell StartNavNode => _segments[0].Node;
+        public NavigationCell StartNavNode => _startSegment.Node;
 
         #region Debug
 
-		public IEnumerable<(NavigationCell, float)> ProcessedCosts => _processCosts;
+		public IEnumerable<(NavigationCell, float)> ProcessedCosts => _sharedPath.CostsDebug.Select( c => (c.Key, c.Value) );
 
         #endregion
 
@@ -40,7 +50,7 @@ namespace TerrainDemo.Navigation
         /// <param name="to"></param>
         /// <param name="actor"></param>
         /// <param name="segments"></param>
-        public Path(GridPos from, GridPos to, Actor actor, [NotNull] NavigationMap map)
+        internal Path(GridPos from, GridPos to, Actor actor, NavigationCell fromNode, NavigationCell toNode, PathCacheEntry sharedPath, [NotNull] NavigationMap map)
         {
             Start   = from;
             Finish  = to;
@@ -48,76 +58,110 @@ namespace TerrainDemo.Navigation
             
             _map = map;
 
-            var startNode = map.GetNavNode( @from );
-            var finishNode = map.GetNavNode( to );
-
-            var searchResult =  map.Pathfinder.GetMacroPath( startNode, finishNode, actor );
-            var macroPath = searchResult.Path;
-            _processCosts = searchResult.CostsDebug.Select( c => (c.Key, c.Value)).ToArray(  );
-
-            if ( macroPath.Count < 2 )
+            _sharedPath = sharedPath;
+            if ( fromNode == toNode )
             {
-	            IsValid = false;
-				return;
+	            _startSegment = new Segment( fromNode, from, to );
+	            _finishSegment = _startSegment;
+	            _segmentsCount = 1;
+            }
+            else
+            {
+	            _startSegment = new Segment( fromNode, from );
+				_finishSegment = new Segment( toNode, to );
+				_segmentsCount = sharedPath.Segments.Count + 2;
             }
 
-            IsValid = true;
-            _segments   = macroPath.Select( mp => new Segment( mp ) ).ToArray( );
-            _segments[0].Points.Add( Start );
-            _segments[_segments.Length - 1].Points.Add( Finish );
+			Assert.IsTrue( _segmentsCount > 0 );
+			IsValid = true;
         }
 
-        public float GetPathLength()
+		public float GetPathLength()
         {
             if (!IsValid)
                 return 0;
 
             var result = 0f;
-            foreach (var segment in _segments)
-                result += segment.GetLength();
+            for ( var i = 0; i < _segmentsCount; i++ )
+            {
+	            var segment = GetSegment(i);
+	            result += segment.GetLength( );
+            }
 
             return result;
         }
 
 		public Iterator Go() => new Iterator( this );
 
-        private readonly Segment _finishSegment;
-		private readonly Segment[] _segments;
-        private readonly NavigationMap _map;
-        private readonly (NavigationCell, float)[] _processCosts;
+
+		private readonly int _segmentsCount;
+		private readonly NavigationMap _map;
+		private readonly (NavigationCell, float)[] _processCosts;
+		private readonly Segment _startSegment;
+		private readonly Segment _finishSegment;
+		private readonly PathCacheEntry _sharedPath;
+
+		private Segment GetSegment( int i )
+		{
+			if ( i == 0 )
+				return _startSegment;
+			else if ( i == _segmentsCount - 1 )
+				return _finishSegment;
+			else if ( i > 0 && i < _segmentsCount - 1 )
+				return _sharedPath.Segments[i - 1];
+			else
+			{
+				throw new ArgumentOutOfRangeException( );
+			}
+		}
 
         //Calculate micro path for given nav node
-        private void RefinePath( int nodeIndex )
+        private void RefineSegment( int nodeIndex )
         {
 	        GridPos prevPoint, myPoint, nextPoint;
 
 	        var prevIndex = Math.Max( nodeIndex - 1, 0 );
-	        var nextIndex = Math.Min( nodeIndex + 1, _segments.Length - 1 );
+	        var nextIndex = Math.Min( nodeIndex + 1, _segmentsCount - 1 );
 
-	        prevPoint = prevIndex == 0 ? Start : _segments[prevIndex].Node.Cell.Center;
-	        nextPoint = nextIndex == _segments.Length - 1 ? Finish : _segments[nextIndex].Node.Cell.Center;
+	        prevPoint = prevIndex == 0 ? Start : GetSegment(prevIndex).Node.Cell.Center;
+	        nextPoint = nextIndex == _segmentsCount - 1 ? Finish : GetSegment(nextIndex).Node.Cell.Center;
 	        myPoint = nodeIndex == 0 
 		        ? Start 
-		        : nodeIndex  == _segments.Length - 1 
+		        : nodeIndex  == _segmentsCount - 1 
 			        ? Finish 
-			        : _segments[nodeIndex].Node.Cell.Center;
+			        : GetSegment(nodeIndex).Node.Cell.Center;
 
 	        var from = GridPos.Average( prevPoint, myPoint );
 	        var to = GridPos.Average(myPoint, nextPoint);
 
-			_segments[nodeIndex].Points.AddRange( new[]{from, to});//todo call pathfinding here
-			_segments[nodeIndex].IsRefined = true;
+	        GetSegment(nodeIndex).Refine(  new[]{from, to});//todo call pathfinding here
         }
 
         public class Segment
         {
 	        public readonly NavigationCell Node;
-	        public readonly List<GridPos> Points = new List<GridPos>();
-	        public          bool           IsRefined;
+	        public IReadOnlyList<GridPos> Points => _points;
+	        public          bool           IsRefined { get; private set; }
 
-	        public Segment( NavigationCell node )
+	        internal Segment( NavigationCell node )
 	        {
 		        Node = node;
+	        }
+
+	        internal Segment(NavigationCell node, params GridPos[] initPoints) : this(node)
+	        {
+		        _points.AddRange(initPoints);
+	        }
+
+
+			public void Refine( IEnumerable<GridPos> points )
+	        {
+		        if ( !IsRefined )
+		        {
+					_points.Clear(  );
+			        _points.AddRange( points );
+			        IsRefined = true;
+		        }
 	        }
 
 	        public float GetLength()
@@ -136,6 +180,8 @@ namespace TerrainDemo.Navigation
 	        {
 		        return $"Node {Node.Cell.Id}, points {Points.ToJoinedString( )}";
 	        }
+
+			private readonly List<GridPos> _points = new List<GridPos>();
         }
 
 		/// <summary>
@@ -158,14 +204,14 @@ namespace TerrainDemo.Navigation
 
 			        if ( _isFinished )
 			        {
-				        var lastSegment = _path._segments[_path._segments.Length - 1];
+				        var lastSegment = _path._finishSegment;
 				        return ( lastSegment.Node, lastSegment.Points[lastSegment.Points.Count - 1] );
 			        }
 
-			        var segment = _path._segments[_segmentIndex];
+			        var segment = _path.GetSegment(_segmentIndex);
 			        if ( !segment.IsRefined )
 			        {
-				        _path.RefinePath( _segmentIndex );
+				        _path.RefineSegment( _segmentIndex );
 			        }
 
 			        return ( segment.Node, segment.Points[_pointIndex] );
@@ -179,16 +225,16 @@ namespace TerrainDemo.Navigation
 
 		        while ( true )
 		        {
-			        if ( _segmentIndex >= _path._segments.Length )
+			        if ( _segmentIndex >= _path._segmentsCount )
 			        {
 				        _isFinished = true;
 				        return false;
 			        }
 
-			        var segment = _path._segments[_segmentIndex];
+			        var segment = _path.GetSegment(_segmentIndex);
 			        if ( !segment.IsRefined )
 			        {
-				        _path.RefinePath( _segmentIndex );
+				        _path.RefineSegment( _segmentIndex );
 			        }
 
 			        _pointIndex++;

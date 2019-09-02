@@ -225,7 +225,7 @@ namespace TerrainDemo.Navigation
             yield return new SearchResult(result, 0, _cameFrom, _costSoFar);
         }
 
-        public readonly struct SearchResult
+        public class SearchResult
         {
 	        public readonly List<TNode> Path;
 	        public readonly uint ElapsedTime;	

@@ -11,6 +11,8 @@ namespace TerrainDemo.Hero
 {
 	public class Locomotor
 	{
+		public Type LocoType => _type;
+
 		public Locomotor( Type type, Actor owner, MicroMap map, NavigationMap navMap )
 		{
 			_type   = type;

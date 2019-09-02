@@ -328,7 +328,10 @@ namespace TerrainDemo.Hero
             return true;
         }
 
-
+        public override string ToString( )
+        {
+	        return $"{Name} {BlockPosition} ({State})";
+        }
 
         public event Action<Actor> Changed;
 

@@ -69,7 +69,7 @@ namespace TerrainDemo.Macro
             throw new ArgumentOutOfRangeException(nameof(cell), "Unknown cell");
         }
 
-        public override string ToString() => $"Edge {Id}, {Cell1?.Coords.ToString() ?? "?"}|{Cell2?.Coords.ToString() ?? "?"}, {Vertex1.Id}-{Vertex2.Id}";
+        public override string ToString() => $"Edge {Id}, {Cell1?.HexPoses.ToString() ?? "?"}|{Cell2?.HexPoses.ToString() ?? "?"}, {Vertex1.Id}-{Vertex2.Id}";
 
         private readonly MacroMap _map;
         private readonly MacroMap.CellMesh _mesh;

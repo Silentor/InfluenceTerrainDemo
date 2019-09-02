@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using OpenToolkit.Mathematics;
 using TerrainDemo.Hero;
 using TerrainDemo.Macro;
@@ -15,8 +16,9 @@ namespace TerrainDemo.Navigation
 	/// </summary>
 	public class NavigationMap
 	{
-		public IReadOnlyDictionary<Coord, NavigationCell> Nodes => _nodes;
+		public IReadOnlyDictionary<HexPos, NavigationCell> Nodes => _nodes;
 		public readonly NavGraph MacroGraph;
+		public readonly Pathfinder Pathfinder;
 		public readonly NavigationGrid NavGrid;
 
 		public NavigationMap(MacroMap macromap, MicroMap micromap, TriRunner settings)
@@ -74,12 +76,41 @@ namespace TerrainDemo.Navigation
 
 		public Path CreatePath(GridPos from, GridPos to, Actor actor)
 		{
-			return new Path(from, to, actor, this);
+			var fromNode = GetNavNode( from );
+			var toNode = GetNavNode( to );
+
+			var pathKey = new PathKey(fromNode.Cell.Id, toNode.Cell.Id, actor.Locomotor.LocoType);
+			if ( _sharedPathes.TryGetValue( pathKey, out var sharedPath ) )
+			{
+				UnityEngine.Debug.Log( $"Path {pathKey} for {actor} was finded at cache" );
+
+				var result = new Path(from, to, actor, fromNode, toNode, sharedPath, this);
+				return result;
+			}
+			else
+			{
+				var newPath = Pathfinder.GetMacroPath(fromNode, toNode, actor);
+
+				//Prepare shared path
+				newPath.Path.RemoveAt( 0 );
+				if(newPath.Path.Last() == toNode)
+					newPath.Path.RemoveAt( newPath.Path.Count - 1 );
+
+				var segments = newPath.Path.Select( n => new Path.Segment( n, new GridPos[0] ) ).ToList( );
+				var newSharedPath = new PathCacheEntry( segments, newPath.ElapsedTime, newPath.CostsDebug);
+				_sharedPathes[pathKey] = newSharedPath;
+				
+				UnityEngine.Debug.Log( $"Created new path {pathKey} for {actor}" );
+
+				var result = new Path(from, to, actor, fromNode, toNode, newSharedPath, this);
+				return result;
+			}
 		}
 
-		private readonly Dictionary<Coord, NavigationCell> _nodes = new Dictionary<Coord, NavigationCell>();
-		private readonly MicroMap _micromap;
+		private readonly Dictionary<HexPos, NavigationCell> _nodes = new Dictionary<HexPos, NavigationCell>();
+		private readonly Dictionary<PathKey, PathCacheEntry> _sharedPathes = new Dictionary<PathKey, PathCacheEntry>();
 
+		private readonly MicroMap _micromap;
 		private readonly MacroMap _macromap;
 
 
@@ -131,7 +162,64 @@ namespace TerrainDemo.Navigation
 				return Incline.Steep;
 		}
 
-		public readonly Pathfinder Pathfinder;
+		private struct PathKey : IEquatable<PathKey>
+		{
+			private readonly HexPos FromNode;
+			private readonly HexPos ToNode;
+			private readonly Locomotor.Type LocoType;
+
+			public PathKey( HexPos fromNode, HexPos node, Locomotor.Type locoType )
+			{
+				FromNode = fromNode;
+				ToNode = node;
+				LocoType = locoType;
+			}
+			public bool Equals( PathKey other )
+			{
+				return FromNode.Equals( other.FromNode ) && ToNode.Equals( other.ToNode ) && LocoType == other.LocoType;
+			}
+			public override bool Equals( object obj )
+			{
+				return obj is PathKey other && Equals( other );
+			}
+			public override int GetHashCode( )
+			{
+				unchecked
+				{
+					var hashCode = FromNode.GetHashCode( );
+					hashCode = ( hashCode * 397 ) ^ ToNode.GetHashCode( );
+					hashCode = ( hashCode * 397 ) ^ (int) LocoType;
+					return hashCode;
+				}
+			}
+			public static bool operator ==( PathKey left, PathKey right )
+			{
+				return left.Equals( right );
+			}
+			public static bool operator !=( PathKey left, PathKey right )
+			{
+				return !left.Equals( right );
+			}
+
+			public override string ToString( )
+			{
+				return $"{FromNode}-{ToNode} ({LocoType})";
+			}
+		}
+	}
+
+	public class PathCacheEntry
+	{
+		public readonly List<Path.Segment> Segments;
+		public readonly uint ElapsedTime;	
+		public readonly IReadOnlyDictionary<NavigationCell, float> CostsDebug;
+
+		public PathCacheEntry( List<Path.Segment> segments, uint elapsedTime, IReadOnlyDictionary<NavigationCell, float> costsDebug )
+		{
+			Segments = segments;
+			ElapsedTime = elapsedTime;
+			CostsDebug = costsDebug;
+		}
 	}
 
 	//public class NavigationCellBorderNode : NavigationNodeBase, IEquatable<NavigationCellBorderNode>

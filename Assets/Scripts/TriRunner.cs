@@ -275,8 +275,10 @@ namespace TerrainDemo
 
             if (hitPoint.HasValue)
             {
-                _npc.Nav.Go(hitPoint.Value.position);
-                _npc2.Nav.Go(hitPoint.Value.position);
+	            foreach ( var actor in Micro.Actors )
+	            {
+		            actor.Nav.Go( hitPoint.Value.position );
+	            }
             }
         }
 
@@ -289,7 +291,6 @@ namespace TerrainDemo
 
         void Awake()
         {
-            Assert.raiseExceptions = true;
             _allBlocks = Resources.LoadAll<BlockSettings>("");
         }
 
@@ -348,9 +349,7 @@ namespace TerrainDemo
 
         private void Update()
         {
-            _hero?.Update(Time.deltaTime);
-            _npc?.Update(Time.deltaTime);
-            _npc2?.Update(Time.deltaTime);
+			Micro.Update( Time.deltaTime );
         }
 #endregion
     }

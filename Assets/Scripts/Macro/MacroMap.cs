@@ -132,7 +132,7 @@ namespace TerrainDemo.Macro
 
             var processedCells = new List<CellCandidate>();
             var unprocessedCells = new List<CellCandidate>();
-            unprocessedCells.Add(new CellCandidate(new Coord(0, 0), Vector2.Zero, CalcVertsPosition(Vector2.Zero, _settings.CellSide)));
+            unprocessedCells.Add(new CellCandidate(new HexPos(0, 0), Vector2.Zero, CalcVertsPosition(Vector2.Zero, _settings.CellSide)));
 
             //Iteratively process flood-fill cell generation algorithm
             while (unprocessedCells.Count > 0)
@@ -152,9 +152,9 @@ namespace TerrainDemo.Macro
                 var neighborsCenters = CalcNeighborCellsPosition(candidateCell.Center, triangleHeight * _side * 2);
                 for (int i = 0; i < neighborsCenters.Length; i++)
                 {
-                    var coord = candidateCell.Coords.Translated(Coord.Directions[i]);
-                    if (!unprocessedCells.Exists(c => c.Coords == coord) &&
-                        !processedCells.Exists(c => c.Coords == coord))
+                    var coord = candidateCell.HexPoses.Translated(HexPos.Directions[i]);
+                    if (!unprocessedCells.Exists(c => c.HexPoses == coord) &&
+                        !processedCells.Exists(c => c.HexPoses == coord))
                     {
                         unprocessedCells.Add(new CellCandidate(coord, neighborsCenters[i], CalcVertsPosition(neighborsCenters[i], _settings.CellSide)));
                     }
@@ -188,7 +188,7 @@ namespace TerrainDemo.Macro
                 },
                 delegate(CellMesh.Face face, IEnumerable<MacroVert> vertices, IEnumerable<MacroEdge> edges)
                 {
-                    var faceCoord = processedCells[face.Id].Coords;
+                    var faceCoord = processedCells[face.Id].HexPoses;
                     var cell = new Cell(this, faceCoord, face, vertices, edges);
                     Cells.Add(cell);
                     return cell;
@@ -197,7 +197,7 @@ namespace TerrainDemo.Macro
             //Init all cells
             foreach (var cell in Cells)
             {
-                var neighbors = Coord.Directions.Select(dir => Cells.Find(c => c.Coords == cell.Coords.Translated(dir)));
+                var neighbors = HexPos.Directions.Select(dir => Cells.Find(c => c.HexPoses == cell.HexPoses.Translated(dir)));
                 cell.Init(neighbors);
             }
 
@@ -407,13 +407,13 @@ namespace TerrainDemo.Macro
 
         private readonly struct CellCandidate
         {
-            public readonly Coord Coords;
+            public readonly HexPos HexPoses;
             public readonly Vector2 Center;
             public readonly Vector2[] Vertices;
 
-            public CellCandidate(Coord coords, Vector2 center, Vector2[] vertices)
+            public CellCandidate(HexPos coords, Vector2 center, Vector2[] vertices)
             {
-                Coords = coords;
+                HexPoses = coords;
                 Center = center;
                 Vertices = vertices;
             }

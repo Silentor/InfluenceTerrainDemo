@@ -22,7 +22,7 @@ namespace TerrainDemo.Macro
         public const int InvalidCellId = -1;
 
         public int Id => _face.Id;
-        public readonly Coord Coords;
+        public readonly HexPos HexPoses;
         public int ZoneId = Zone.InvalidId;
         public readonly MacroMap Map;
         public Box2 Bounds => _face.Bounds;
@@ -102,7 +102,7 @@ namespace TerrainDemo.Macro
         }
         */
 
-        public Cell(MacroMap map, Coord coords, [NotNull] MacroMap.CellMesh.Face face, IEnumerable<MacroVert> vertices, IEnumerable<MacroEdge> edges)
+        public Cell(MacroMap map, HexPos coords, [NotNull] MacroMap.CellMesh.Face face, IEnumerable<MacroVert> vertices, IEnumerable<MacroEdge> edges)
         {
             if (face == null) throw new ArgumentNullException(nameof(face));
             Assert.IsTrue(face.Vertices.Count() == MaxNeighborsCount);
@@ -112,7 +112,7 @@ namespace TerrainDemo.Macro
             _vertices = vertices.ToArray();
             _edges = edges.ToArray();
             Map = map;
-            Coords = coords;
+            HexPoses = coords;
         }   
 
         public void Init(IEnumerable<Cell> neighbors)
@@ -175,7 +175,7 @@ namespace TerrainDemo.Macro
 
         public override string ToString()
         {
-            return $"TriCell {Coords}({_neighbors[0]?.Coords.ToString() ?? "?"}, {_neighbors[1]?.Coords.ToString() ?? "?"}, {_neighbors[2]?.Coords.ToString() ?? "?"}, {_neighbors[3]?.Coords.ToString() ?? "?"}, {_neighbors[4]?.Coords.ToString() ?? "?"}, {_neighbors[5]?.Coords.ToString() ?? "?"})";
+            return $"TriCell {HexPoses}({_neighbors[0]?.HexPoses.ToString() ?? "?"}, {_neighbors[1]?.HexPoses.ToString() ?? "?"}, {_neighbors[2]?.HexPoses.ToString() ?? "?"}, {_neighbors[3]?.HexPoses.ToString() ?? "?"}, {_neighbors[4]?.HexPoses.ToString() ?? "?"}, {_neighbors[5]?.HexPoses.ToString() ?? "?"})";
         }
 
         private readonly MacroMap.CellMesh.Face _face;
@@ -233,7 +233,7 @@ namespace TerrainDemo.Macro
         {
             if (other is null) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Equals(Coords, other.Coords);
+            return Equals(HexPoses, other.HexPoses);
         }
 
         public override bool Equals(object obj)
@@ -246,7 +246,7 @@ namespace TerrainDemo.Macro
 
         public override int GetHashCode()
         {
-            return Coords.GetHashCode();
+            return HexPoses.GetHashCode();
         }
 
         public static bool operator ==(Cell left, Cell right)
