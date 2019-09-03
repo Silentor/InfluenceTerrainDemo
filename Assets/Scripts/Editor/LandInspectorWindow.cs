@@ -794,6 +794,9 @@ namespace TerrainDemo.Editor
 				var angle = MathHelper.RadiansToDegrees(Vector3.CalculateAngle(data.Normal, Vector3.UnitY));
 				GUILayout.Label($"Angle {angle} °");
 
+				if(block.IsObstacle)
+					GUILayout.Label( "Is obstacle" );
+
 				if (showHeightmap)
 				{
 					GUILayout.Label("Vertices:");

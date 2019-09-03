@@ -120,8 +120,11 @@ namespace TerrainDemo.Generators
         public override BlockLayers GenerateBlock3(GridPos position, in Heights v00, in Heights v01,
             in Heights v10, in Heights v11)
         {
-            if(_currentCell != null)
-                return new BlockLayers(_currentCellData.Item2, BlockType.Empty);
+	        if ( _currentCell != null )
+	        {
+		        var isObstacle = _zoneRandom.Value( ) < 0.1;
+		        return new BlockLayers(_currentCellData.Item2, BlockType.Empty, isObstacle);
+	        }
             else //Just defence
                 return new BlockLayers(BlockType.Empty, BlockType.Empty);
         }

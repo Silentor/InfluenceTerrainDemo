@@ -66,6 +66,8 @@ namespace TerrainDemo.Micro
             DoChanged();
         }
 
+		
+
         /// <summary>
         /// Generate heightmap from blockmap
         /// </summary>
@@ -138,6 +140,14 @@ namespace TerrainDemo.Micro
             GenerateDataMap();
             DoChanged();
         }
+
+        //public void SetObstacles( IEnumerable<GridPos> positions )
+        //{
+	       // foreach ( var obstacle in positions )
+	       // {
+		      //  _obstacles.Add( obstacle, true );
+	       // }
+        //}
 
         public Heights[,] GetHeightMap()
         {
@@ -529,6 +539,8 @@ namespace TerrainDemo.Micro
 
         protected readonly List<BaseBlockMap> _childs = new List<BaseBlockMap>();
         protected readonly List<Actor> _actors = new List<Actor>();
+
+		protected readonly Dictionary<GridPos, bool>	_obstacles = new Dictionary<GridPos, bool>();
 
         protected void DoChanged()
         {

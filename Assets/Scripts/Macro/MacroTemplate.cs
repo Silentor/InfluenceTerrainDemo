@@ -215,7 +215,7 @@ namespace TerrainDemo.Macro
                         !v11.IsUndergroundLayerPresent)
                         under = BlockType.Empty;
 
-                    blockBuffer2.Add(new Blocks(main, under));
+                    blockBuffer2.Add(new Blocks(main, under, blockType.Obstacle));
                 }
 
                 mainGenerator.EndCellGeneration(microcell);

@@ -101,7 +101,8 @@ namespace TerrainDemo.Navigation
 		Flat, 
 		Small, 
 		Medium, 
-		Steep
+		Steep,
+		Blocked				//Block is completely blocked
 	}
 
 	public enum LocalIncline : byte

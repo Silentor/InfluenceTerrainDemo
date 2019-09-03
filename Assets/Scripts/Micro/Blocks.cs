@@ -37,13 +37,16 @@ namespace TerrainDemo.Micro
 
         public bool IsOverlapped => OverlapState == 0;
 
+        public readonly bool IsObstacle;
+
         public static readonly Blocks Empty;
 
-        public Blocks(BlockType ground, BlockType underground) : this(ground, underground, 0)
+        public Blocks(BlockType ground, BlockType underground, bool isObstacle = false) : this(ground, underground, 0, isObstacle)
         {
         }
 
-        private Blocks(BlockType ground, BlockType underground, byte overlapState)
+
+        private Blocks(BlockType ground, BlockType underground, byte overlapState, bool isObstacle)
         {
             /*
             //Fix heights if needed
@@ -83,6 +86,7 @@ namespace TerrainDemo.Micro
                 */
 
             OverlapState = overlapState;
+            IsObstacle = isObstacle;
 
             //Assert.IsTrue(Ground != BlockType.Empty || Height.Main - Height.Underground == 0, $"Block is wrong");
             //Assert.IsTrue(Underground != BlockType.Empty || Height.Underground - Height.Base == 0, $"Block is wrong");
@@ -100,7 +104,7 @@ namespace TerrainDemo.Micro
                 newState = newState - 1;
                 objectMapId += 1;
             }
-            return new Blocks(Ground, Underground, (byte)((objectMapId << 2) | (int)newState));
+            return new Blocks(Ground, Underground, (byte)((objectMapId << 2) | (int)newState), IsObstacle);
         }
 
         public (int mapId, BlockOverlapState state) GetOverlapState()
@@ -167,12 +171,15 @@ namespace TerrainDemo.Micro
         public readonly BlockType Base;
         public readonly BlockType Underground;
         public readonly BlockType Ground;
+        public readonly bool Obstacle;
 
-        public BlockLayers(BlockType ground, BlockType underground) : this()
+        public BlockLayers(BlockType ground, BlockType underground, bool obstacle = false) : this()
         {
             Underground = underground;
             Ground = ground;
             Base = BlockType.Bedrock;
+
+            Obstacle = obstacle;
         }
     }
 }

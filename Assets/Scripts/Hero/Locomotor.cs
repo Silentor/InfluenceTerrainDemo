@@ -250,7 +250,7 @@ namespace TerrainDemo.Hero
 																	}
 																};
 
-		protected bool CheckBlock( in NavigationGrid.Block block )
+		private bool CheckBlock( in NavigationGrid.Block block )
 		{
 			if ( _type == Type.Biped )
 			{

@@ -15,7 +15,7 @@ namespace TerrainDemo.Micro
 
         public static readonly BlockData Empty = new BlockData();
 
-        public BlockData(in Heights h00, in Heights h01, in Heights h10, in Heights h11)
+        public BlockData( in Heights h00, in Heights h01, in Heights h10, in Heights h11 )
         {
             Height = (h00.Nominal + h01.Nominal + h10.Nominal + h11.Nominal) / 4;
             MinHeight = h00.Base;
