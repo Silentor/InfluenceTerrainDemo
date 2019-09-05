@@ -76,6 +76,7 @@ namespace TerrainDemo.Visualization
             var heightMap = map.GetHeightMap();
             var blockMap = map.GetBlockMap();
 
+            var indexCounter = 1;
             var groundVertIndexBuffer = new int[bounds.Size.X + 1, bounds.Size.Z + 1];
             var groundVertices = new List<Vector3>((bounds.Size.X + 1) * (bounds.Size.Z + 1))
                 { Vector3.zero};        //Dummy value to make default 0 values of baseVertIndexBuffer a invalid
@@ -83,9 +84,11 @@ namespace TerrainDemo.Visualization
             var groundUv = new List<Vector2>(groundVertices.Count){Vector2.zero};
             //var groundNormals = new List<Vector3>(groundVertices.Count) {Vector3.zero};
 
+            var obstaclesIndices = new List<int>();
+
             //Set quads
-            for (int worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
-                for (int worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
+            for (var worldX = bounds.Min.X; worldX <= bounds.Max.X; worldX++)
+                for (var worldZ = bounds.Min.Z; worldZ <= bounds.Max.Z; worldZ++)
                 {
                     var mapLocalX = worldX - map.Bounds.Min.X;
                     var mapLocalZ = worldZ - map.Bounds.Min.Z;
@@ -101,107 +104,149 @@ namespace TerrainDemo.Visualization
                         continue;
 
                     //Prepare block vertices
-                    int v00, v01, v10, v11;
-                    int startIndexCounter = groundVertices.Count;
+                    int i00, i01, i10, i11;
+                    
                     var h00 = heightMap[mapLocalX, mapLocalZ].Nominal;
                     if (groundVertIndexBuffer[chunkLocalX, chunkLocalZ] == 0)
                     {
-                        v00 = startIndexCounter++;
-                        groundVertIndexBuffer[chunkLocalX, chunkLocalZ] = v00;
-                        groundVertices.Add(new Vector3(worldX, h00, worldZ));
+                        i00 = indexCounter++;
+                        groundVertIndexBuffer[chunkLocalX, chunkLocalZ] = i00;
+                        var v00 = new Vector3(worldX, h00, worldZ);
+                        groundVertices.Add(v00);
                         groundUv.Add(new Vector2(chunkLocalX / (float) bounds.Size.X,
                             chunkLocalZ / (float) bounds.Size.Z));
-
                     }
                     else
                     {
-                        v00 = groundVertIndexBuffer[chunkLocalX, chunkLocalZ];
+                        i00 = groundVertIndexBuffer[chunkLocalX, chunkLocalZ];
                     }
 
                     var h01 = heightMap[mapLocalX, mapLocalZ + 1].Nominal;
                     if (groundVertIndexBuffer[chunkLocalX, chunkLocalZ + 1] == 0)
                     {
-                        v01 = startIndexCounter++;
-                        groundVertIndexBuffer[chunkLocalX, chunkLocalZ + 1] = v01;
-                        groundVertices.Add(new Vector3(worldX, h01, worldZ + 1));
+                        i01 = indexCounter++;
+                        groundVertIndexBuffer[chunkLocalX, chunkLocalZ + 1] = i01;
+                        var v01 = new Vector3(worldX, h01, worldZ + 1);
+                        groundVertices.Add(v01);
                         groundUv.Add(new Vector2(chunkLocalX / (float) bounds.Size.X,
                             (chunkLocalZ + 1) / (float) bounds.Size.Z));
                     }
                     else
                     {
-                        v01 = groundVertIndexBuffer[chunkLocalX, chunkLocalZ + 1];
+                        i01 = groundVertIndexBuffer[chunkLocalX, chunkLocalZ + 1];
                     }
 
                     var h10 = heightMap[mapLocalX + 1, mapLocalZ].Nominal;
                     if (groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ] == 0)
                     {
-                        v10 = startIndexCounter++;
-                        groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ] = v10;
-                        groundVertices.Add(new Vector3(worldX + 1, h10, worldZ));
+                        i10 = indexCounter++;
+                        groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ] = i10;
+                        var v10 = new Vector3(worldX + 1, h10, worldZ);
+                        groundVertices.Add(v10);
                         groundUv.Add(new Vector2((chunkLocalX + 1) / (float) bounds.Size.X,
                             (chunkLocalZ) / (float) bounds.Size.Z));
                     }
                     else
                     {
-                        v10 = groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ];
+                        i10 = groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ];
                     }
 
                     var h11 = heightMap[mapLocalX + 1, mapLocalZ + 1].Nominal;
                     if (groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1] == 0)
                     {
-                        v11 = startIndexCounter++;
-                        groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1] = v11;
-                        groundVertices.Add(new Vector3(worldX + 1, h11, worldZ + 1));
+                        i11 = indexCounter++;
+                        groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1] = i11;
+                        var v11 = new Vector3(worldX + 1, h11, worldZ + 1);
+                        groundVertices.Add(v11);
                         groundUv.Add(new Vector2((chunkLocalX + 1) / (float) bounds.Size.X,
                             (chunkLocalZ + 1) / (float) bounds.Size.Z));
                     }
                     else
                     {
-                        v11 = groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1];
+                        i11 = groundVertIndexBuffer[chunkLocalX + 1, chunkLocalZ + 1];
                     }
 
                     //Make proper quad
                     if (Mathf.Abs(h00 - h11) < Mathf.Abs(h10 - h01))
                     {
-                        groundIndices.Add(v00);
-                        groundIndices.Add(v01);
-                        groundIndices.Add(v11);
+                        groundIndices.Add(i00);
+                        groundIndices.Add(i01);
+                        groundIndices.Add(i11);
 
-                        groundIndices.Add(v00);
-                        groundIndices.Add(v11);
-                        groundIndices.Add(v10);
+                        groundIndices.Add(i00);
+                        groundIndices.Add(i11);
+                        groundIndices.Add(i10);
                     }
                     else
                     {
-                        groundIndices.Add(v00);
-                        groundIndices.Add(v01);
-                        groundIndices.Add(v10);
+                        groundIndices.Add(i00);
+                        groundIndices.Add(i01);
+                        groundIndices.Add(i10);
 
-                        groundIndices.Add(v10);
-                        groundIndices.Add(v01);
-                        groundIndices.Add(v11);
+                        groundIndices.Add(i10);
+                        groundIndices.Add(i01);
+                        groundIndices.Add(i11);
                     }
 
-                    /*
-                    //Calculate normals, check nearby map objects
-                    foreach (var mapChild in map.Childs)
-                    {
-                        if (worldX >= mapChild.Bounds.Min.X && worldX <= mapChild.Bounds.Max.X + 1
-                                                            && worldZ >= mapChild.Bounds.Min.Z &&
-                                                            worldZ <= mapChild.Bounds.Max.Z + 1)
-                        {
-                            ref readonly var childHeight = ref mapChild.get
-                        }
-                    }
-                    */
-                }
+					if (block.IsObstacle)
+					{
+						//Calculate pyramid top vertex
+						var v00 = groundVertices[i00];
+						var v01 = groundVertices[i01];
+						var v10 = groundVertices[i10];
+						var v11 = groundVertices[i11];
+						var obstacleTop = (v00 + v01 + v10 + v11) / 4;
+						obstacleTop.y = obstacleTop.y + 1;
+
+						//Add obstacle pyramid vertices and uv
+						groundVertices.Add(v00);
+						groundVertices.Add(v01);
+						groundVertices.Add(v10);
+						groundVertices.Add(v11);
+						groundVertices.Add(obstacleTop);
+
+						groundUv.Add(new Vector2(0, 0));
+						groundUv.Add(new Vector2(0, 1));
+						groundUv.Add(new Vector2(1, 0));
+						groundUv.Add(new Vector2(1, 1));
+						groundUv.Add(new Vector2(0.5f, 0.5f));
+
+						i00 = indexCounter++;
+						i01 = indexCounter++;
+						i10 = indexCounter++;
+						i11 = indexCounter++;
+						var iTop = indexCounter++;
+
+						//Make pyramid
+						obstaclesIndices.Add(i10);
+						obstaclesIndices.Add(i00);
+						obstaclesIndices.Add(iTop);
+
+						obstaclesIndices.Add(i11);
+						obstaclesIndices.Add(i10);
+						obstaclesIndices.Add(iTop);
+
+						obstaclesIndices.Add(i01);
+						obstaclesIndices.Add(i11);
+						obstaclesIndices.Add(iTop);
+
+						obstaclesIndices.Add(i00);
+						obstaclesIndices.Add(i01);
+						obstaclesIndices.Add(iTop);
+					}
+				}
 
 
-            var groundMesh = new Mesh();
+            var groundMesh = new Mesh
+                             {
+	                             subMeshCount = 2
+                             };
             groundMesh.SetVertices(groundVertices);
             groundMesh.SetTriangles(groundIndices, 0);
+            groundMesh.SetTriangles( obstaclesIndices, 1 );
             groundMesh.SetUVs(0, groundUv);
             //groundMesh.SetNormals(groundNormals);
+
             groundMesh.RecalculateNormals();
 
             var mainTexture = CreateBlockTexture(map, bounds, renderSettings);
@@ -858,6 +903,12 @@ namespace TerrainDemo.Visualization
                 colors.Add(cell.Zone.Biome.LayoutColor);
             }
         }
+
+        private void CreateObstacle( List<Vector3> vertices, List<Color> colors, List<int> indices )
+        {
+
+        }
+
 
         private Color InfluenceToColorSmooth(Influence influence)
         {

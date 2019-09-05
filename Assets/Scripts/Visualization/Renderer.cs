@@ -28,6 +28,7 @@ namespace TerrainDemo.Visualization
             _settings = settings;
             _vertexColor = settings.VertexColoredMat;
             _textured = settings.TexturedMat;
+            _obstacles = settings.ObstaclesMat;
         }
 
         public void Render(MacroMap map, TriRunner renderSettings)
@@ -148,6 +149,7 @@ namespace TerrainDemo.Visualization
         private Transform _meshRoot;
         private readonly Material _vertexColor;
         private readonly Material _textured;
+        private readonly Material _obstacles;
 
         private readonly Dictionary<Vector2i, GameObject> _renderChunksCache = new Dictionary<Vector2i, GameObject>();
         private readonly Dictionary<ObjectMap, GameObject> _renderObjectCache = new Dictionary<ObjectMap, GameObject>();
@@ -190,7 +192,8 @@ namespace TerrainDemo.Visualization
             filter.mesh = mesh;
             var baseTexturedMat = new Material(_textured);
             baseTexturedMat.mainTexture = texture;
-            renderer.material = baseTexturedMat;
+
+            renderer.materials = new []{baseTexturedMat, _obstacles};
         }
 
         private void ActorOnChanged(Actor actor)

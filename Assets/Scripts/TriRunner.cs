@@ -52,6 +52,7 @@ namespace TerrainDemo
         [Header("Micro")]
         public Renderer.BlockTextureMode TextureMode;
         public Material TexturedMat;
+        public Material ObstaclesMat;
 
         [Header("Actors")]
         public GameObject ActorPrefab;
