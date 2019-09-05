@@ -9,6 +9,10 @@ namespace TerrainDemo.Navigation
 	{
 		public readonly Bounds2i Bounds;
 
+		/// <summary>
+		/// Prepare navigation grid from micro map
+		/// </summary>
+		/// <param name="map"></param>
 		public NavigationGrid( MicroMap map )
 		{
 			Bounds = map.Bounds;
@@ -19,31 +23,41 @@ namespace TerrainDemo.Navigation
 			var zMax = _grid.GetLength(1) - 1;
 
 			//Iterate in local space
-			for (int x = 0; x <= xMax; x++)
+			for (uint x = 0; x <= xMax; x++)
 			{
-				for (int z = 0; z <= zMax; z++)
+				for (uint z = 0; z <= zMax; z++)
 				{
-					ref readonly var block = ref map.GetBlockDataLocal((x, z));
-					if (block.IsEmpty)
+					ref readonly var blockData = ref map.GetBlockDataLocal(x, z);
+					if (blockData.IsEmpty)
 						continue;
 
-					var     normal = block.Normal;
-					var     angle = Vector3.CalculateAngle( Vector3.UnitY, normal );
-					var slope = NavigationMap.AngleToIncline( angle );
+					Incline slope;
 					Side2d orientation;
-					if ( Math.Abs( normal.Z ) > Math.Abs( normal.X ) )
+					ref readonly var block = ref map.GetBlockLocalRef( x, z );
+					if ( block.IsObstacle )
 					{
-						if ( normal.Z > 0 )
-							orientation = Side2d.Forward;
-						else
-							orientation = Side2d.Back;
+						slope = Incline.Blocked;
+						orientation = Side2d.Forward;
 					}
 					else
 					{
-						if ( normal.X > 0 )
-							orientation = Side2d.Right;
+						var    normal = blockData.Normal;
+						var    angle  = Vector3.CalculateAngle( Vector3.UnitY, normal );
+						slope  = NavigationMap.AngleToIncline( angle );
+						if ( Math.Abs( normal.Z ) > Math.Abs( normal.X ) )
+						{
+							if ( normal.Z > 0 )
+								orientation = Side2d.Forward;
+							else
+								orientation = Side2d.Back;
+						}
 						else
-							orientation = Side2d.Left;
+						{
+							if ( normal.X > 0 )
+								orientation = Side2d.Right;
+							else
+								orientation = Side2d.Left;
+						}
 					}
 
 					_grid[x, z] = new Block( new Normal(slope, orientation) );

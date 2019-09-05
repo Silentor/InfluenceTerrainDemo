@@ -125,6 +125,7 @@ namespace TerrainDemo.Navigation
 				    case Incline.Small:  roughness += 2; break;
 				    case Incline.Medium: roughness += 10; break;
 				    case Incline.Steep:  roughness += 100; break;
+					case Incline.Blocked: roughness += 100; break;
 				    default:             throw new ArgumentOutOfRangeException();
 			    }
 

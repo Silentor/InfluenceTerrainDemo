@@ -323,8 +323,8 @@ namespace TerrainDemo.Micro
         private readonly MacroMap _macromap;
         private readonly TriRunner _settings;
         private readonly Dictionary<BlockType, BlockSettings> _blockSettings = new Dictionary<BlockType, BlockSettings>();
-        
-        
+
+
     }
 
     /// <summary>

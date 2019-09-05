@@ -252,6 +252,9 @@ namespace TerrainDemo.Hero
 
 		private bool CheckBlock( in NavigationGrid.Block block )
 		{
+			if ( block.Normal.Slope == Incline.Blocked )
+				return false;
+
 			if ( _type == Type.Biped )
 			{
 				return block.Normal.Slope <= Incline.Medium;

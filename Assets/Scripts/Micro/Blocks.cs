@@ -17,6 +17,8 @@ namespace TerrainDemo.Micro
         public readonly BlockType Base;
         public readonly BlockType Underground;
         public readonly BlockType Ground;
+        public readonly bool IsObstacle;
+
         /// <summary>
         /// How blocks overlapped between main map and objects maps
         /// nnnn nnxx - id of another object map with overlapped block
@@ -33,11 +35,9 @@ namespace TerrainDemo.Micro
                                 != BlockType.Empty ? Ground : Underground 
                                                               != BlockType.Empty ? Underground : Base;
 
-        public bool IsEmpty => Ground == BlockType.Empty && Underground == BlockType.Empty && Base == BlockType.Empty;
+        public bool IsEmpty => this == Empty;
 
         public bool IsOverlapped => OverlapState == 0;
-
-        public readonly bool IsObstacle;
 
         public static readonly Blocks Empty;
 

@@ -325,12 +325,12 @@ namespace TerrainDemo.Micro
             return ref _blocks[localPos.X, localPos.Z];
         }
 
-        public ref readonly Blocks GetBlockRef(int xWorldBlockPos, int zWorldBlockPos)
+        public ref readonly Blocks GetBlockLocalRef(uint xlocalBlockPos, uint zLocalBlockPos)
         {
-            if(xWorldBlockPos < Bounds.Min.X || xWorldBlockPos > Bounds.Max.X || zWorldBlockPos < Bounds.Min.Z || zWorldBlockPos > Bounds.Max.Z)
-                return ref Blocks.Empty;
+	        if (xlocalBlockPos >= _blockData.GetLength( 0 ) || zLocalBlockPos >= _blockData.GetLength( 1 ))
+		        return ref Blocks.Empty;
 
-            return ref _blocks[xWorldBlockPos - Bounds.Min.X, zWorldBlockPos - Bounds.Min.Z];
+	        return ref _blocks[xlocalBlockPos, zLocalBlockPos];
         }
 
         public ref readonly BlockData GetBlockData(GridPos worldBlockPos)
@@ -342,12 +342,12 @@ namespace TerrainDemo.Micro
             return ref _blockData[localPos.X, localPos.Z];
         }
 
-        internal ref readonly BlockData GetBlockDataLocal(Vector2i localBlockPos)
+        internal ref readonly BlockData GetBlockDataLocal(uint xlocalBlockPos, uint zLocalBlockPos)
         {
-	        if (localBlockPos.X >= _blockData.GetLength( 0 ) || localBlockPos.Z >= _blockData.GetLength( 1 ))
+	        if (xlocalBlockPos >= _blockData.GetLength( 0 ) || zLocalBlockPos >= _blockData.GetLength( 1 ))
 		        return ref BlockData.Empty;
 
-	        return ref _blockData[localBlockPos.X, localBlockPos.Z];
+	        return ref _blockData[xlocalBlockPos, zLocalBlockPos];
         }
 
 

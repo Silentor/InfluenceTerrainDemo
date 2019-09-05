@@ -6,8 +6,8 @@ using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
 using UnityEngine;
 using Ray = TerrainDemo.Spatial.Ray;
-using Vector2 = UnityEngine.Vector2;
-using Vector3 = UnityEngine.Vector3;
+using Vector2 = OpenToolkit.Mathematics.Vector2;
+using Vector3 = OpenToolkit.Mathematics.Vector3;
 
 namespace TerrainDemo.Tools
 {
@@ -20,9 +20,9 @@ namespace TerrainDemo.Tools
             Vector2 b = p3 - p4;
             Vector2 c = p1 - p3;
 
-            float alphaNumerator = b.y * c.x - b.x * c.y;
-            float alphaDenominator = a.y * b.x - a.x * b.y;
-            float betaNumerator = a.x * c.y - a.y * c.x;
+            float alphaNumerator = b.Y * c.X - b.X * c.Y;
+            float alphaDenominator = a.Y * b.X - a.X * b.Y;
+            float betaNumerator = a.X * c.Y - a.Y * c.X;
             float betaDenominator = alphaDenominator; /*2013/07/05, fix by Deniz*/
 
             bool doIntersect = true;
@@ -95,7 +95,7 @@ namespace TerrainDemo.Tools
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <param name="c"></param>
-        public static (float u, float v, float w) Barycentric2DCoords(OpenToolkit.Mathematics.Vector2 point, OpenToolkit.Mathematics.Vector2 a, OpenToolkit.Mathematics.Vector2 b, OpenToolkit.Mathematics.Vector2 c)
+        public static (float u, float v, float w) Barycentric2DCoords(Vector2 point, Vector2 a, Vector2 b, Vector2 c)
         {
             //Based on http://gamedev.stackexchange.com/a/63203
             var v0 = b - a;
@@ -109,7 +109,7 @@ namespace TerrainDemo.Tools
             return (u, v, w);
         }
 
-        public static (float u, float v, float w) Barycentric2DCoordsOptimized_00_01_11(OpenToolkit.Mathematics.Vector2 localPoint)
+        public static (float u, float v, float w) Barycentric2DCoordsOptimized_00_01_11(Vector2 localPoint)
         {
             //Based on http://gamedev.stackexchange.com/a/63203
             //var v0 = b - a;       0, 1
@@ -123,7 +123,7 @@ namespace TerrainDemo.Tools
             return (u, v, w);
         }
 
-        public static (float u, float v, float w) Barycentric2DCoordsOptimized_00_11_10(OpenToolkit.Mathematics.Vector2 localPoint)
+        public static (float u, float v, float w) Barycentric2DCoordsOptimized_00_11_10(Vector2 localPoint)
         {
             //Based on http://gamedev.stackexchange.com/a/63203
             //var v0 = b - a;       1, 1
@@ -137,7 +137,7 @@ namespace TerrainDemo.Tools
             return (u, v, w);
         }
 
-        public static (float u, float v, float w) Barycentric2DCoordsOptimized_00_01_10(OpenToolkit.Mathematics.Vector2 localPoint)
+        public static (float u, float v, float w) Barycentric2DCoordsOptimized_00_01_10(Vector2 localPoint)
         {
             //Based on http://gamedev.stackexchange.com/a/63203
             //var v0 = b - a;           0, 1
@@ -151,12 +151,12 @@ namespace TerrainDemo.Tools
             return (u, v, w);
         }
 
-        public static (float u, float v, float w) Barycentric2DCoordsOptimized_01_11_10(OpenToolkit.Mathematics.Vector2 localPoint)
+        public static (float u, float v, float w) Barycentric2DCoordsOptimized_01_11_10(Vector2 localPoint)
         {
             //Based on http://gamedev.stackexchange.com/a/63203
             //var v0 = b - a;           1, 0
             //var v1 = c - a;           1, -1    
-            var v2 = localPoint - OpenToolkit.Mathematics.Vector2.UnitY;
+            var v2 = localPoint - Vector2.UnitY;
             const float invDen = 1f / (1 * (-1) - 1 * 0);
             var v = (-v2.X - v2.Y) * invDen;
             var w = (v2.Y) * invDen;
@@ -167,7 +167,7 @@ namespace TerrainDemo.Tools
 
         private static float GetPseudoDotProduct(Vector3 p1, Vector3 p2)
         {
-            return p1.x * p2.z - p2.x * p1.z;
+            return p1.X * p2.Z - p2.X * p1.Z;
         }
 
         // intersect3D_RayTriangle(): find the 3D intersection of a ray with a triangle
@@ -178,27 +178,27 @@ namespace TerrainDemo.Tools
         //             1 =  intersect in unique point I1
         //             2 =  are in the same plane
         [Obsolete]
-        public static int LineTriangleIntersection(in Ray ray, OpenToolkit.Mathematics.Vector3 v0, OpenToolkit.Mathematics.Vector3 v1, OpenToolkit.Mathematics.Vector3 v2, /*out Vector3 inter*/ out float distance)    //todo needs testing
+        public static int LineTriangleIntersection(in Ray ray, Vector3 v0, Vector3 v1, Vector3 v2, /*out Vector3 inter*/ out float distance)    //todo needs testing
         {
             //Translated from http://geomalgorithms.com/a06-_intersect-2.html#intersect3D_RayTriangle()
 
-            OpenToolkit.Mathematics.Vector3 u, v, n;              // triangle vectors
-            OpenToolkit.Mathematics.Vector3 dir, w0, w;           // ray vectors
+            Vector3 u, v, n;              // triangle vectors
+            Vector3 dir, w0, w;           // ray vectors
             float a, b;              // params to calc ray-plane intersect
-            OpenToolkit.Mathematics.Vector3 inter;
+            Vector3 inter;
             distance = -1;
 
             // get triangle edge vectors and plane normal
             u = v1 - v0;
             v = v2 - v0;
-            n = OpenToolkit.Mathematics.Vector3.Cross(u, v);              // cross product
-            if (n == OpenToolkit.Mathematics.Vector3.Zero)              // triangle is degenerate
+            n = Vector3.Cross(u, v);              // cross product
+            if (n == Vector3.Zero)              // triangle is degenerate
                 return -1;                      // do not deal with this case
 
             dir = ray.Direction;              // ray direction vector
             w0 = ray.Origin - v0;
-            a = -OpenToolkit.Mathematics.Vector3.Dot(n, w0);
-            b = OpenToolkit.Mathematics.Vector3.Dot(n, dir);
+            a = -Vector3.Dot(n, w0);
+            b = Vector3.Dot(n, dir);
             if (Math.Abs(b) < 0.0000001f)
             {     // ray is  parallel to triangle plane
                 if (Mathf.Approximately(a, 0))                 // ray lies in triangle plane
@@ -216,12 +216,12 @@ namespace TerrainDemo.Tools
 
             // is I inside T?
             float uu, uv, vv, wu, wv, D;
-            uu = OpenToolkit.Mathematics.Vector3.Dot(u, u);
-            uv = OpenToolkit.Mathematics.Vector3.Dot(u, v);
-            vv = OpenToolkit.Mathematics.Vector3.Dot(v, v);
+            uu = Vector3.Dot(u, u);
+            uv = Vector3.Dot(u, v);
+            vv = Vector3.Dot(v, v);
             w = inter - v0;
-            wu = OpenToolkit.Mathematics.Vector3.Dot(w, u);
-            wv = OpenToolkit.Mathematics.Vector3.Dot(w, v);
+            wu = Vector3.Dot(w, u);
+            wv = Vector3.Dot(w, v);
             D = uv * uv - uu * vv;
 
             // get and test parametric coords
@@ -246,18 +246,18 @@ namespace TerrainDemo.Tools
         /// <param name="v1"></param>
         /// <param name="v2"></param>
         /// <returns></returns>
-        public static float RayTriangleIntersection(in Ray ray, OpenToolkit.Mathematics.Vector3 v0, OpenToolkit.Mathematics.Vector3 v1, OpenToolkit.Mathematics.Vector3 v2)
+        public static float RayTriangleIntersection(in Ray ray, Vector3 v0, Vector3 v1, Vector3 v2)
         {
             var v1v0 = v1 - v0;
             var v2v0 = v2 - v0;
             var rov0 = ray.Origin - v0;
 
-            var n = OpenToolkit.Mathematics.Vector3.Cross(v1v0, v2v0);
-            var q = OpenToolkit.Mathematics.Vector3.Cross(rov0, ray.Direction);
-            float d = 1.0f / OpenToolkit.Mathematics.Vector3.Dot(ray.Direction, n);
-            float u = d * OpenToolkit.Mathematics.Vector3.Dot(-q, v2v0);             //u - barycentric coord
-            float v = d * OpenToolkit.Mathematics.Vector3.Dot(q, v1v0);              //v - barycentric coord
-            float t = d * OpenToolkit.Mathematics.Vector3.Dot(-n, rov0);             //t - distance to intersection point
+            var n = Vector3.Cross(v1v0, v2v0);
+            var q = Vector3.Cross(rov0, ray.Direction);
+            float d = 1.0f / Vector3.Dot(ray.Direction, n);
+            float u = d * Vector3.Dot(-q, v2v0);             //u - barycentric coord
+            float v = d * Vector3.Dot(q, v1v0);              //v - barycentric coord
+            float t = d * Vector3.Dot(-n, rov0);             //t - distance to intersection point
 
             if (u < 0.0 || u > 1.0 || v < 0.0 || (u + v) > 1.0)
                 t = -1.0f;
@@ -277,12 +277,12 @@ namespace TerrainDemo.Tools
         /// <returns></returns>
         public static float RayAABBIntersection(Vector3 origin, Vector3 direction, Vector3 vmin, Vector3 vmax)
         {
-            float t1 = (vmin.x - origin.x) / direction.x;
-            float t2 = (vmax.x - origin.x) / direction.x;
-            float t3 = (vmin.y - origin.y) / direction.y;
-            float t4 = (vmax.y - origin.y) / direction.y;
-            float t5 = (vmin.z - origin.z) / direction.z;
-            float t6 = (vmax.z - origin.z) / direction.z;
+            float t1 = (vmin.X - origin.X) / direction.X;
+            float t2 = (vmax.X - origin.X) / direction.X;
+            float t3 = (vmin.Y - origin.Y) / direction.Y;
+            float t4 = (vmax.Y - origin.Y) / direction.Y;
+            float t5 = (vmin.Z - origin.Z) / direction.Z;
+            float t6 = (vmax.Z - origin.Z) / direction.Z;
 
             float aMin = t1 < t2 ? t1 : t2;
             float bMin = t3 < t4 ? t3 : t4;
@@ -386,7 +386,7 @@ namespace TerrainDemo.Tools
             return null;
         }
 
-        public static IEnumerable<(GridPos blockPosition, float distance, Side2d normal)> GridIntersections(OpenToolkit.Mathematics.Vector2 start, OpenToolkit.Mathematics.Vector2 finish, int blockLimit = 1000)
+        public static IEnumerable<(GridPos blockPosition, float distance, Side2d normal)> GridIntersections(Vector2 start, Vector2 finish, int blockLimit = 1000)
         {
             var xIncrement = Math.Sign(finish.X - start.X);
             var yIncrement = Math.Sign(finish.Y - start.Y);
@@ -412,13 +412,13 @@ namespace TerrainDemo.Tools
             {
                 while (startBlock != finishBlock)
                 {
-                    var pointY = new OpenToolkit.Mathematics.Vector2(
+                    var pointY = new Vector2(
                         ((testedYPosition) - start.Y) * k2 / k1 + start.X,
                         testedYPosition);
 
                     testedYPosition += yIncrement;
                     startBlock = new GridPos(startBlock.X, startBlock.Z + yIncrement);
-                    yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointY, start), yIncrement > 0 ? Side2d.Back : Side2d.Forward);
+                    yield return (startBlock, Vector2.Distance(pointY, start), yIncrement > 0 ? Side2d.Back : Side2d.Forward);
 
                     if (--blockLimit <= 0)
                     {
@@ -432,12 +432,12 @@ namespace TerrainDemo.Tools
             {
                 while (startBlock != finishBlock)
                 {
-                    var pointX = new OpenToolkit.Mathematics.Vector2(testedXPosition,
+                    var pointX = new Vector2(testedXPosition,
                         (testedXPosition - start.X) * k1 / k2 + start.Y);
 
                     testedXPosition += xIncrement;
                     startBlock = new GridPos(startBlock.X + xIncrement, startBlock.Z);
-                    yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointX, start), xIncrement > 0 ? Side2d.Left : Side2d.Right);
+                    yield return (startBlock, Vector2.Distance(pointX, start), xIncrement > 0 ? Side2d.Left : Side2d.Right);
 
                     if (--blockLimit <= 0)
                     {
@@ -451,14 +451,14 @@ namespace TerrainDemo.Tools
             else
             {
                 var testedPoint = start;
-                var pointX = new OpenToolkit.Mathematics.Vector2(testedXPosition,
+                var pointX = new Vector2(testedXPosition,
                     (testedXPosition - start.X) * k1 / k2 + start.Y);
-                var pointY = new OpenToolkit.Mathematics.Vector2((testedYPosition - start.Y) * k2 / k1 + start.X,
+                var pointY = new Vector2((testedYPosition - start.Y) * k2 / k1 + start.X,
                     testedYPosition);
                 while (startBlock != finishBlock)
                 {
-                    var distanceToXPoint = OpenToolkit.Mathematics.Vector2.DistanceSquared(pointX, testedPoint);
-                    var distanceToYPoint = OpenToolkit.Mathematics.Vector2.DistanceSquared(pointY, testedPoint);
+                    var distanceToXPoint = Vector2.DistanceSquared(pointX, testedPoint);
+                    var distanceToYPoint = Vector2.DistanceSquared(pointY, testedPoint);
                     //Debug.Log($"{Time.frameCount}: comparing distance ({pointX}, {testedPoint}) = {distanceToXPoint} and ({pointY}, {testedPoint}) = {distanceToYPoint}. Diff {Math.Abs(distanceToXPoint-distanceToYPoint)}");
 
                     //Compare two intersection points
@@ -472,8 +472,8 @@ namespace TerrainDemo.Tools
                             testedXPosition += xIncrement;
                             testedPoint = pointX;
                             startBlock = new GridPos(startBlock.X + xIncrement, startBlock.Z);
-                            yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointX, start), xIncrement > 0 ? Side2d.Left : Side2d.Right);
-                            pointX = new OpenToolkit.Mathematics.Vector2(testedXPosition,
+                            yield return (startBlock, Vector2.Distance(pointX, start), xIncrement > 0 ? Side2d.Left : Side2d.Right);
+                            pointX = new Vector2(testedXPosition,
                                 (testedXPosition - start.X) * k1 / k2 + start.Y);
                         }
                         else
@@ -482,8 +482,8 @@ namespace TerrainDemo.Tools
                             testedYPosition += yIncrement;
                             testedPoint = pointY;
                             startBlock = new GridPos(startBlock.X, startBlock.Z + yIncrement);
-                            yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointY, start), yIncrement > 0 ? Side2d.Back : Side2d.Forward);
-                            pointY = new OpenToolkit.Mathematics.Vector2(
+                            yield return (startBlock, Vector2.Distance(pointY, start), yIncrement > 0 ? Side2d.Back : Side2d.Forward);
+                            pointY = new Vector2(
                                 (testedYPosition - start.Y) * k2 / k1 + start.X,
                                 testedYPosition);
                         }
@@ -495,8 +495,8 @@ namespace TerrainDemo.Tools
                         testedXPosition += xIncrement;
                         testedPoint = pointX;
                         startBlock = new GridPos(startBlock.X + xIncrement, startBlock.Z);
-                        yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointX, start), xIncrement > 0 ? Side2d.Left : Side2d.Right);
-                        pointX = new OpenToolkit.Mathematics.Vector2(testedXPosition,
+                        yield return (startBlock, Vector2.Distance(pointX, start), xIncrement > 0 ? Side2d.Left : Side2d.Right);
+                        pointX = new Vector2(testedXPosition,
                             (testedXPosition - start.X) * k1 / k2 + start.Y);
                     }
                     else
@@ -505,8 +505,8 @@ namespace TerrainDemo.Tools
                         testedYPosition += yIncrement;
                         testedPoint = pointY;
                         startBlock = new GridPos(startBlock.X, startBlock.Z + yIncrement);
-                        yield return (startBlock, OpenToolkit.Mathematics.Vector2.Distance(pointY, start), yIncrement > 0 ? Side2d.Back : Side2d.Forward);
-                        pointY = new OpenToolkit.Mathematics.Vector2((testedYPosition - start.Y) * k2 / k1 + start.X,
+                        yield return (startBlock, Vector2.Distance(pointY, start), yIncrement > 0 ? Side2d.Back : Side2d.Forward);
+                        pointY = new Vector2((testedYPosition - start.Y) * k2 / k1 + start.X,
                             testedYPosition);
                     }
 
