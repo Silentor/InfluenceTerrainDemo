@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using TerrainDemo.Hero;
 
 //Based on https://www.redblobgames.com/pathfinding/from-star/implementation.html#csharp
@@ -77,7 +78,7 @@ namespace TerrainDemo.Navigation
         public SearchResult CreatePath(Actor actor, TNode from, TNode to, Predicate<TNode> isValidNode = null)
         {
             if (from.Equals(to))
-				return new SearchResult( new List<TNode>(), 0, new Dictionary<TNode, TNode>(), new Dictionary<TNode, float>());
+				return new SearchResult( new List<TNode>(), SearchState.Success, 0, new Dictionary<TNode, TNode>(), new Dictionary<TNode, float>());
 
             var timer = Stopwatch.StartNew();
             int processedNodes = 0, maxFrontierCount = 0;
@@ -123,19 +124,34 @@ namespace TerrainDemo.Navigation
                     maxFrontierCount = frontier.Count;
             }
 
-            timer.Stop();
-
             //Reconstruct path
+            SearchState searchState;
             var result = new List<TNode>();
             TNode prev;
             if (_cameFrom.ContainsKey(goal))
             {
+	            searchState = SearchState.Success;
                 prev = goal;
                 result.Add(prev);
             }
             else
             {
-	            return new SearchResult( null, timer.ElapsedMilliseconds, _cameFrom, _costSoFar );
+				//Incomplete path, return path to nearest node to goal
+				searchState = SearchState.Incomplete;
+				TNode nearestNode = start;
+				float nearestCost = float.MaxValue;
+				foreach ( var cost in _costSoFar )
+				{
+					var neighborCost = /*cost.Value + */_graph.Heuristic( cost.Key, goal );
+					if ( neighborCost < nearestCost )
+					{
+						nearestCost = neighborCost;
+						nearestNode = cost.Key;
+					}
+				}
+
+				prev = nearestNode;
+				result.Add( prev );
             }
 
             do
@@ -145,7 +161,9 @@ namespace TerrainDemo.Navigation
             } while (!prev.Equals(start));
             result.Reverse();
 
-            return new SearchResult(result, timer.ElapsedMilliseconds, _cameFrom, _costSoFar);
+            timer.Stop();
+
+            return new SearchResult(result, searchState, timer.ElapsedMilliseconds, _cameFrom, _costSoFar);
         }
 
         /// <summary>
@@ -195,7 +213,7 @@ namespace TerrainDemo.Navigation
                         _cameFrom[neighbor] = current;
                     }
 
-                    yield return new SearchResult(null, 0, _cameFrom, _costSoFar);
+                    yield return new SearchResult(null, SearchState.Searching, 0, _cameFrom, _costSoFar);
                 }
 
                 if (frontier.Count > maxFrontierCount)
@@ -222,25 +240,34 @@ namespace TerrainDemo.Navigation
             } while (!prev.Equals(start));
             result.Reverse();
 
-            yield return new SearchResult(result, 0, _cameFrom, _costSoFar);
+            yield return new SearchResult(result, SearchState.Success, 0, _cameFrom, _costSoFar);
         }
 
         public class SearchResult
         {
 	        public readonly List<TNode> Route;
+	        public readonly SearchState Result;
 	        public readonly uint ElapsedTimeMs;	
 	        public readonly IReadOnlyDictionary<TNode, TNode> CameFromDebug;
 	        public readonly IReadOnlyDictionary<TNode, float> CostsDebug;
 
-	        public SearchResult( List<TNode> route, long elapsedTimeMs, IReadOnlyDictionary<TNode, TNode> cameFromDebug, IReadOnlyDictionary<TNode, float> costsDebug )
+	        public SearchResult( List<TNode> route, SearchState result, long elapsedTimeMs, IReadOnlyDictionary<TNode, TNode> cameFromDebug, IReadOnlyDictionary<TNode, float> costsDebug )
 	        {
 		        Route = route;
+		        Result = result;
 		        ElapsedTimeMs = (uint)elapsedTimeMs;
 		        CameFromDebug = cameFromDebug;
 		        CostsDebug = costsDebug;
 	        }
         }
 
+    }
+
+    public enum SearchState
+    {
+		Searching,
+		Success,
+		Incomplete
     }
 }
 

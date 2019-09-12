@@ -203,8 +203,8 @@ namespace TerrainDemo
 
             _npc = new Actor(Micro, NavMap, (-37, -57), Vector2.One, false, "Npc", Locomotor.Type.Biped);
             Micro.AddActor(_npc);
-            _npc2 = new Actor(Micro, NavMap, (-36, -58), Vector2.One, false, "Npc2", Locomotor.Type.Wheeled);
-            Micro.AddActor(_npc2);
+            //_npc2 = new Actor(Micro, NavMap, (-36, -58), Vector2.One, false, "Npc2", Locomotor.Type.Wheeled);
+            //Micro.AddActor(_npc2);
 
 			_npc.RotateTo((Vector2)_hero.Position);
 
@@ -228,7 +228,7 @@ namespace TerrainDemo
 
             _random = new Tools.Random(Seed);
 
-            for (int i = 0; i < Biomes.Length; i++)
+            for (var i = 0; i < Biomes.Length; i++)
                 Biomes[i].Index = i;
         }
 

@@ -7,6 +7,7 @@ using JetBrains.Annotations;
 using TerrainDemo.Hero;
 using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
+using UnityEngine;
 using UnityEngine.Assertions;
 
 namespace TerrainDemo.Navigation
@@ -136,7 +137,13 @@ namespace TerrainDemo.Navigation
 
 	        var microRoute = _map.Pathfinder.GetMicroRoute( from, to, Actor );
 
-	        GetSegment( nodeIndex).Refine(  microRoute.Route );
+			if(microRoute.Route == null)
+				Debug.LogError( $"Segment {nextIndex} refining failed, from {from} to {to}, owner {Actor}. Searched {microRoute.CameFromDebug.Count} blocks for {microRoute.ElapsedTimeMs} ms" );
+			else
+			{
+				Debug.Log( $"Segment {nextIndex} refined, from {from} to {to}, owner {Actor}. Searched {microRoute.CameFromDebug.Count} blocks for {microRoute.ElapsedTimeMs} ms" );
+				GetSegment( nodeIndex).Refine(  microRoute.Route );
+			}
         }
 
         public class Segment

@@ -111,14 +111,14 @@ namespace TerrainDemo.Editor
 	        if ( _actor.Nav.Path != null )
 	        {
 		        var path     = _actor.Nav.Path;
-		        var iterator = _actor.Nav.DebugPathIterator;
+		        var current = _actor.Nav.DebugCurrentWaypoint;
 		        GUILayout.Label(
 			        $"Path from {path.Start} to {path.Finish}, is valid {path.IsValid}, total length {path.GetPathLength( )}" );
 		        var segmentStyle = _oldWaypointStyle;
 		        foreach ( var segment in path.Segments )
 		        {
 			        GUIStyle waypointStyle;
-			        if ( segment.Node == iterator.Current.node )
+			        if ( segment.Node == current.node )
 			        {
 				        segmentStyle  = _currentWaypointStyle;
 				        waypointStyle = _oldWaypointStyle;
@@ -128,7 +128,7 @@ namespace TerrainDemo.Editor
 
 			        using ( var h = new GUILayout.HorizontalScope( ) )
 			        {
-				        GUILayout.Label( $"  {segment.ToString( )}", segmentStyle );
+				        GUILayout.Label( $"  {segment.ToString( )}, refined {segment.IsRefined}", segmentStyle );
 				        if ( GUILayout.Button( "ʘ", GUILayout.Height( 15 ), GUILayout.Width( 15 ) ) )
 				        {
 					        var segmentBounds = new Bounds( segment.Points.First( ), UnityEngine.Vector3.zero );
@@ -139,7 +139,7 @@ namespace TerrainDemo.Editor
 
 			        foreach ( var waypoint in segment.Points )
 			        {
-				        if ( waypoint == iterator.Current.position )
+				        if ( waypoint == current.position )
 					        waypointStyle = _currentWaypointStyle;
 
 				        using ( var h = new GUILayout.HorizontalScope( ) )
@@ -151,11 +151,11 @@ namespace TerrainDemo.Editor
 					        }
 				        }
 
-				        if ( waypoint == iterator.Current.position )
+				        if ( waypoint == current.position )
 					        waypointStyle = _nextWaypointStyle;
 			        }
 
-			        if ( segment.Node == iterator.Current.node )
+			        if ( segment.Node == current.node )
 				        segmentStyle = _nextWaypointStyle;
 		        }
 	        }

@@ -156,20 +156,27 @@ namespace TerrainDemo.Navigation
 			if(IsStraightPathExists( actor, from, to ))
 				return new AStarSearch<MicroMapGraphAdapter, GridPos>.SearchResult( 
 					new List<GridPos>(){from, to},
+					SearchState.Success,
 					0, 
 					new Dictionary<GridPos, GridPos>(  ), 
 					new Dictionary<GridPos, float>(  )
 					);
 
-			var result = _microAStar.CreatePath( actor, from, to );
+			const int searchRadius = 30 * 30;
+			var result = _microAStar.CreatePath( actor, from, to, 
+			             pos => GridPos.DistanceSquared( from, pos ) < searchRadius && GridPos.DistanceSquared( to, pos ) < searchRadius);
 
 			var timer = Stopwatch.StartNew( );
-			SimplifyStraightLines( result.Route );
-			SimplifyCorners( result.Route, actor );
-			timer.Stop(  );
+			if ( result.Route != null )
+			{
+				SimplifyStraightLines( result.Route );
+				SimplifyCorners( result.Route, actor );
+			}
+			timer.Stop( );
 
 			return new AStarSearch<MicroMapGraphAdapter, GridPos>.SearchResult( 
 				result.Route, 
+				result.Result,
 				result.ElapsedTimeMs + timer.ElapsedMilliseconds, 
 				result.CameFromDebug, result.CostsDebug );
         }

@@ -19,7 +19,7 @@ namespace TerrainDemo.Hero
 
         public Path Path { get; private set; }
 
-		public Path.Iterator DebugPathIterator { get; private set; }
+		public (NavigationCell node, GridPos position) DebugCurrentWaypoint { get; private set; }
 
         public Navigator(Actor owner, MicroMap map, NavigationMap navMap)
         {
@@ -98,13 +98,13 @@ namespace TerrainDemo.Hero
             }
 
             var pathIterator = path.Go( );
-            DebugPathIterator = pathIterator;
 
             try
             {
                 while( pathIterator.Next(  ) )
                 {
                     var waypoint = pathIterator.Current;
+                    DebugCurrentWaypoint = waypoint;
                     var waypointPosition = BlockInfo.GetWorldCenter(waypoint.position);
                     while (Vector2.Distance((Vector2) Owner.Position, waypointPosition) > 0.1f)
                     {
