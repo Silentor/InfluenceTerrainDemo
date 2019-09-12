@@ -134,7 +134,9 @@ namespace TerrainDemo.Navigation
 	        var from = GridPos.Average( prevPoint, myPoint );
 	        var to = GridPos.Average(myPoint, nextPoint);
 
-	        GetSegment(nodeIndex).Refine(  new[]{from, to});//todo call pathfinding here
+	        var microRoute = _map.Pathfinder.GetMicroRoute( from, to, Actor );
+
+	        GetSegment( nodeIndex).Refine(  microRoute.Route );
         }
 
         public class Segment

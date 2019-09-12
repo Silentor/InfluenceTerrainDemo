@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,16 +21,9 @@ namespace TerrainDemo.Navigation
     /// </summary>
     public class Pathfinder
     {
-        public Pathfinder([NotNull] NavigationMap navMap, TriRunner settings)
+        public Pathfinder([NotNull] NavigationMap navMap, MicroMap baseMap, TriRunner settings)
         {
-            //_map = micromap ?? throw new ArgumentNullException(nameof(micromap));
-            //_macromap = macromap ?? throw new ArgumentNullException(nameof(macromap));
-
-            //_microAStar = new AStarSearch<MicroMapGraph, Waypoint>(new MicroMapGraph(micromap));
-            //_microAStar.DebugCompleted += MicroAStarOnDebugCompleted;
-
-            //_navmap = new NavigationMap(macromap, micromap, settings);
-
+            _microAStar = new MicroAStar(new MicroMapGraphAdapter(baseMap));
             _macroNavAstar2 = new AStarSearch<NavGraph, NavigationCell>( navMap.MacroGraph );
         }
 
@@ -127,20 +121,20 @@ namespace TerrainDemo.Navigation
             return null;
         }
 
-        public static bool IsStraightPathExists(Actor actor, Waypoint from, Waypoint to)
+        public static bool IsStraightPathExists(Actor actor, GridPos from, GridPos to)
         {
             if (from == to)
                 return true;
 
-            var raster = Intersections.GridIntersections(from.Position, to.Position);
-            var currentMap = from.Map;
-            var currentPos = from.Position;
+            var raster = Intersections.GridIntersections(from, to);
+            //var currentMap = from.Map;
+            var currentPos = from;
             foreach (var intersection in raster)
             {
                 var nextPosition = intersection.blockPosition;
-                if (actor.Locomotor.IsPassable(currentMap, currentPos, nextPosition, out var nextMap))
+                if (actor.Locomotor.IsPassable(/*currentMap, */currentPos, nextPosition/*, out var nextMap*/))
                 {
-                    currentMap = nextMap;
+                    //currentMap = nextMap;
                     currentPos = nextPosition;
                 }
                 else
@@ -150,16 +144,37 @@ namespace TerrainDemo.Navigation
             return true;
         }
 
-        public AStarSearch<NavGraph, NavigationCell>.SearchResult GetMacroPath( NavigationCell from, NavigationCell to, Actor actor )
+        public AStarSearch<NavGraph, NavigationCell>.SearchResult GetMacroRoute( NavigationCell from, NavigationCell to, Actor actor )
         {
 	        var result = _macroNavAstar2.CreatePath( actor, from, to );
 	        return result;
         }
 
-        private readonly MicroMap _map;
-        private readonly MacroMap _macromap;
-        private readonly AStarSearch<MicroMapGraph, Waypoint> _microAStar;
-        private readonly NavigationMap _navmap;
+        public MicroAStar.SearchResult GetMicroRoute( GridPos from, GridPos to, Actor actor )
+        {
+			//Fast pass
+			if(IsStraightPathExists( actor, from, to ))
+				return new AStarSearch<MicroMapGraphAdapter, GridPos>.SearchResult( 
+					new List<GridPos>(){from, to},
+					0, 
+					new Dictionary<GridPos, GridPos>(  ), 
+					new Dictionary<GridPos, float>(  )
+					);
+
+			var result = _microAStar.CreatePath( actor, from, to );
+
+			var timer = Stopwatch.StartNew( );
+			SimplifyStraightLines( result.Route );
+			SimplifyCorners( result.Route, actor );
+			timer.Stop(  );
+
+			return new AStarSearch<MicroMapGraphAdapter, GridPos>.SearchResult( 
+				result.Route, 
+				result.ElapsedTimeMs + timer.ElapsedMilliseconds, 
+				result.CameFromDebug, result.CostsDebug );
+        }
+
+        private readonly AStarSearch<MicroMapGraphAdapter, GridPos> _microAStar;
         private readonly AStarSearch<NavGraph, NavigationCell> _macroNavAstar2;
 
         /// <summary>
@@ -167,12 +182,12 @@ namespace TerrainDemo.Navigation
         /// </summary>
         /// <param name="waypoints"></param>
         /// <returns></returns>
-        private List<Waypoint> SimplifyStraightLines(List<Waypoint> waypoints)
+        private List<GridPos> SimplifyStraightLines(List<GridPos> waypoints)
         {
             for (int i = 1; i < waypoints.Count - 1; i++)
             {
-                var dir1 = waypoints[i - 1].Position - waypoints[i].Position;
-                var dir2 = waypoints[i].Position - waypoints[i + 1].Position;
+                var dir1 = waypoints[i - 1] - waypoints[i];
+                var dir2 = waypoints[i] - waypoints[i + 1];
                 if (Math.Sign(dir1.X) == Math.Sign(dir2.X) && Math.Sign(dir1.Z) == Math.Sign(dir2.Z))
                 {
                     waypoints.RemoveAt(i);
@@ -189,7 +204,7 @@ namespace TerrainDemo.Navigation
         /// <param name="waypoints"></param>
         /// <param name="actor"></param>
         /// <returns></returns>
-        private List<Waypoint> SimplifyCorners(List<Waypoint> waypoints, Actor actor)
+        private List<GridPos> SimplifyCorners(List<GridPos> waypoints, Actor actor)
         {
             //Simplify corners
             var i = 0;
@@ -207,5 +222,12 @@ namespace TerrainDemo.Navigation
             return waypoints;
         }
 
+    }
+
+    public class MicroAStar : AStarSearch<MicroMapGraphAdapter, GridPos>
+    {
+	    public MicroAStar( MicroMapGraphAdapter graph ) : base( graph )
+	    {
+	    }
     }
 }

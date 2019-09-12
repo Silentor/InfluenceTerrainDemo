@@ -227,15 +227,15 @@ namespace TerrainDemo.Navigation
 
         public class SearchResult
         {
-	        public readonly List<TNode> Path;
-	        public readonly uint ElapsedTime;	
+	        public readonly List<TNode> Route;
+	        public readonly uint ElapsedTimeMs;	
 	        public readonly IReadOnlyDictionary<TNode, TNode> CameFromDebug;
 	        public readonly IReadOnlyDictionary<TNode, float> CostsDebug;
 
-	        public SearchResult( List<TNode> path, long elapsedTime, IReadOnlyDictionary<TNode, TNode> cameFromDebug, IReadOnlyDictionary<TNode, float> costsDebug )
+	        public SearchResult( List<TNode> route, long elapsedTimeMs, IReadOnlyDictionary<TNode, TNode> cameFromDebug, IReadOnlyDictionary<TNode, float> costsDebug )
 	        {
-		        Path = path;
-		        ElapsedTime = (uint)elapsedTime;
+		        Route = route;
+		        ElapsedTimeMs = (uint)elapsedTimeMs;
 		        CameFromDebug = cameFromDebug;
 		        CostsDebug = costsDebug;
 	        }

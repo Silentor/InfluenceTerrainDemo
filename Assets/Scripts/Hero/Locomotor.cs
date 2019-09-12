@@ -29,7 +29,7 @@ namespace TerrainDemo.Hero
 		/// <param name="toPos"></param>
 		/// <param name="toMap"></param>
 		/// <returns>New position</returns>
-		public Vector2 Step(BaseBlockMap fromMap, Vector2 fromPos, Vector2 toPos, out BaseBlockMap toMap)
+		public Vector2 Step(/*BaseBlockMap fromMap, */Vector2 fromPos, Vector2 toPos/*, out BaseBlockMap toMap*/)
 		{
 			for (var i = 0; i < 2; i++)
 			{
@@ -43,7 +43,7 @@ namespace TerrainDemo.Hero
 				{
 					//Debug.Log($"{Time.frameCount} - {i}: Blocks are equal");
 
-					toMap = fromMap;
+					//toMap = fromMap;
 					return toPos;
 				}
 
@@ -53,7 +53,7 @@ namespace TerrainDemo.Hero
 				{
 					toBlock = intersection.blockPosition;
 					//Debug.Log($"{Time.frameCount} - {i}: Check pass from {fromBlock} to {toBlock}");
-					if (!IsPassable(fromMap, fromBlock, toBlock, out var toMap2))
+					if (!IsPassable(fromBlock, toBlock))
 					{
 						//Respond to collision
 						var hitPoint = pathRay.GetPoint(intersection.distance);
@@ -91,7 +91,7 @@ namespace TerrainDemo.Hero
 						{
 							//Debug.Log($"{Time.frameCount} - {i}: Resolving completed, result {toPos}");
 
-							toMap = fromMap;
+							//toMap = fromMap;
 							return fromPos;
 						}
 						else
@@ -110,7 +110,7 @@ namespace TerrainDemo.Hero
 							{
 								//Debug.LogWarning($"{Time.frameCount} - {i} Actor collision still not resolved completely on second check, use last good hit point");
 
-								toMap = fromMap;
+								//toMap = fromMap;
 								return fromPos;
 							}
 
@@ -121,7 +121,7 @@ namespace TerrainDemo.Hero
 						//Debug.Log($"{Time.frameCount} - {i}: There is pass from {fromBlock} to {toBlock}, check next pass");
 						//Continue check intersections
 						fromBlock = toBlock;
-						fromMap   = toMap2;
+						//fromMap   = toMap2;
 					}
 				}
 
@@ -130,7 +130,7 @@ namespace TerrainDemo.Hero
 			}
 
 			//No collision, pass is clear
-			toMap = fromMap;
+			//toMap = fromMap;
 			return toPos;
 		}
 
@@ -142,7 +142,7 @@ namespace TerrainDemo.Hero
 		/// <param name="toPos"></param>
 		/// <param name="toMap"></param>
 		/// <returns></returns>
-		public bool IsPassable(BaseBlockMap fromMap, GridPos fromPos, GridPos toPos, out BaseBlockMap toMap) //todo move to Locomotor component
+		public bool IsPassable(/*BaseBlockMap fromMap, */GridPos fromPos, GridPos toPos/*, out BaseBlockMap toMap*/) //todo move to Locomotor component
 		{
 			//Assume that fromPos -> toPos is small for simplicity
 			/*
@@ -200,10 +200,10 @@ namespace TerrainDemo.Hero
 			//}
 
 			//ref readonly var fromData = ref fromMap.GetBlockData(fromPos);
-			ref readonly var toData     = ref fromMap.GetBlockData(toPos);
+			ref readonly var toData     = ref _map.GetBlockData(toPos);
 			ref readonly var toNavBlock = ref _navMap.NavGrid.GetBlock( toPos );
 
-			toMap = fromMap;
+			//toMap = fromMap;
 
 			if (toData != BlockData.Empty)
 			{

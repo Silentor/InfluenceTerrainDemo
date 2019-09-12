@@ -267,7 +267,7 @@ namespace TerrainDemo.Hero
             var newBlockPosition = (GridPos)newMapPosition;
             if (newBlockPosition != _currentBlockPos)
             {
-                var collidedPos = Locomotor.Step(_currentMap, _mapPosition, newMapPosition, out _currentMap);
+                var collidedPos = Locomotor.Step(_mapPosition, newMapPosition);
                 newMapPosition = collidedPos;
                 _currentBlockPos = (GridPos) collidedPos;
             }

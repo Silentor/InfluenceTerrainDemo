@@ -56,7 +56,7 @@ namespace TerrainDemo.Editor
 	        (Vector2 moveDirection, float blockInclinationSpeedMod, float blockMaterialSpeedMod) debugInternals )
         {
 	        GUILayout.Label( "Locomotor", EditorStyles.centeredGreyMiniLabel );
-
+			GUILayout.Label( $"Type: {_actor.Locomotor.LocoType}" );
 	        using ( var speedScope = new EditorGUI.ChangeCheckScope( ) )
 	        {
 		        var newSpeed = EditorGUILayout.DelayedFloatField( "Speed", _actor.Speed );
@@ -76,7 +76,7 @@ namespace TerrainDemo.Editor
 
 	        var actualSpeed = _actor.Speed                            * debugInternals.moveDirection.Length *
 	                          debugInternals.blockInclinationSpeedMod * debugInternals.blockMaterialSpeedMod;
-	        GUILayout.Label( $"Max speed {_actor.Speed}, actual speed {actualSpeed:N2}" );
+	        GUILayout.Label( $"Max speed {_actor.Speed}, current speed {actualSpeed:N2}" );
 
 	        const float realSpeedCalcDelay = 0.2f;
 

@@ -63,7 +63,7 @@ namespace TerrainDemo.Navigation
 
 			timer.Stop();
 
-			Pathfinder = new Pathfinder(this, settings);
+			Pathfinder = new Pathfinder(this, _micromap, settings);
 
 			UnityEngine.Debug.Log($"Prepared navigation map in {timer.ElapsedMilliseconds} msec, macrograph nodes {MacroGraph.NodesCount}, macrograph edges {MacroGraph.EdgesCount}");
 		}
@@ -89,15 +89,15 @@ namespace TerrainDemo.Navigation
 			}
 			else
 			{
-				var newPath = Pathfinder.GetMacroPath(fromNode, toNode, actor);
+				var newPath = Pathfinder.GetMacroRoute(fromNode, toNode, actor);
 
 				//Prepare shared path
-				newPath.Path.RemoveAt( 0 );
-				if(newPath.Path.Last() == toNode)
-					newPath.Path.RemoveAt( newPath.Path.Count - 1 );
+				newPath.Route.RemoveAt( 0 );
+				if(newPath.Route.Last() == toNode)
+					newPath.Route.RemoveAt( newPath.Route.Count - 1 );
 
-				var segments = newPath.Path.Select( n => new Path.Segment( n, new GridPos[0] ) ).ToList( );
-				var newSharedPath = new PathCacheEntry( segments, newPath.ElapsedTime, newPath.CostsDebug);
+				var segments = newPath.Route.Select( n => new Path.Segment( n, new GridPos[0] ) ).ToList( );
+				var newSharedPath = new PathCacheEntry( segments, newPath.ElapsedTimeMs, newPath.CostsDebug);
 				_sharedPathes[pathKey] = newSharedPath;
 				
 				UnityEngine.Debug.Log( $"Created new path {pathKey} for {actor}" );
