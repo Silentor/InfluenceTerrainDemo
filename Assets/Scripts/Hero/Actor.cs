@@ -264,8 +264,6 @@ namespace TerrainDemo.Hero
             var newMapPosition = GetNewPosition( _mapPosition, thrustVelocity, deltaTime );
 
             //Check change block(and map maybe)
-            var newBlockPosition = (GridPos)newMapPosition;
-            if (newBlockPosition != _currentBlockPos)
             {
                 var collidedPos = Locomotor.Step(_mapPosition, newMapPosition);
                 newMapPosition = collidedPos;

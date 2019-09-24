@@ -145,7 +145,7 @@ namespace TerrainDemo.Tests
             var ray = new UnityEngine.Ray(handle1Pos, handle2Pos - handle1Pos);
             foreach (var intersection in intersections)
             {
-                var intersectedBlock = BlockInfo.GetBounds(intersection.blockPosition);
+                var intersectedBlock = BlockInfo.GetBounds(intersection.nextBlock);
                 DrawRectangle.ForGizmo(intersectedBlock, Color.white);
 
                 var hitPoint = ray.GetPoint(intersection.distance);

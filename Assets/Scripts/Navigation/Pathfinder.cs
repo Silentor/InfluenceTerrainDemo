@@ -128,14 +128,11 @@ namespace TerrainDemo.Navigation
 
             var raster = Intersections.GridIntersections(from, to);
             //var currentMap = from.Map;
-            var currentPos = from;
             foreach (var intersection in raster)
             {
-                var nextPosition = intersection.blockPosition;
-                if (actor.Locomotor.IsPassable(/*currentMap, */currentPos, nextPosition/*, out var nextMap*/))
+                if (actor.Locomotor.IsPassable(/*currentMap, */intersection.prevBlock, intersection.nextBlock/*, out var nextMap*/))
                 {
                     //currentMap = nextMap;
-                    currentPos = nextPosition;
                 }
                 else
                     return false;

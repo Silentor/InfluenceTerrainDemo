@@ -160,6 +160,13 @@ namespace TerrainDemo.Spatial
 			return dx * dx + dz * dz;
 		}
 
+		public static int ManhattanDistance(GridPos a, GridPos b)
+		{
+			var dx = Math.Abs(b.X - a.X);
+			var dz = Math.Abs(b.Z - a.Z);
+			return dx + dz;
+		}
+
 		public static GridPos Average( GridPos g1, GridPos g2 )
 		{
 			return new GridPos((g1.X + g2.X) / 2, (g1.Z + g2.Z) / 2 );

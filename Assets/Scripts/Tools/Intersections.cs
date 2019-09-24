@@ -386,7 +386,7 @@ namespace TerrainDemo.Tools
             return null;
         }
 
-        public static IEnumerable<(GridPos blockPosition, float distance, Side2d normal)> GridIntersections(Vector2 start, Vector2 finish, int blockLimit = 1000)
+        public static IEnumerable<(GridPos prevBlock, GridPos nextBlock, float distance, Side2d normal)> GridIntersections(Vector2 start, Vector2 finish, int blockLimit = 1000)
         {
             var xIncrement = Math.Sign(finish.X - start.X);
             var yIncrement = Math.Sign(finish.Y - start.Y);
@@ -417,8 +417,9 @@ namespace TerrainDemo.Tools
                         testedYPosition);
 
                     testedYPosition += yIncrement;
+                    var prevBlock = startBlock;
                     startBlock = new GridPos(startBlock.X, startBlock.Z + yIncrement);
-                    yield return (startBlock, Vector2.Distance(pointY, start), yIncrement > 0 ? Side2d.Back : Side2d.Forward);
+                    yield return (prevBlock, startBlock, Vector2.Distance(pointY, start), yIncrement > 0 ? Side2d.Back : Side2d.Forward);
 
                     if (--blockLimit <= 0)
                     {
@@ -436,8 +437,9 @@ namespace TerrainDemo.Tools
                         (testedXPosition - start.X) * k1 / k2 + start.Y);
 
                     testedXPosition += xIncrement;
+                    var prevBlock = startBlock;
                     startBlock = new GridPos(startBlock.X + xIncrement, startBlock.Z);
-                    yield return (startBlock, Vector2.Distance(pointX, start), xIncrement > 0 ? Side2d.Left : Side2d.Right);
+                    yield return (prevBlock, startBlock, Vector2.Distance(pointX, start), xIncrement > 0 ? Side2d.Left : Side2d.Right);
 
                     if (--blockLimit <= 0)
                     {
@@ -471,8 +473,9 @@ namespace TerrainDemo.Tools
                             //X-increment block is closer
                             testedXPosition += xIncrement;
                             testedPoint = pointX;
+                            var prevBlock = startBlock;
                             startBlock = new GridPos(startBlock.X + xIncrement, startBlock.Z);
-                            yield return (startBlock, Vector2.Distance(pointX, start), xIncrement > 0 ? Side2d.Left : Side2d.Right);
+                            yield return (prevBlock, startBlock, Vector2.Distance(pointX, start), xIncrement > 0 ? Side2d.Left : Side2d.Right);
                             pointX = new Vector2(testedXPosition,
                                 (testedXPosition - start.X) * k1 / k2 + start.Y);
                         }
@@ -481,8 +484,9 @@ namespace TerrainDemo.Tools
                             //X-increment block is closer
                             testedYPosition += yIncrement;
                             testedPoint = pointY;
+                            var prevBlock = startBlock;
                             startBlock = new GridPos(startBlock.X, startBlock.Z + yIncrement);
-                            yield return (startBlock, Vector2.Distance(pointY, start), yIncrement > 0 ? Side2d.Back : Side2d.Forward);
+                            yield return (prevBlock, startBlock, Vector2.Distance(pointY, start), yIncrement > 0 ? Side2d.Back : Side2d.Forward);
                             pointY = new Vector2(
                                 (testedYPosition - start.Y) * k2 / k1 + start.X,
                                 testedYPosition);
@@ -494,8 +498,9 @@ namespace TerrainDemo.Tools
 
                         testedXPosition += xIncrement;
                         testedPoint = pointX;
+                        var prevBlock = startBlock;
                         startBlock = new GridPos(startBlock.X + xIncrement, startBlock.Z);
-                        yield return (startBlock, Vector2.Distance(pointX, start), xIncrement > 0 ? Side2d.Left : Side2d.Right);
+                        yield return (prevBlock, startBlock, Vector2.Distance(pointX, start), xIncrement > 0 ? Side2d.Left : Side2d.Right);
                         pointX = new Vector2(testedXPosition,
                             (testedXPosition - start.X) * k1 / k2 + start.Y);
                     }
@@ -504,8 +509,9 @@ namespace TerrainDemo.Tools
                         //Debug.Log($"Second point {pointY} is nearer, step from {startBlock} to {new Vector2i(startBlock.X, startBlock.Z + yIncrement)} at {pointY}");
                         testedYPosition += yIncrement;
                         testedPoint = pointY;
+                        var prevBlock = startBlock;
                         startBlock = new GridPos(startBlock.X, startBlock.Z + yIncrement);
-                        yield return (startBlock, Vector2.Distance(pointY, start), yIncrement > 0 ? Side2d.Back : Side2d.Forward);
+                        yield return (prevBlock, startBlock, Vector2.Distance(pointY, start), yIncrement > 0 ? Side2d.Back : Side2d.Forward);
                         pointY = new Vector2((testedYPosition - start.Y) * k2 / k1 + start.X,
                             testedYPosition);
                     }
@@ -519,7 +525,7 @@ namespace TerrainDemo.Tools
             }
         }
 
-        public static IEnumerable<(GridPos blockPosition, float distance, Side2d normal)> GridIntersections(
+        public static IEnumerable<(GridPos prevBlock, GridPos nextBlock, float distance, Side2d normal)> GridIntersections(
 	        GridPos start, GridPos finish, int blockLimit = 1000)
         {
             return GridIntersections(BlockInfo.GetWorldCenter(start), BlockInfo.GetWorldCenter(finish), blockLimit);
