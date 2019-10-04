@@ -37,10 +37,10 @@ namespace TerrainDemo.Hero
         {
             var blockDestination = (GridPos) destination;
 
-            if (Owner.BlockPosition == blockDestination)
+            if (Owner.Locomotor.BlockPosition == blockDestination)
                 return;
 
-            var path = _navMap.CreatePath( Owner.BlockPosition, destination, Owner);
+            var path = _navMap.CreatePath( Owner.Locomotor.BlockPosition, destination, Owner);
 
             if (IsNavigated)
                 Cancel(false);
@@ -65,7 +65,7 @@ namespace TerrainDemo.Hero
                 IsNavigated = false;
 
                 if(stopOwner)
-                    Owner.Stop();
+                    Owner.Locomotor.Stop();
             }
         }
 
@@ -106,10 +106,11 @@ namespace TerrainDemo.Hero
                     var waypoint = pathIterator.Current;
                     DebugCurrentWaypoint = waypoint;
                     var waypointPosition = BlockInfo.GetWorldCenter(waypoint.position);
+					Owner.Locomotor.MoveTo( waypointPosition );
                     while (Vector2.Distance((Vector2) Owner.Position, waypointPosition) > 0.1f)
                     {
                         //Owner.Rotate(waypointPosition);
-                        Owner.MoveTo(waypointPosition, waypoint.position == path.Finish);
+                        Owner.Locomotor.MoveTo(waypointPosition /*, waypoint.position == path.Finish*/ );
                         await Task.Delay(300, ct);
                     }
 

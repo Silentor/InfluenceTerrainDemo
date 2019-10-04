@@ -46,7 +46,7 @@ namespace TerrainDemo.Editor
             var debugInternals = _actor.GetDebugState();
 
             GUILayout.Label($"Map: {_actor.Map.Name}");
-            GUILayout.Label($"Block: {_actor.BlockPosition}");
+            GUILayout.Label($"Block: {_actor.Locomotor.BlockPosition}");
 
             InspectLocomotor( debugInternals );
 
@@ -59,13 +59,13 @@ namespace TerrainDemo.Editor
 			GUILayout.Label( $"Type: {_actor.Locomotor.LocoType}" );
 	        using ( var speedScope = new EditorGUI.ChangeCheckScope( ) )
 	        {
-		        var newSpeed = EditorGUILayout.DelayedFloatField( "Speed", _actor.Speed );
+		        var newSpeed = EditorGUILayout.DelayedFloatField( "Speed", _actor.Locomotor.MaxRotationAngle );
 		        if ( speedScope.changed )
-			        _actor.Speed = newSpeed;
+			        _actor.Locomotor.MaxSpeed = newSpeed;
 	        }
 
-	        ref readonly var block       = ref _actor.Map.GetBlockRef( _actor.BlockPosition );
-	        var              blockNormal = _actor.Map.GetBlockData( _actor.BlockPosition ).Normal;
+	        ref readonly var block       = ref _actor.Map.GetBlockRef( _actor.Locomotor.BlockPosition );
+	        var              blockNormal = _actor.Map.GetBlockData( _actor.Locomotor.BlockPosition ).Normal;
 
 	        var blockInclinationAngle = MathHelper.RadiansToDegrees( Vector3.CalculateAngle( Vector3.UnitY, blockNormal ) );
 	        GUILayout.Label( $"Block angle : {blockInclinationAngle:N2}, block material : {block.Top}" );
@@ -74,9 +74,9 @@ namespace TerrainDemo.Editor
 	        GUILayout.Label( $"Inclination speed mod : {debugInternals.blockInclinationSpeedMod:N2}" );
 	        GUILayout.Label( $"Material speed mod : {debugInternals.blockMaterialSpeedMod:N2}" );
 
-	        var actualSpeed = _actor.Speed                            * debugInternals.moveDirection.Length *
+	        var actualSpeed = _actor.Locomotor.MaxSpeed               * debugInternals.moveDirection.Length *
 	                          debugInternals.blockInclinationSpeedMod * debugInternals.blockMaterialSpeedMod;
-	        GUILayout.Label( $"Max speed {_actor.Speed}, current speed {actualSpeed:N2}" );
+	        GUILayout.Label( $"Max speed {_actor.Locomotor.MaxSpeed}, current speed {actualSpeed:N2}" );
 
 	        const float realSpeedCalcDelay = 0.2f;
 

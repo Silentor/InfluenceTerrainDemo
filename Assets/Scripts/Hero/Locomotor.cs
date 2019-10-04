@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using OpenToolkit.Mathematics;
 using TerrainDemo.Micro;
 using TerrainDemo.Navigation;
 using TerrainDemo.Spatial;
@@ -7,60 +8,81 @@ using TerrainDemo.Tools;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Vector2 = OpenToolkit.Mathematics.Vector2;
+using Quaternion = OpenToolkit.Mathematics.Quaternion;
+using Vector3 = OpenToolkit.Mathematics.Vector3;
 
 namespace TerrainDemo.Hero
 {
 	public class Locomotor
 	{
+		public float MaxSpeed = 5;
+		public float MaxRotationAngle = 45;
+
 		public Type LocoType => _type;
 
-		public Locomotor( Type type, Actor owner, MicroMap map, NavigationMap navMap )
+		public Vector2 Position { get; private set; }
+
+		/// <summary>
+		/// Degrees
+		/// </summary>
+		public Quaternion Rotation => Quaternion.FromEulerAngles( 0, _rotation, 0 );
+
+		public GridPos BlockPosition => (GridPos) Position;
+
+		public bool IsMoving { get; private set; }
+
+		public Locomotor( Type type, Vector2 startPosition, Quaternion startRotation, Actor owner, MicroMap map, NavigationMap navMap )
 		{
 			_type   = type;
+			Position = startPosition;
+			//_rotation = startRotation.to todo init rotation
 			_owner  = owner;
 			_map    = map;
 			_navMap = navMap;
 		}
 
-		/// <summary>
-		/// Make step on map and resolve collisions
-		/// </summary>
-		/// <param name="fromMap"></param>
-		/// <param name="fromPos"></param>
-		/// <param name="toPos"></param>
-		/// <param name="toMap"></param>
-		/// <returns>New position</returns>
-		public Vector2 Step(/*BaseBlockMap fromMap, */Vector2 fromPos, Vector2 toPos/*, out BaseBlockMap toMap*/)
+		public void Move( Vector2 direction )
 		{
-			var fromBlock = (GridPos) fromPos;
-			var toBlock   = (GridPos) toPos;
-
-			//Fast pass: step inside the same block
-			if (fromBlock == toBlock)
+			if ( direction != Vector2.Zero )
 			{
-				//toMap = fromMap;
-				return ResolveBlockCollision(fromBlock, toPos);
+				_targetVelocity = direction.Normalized( ) * MaxSpeed;
+				_targetPosition = null;
+				IsMoving = true;
 			}
+		}
+		public void MoveTo( Vector2 position )
+		{
+			_targetPosition = position;
+			_targetVelocity = Vector2.Zero;
+			IsMoving = true;
+		}
 
-			//Default pass: check every intersected block
-			var intersections = Intersections.GridIntersections( fromPos, toPos );
-			var pathRay       = new Ray2( fromPos, toPos - fromPos );
-			foreach ( var intersection in intersections )
-			{
-				var intersectPoint = pathRay.GetPoint( intersection.distance );
-				var collidedPos    = ResolveBlockCollision( intersection.prevBlock, intersectPoint );
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="direction">-1..1</param>
+		public void Rotate(float direction)
+		{
+			direction        = Mathf.Clamp(direction, -1, 1);
+			_rotateDirection = direction;
+		}
 
-				if ( collidedPos == intersectPoint )
-					continue;
+		public void LookAt(Vector2 worldPosition)
+		{
+			_lookAt = worldPosition;
 
-				//Resolve collision of entire step vector
-				var collidedPosEnd = ResolveBlockCollision( intersection.prevBlock, toPos );
-				return Step( collidedPos, collidedPosEnd );
-			}
+			//var angle = UnityEngine.Vector2.SignedAngle(worldPosition - (Vector2)Position, UnityEngine.Vector2.up);
+			//_targetRotation = Quaternion.FromEulerAngles(0, MathHelper.DegreesToRadians(angle), 0);
+		}
 
-			//No collision, pass is clear
-			//toMap = fromMap;
-			return toPos;
+		/// <summary>
+		/// Cancel movement and rotations
+		/// </summary>
+		public void Stop( )
+		{
+			_targetVelocity = Vector2.Zero;
+			_targetPosition = null;
+			IsMoving = false;
 		}
 
 		/// <summary>
@@ -96,6 +118,19 @@ namespace TerrainDemo.Hero
 			return LocalInclinationCost[(int)_type, (int)edgeSlopeness];
 		}
 
+		public bool Update( float deltaTime )
+		{
+			var isChanged = false;
+
+			isChanged |= UpdateMovement( deltaTime );
+			isChanged |= UpdateRotation( deltaTime );
+
+			if ( _owner.DebugLocomotion )
+				DebugDrawBounds( );
+
+			return isChanged;
+		}
+
 		private readonly Type _type;
 		private readonly Actor _owner;
 		private readonly MicroMap _map;
@@ -123,6 +158,120 @@ namespace TerrainDemo.Hero
 																	}
 																};
 
+		private Vector2 _targetVelocity;
+		private Vector2? _targetPosition;
+		private float _rotateDirection;
+		private Quaternion _targetRotation;
+		private Vector2? _lookAt;
+		private float _rotation;
+
+		private bool UpdateRotation( float deltaTime )
+		{
+			if ( _rotateDirection != 0 )
+			{
+				var step = _rotateDirection * MathHelper.DegreesToRadians( MaxRotationAngle ) * deltaTime;
+				_rotation += step;
+				return true;
+			}
+
+			return false;
+
+			//if ( _lookAt.HasValue )
+			//{
+			//	if ( _lookAt != Position )
+			//	{
+			//		Rotation = 
+			//	}
+			//}
+		}
+		private bool UpdateMovement( float deltaTime )
+		{
+			if ( _targetVelocity != Vector2.Zero )
+			{
+				IsMoving = true;
+				var step        = Vector2.Transform( _targetVelocity, Rotation) * deltaTime;
+				var newPosition = Step( Position, Position + step );
+
+				if ( newPosition != Position )
+				{
+					Position = newPosition;
+					return true;
+				}
+			}
+			else if ( _targetPosition.HasValue )
+			{
+				IsMoving = true;
+				var targetPos      = _targetPosition.Value;
+				var targetDir      = ( targetPos - Position ).Normalized( );
+				var targetDistance = ( targetPos - Position ).Length;
+
+				Vector2 newPosition;
+				if ( targetDistance > deltaTime * MaxSpeed )
+				{
+					var step = targetDir * deltaTime * MaxSpeed;
+					newPosition = Position + step;
+				}
+				else
+				{
+					newPosition = targetPos;
+				}
+
+				newPosition = Step( Position, newPosition );
+				if ( newPosition != Position )
+				{
+					Position = newPosition;
+
+					if ( Position == targetPos )
+						Stop( );
+
+					return true;
+				}
+			}
+
+			if ( _owner.DebugLocomotion )
+				DebugDrawBounds( );
+			return false;
+		}
+		/// <summary>
+		/// Make step on map and resolve collisions
+		/// </summary>
+		/// <param name="fromMap"></param>
+		/// <param name="fromPos"></param>
+		/// <param name="toPos"></param>
+		/// <param name="toMap"></param>
+		/// <returns>New position</returns>
+		private Vector2 Step(/*BaseBlockMap fromMap, */Vector2 fromPos, Vector2 toPos/*, out BaseBlockMap toMap*/)
+		{
+			var fromBlock = (GridPos) fromPos;
+			var toBlock   = (GridPos) toPos;
+
+			//Fast pass: step inside the same block
+			if (fromBlock == toBlock)
+			{
+				//toMap = fromMap;
+				return ResolveBlockCollision(fromBlock, toPos);
+			}
+
+			//Default pass: check every intersected block
+			var intersections = Intersections.GridIntersections( fromPos, toPos );
+			var pathRay       = new Ray2( fromPos, toPos - fromPos );
+			foreach ( var intersection in intersections )
+			{
+				var intersectPoint = pathRay.GetPoint( intersection.distance );
+				var collidedPos    = ResolveBlockCollision( intersection.prevBlock, intersectPoint );
+
+				if ( collidedPos == intersectPoint )
+					continue;
+
+				//Resolve collision of entire step vector
+				var collidedPosEnd = ResolveBlockCollision( intersection.prevBlock, toPos );
+				return Step( collidedPos, collidedPosEnd );
+			}
+
+			//No collision, pass is clear
+			//toMap = fromMap;
+			return toPos;
+		}
 		private bool CheckBlock( in NavigationGrid.Block block )
 		{
 			if ( block.Normal.Slope == Incline.Blocked )
@@ -196,6 +345,20 @@ namespace TerrainDemo.Hero
 				(blockSideLocalPos.Item1 + block).ToVector3(yPosition - 1),
 				Color.red, 0, true
 			);
+		}
+
+		[Conditional( "UNITY_EDITOR")]
+		private void DebugDrawBounds( )
+		{
+			var yPosition = _owner.Position.Y + 1;
+			var currentBlockBounds = BlockInfo.GetBounds(BlockPosition);
+			DrawRectangle.ForDebug(currentBlockBounds, yPosition, Color.blue);
+
+			if ( IsMoving )
+			{
+				var direction = Vector3.Transform( Vector3.UnitZ, Rotation );
+				DrawArrow.ForDebug( Position.ToVector3( yPosition ) + Vector3.UnitY, direction * MaxSpeed, Color.blue);
+			}
 		}
 
 		public enum Type
