@@ -14,12 +14,10 @@ namespace TerrainDemo.Tools
         [Conditional("UNITY_EDITOR")]
         public static void ForGizmo(Box2 rectangle, Color color, bool filled = false)
         {
-            var corner1 = new Vector3(rectangle.Left, 0, rectangle.Bottom);
-            var corner2 = new Vector3(rectangle.Left, 0, rectangle.Top);
-            var corner3 = new Vector3(rectangle.Right, 0, rectangle.Top);
-            var corner4 = new Vector3(rectangle.Right, 0, rectangle.Bottom);
-
-            var points = new[] { corner1, corner2, corner3, corner4, corner1 };
+            var corner1 = new Vector3(rectangle.Min.X, 0, rectangle.Min.Y);
+            var corner2 = new Vector3(rectangle.Min.X, 0, rectangle.Max.Y);
+            var corner3 = new Vector3(rectangle.Max.X, 0, rectangle.Max.Y);
+            var corner4 = new Vector3(rectangle.Max.X, 0, rectangle.Min.Y);
 
             Gizmos.color = color;
             Gizmos.DrawLine(corner1, corner2);
@@ -151,10 +149,10 @@ namespace TerrainDemo.Tools
         [Conditional("UNITY_EDITOR")]
         public static void ForHandle(Box2 rectangle, Color color, bool filled = false)
         {
-            var corner1 = new Vector3(rectangle.Left, 0, rectangle.Bottom);
-            var corner2 = new Vector3(rectangle.Left, 0, rectangle.Top);
-            var corner3 = new Vector3(rectangle.Right, 0, rectangle.Top);
-            var corner4 = new Vector3(rectangle.Right, 0, rectangle.Bottom);
+	        var corner1 = new Vector3(rectangle.Min.X, 0, rectangle.Min.Y);
+	        var corner2 = new Vector3(rectangle.Min.X, 0, rectangle.Max.Y);
+	        var corner3 = new Vector3(rectangle.Max.X, 0, rectangle.Max.Y);
+	        var corner4 = new Vector3(rectangle.Max.X, 0, rectangle.Min.Y);
 
             var points = new[] { corner1, corner2, corner3, corner4, corner1 };
 

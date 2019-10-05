@@ -7,8 +7,10 @@ using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using UnityEngine;
 using UnityEngine.Assertions;
+using Debug = System.Diagnostics.Debug;
 using Vector2 = OpenToolkit.Mathematics.Vector2;
 using Quaternion = OpenToolkit.Mathematics.Quaternion;
+using Vector2i = TerrainDemo.Spatial.Vector2i;
 using Vector3 = OpenToolkit.Mathematics.Vector3;
 
 namespace TerrainDemo.Hero
@@ -16,7 +18,7 @@ namespace TerrainDemo.Hero
 	public class Locomotor
 	{
 		public float MaxSpeed = 5;
-		public float MaxRotationAngle = 45;
+		public float MaxRotationAngle = 180;
 
 		public Type LocoType => _type;
 
@@ -35,7 +37,7 @@ namespace TerrainDemo.Hero
 		{
 			_type   = type;
 			Position = startPosition;
-			//_rotation = startRotation.to todo init rotation
+			_rotation = startRotation.ToEulerAngles( ).Y;
 			_owner  = owner;
 			_map    = map;
 			_navMap = navMap;
@@ -171,6 +173,7 @@ namespace TerrainDemo.Hero
 			{
 				var step = _rotateDirection * MathHelper.DegreesToRadians( MaxRotationAngle ) * deltaTime;
 				_rotation += step;
+
 				return true;
 			}
 
@@ -189,7 +192,12 @@ namespace TerrainDemo.Hero
 			if ( _targetVelocity != Vector2.Zero )
 			{
 				IsMoving = true;
-				var step        = Vector2.Transform( _targetVelocity, Rotation) * deltaTime;
+
+				var velocity        = (Vector3) _targetVelocity;
+				var rotatedVelocity = Vector3.Transform( velocity, Rotation );
+				var planeVelocity   = (Vector2) rotatedVelocity;
+				var step            = planeVelocity * deltaTime;
+
 				var newPosition = Step( Position, Position + step );
 
 				if ( newPosition != Position )

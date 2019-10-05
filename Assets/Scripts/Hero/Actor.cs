@@ -85,6 +85,7 @@ namespace TerrainDemo.Hero
         public void Stop()
         {
 			Nav.Cancel( true );
+			Locomotor.Stop(  );
         }
 
         public void Update( float deltaTime )

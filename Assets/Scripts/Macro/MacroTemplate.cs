@@ -12,6 +12,7 @@ using UnityEngine.Assertions;
 using Debug = UnityEngine.Debug;
 using Random = TerrainDemo.Tools.Random;
 using Vector2 = OpenToolkit.Mathematics.Vector2;
+using Vector2i = TerrainDemo.Spatial.Vector2i;
 using Vector3 = OpenToolkit.Mathematics.Vector3;
 
 namespace TerrainDemo.Macro

@@ -128,22 +128,12 @@ namespace TerrainDemo.Spatial
 
         public static explicit operator Bounds2i(Bounds input)
         {
-            var xMin = input.min.x % 1 == 0 ? input.min.x + RoundBiasValue : input.min.x;   //todo rewrite same as Vector cast
-            var yMin = input.min.z % 1 == 0 ? input.min.z + RoundBiasValue : input.min.z;
-            var xMax = input.max.x % 1 == 0 ? input.max.x - RoundBiasValue : input.max.x;
-            var yMax = input.max.z % 1 == 0 ? input.max.z - RoundBiasValue : input.max.z;
-
-            return new Bounds2i((GridPos)(new Vector2(xMin, yMin)), (GridPos)(new Vector2(xMax, yMax)));         //To bias float bounds values to integer
+            return new Bounds2i((GridPos)input.min, (GridPos)input.max);         
         }
 
         public static explicit operator Bounds2i(Box2 input)
         {
-            var xMin = input.Left % 1 == 0 ? input.Left + RoundBiasValue : input.Left;				//todo is it need?
-            var yMin = input.Bottom % 1 == 0 ? input.Bottom + RoundBiasValue : input.Bottom;
-            var xMax = input.Right % 1 == 0 ? input.Right - RoundBiasValue : input.Right;
-            var yMax = input.Top % 1 == 0 ? input.Top - RoundBiasValue : input.Top;
-
-            return new Bounds2i((GridPos)(new Vector2(xMin, yMin)), (GridPos)(new Vector2(xMax, yMax)));         //To bias float bounds values to integer
+            return new Bounds2i((GridPos)input.Min, (GridPos)input.Max);         
         }
 
         #region Enumerable

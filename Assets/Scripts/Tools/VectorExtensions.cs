@@ -1,4 +1,5 @@
 ﻿using System;
+using JetBrains.Annotations;
 using TerrainDemo.Spatial;
 using UnityEngine;
 using OpenTK = OpenToolkit.Mathematics;
@@ -50,6 +51,41 @@ namespace TerrainDemo.Tools
         public static Vector3 ConvertTo3D(this Vector2i v)
         {
             return ((Vector2)v).ConvertTo3D();
+        }
+
+        public static OpenTK.Vector3 ToVector3(this OpenTK.Vector2 v, float yValue)
+        {
+	        return new Vector3(v.X, yValue, v.Y);
+        }
+
+        public static string ToString(this OpenTK.Vector2 v, int precision)
+        {
+	        switch (precision)
+	        {
+		        case 0:
+			        return $"({v.X:F0}, {v.Y:F0})";
+		        case 1:
+			        return $"({v.X:F1}, {v.Y:F1})";
+		        case 2:
+			        return $"({v.X:F2}, {v.Y:F2})";
+		        case 3:
+			        return $"({v.X:F3}, {v.Y:F3})";
+		        default:
+			        return v.ToString();
+	        }
+        }
+
+        [Pure]
+        public static string ToString(this OpenTK.Vector3 v, int precision)
+        {
+	        switch (precision)
+	        {
+		        case 0:  return $"({v.X:N0}, {v.Y:N0}, {v.Z:N0})";
+		        case 1:  return $"({v.X:N1}, {v.Y:N1}, {v.Z:N1})";
+		        case 2:  return $"({v.X:N2}, {v.Y:N2}, {v.Z:N2})";
+		        case 3:  return $"({v.X:N3}, {v.Y:N3}, {v.Z:N3})";
+		        default: return v.ToString();
+	        }
         }
 
         /// <summary>

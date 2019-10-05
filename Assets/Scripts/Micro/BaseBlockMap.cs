@@ -9,6 +9,7 @@ using TerrainDemo.Tools;
 using UnityEngine;
 using Ray = TerrainDemo.Spatial.Ray;
 using Vector2 = OpenToolkit.Mathematics.Vector2;
+using Vector2i = TerrainDemo.Spatial.Vector2i;
 using Vector3 = OpenToolkit.Mathematics.Vector3;
 
 namespace TerrainDemo.Micro

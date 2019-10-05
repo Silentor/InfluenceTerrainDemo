@@ -284,7 +284,7 @@ namespace TerrainDemo.Spatial
 
         private Box2 Combine(Box2 first, Box2 second)
         {
-            return new Box2(Math.Min(first.Left, second.Left), Math.Max(first.Top, second.Top), Math.Max(first.Right, second.Right), Math.Min(first.Bottom, second.Bottom));
+            return new Box2(Vector2.ComponentMin( first.Min, second.Min ), Vector2.ComponentMax( first.Max, second.Max ));
         }
 
         private Vertex GetVertex(Vector2 position, List<Vertex> currentVertices)

@@ -6,7 +6,9 @@ using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
 using UnityEngine;
 using Vector2 = OpenToolkit.Mathematics.Vector2;
+using Vector2i = TerrainDemo.Spatial.Vector2i;
 using Vector3 = UnityEngine.Vector3;
+using Vector3i = TerrainDemo.Spatial.Vector3i;
 
 namespace TerrainDemo.Tools
 {
@@ -306,10 +308,11 @@ namespace TerrainDemo.Tools
         public static GridPos[] ConvexToBlocks(Predicate<Vector2> contains, Box2 bounds)
         {
             var result = new List<GridPos>();
-            var minZ = (int)Math.Round(bounds.Bottom);
-            var maxZ = (int)Math.Round(bounds.Top);
-            var minX = (int)Math.Round(bounds.Left);
-            var maxX = (int)Math.Round(bounds.Right);
+            var boundI = (Bounds2i) bounds;
+            var minZ = boundI.Min.Z;
+            var maxZ = boundI.Max.Z;
+            var minX = boundI.Min.X;
+            var maxX = boundI.Max.X;
 
             //DrawRectangle.ForGizmo(new Box2(minX, maxZ, maxX, minZ), Color.blue / 2);
 
@@ -361,10 +364,11 @@ namespace TerrainDemo.Tools
         public static GridPos[] ConvexToVertices(Predicate<Vector2> contains, Box2 bounds)
         {
             var result = new List<GridPos>();
-            var minZ = (int)Math.Ceiling(bounds.Bottom);
-            var maxZ = (int)Math.Floor(bounds.Top);
-            var minX = (int)Math.Ceiling(bounds.Left);
-            var maxX = (int)Math.Floor(bounds.Right);
+            var boundI = (Bounds2i) bounds;
+            var minZ   = boundI.Min.Z;
+            var maxZ   = boundI.Max.Z;
+            var minX   = boundI.Min.X;
+            var maxX   = boundI.Max.X;
 
             //DrawRectangle.ForGizmo(new Box2(minX, maxZ, maxX, minZ), Color.blue / 2);
 

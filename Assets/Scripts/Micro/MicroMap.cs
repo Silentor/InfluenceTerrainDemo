@@ -15,6 +15,7 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using Debug = UnityEngine.Debug;
 using Vector2 = OpenToolkit.Mathematics.Vector2;
+using Vector2i = TerrainDemo.Spatial.Vector2i;
 using Vector3 = UnityEngine.Vector3;
 
 namespace TerrainDemo.Micro

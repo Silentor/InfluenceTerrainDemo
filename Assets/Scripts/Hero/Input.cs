@@ -23,11 +23,11 @@ namespace TerrainDemo.Hero
             if (UnityEngine.Input.GetKey(KeyCode.W))
                 moveDir = Vector2.up;
             if (UnityEngine.Input.GetKey(KeyCode.S))
-                moveDir += Vector2.down * 0.5f;
+                moveDir += Vector2.down;
             if (UnityEngine.Input.GetKey(KeyCode.A))
-                moveDir += Vector2.left * 0.75f;
+                moveDir += Vector2.left;
             if (UnityEngine.Input.GetKey(KeyCode.D))
-                moveDir += Vector2.right * 0.75f;
+                moveDir += Vector2.right;
 
             if (_oldMoveDirection != moveDir)
             {

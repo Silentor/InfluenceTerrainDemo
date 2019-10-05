@@ -7,6 +7,7 @@ using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using UnityEngine;
 using Vector2 = OpenToolkit.Mathematics.Vector2;
+using Vector2i = TerrainDemo.Spatial.Vector2i;
 
 namespace TerrainDemo.Tests.Editor
 {
