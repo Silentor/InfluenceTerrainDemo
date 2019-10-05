@@ -21,6 +21,7 @@ SOFTWARE.
  */
 
 using System;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -233,7 +234,7 @@ namespace OpenToolkit.Mathematics
         [XmlIgnore]
         public Vector2h Xy
         {
-            get => throw new NotImplementedException(); //Unsafe.As<Vector4h, Vector2h>(ref this);
+            get => Unsafe.As<Vector4h, Vector2h>(ref this);
             set
             {
                 X = value.X;
@@ -401,7 +402,7 @@ namespace OpenToolkit.Mathematics
         [XmlIgnore]
         public Vector3h Xyz
         {
-            get => throw new NotImplementedException(); //Unsafe.As<Vector4h, Vector3h>(ref this);
+            get => Unsafe.As<Vector4h, Vector3h>(ref this);
             set
             {
                 X = value.X;
@@ -1210,6 +1211,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="v4f">The Vector4 to convert.</param>
         /// <returns>The resulting Half vector.</returns>
+        [Pure]
         public static explicit operator Vector4h(Vector4 v4f)
         {
             return new Vector4h(v4f);
@@ -1220,6 +1222,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="v4d">The Vector4d to convert.</param>
         /// <returns>The resulting Half vector.</returns>
+        [Pure]
         public static explicit operator Vector4h(Vector4d v4d)
         {
             return new Vector4h(v4d);
@@ -1230,6 +1233,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="h4">The Half4 to convert.</param>
         /// <returns>The resulting Vector4.</returns>
+        [Pure]
         public static explicit operator Vector4(Vector4h h4)
         {
             return new Vector4(
@@ -1244,6 +1248,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="h4">The Half4 to convert.</param>
         /// <returns>The resulting Vector4d.</returns>
+        [Pure]
         public static explicit operator Vector4d(Vector4h h4)
         {
             return new Vector4d(
@@ -1251,6 +1256,18 @@ namespace OpenToolkit.Mathematics
                 h4.Y.ToSingle(),
                 h4.Z.ToSingle(),
                 h4.W.ToSingle());
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Vector4h"/> struct using a tuple containing the component
+        /// values.
+        /// </summary>
+        /// <param name="values">A tuple containing the component values.</param>
+        /// <returns>A new instance of the <see cref="Vector4h"/> struct with the given component values.</returns>
+        [Pure]
+        public static implicit operator Vector4h((Half X, Half Y, Half Z, Half W) values)
+        {
+            return new Vector4h(values.X, values.Y, values.Z, values.W);
         }
 
         /// <summary>
@@ -1309,6 +1326,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="other">OpenToolkit.Half4 to compare to this instance..</param>
         /// <returns>True, if other is equal to this instance; false otherwise.</returns>
+        [Pure]
         public bool Equals(Vector4h other)
         {
             return X.Equals(other.X) && Y.Equals(other.Y) && Z.Equals(other.Z) && W.Equals(other.W);
@@ -1335,6 +1353,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="h">The Half4 to convert.</param>
         /// <returns>The input as byte array.</returns>
+        [Pure]
         public static byte[] GetBytes(Vector4h h)
         {
             var result = new byte[SizeInBytes];
@@ -1361,6 +1380,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="value">A Half4 in it's byte[] representation.</param>
         /// <param name="startIndex">The starting position within value.</param>
         /// <returns>A new Half4 instance.</returns>
+        [Pure]
         public static Vector4h FromBytes(byte[] value, int startIndex)
         {
             return new Vector4h(
@@ -1368,6 +1388,22 @@ namespace OpenToolkit.Mathematics
                 Half.FromBytes(value, startIndex + 2),
                 Half.FromBytes(value, startIndex + 4),
                 Half.FromBytes(value, startIndex + 6));
+        }
+
+        /// <summary>
+        /// Deconstructs the vector into it's individual components.
+        /// </summary>
+        /// <param name="x">The X component of the vector.</param>
+        /// <param name="y">The Y component of the vector.</param>
+        /// <param name="z">The Z component of the vector.</param>
+        /// <param name="w">The W component of the vector.</param>
+        [Pure]
+        public void Deconstruct(out Half x, out Half y, out Half z, out Half w)
+        {
+            x = X;
+            y = Y;
+            z = Z;
+            w = W;
         }
     }
 }

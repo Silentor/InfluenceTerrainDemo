@@ -21,6 +21,7 @@ SOFTWARE.
 */
 
 using System;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Xml.Serialization;
@@ -182,6 +183,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="a">Left operand.</param>
         /// <param name="b">Right operand.</param>
         /// <returns>Result of operation.</returns>
+        [Pure]
         public static Vector2d Add(Vector2d a, Vector2d b)
         {
             Add(ref a, ref b, out a);
@@ -206,6 +208,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <returns>Result of subtraction.</returns>
+        [Pure]
         public static Vector2d Subtract(Vector2d a, Vector2d b)
         {
             Subtract(ref a, ref b, out a);
@@ -230,6 +233,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <returns>Result of the operation.</returns>
+        [Pure]
         public static Vector2d Multiply(Vector2d vector, double scale)
         {
             Multiply(ref vector, scale, out vector);
@@ -254,6 +258,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <returns>Result of the operation.</returns>
+        [Pure]
         public static Vector2d Multiply(Vector2d vector, Vector2d scale)
         {
             Multiply(ref vector, ref scale, out vector);
@@ -278,6 +283,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <returns>Result of the operation.</returns>
+        [Pure]
         public static Vector2d Divide(Vector2d vector, double scale)
         {
             Divide(ref vector, scale, out vector);
@@ -302,6 +308,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <returns>Result of the operation.</returns>
+        [Pure]
         public static Vector2d Divide(Vector2d vector, Vector2d scale)
         {
             Divide(ref vector, ref scale, out vector);
@@ -321,65 +328,12 @@ namespace OpenToolkit.Mathematics
         }
 
         /// <summary>
-        /// Calculate the component-wise minimum of two vectors.
-        /// </summary>
-        /// <param name="a">First operand.</param>
-        /// <param name="b">Second operand.</param>
-        /// <returns>The component-wise minimum.</returns>
-        [Obsolete("Use ComponentMin() instead.")]
-        public static Vector2d Min(Vector2d a, Vector2d b)
-        {
-            a.X = a.X < b.X ? a.X : b.X;
-            a.Y = a.Y < b.Y ? a.Y : b.Y;
-            return a;
-        }
-
-        /// <summary>
-        /// Calculate the component-wise minimum of two vectors.
-        /// </summary>
-        /// <param name="a">First operand.</param>
-        /// <param name="b">Second operand.</param>
-        /// <param name="result">The component-wise minimum.</param>
-        [Obsolete("Use ComponentMin() instead.")]
-        public static void Min(ref Vector2d a, ref Vector2d b, out Vector2d result)
-        {
-            result.X = a.X < b.X ? a.X : b.X;
-            result.Y = a.Y < b.Y ? a.Y : b.Y;
-        }
-
-        /// <summary>
-        /// Calculate the component-wise maximum of two vectors.
-        /// </summary>
-        /// <param name="a">First operand.</param>
-        /// <param name="b">Second operand.</param>
-        /// <returns>The component-wise maximum.</returns>
-        [Obsolete("Use ComponentMax() instead.")]
-        public static Vector2d Max(Vector2d a, Vector2d b)
-        {
-            a.X = a.X > b.X ? a.X : b.X;
-            a.Y = a.Y > b.Y ? a.Y : b.Y;
-            return a;
-        }
-
-        /// <summary>
-        /// Calculate the component-wise maximum of two vectors.
-        /// </summary>
-        /// <param name="a">First operand.</param>
-        /// <param name="b">Second operand.</param>
-        /// <param name="result">The component-wise maximum.</param>
-        [Obsolete("Use ComponentMax() instead.")]
-        public static void Max(ref Vector2d a, ref Vector2d b, out Vector2d result)
-        {
-            result.X = a.X > b.X ? a.X : b.X;
-            result.Y = a.Y > b.Y ? a.Y : b.Y;
-        }
-
-        /// <summary>
         /// Returns a vector created from the smallest of the corresponding components of the given vectors.
         /// </summary>
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <returns>The component-wise minimum.</returns>
+        [Pure]
         public static Vector2d ComponentMin(Vector2d a, Vector2d b)
         {
             a.X = a.X < b.X ? a.X : b.X;
@@ -405,6 +359,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <returns>The component-wise maximum.</returns>
+        [Pure]
         public static Vector2d ComponentMax(Vector2d a, Vector2d b)
         {
             a.X = a.X > b.X ? a.X : b.X;
@@ -431,6 +386,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">Left operand.</param>
         /// <param name="right">Right operand.</param>
         /// <returns>The minimum Vector2d.</returns>
+        [Pure]
         public static Vector2d MagnitudeMin(Vector2d left, Vector2d right)
         {
             return left.LengthSquared < right.LengthSquared ? left : right;
@@ -455,6 +411,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">Left operand.</param>
         /// <param name="right">Right operand.</param>
         /// <returns>The minimum Vector2d.</returns>
+        [Pure]
         public static Vector2d MagnitudeMax(Vector2d left, Vector2d right)
         {
             return left.LengthSquared >= right.LengthSquared ? left : right;
@@ -479,6 +436,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="min">Minimum vector.</param>
         /// <param name="max">Maximum vector.</param>
         /// <returns>The clamped vector.</returns>
+        [Pure]
         public static Vector2d Clamp(Vector2d vec, Vector2d min, Vector2d max)
         {
             vec.X = vec.X < min.X ? min.X : vec.X > max.X ? max.X : vec.X;
@@ -505,6 +463,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="vec1">The first vector.</param>
         /// <param name="vec2">The second vector.</param>
         /// <returns>The distance.</returns>
+        [Pure]
         public static double Distance(Vector2d vec1, Vector2d vec2)
         {
             Distance(ref vec1, ref vec2, out double result);
@@ -528,6 +487,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="vec1">The first vector.</param>
         /// <param name="vec2">The second vector.</param>
         /// <returns>The squared distance.</returns>
+        [Pure]
         public static double DistanceSquared(Vector2d vec1, Vector2d vec2)
         {
             DistanceSquared(ref vec1, ref vec2, out double result);
@@ -550,6 +510,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="vec">The input vector.</param>
         /// <returns>The normalized copy.</returns>
+        [Pure]
         public static Vector2d Normalize(Vector2d vec)
         {
             var scale = 1.0 / vec.Length;
@@ -575,6 +536,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="vec">The input vector.</param>
         /// <returns>The normalized copy.</returns>
+        [Pure]
         public static Vector2d NormalizeFast(Vector2d vec)
         {
             var scale = MathHelper.InverseSqrtFast((vec.X * vec.X) + (vec.Y * vec.Y));
@@ -601,6 +563,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">First operand.</param>
         /// <param name="right">Second operand.</param>
         /// <returns>The dot product of the two inputs.</returns>
+        [Pure]
         public static double Dot(Vector2d left, Vector2d right)
         {
             return (left.X * right.X) + (left.Y * right.Y);
@@ -624,6 +587,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="b">Second input vector.</param>
         /// <param name="blend">The blend factor. a when blend=0, b when blend=1.</param>
         /// <returns>a when blend=0, b when blend=1, and a linear combination otherwise.</returns>
+        [Pure]
         public static Vector2d Lerp(Vector2d a, Vector2d b, double blend)
         {
             a.X = (blend * (b.X - a.X)) + a.X;
@@ -653,6 +617,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="u">First Barycentric Coordinate.</param>
         /// <param name="v">Second Barycentric Coordinate.</param>
         /// <returns>a when u=v=0, b when u=1,v=0, c when u=0,v=1, and a linear combination of a,b,c otherwise.</returns>
+        [Pure]
         public static Vector2d BaryCentric(Vector2d a, Vector2d b, Vector2d c, double u, double v)
         {
             return a + (u * (b - a)) + (v * (c - a));
@@ -699,6 +664,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="vec">The vector to transform.</param>
         /// <param name="quat">The quaternion to rotate the vector by.</param>
         /// <returns>The result of the operation.</returns>
+        [Pure]
         public static Vector2d Transform(Vector2d vec, Quaterniond quat)
         {
             Transform(ref vec, ref quat, out Vector2d result);
@@ -742,6 +708,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">The left instance.</param>
         /// <param name="right">The right instance.</param>
         /// <returns>The result of the operation.</returns>
+        [Pure]
         public static Vector2d operator +(Vector2d left, Vector2d right)
         {
             left.X += right.X;
@@ -755,6 +722,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">The left instance.</param>
         /// <param name="right">The right instance.</param>
         /// <returns>The result of the operation.</returns>
+        [Pure]
         public static Vector2d operator -(Vector2d left, Vector2d right)
         {
             left.X -= right.X;
@@ -767,6 +735,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="vec">The instance.</param>
         /// <returns>The result of the operation.</returns>
+        [Pure]
         public static Vector2d operator -(Vector2d vec)
         {
             vec.X = -vec.X;
@@ -780,6 +749,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="vec">The instance.</param>
         /// <param name="f">The scalar.</param>
         /// <returns>The result of the operation.</returns>
+        [Pure]
         public static Vector2d operator *(Vector2d vec, double f)
         {
             vec.X *= f;
@@ -793,6 +763,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="f">The scalar.</param>
         /// <param name="vec">The instance.</param>
         /// <returns>The result of the operation.</returns>
+        [Pure]
         public static Vector2d operator *(double f, Vector2d vec)
         {
             vec.X *= f;
@@ -806,6 +777,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="scale">Left operand.</param>
         /// <param name="vec">Right operand.</param>
         /// <returns>Result of multiplication.</returns>
+        [Pure]
         public static Vector2d operator *(Vector2d vec, Vector2d scale)
         {
             vec.X *= scale.X;
@@ -819,6 +791,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="quat">The quaternion to rotate the vector by.</param>
         /// <param name="vec">The vector to transform.</param>
         /// <returns>The transformed vector.</returns>
+        [Pure]
         public static Vector2d operator *(Quaterniond quat, Vector2d vec)
         {
             Transform(ref vec, ref quat, out Vector2d result);
@@ -831,6 +804,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="vec">The instance.</param>
         /// <param name="f">The scalar.</param>
         /// <returns>The result of the operation.</returns>
+        [Pure]
         public static Vector2d operator /(Vector2d vec, double f)
         {
             vec.X /= f;
@@ -844,6 +818,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">The left instance.</param>
         /// <param name="right">The right instance.</param>
         /// <returns>True, if both instances are equal; false otherwise.</returns>
+        [Pure]
         public static bool operator ==(Vector2d left, Vector2d right)
         {
             return left.Equals(right);
@@ -855,6 +830,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">The left instance.</param>
         /// <param name="right">The right instance.</param>
         /// <returns>True, if the instances are not equal; false otherwise.</returns>
+        [Pure]
         public static bool operator !=(Vector2d left, Vector2d right)
         {
             return !left.Equals(right);
@@ -865,6 +841,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="v2">The Vector2 to convert.</param>
         /// <returns>The resulting Vector2d.</returns>
+        [Pure]
         public static explicit operator Vector2d(Vector2 v2)
         {
             return new Vector2d(v2.X, v2.Y);
@@ -875,9 +852,22 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="v2d">The Vector2d to convert.</param>
         /// <returns>The resulting Vector2.</returns>
+        [Pure]
         public static explicit operator Vector2(Vector2d v2d)
         {
             return new Vector2((float)v2d.X, (float)v2d.Y);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Vector2d"/> struct using a tuple containing the component
+        /// values.
+        /// </summary>
+        /// <param name="values">A tuple containing the component values.</param>
+        /// <returns>A new instance of the <see cref="Vector2d"/> struct with the given component values.</returns>
+        [Pure]
+        public static implicit operator Vector2d((double X, double Y) values)
+        {
+            return new Vector2d(values.X, values.Y);
         }
 
         private static readonly string ListSeparator = CultureInfo.CurrentCulture.TextInfo.ListSeparator;
@@ -905,6 +895,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="obj">The object to compare to.</param>
         /// <returns>True if the instances are equal; false otherwise.</returns>
+        [Pure]
         public override bool Equals(object obj)
         {
             if (!(obj is Vector2d))
@@ -920,11 +911,24 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="other">A vector to compare with this vector.</param>
         /// <returns>true if the current vector is equal to the vector parameter; otherwise, false.</returns>
+        [Pure]
         public bool Equals(Vector2d other)
         {
             return
                 X == other.X &&
                 Y == other.Y;
+        }
+
+        /// <summary>
+        /// Deconstructs the vector into it's individual components.
+        /// </summary>
+        /// <param name="x">The X component of the vector.</param>
+        /// <param name="y">The Y component of the vector.</param>
+        [Pure]
+        public void Deconstruct(out double x, out double y)
+        {
+            x = X;
+            y = Y;
         }
     }
 }

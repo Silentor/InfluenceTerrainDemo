@@ -21,6 +21,7 @@ SOFTWARE.
  */
 
 using System;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -295,6 +296,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="a">Left operand.</param>
         /// <param name="b">Right operand.</param>
         /// <returns>Result of operation.</returns>
+        [Pure]
         public static Vector4d Add(Vector4d a, Vector4d b)
         {
             Add(ref a, ref b, out a);
@@ -321,6 +323,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <returns>Result of subtraction.</returns>
+        [Pure]
         public static Vector4d Subtract(Vector4d a, Vector4d b)
         {
             Subtract(ref a, ref b, out a);
@@ -347,6 +350,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <returns>Result of the operation.</returns>
+        [Pure]
         public static Vector4d Multiply(Vector4d vector, double scale)
         {
             Multiply(ref vector, scale, out vector);
@@ -373,6 +377,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <returns>Result of the operation.</returns>
+        [Pure]
         public static Vector4d Multiply(Vector4d vector, Vector4d scale)
         {
             Multiply(ref vector, ref scale, out vector);
@@ -399,6 +404,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <returns>Result of the operation.</returns>
+        [Pure]
         public static Vector4d Divide(Vector4d vector, double scale)
         {
             Divide(ref vector, scale, out vector);
@@ -425,6 +431,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="vector">Left operand.</param>
         /// <param name="scale">Right operand.</param>
         /// <returns>Result of the operation.</returns>
+        [Pure]
         public static Vector4d Divide(Vector4d vector, Vector4d scale)
         {
             Divide(ref vector, ref scale, out vector);
@@ -446,73 +453,12 @@ namespace OpenToolkit.Mathematics
         }
 
         /// <summary>
-        /// Calculate the component-wise minimum of two vectors.
-        /// </summary>
-        /// <param name="a">First operand.</param>
-        /// <param name="b">Second operand.</param>
-        /// <returns>The component-wise minimum.</returns>
-        [Obsolete("Use ComponentMin() instead.")]
-        public static Vector4d Min(Vector4d a, Vector4d b)
-        {
-            a.X = a.X < b.X ? a.X : b.X;
-            a.Y = a.Y < b.Y ? a.Y : b.Y;
-            a.Z = a.Z < b.Z ? a.Z : b.Z;
-            a.W = a.W < b.W ? a.W : b.W;
-            return a;
-        }
-
-        /// <summary>
-        /// Calculate the component-wise minimum of two vectors.
-        /// </summary>
-        /// <param name="a">First operand.</param>
-        /// <param name="b">Second operand.</param>
-        /// <param name="result">The component-wise minimum.</param>
-        [Obsolete("Use ComponentMin() instead.")]
-        public static void Min(ref Vector4d a, ref Vector4d b, out Vector4d result)
-        {
-            result.X = a.X < b.X ? a.X : b.X;
-            result.Y = a.Y < b.Y ? a.Y : b.Y;
-            result.Z = a.Z < b.Z ? a.Z : b.Z;
-            result.W = a.W < b.W ? a.W : b.W;
-        }
-
-        /// <summary>
-        /// Calculate the component-wise maximum of two vectors.
-        /// </summary>
-        /// <param name="a">First operand.</param>
-        /// <param name="b">Second operand.</param>
-        /// <returns>The component-wise maximum.</returns>
-        [Obsolete("Use ComponentMax() instead.")]
-        public static Vector4d Max(Vector4d a, Vector4d b)
-        {
-            a.X = a.X > b.X ? a.X : b.X;
-            a.Y = a.Y > b.Y ? a.Y : b.Y;
-            a.Z = a.Z > b.Z ? a.Z : b.Z;
-            a.W = a.W > b.W ? a.W : b.W;
-            return a;
-        }
-
-        /// <summary>
-        /// Calculate the component-wise maximum of two vectors.
-        /// </summary>
-        /// <param name="a">First operand.</param>
-        /// <param name="b">Second operand.</param>
-        /// <param name="result">The component-wise maximum.</param>
-        [Obsolete("Use ComponentMax() instead.")]
-        public static void Max(ref Vector4d a, ref Vector4d b, out Vector4d result)
-        {
-            result.X = a.X > b.X ? a.X : b.X;
-            result.Y = a.Y > b.Y ? a.Y : b.Y;
-            result.Z = a.Z > b.Z ? a.Z : b.Z;
-            result.W = a.W > b.W ? a.W : b.W;
-        }
-
-        /// <summary>
         /// Returns a vector created from the smallest of the corresponding components of the given vectors.
         /// </summary>
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <returns>The component-wise minimum.</returns>
+        [Pure]
         public static Vector4d ComponentMin(Vector4d a, Vector4d b)
         {
             a.X = a.X < b.X ? a.X : b.X;
@@ -542,6 +488,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="a">First operand.</param>
         /// <param name="b">Second operand.</param>
         /// <returns>The component-wise maximum.</returns>
+        [Pure]
         public static Vector4d ComponentMax(Vector4d a, Vector4d b)
         {
             a.X = a.X > b.X ? a.X : b.X;
@@ -571,6 +518,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">Left operand.</param>
         /// <param name="right">Right operand.</param>
         /// <returns>The minimum Vector4d.</returns>
+        [Pure]
         public static Vector4d MagnitudeMin(Vector4d left, Vector4d right)
         {
             return left.LengthSquared < right.LengthSquared ? left : right;
@@ -593,6 +541,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">Left operand.</param>
         /// <param name="right">Right operand.</param>
         /// <returns>The minimum Vector4d.</returns>
+        [Pure]
         public static Vector4d MagnitudeMax(Vector4d left, Vector4d right)
         {
             return left.LengthSquared >= right.LengthSquared ? left : right;
@@ -616,6 +565,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="min">Minimum vector.</param>
         /// <param name="max">Maximum vector.</param>
         /// <returns>The clamped vector.</returns>
+        [Pure]
         public static Vector4d Clamp(Vector4d vec, Vector4d min, Vector4d max)
         {
             vec.X = vec.X < min.X ? min.X : vec.X > max.X ? max.X : vec.X;
@@ -645,6 +595,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="vec">The input vector.</param>
         /// <returns>The normalized copy.</returns>
+        [Pure]
         public static Vector4d Normalize(Vector4d vec)
         {
             var scale = 1.0 / vec.Length;
@@ -674,6 +625,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="vec">The input vector.</param>
         /// <returns>The normalized copy.</returns>
+        [Pure]
         public static Vector4d NormalizeFast(Vector4d vec)
         {
             var scale = MathHelper.InverseSqrtFast((vec.X * vec.X) + (vec.Y * vec.Y) + (vec.Z * vec.Z) + (vec.W * vec.W));
@@ -704,6 +656,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">First operand.</param>
         /// <param name="right">Second operand.</param>
         /// <returns>The dot product of the two inputs.</returns>
+        [Pure]
         public static double Dot(Vector4d left, Vector4d right)
         {
             return (left.X * right.X) + (left.Y * right.Y) + (left.Z * right.Z) + (left.W * right.W);
@@ -727,6 +680,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="b">Second input vector.</param>
         /// <param name="blend">The blend factor. a when blend=0, b when blend=1.</param>
         /// <returns>a when blend=0, b when blend=1, and a linear combination otherwise.</returns>
+        [Pure]
         public static Vector4d Lerp(Vector4d a, Vector4d b, double blend)
         {
             a.X = (blend * (b.X - a.X)) + a.X;
@@ -760,6 +714,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="u">First Barycentric Coordinate.</param>
         /// <param name="v">Second Barycentric Coordinate.</param>
         /// <returns>a when u=v=0, b when u=1,v=0, c when u=0,v=1, and a linear combination of a,b,c otherwise.</returns>
+        [Pure]
         public static Vector4d BaryCentric(Vector4d a, Vector4d b, Vector4d c, double u, double v)
         {
             return a + (u * (b - a)) + (v * (c - a));
@@ -806,6 +761,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="vec">The vector to transform.</param>
         /// <param name="mat">The desired transformation.</param>
         /// <returns>The transformed vector.</returns>
+        [Pure]
         public static Vector4d Transform(Vector4d vec, Matrix4d mat)
         {
             Transform(ref vec, ref mat, out Vector4d result);
@@ -833,6 +789,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="vec">The vector to transform.</param>
         /// <param name="quat">The quaternion to rotate the vector by.</param>
         /// <returns>The result of the operation.</returns>
+        [Pure]
         public static Vector4d Transform(Vector4d vec, Quaterniond quat)
         {
             Transform(ref vec, ref quat, out Vector4d result);
@@ -864,7 +821,7 @@ namespace OpenToolkit.Mathematics
         [XmlIgnore]
         public Vector2d Xy
         {
-            get => throw new NotImplementedException(); //Unsafe.As<Vector4d, Vector2d>(ref this);
+            get => Unsafe.As<Vector4d, Vector2d>(ref this);
             set
             {
                 X = value.X;
@@ -1032,7 +989,7 @@ namespace OpenToolkit.Mathematics
         [XmlIgnore]
         public Vector3d Xyz
         {
-            get => throw new NotImplementedException(); //Unsafe.As<Vector4d, Vector3d>(ref this);
+            get => Unsafe.As<Vector4d, Vector3d>(ref this);
             set
             {
                 X = value.X;
@@ -1824,6 +1781,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>The result of the calculation.</returns>
+        [Pure]
         public static Vector4d operator +(Vector4d left, Vector4d right)
         {
             left.X += right.X;
@@ -1839,6 +1797,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>The result of the calculation.</returns>
+        [Pure]
         public static Vector4d operator -(Vector4d left, Vector4d right)
         {
             left.X -= right.X;
@@ -1853,6 +1812,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="vec">The instance.</param>
         /// <returns>The result of the calculation.</returns>
+        [Pure]
         public static Vector4d operator -(Vector4d vec)
         {
             vec.X = -vec.X;
@@ -1868,6 +1828,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="vec">The instance.</param>
         /// <param name="scale">The scalar.</param>
         /// <returns>The result of the calculation.</returns>
+        [Pure]
         public static Vector4d operator *(Vector4d vec, double scale)
         {
             vec.X *= scale;
@@ -1883,6 +1844,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="scale">The scalar.</param>
         /// <param name="vec">The instance.</param>
         /// <returns>The result of the calculation.</returns>
+        [Pure]
         public static Vector4d operator *(double scale, Vector4d vec)
         {
             vec.X *= scale;
@@ -1898,6 +1860,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="scale">Left operand.</param>
         /// <param name="vec">Right operand.</param>
         /// <returns>Result of multiplication.</returns>
+        [Pure]
         public static Vector4d operator *(Vector4d vec, Vector4d scale)
         {
             vec.X *= scale.X;
@@ -1913,6 +1876,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="quat">The quaternion to rotate the vector by.</param>
         /// <param name="vec">The vector to transform.</param>
         /// <returns>The transformed vector.</returns>
+        [Pure]
         public static Vector4d operator *(Quaterniond quat, Vector4d vec)
         {
             Transform(ref vec, ref quat, out Vector4d result);
@@ -1925,6 +1889,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="vec">The instance.</param>
         /// <param name="scale">The scalar.</param>
         /// <returns>The result of the calculation.</returns>
+        [Pure]
         public static Vector4d operator /(Vector4d vec, double scale)
         {
             vec.X /= scale;
@@ -1940,6 +1905,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>True, if left equals right; false otherwise.</returns>
+        [Pure]
         public static bool operator ==(Vector4d left, Vector4d right)
         {
             return left.Equals(right);
@@ -1951,6 +1917,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>True, if left does not equa lright; false otherwise.</returns>
+        [Pure]
         public static bool operator !=(Vector4d left, Vector4d right)
         {
             return !left.Equals(right);
@@ -1961,6 +1928,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="v">The instance.</param>
         /// <returns>A pointer to the first element of v.</returns>
+        [Pure]
         public static unsafe explicit operator double*(Vector4d v)
         {
             return &v.X;
@@ -1971,6 +1939,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="v">The instance.</param>
         /// <returns>A pointer to the first element of v.</returns>
+        [Pure]
         public static explicit operator IntPtr(Vector4d v)
         {
             unsafe
@@ -1984,6 +1953,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="v4">The Vector4 to convert.</param>
         /// <returns>The resulting Vector4d.</returns>
+        [Pure]
         public static explicit operator Vector4d(Vector4 v4)
         {
             return new Vector4d(v4.X, v4.Y, v4.Z, v4.W);
@@ -1994,9 +1964,22 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="v4d">The Vector4d to convert.</param>
         /// <returns>The resulting Vector4.</returns>
+        [Pure]
         public static explicit operator Vector4(Vector4d v4d)
         {
             return new Vector4((float)v4d.X, (float)v4d.Y, (float)v4d.Z, (float)v4d.W);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Vector4d"/> struct using a tuple containing the component
+        /// values.
+        /// </summary>
+        /// <param name="values">A tuple containing the component values.</param>
+        /// <returns>A new instance of the <see cref="Vector4d"/> struct with the given component values.</returns>
+        [Pure]
+        public static implicit operator Vector4d((double X, double Y, double Z, double W) values)
+        {
+            return new Vector4d(values.X, values.Y, values.Z, values.W);
         }
 
         private static readonly string ListSeparator = CultureInfo.CurrentCulture.TextInfo.ListSeparator;
@@ -2028,6 +2011,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="obj">The object to compare to.</param>
         /// <returns>True if the instances are equal; false otherwise.</returns>
+        [Pure]
         public override bool Equals(object obj)
         {
             if (!(obj is Vector4d))
@@ -2043,6 +2027,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="other">A vector to compare with this vector.</param>
         /// <returns>true if the current vector is equal to the vector parameter; otherwise, false.</returns>
+        [Pure]
         public bool Equals(Vector4d other)
         {
             return
@@ -2050,6 +2035,22 @@ namespace OpenToolkit.Mathematics
                 Y == other.Y &&
                 Z == other.Z &&
                 W == other.W;
+        }
+
+        /// <summary>
+        /// Deconstructs the vector into it's individual components.
+        /// </summary>
+        /// <param name="x">The X component of the vector.</param>
+        /// <param name="y">The Y component of the vector.</param>
+        /// <param name="z">The Z component of the vector.</param>
+        /// <param name="w">The W component of the vector.</param>
+        [Pure]
+        public void Deconstruct(out double x, out double y, out double z, out double w)
+        {
+            x = X;
+            y = Y;
+            z = Z;
+            w = W;
         }
     }
 }

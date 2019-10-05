@@ -21,6 +21,7 @@ SOFTWARE.
  */
 
 using System;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -214,7 +215,7 @@ namespace OpenToolkit.Mathematics
         [XmlIgnore]
         public Vector2h Xy
         {
-            get => throw new NotImplementedException(); //Unsafe.As<Vector3h, Vector2h>(ref this);
+            get => Unsafe.As<Vector3h, Vector2h>(ref this);
             set
             {
                 X = value.X;
@@ -390,6 +391,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="v3f">The Vector3 to convert.</param>
         /// <returns>The resulting Half vector.</returns>
+        [Pure]
         public static explicit operator Vector3h(Vector3 v3f)
         {
             return new Vector3h(v3f);
@@ -400,6 +402,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="v3d">The Vector3d to convert.</param>
         /// <returns>The resulting Half vector.</returns>
+        [Pure]
         public static explicit operator Vector3h(Vector3d v3d)
         {
             return new Vector3h(v3d);
@@ -410,6 +413,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="h3">The Half3 to convert.</param>
         /// <returns>The resulting Vector3.</returns>
+        [Pure]
         public static explicit operator Vector3(Vector3h h3)
         {
             return new Vector3(
@@ -423,12 +427,25 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="h3">The Half3 to convert.</param>
         /// <returns>The resulting Vector3d.</returns>
+        [Pure]
         public static explicit operator Vector3d(Vector3h h3)
         {
             return new Vector3d(
                 h3.X.ToSingle(),
                 h3.Y.ToSingle(),
                 h3.Z.ToSingle());
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Vector3h"/> struct using a tuple containing the component
+        /// values.
+        /// </summary>
+        /// <param name="values">A tuple containing the component values.</param>
+        /// <returns>A new instance of the <see cref="Vector3h"/> struct with the given component values.</returns>
+        [Pure]
+        public static implicit operator Vector3h((Half X, Half Y, Half Z) values)
+        {
+            return new Vector3h(values.X, values.Y, values.Z);
         }
 
         /// <summary>
@@ -441,6 +458,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="info">The serialization info.</param>
         /// <param name="context">The streaming context.</param>
+        [Pure]
         public Vector3h(SerializationInfo info, StreamingContext context)
         {
             X = (Half)info.GetValue("X", typeof(Half));
@@ -483,6 +501,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="other">OpenToolkit.Half3 to compare to this instance..</param>
         /// <returns>True, if other is equal to this instance; false otherwise.</returns>
+        [Pure]
         public bool Equals(Vector3h other)
         {
             return X.Equals(other.X) && Y.Equals(other.Y) && Z.Equals(other.Z);
@@ -501,6 +520,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="h">The Half3 to convert.</param>
         /// <returns>The input as byte array.</returns>
+        [Pure]
         public static byte[] GetBytes(Vector3h h)
         {
             var result = new byte[SizeInBytes];
@@ -524,12 +544,27 @@ namespace OpenToolkit.Mathematics
         /// <param name="value">A Half3 in it's byte[] representation.</param>
         /// <param name="startIndex">The starting position within value.</param>
         /// <returns>A new Half3 instance.</returns>
+        [Pure]
         public static Vector3h FromBytes(byte[] value, int startIndex)
         {
             return new Vector3h(
                 Half.FromBytes(value, startIndex),
                 Half.FromBytes(value, startIndex + 2),
                 Half.FromBytes(value, startIndex + 4));
+        }
+
+        /// <summary>
+        /// Deconstructs the vector into it's individual components.
+        /// </summary>
+        /// <param name="x">The X component of the vector.</param>
+        /// <param name="y">The Y component of the vector.</param>
+        /// <param name="z">The Z component of the vector.</param>
+        [Pure]
+        public void Deconstruct(out Half x, out Half y, out Half z)
+        {
+            x = X;
+            y = Y;
+            z = Z;
         }
     }
 }

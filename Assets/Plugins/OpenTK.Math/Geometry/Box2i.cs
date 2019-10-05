@@ -1,5 +1,5 @@
-﻿//
-// Box2.cs
+//
+// Box2i.cs
 //
 // Copyright (C) 2019 OpenTK
 //
@@ -18,14 +18,14 @@ namespace OpenToolkit.Mathematics
     /// Defines an axis-aligned 2d box (rectangle).
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public struct Box2 : IEquatable<Box2>
+    public struct Box2i : IEquatable<Box2i>
     {
-        private Vector2 _min;
+        private Vector2i _min;
 
         /// <summary>
         /// Gets or sets the minimum boundary of the structure.
         /// </summary>
-        public Vector2 Min
+        public Vector2i Min
         {
             get => _min;
             set
@@ -43,12 +43,12 @@ namespace OpenToolkit.Mathematics
             }
         }
 
-        private Vector2 _max;
+        private Vector2i _max;
 
         /// <summary>
         /// Gets or sets the maximum boundary of the structure.
         /// </summary>
-        public Vector2 Max
+        public Vector2i Max
         {
             get => _max;
             set
@@ -67,67 +67,66 @@ namespace OpenToolkit.Mathematics
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Box2"/> struct.
+        /// Initializes a new instance of the <see cref="Box2i"/> struct.
         /// </summary>
         /// <param name="min">The minimum point on the XY plane this box encloses.</param>
         /// <param name="max">The maximum point on the XY plane this box encloses.</param>
-        public Box2(Vector2 min, Vector2 max)
+        public Box2i(Vector2i min, Vector2i max)
         {
-            _min = Vector2.ComponentMin(min, max);
-            _max = Vector2.ComponentMax(min, max);
+            _min = Vector2i.ComponentMin(min, max);
+            _max = Vector2i.ComponentMax(min, max);
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Box2"/> struct.
+        /// Initializes a new instance of the <see cref="Box2i"/> struct.
         /// </summary>
         /// <param name="minX">The minimum X value to be enclosed.</param>
         /// <param name="minY">The minimum Y value to be enclosed.</param>
         /// <param name="maxX">The maximum X value to be enclosed.</param>
         /// <param name="maxY">The maximum Y value to be enclosed.</param>
-        public Box2(float minX, float minY, float maxX, float maxY)
-            : this(new Vector2(minX, minY), new Vector2(maxX, maxY))
+        public Box2i(int minX, int minY, int maxX, int maxY)
+            : this(new Vector2i(minX, minY), new Vector2i(maxX, maxY))
         {
         }
 
         /// <summary>
-        /// Gets or sets a vector describing the size of the Box2 structure.
+        /// Gets a vector describing the size of the Box2i structure.
         /// </summary>
-        public Vector2 Size
+        public Vector2i Size
         {
             get => Max - Min;
-            set
-            {
-                Vector2 center = Center;
-                _min = center - (value * 0.5f);
-                _max = center + (value * 0.5f);
-            }
         }
 
         /// <summary>
         /// Gets or sets a vector describing half the size of the box.
         /// </summary>
-        public Vector2 HalfSize
+        public Vector2i HalfSize
         {
             get => Size / 2;
-            set => Size = value * 2;
+            set
+            {
+                Vector2i center = new Vector2i((int)Center.X, (int)Center.Y);
+                _min = center - value;
+                _max = center + value;
+            }
         }
 
         /// <summary>
-        /// Gets or sets a vector describing the center of the box.
+        /// Gets a vector describing the center of the box.
         /// </summary>
+        /// to avoid annoying off-by-one errors in box placement, no setter is provided for this property
         public Vector2 Center
         {
-            get => HalfSize + _min;
-            set => Translate(value - Center);
+            get => ((_min + _max).ToVector2() * 0.5f) + _min.ToVector2();
         }
 
         /// <summary>
-        /// Returns whether the box contains the specified point (borders exclusive).
+        /// Returns whether the box contains the specified point (borders inclusive).
         /// </summary>
         /// <param name="point">The point to query.</param>
         /// <returns>Whether this box contains the point.</returns>
         [Pure]
-        public bool Contains(Vector2 point)
+        public bool Contains(Vector2i point)
         {
             return _min.X < point.X && point.X < _max.X &&
                    _min.Y < point.Y && point.Y < _max.Y;
@@ -142,7 +141,7 @@ namespace OpenToolkit.Mathematics
         /// </param>
         /// <returns>Whether this box contains the point.</returns>
         [Pure]
-        public bool Contains(Vector2 point, bool boundaryInclusive)
+        public bool Contains(Vector2i point, bool boundaryInclusive)
         {
             if (boundaryInclusive)
             {
@@ -159,7 +158,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="other">The box to query.</param>
         /// <returns>Whether this box contains the other box.</returns>
         [Pure]
-        public bool Contains(Box2 other)
+        public bool Contains(Box2i other)
         {
             return _max.X >= other._min.X && _min.X <= other._max.X &&
                    _max.Y >= other._min.Y && _min.Y <= other._max.Y;
@@ -171,7 +170,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="point">The point to find distance for.</param>
         /// <returns>The distance between the specified point and the nearest edge.</returns>
         [Pure]
-        public float DistanceToNearestEdge(Vector2 point)
+        public float DistanceToNearestEdge(Vector2i point)
         {
             var distX = new Vector2(
                 Math.Max(0f, Math.Max(_min.X - point.X, point.X - _max.X)),
@@ -180,75 +179,75 @@ namespace OpenToolkit.Mathematics
         }
 
         /// <summary>
-        /// Translates this Box2 by the given amount.
+        /// Translates this Box2i by the given amount.
         /// </summary>
         /// <param name="distance">The distance to translate the box.</param>
-        public void Translate(Vector2 distance)
+        public void Translate(Vector2i distance)
         {
-            _min += distance;
-            _max += distance;
+            Min += distance;
+            Max += distance;
         }
 
         /// <summary>
-        /// Returns a Box2 translated by the given amount.
+        /// Returns a Box2i translated by the given amount.
         /// </summary>
         /// <param name="distance">The distance to translate the box.</param>
         /// <returns>The translated box.</returns>
         [Pure]
-        public Box2 Translated(Vector2 distance)
+        public Box2i Translated(Vector2i distance)
         {
             // create a local copy of this box
-            Box2 box = this;
+            Box2i box = this;
             box.Translate(distance);
             return box;
         }
 
         /// <summary>
-        /// Scales this Box2 by the given amount.
+        /// Scales this Box2i by the given amount.
         /// </summary>
         /// <param name="scale">The scale to scale the box.</param>
         /// <param name="anchor">The anchor to scale the box from.</param>
-        public void Scale(Vector2 scale, Vector2 anchor)
+        public void Scale(Vector2i scale, Vector2i anchor)
         {
             _min = anchor + ((_min - anchor) * scale);
             _max = anchor + ((_max - anchor) * scale);
         }
 
         /// <summary>
-        /// Returns a Box2 scaled by a given amount from an anchor point.
+        /// Returns a Box2i scaled by a given amount from an anchor point.
         /// </summary>
         /// <param name="scale">The scale to scale the box.</param>
         /// <param name="anchor">The anchor to scale the box from.</param>
         /// <returns>The scaled box.</returns>
         [Pure]
-        public Box2 Scaled(Vector2 scale, Vector2 anchor)
+        public Box2i Scaled(Vector2i scale, Vector2i anchor)
         {
             // create a local copy of this box
-            Box2 box = this;
+            Box2i box = this;
             box.Scale(scale, anchor);
             return box;
         }
 
         /// <summary>
-        /// Inflate this Box2 to encapsulate a given point.
+        /// Inflate this Box2i to encapsulate a given point.
         /// </summary>
         /// <param name="point">The point to query.</param>
-        public void Inflate(Vector2 point)
+        public void Inflate(Vector2i point)
         {
-            _min = Vector2.ComponentMin(_min, point);
-            _max = Vector2.ComponentMax(_max, point);
+            _min = Vector2i.ComponentMin(_min, point);
+            _max = Vector2i.ComponentMax(_max, point);
         }
 
         /// <summary>
-        /// Inflate this Box2 to encapsulate a given point.
+        /// Inflate this Box2i to encapsulate a given point.
         /// </summary>
         /// <param name="point">The point to query.</param>
         /// <returns>The inflated box.</returns>
         [Pure]
-        public Box2 Inflated(Vector2 point)
+        public Box2i Inflated(Vector2i point)
         {
             // create a local copy of this box
-            Box2 box = this;
+            Box2i box = this;
             box.Inflate(point);
             return box;
         }
@@ -259,7 +258,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">The left operand.</param>
         /// <param name="right">The right operand.</param>
         [Pure]
-        public static bool operator ==(Box2 left, Box2 right)
+        public static bool operator ==(Box2i left, Box2i right)
         {
             return left.Min == right.Min && left.Max == right.Max;
         }
@@ -270,14 +269,14 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">The left operand.</param>
         /// <param name="right">The right operand.</param>
         [Pure]
-        public static bool operator !=(Box2 left, Box2 right)
+        public static bool operator !=(Box2i left, Box2i right)
         {
             return !(left == right);
         }
 
         /// <inheritdoc/>
         [Pure]
-        public bool Equals(Box2 other)
+        public bool Equals(Box2i other)
         {
             return Min.Equals(other.Min) && Max.Equals(other.Max);
         }
@@ -290,7 +289,7 @@ namespace OpenToolkit.Mathematics
             {
                 return false;
             }
-            return obj is Box2 other && Equals(other);
+            return obj is Box2i other && Equals(other);
         }
 
         /// <inheritdoc/>

@@ -21,6 +21,7 @@ SOFTWARE.
 */
 
 using System;
+using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
 using System.Xml.Serialization;
 
@@ -148,18 +149,18 @@ namespace OpenToolkit.Mathematics
         public Vector4d ToAxisAngle()
         {
             var q = this;
-            if (Math.Abs(q.W) > 1.0f)
+            if (Math.Abs(q.W) > 1.0d)
             {
                 q.Normalize();
             }
 
             var result = new Vector4d
             {
-                W = 2.0f * (float)Math.Acos(q.W) // angle
+                W = 2.0d * Math.Acos(q.W) // angle
             };
 
-            var den = (float)Math.Sqrt(1.0 - (q.W * q.W));
-            if (den > 0.0001f)
+            var den = Math.Sqrt(1.0 - (q.W * q.W));
+            if (den > 0.0001d)
             {
                 result.Xyz = q.Xyz / den;
             }
@@ -171,6 +172,63 @@ namespace OpenToolkit.Mathematics
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Convert the current quaternion to Euler angle representation.
+        /// </summary>
+        /// <param name="angles">The Euler angles in radians.</param>
+        public void ToEulerAngles(out Vector3d angles)
+        {
+            angles = ToEulerAngles();
+        }
+
+        /// <summary>
+        /// Convert this instance to an Euler angle representation.
+        /// </summary>
+        /// <returns>The Euler angles in radians.</returns>
+        public Vector3d ToEulerAngles()
+        {
+            /*
+            reference
+            http://en.wikipedia.org/wiki/Conversion_between_qernions_and_Euler_angles
+            http://www.euclideanspace.com/maths/geometry/rotations/conversions/qernionToEuler/
+            */
+
+            var q = this;
+
+            q.Normalize();
+
+            double singularityTest = (q.X * q.Y) - (q.W * q.Z);
+            double yawY = 2d * ((q.W * q.X) + (q.Y * q.Z));
+            double yawX = 1d - (2d * ((q.Z * q.Z) + (q.X * q.X)));
+
+            // Threshold for the singularities found at the north/south poles.
+            // TODO: Think about how this threshold should change with the added precision
+            const double SINGULARITY_THRESHOLD = 0.4999995d;
+
+            Vector3d eulerAngles;
+
+            if (singularityTest < -SINGULARITY_THRESHOLD)
+            {
+                eulerAngles.Z = -Math.PI / 2; // -90 degrees
+                eulerAngles.Y = Math.Atan2(yawY, yawX);
+                eulerAngles.X = MathHelper.NormalizeRadians(-eulerAngles.Y - (2d * (float)Math.Atan2(q.Y, q.W)));
+            }
+            else if (singularityTest > SINGULARITY_THRESHOLD)
+            {
+                eulerAngles.Z = Math.PI / 2; // 90 degrees
+                eulerAngles.Y = Math.Atan2(yawY, yawX);
+                eulerAngles.X = MathHelper.NormalizeRadians(eulerAngles.Y - (2d * (float)Math.Atan2(q.Y, q.W)));
+            }
+            else
+            {
+                eulerAngles.Z = Math.Asin(2d * singularityTest);
+                eulerAngles.X = Math.Atan2(yawY, yawX);
+                eulerAngles.Y = Math.Atan2(-2d * ((q.W * q.Y) + (q.Z * q.X)), 1d - (2d * ((q.Y * q.Y) + (q.Z * q.Z))));
+            }
+
+            return eulerAngles;
         }
 
         /// <summary>
@@ -196,15 +254,15 @@ namespace OpenToolkit.Mathematics
         }
 
         /// <summary>
-        /// Reverses the rotation angle of this Quaterniond.
+        /// Inverts this Quaterniond.
         /// </summary>
         public void Invert()
         {
-            W = -W;
+            Invert(ref this, out this);
         }
 
         /// <summary>
-        /// Returns a copy of this Quaterniond with its rotation angle reversed.
+        /// Returns the inverse of this Quaterniond.
         /// </summary>
         /// <returns>The inverted copy.</returns>
         public Quaterniond Inverted()
@@ -219,7 +277,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         public void Normalize()
         {
-            var scale = 1.0f / Length;
+            var scale = 1.0d / Length;
             Xyz *= scale;
             W *= scale;
         }
@@ -243,6 +301,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">The first operand.</param>
         /// <param name="right">The second operand.</param>
         /// <returns>The result of the addition.</returns>
+        [Pure]
         public static Quaterniond Add(Quaterniond left, Quaterniond right)
         {
             return new Quaterniond(
@@ -269,6 +328,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">The left instance.</param>
         /// <param name="right">The right instance.</param>
         /// <returns>The result of the operation.</returns>
+        [Pure]
         public static Quaterniond Sub(Quaterniond left, Quaterniond right)
         {
             return new Quaterniond(
@@ -295,6 +355,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>A new instance containing the result of the calculation.</returns>
+        [Pure]
         public static Quaterniond Multiply(Quaterniond left, Quaterniond right)
         {
             Multiply(ref left, ref right, out Quaterniond result);
@@ -337,6 +398,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="quaternion">The instance.</param>
         /// <param name="scale">The scalar.</param>
         /// <returns>A new instance containing the result of the calculation.</returns>
+        [Pure]
         public static Quaterniond Multiply(Quaterniond quaternion, double scale)
         {
             return new Quaterniond
@@ -353,6 +415,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="q">The Quaterniond.</param>
         /// <returns>The conjugate of the given Quaterniond.</returns>
+        [Pure]
         public static Quaterniond Conjugate(Quaterniond q)
         {
             return new Quaterniond(-q.Xyz, q.W);
@@ -373,6 +436,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="q">The Quaterniond to invert.</param>
         /// <returns>The inverse of the given Quaterniond.</returns>
+        [Pure]
         public static Quaterniond Invert(Quaterniond q)
         {
             Invert(ref q, out Quaterniond result);
@@ -389,7 +453,7 @@ namespace OpenToolkit.Mathematics
             var lengthSq = q.LengthSquared;
             if (lengthSq != 0.0)
             {
-                var i = 1.0f / lengthSq;
+                var i = 1.0d / lengthSq;
                 result = new Quaterniond(q.Xyz * -i, q.W * i);
             }
             else
@@ -403,6 +467,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="q">The Quaterniond to normalize.</param>
         /// <returns>The normalized copy.</returns>
+        [Pure]
         public static Quaterniond Normalize(Quaterniond q)
         {
             Normalize(ref q, out Quaterniond result);
@@ -416,7 +481,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="result">The normalized Quaterniond.</param>
         public static void Normalize(ref Quaterniond q, out Quaterniond result)
         {
-            var scale = 1.0f / q.Length;
+            var scale = 1.0d / q.Length;
             result = new Quaterniond(q.Xyz * scale, q.W * scale);
         }
 
@@ -426,16 +491,17 @@ namespace OpenToolkit.Mathematics
         /// <param name="axis">The axis to rotate about.</param>
         /// <param name="angle">The rotation angle in radians.</param>
         /// <returns>The quaternion.</returns>
+        [Pure]
         public static Quaterniond FromAxisAngle(Vector3d axis, double angle)
         {
-            if (axis.LengthSquared == 0.0f)
+            if (axis.LengthSquared == 0.0d)
             {
                 return Identity;
             }
 
             var result = Identity;
 
-            angle *= 0.5f;
+            angle *= 0.5d;
             axis.Normalize();
             result.Xyz = axis * Math.Sin(angle);
             result.W = Math.Cos(angle);
@@ -450,6 +516,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="yaw">The yaw (heading), rotation around Y axis.</param>
         /// <param name="roll">The roll (bank), rotation around Z axis.</param>
         /// <returns>The quaternion.</returns>
+        [Pure]
         public static Quaterniond FromEulerAngles(double pitch, double yaw, double roll)
         {
             return new Quaterniond(pitch, yaw, roll);
@@ -460,6 +527,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="eulerAngles">The euler angles as a vector.</param>
         /// <returns>The equivalent Quaterniond.</returns>
+        [Pure]
         public static Quaterniond FromEulerAngles(Vector3d eulerAngles)
         {
             return new Quaterniond(eulerAngles);
@@ -486,10 +554,21 @@ namespace OpenToolkit.Mathematics
         }
 
         /// <summary>
+        /// Converts a quaternion to it's euler angle representation.
+        /// </summary>
+        /// <param name="q">The Quaternion.</param>
+        /// <param name="result">The resulting euler angles in radians.</param>
+        public static void ToEulerAngles(in Quaterniond q, out Vector3d result)
+        {
+            q.ToEulerAngles(out result);
+        }
+
+        /// <summary>
         /// Builds a quaternion from the given rotation matrix.
         /// </summary>
         /// <param name="matrix">A rotation matrix.</param>
         /// <returns>The equivalent quaternion.</returns>
+        [Pure]
         public static Quaterniond FromMatrix(Matrix3d matrix)
         {
             FromMatrix(ref matrix, out Quaterniond result);
@@ -559,12 +638,13 @@ namespace OpenToolkit.Mathematics
         /// <param name="q2">The second Quaterniond.</param>
         /// <param name="blend">The blend factor.</param>
         /// <returns>A smooth blend between the given quaternions.</returns>
+        [Pure]
         public static Quaterniond Slerp(Quaterniond q1, Quaterniond q2, double blend)
         {
             // if either input is zero, return the other.
-            if (q1.LengthSquared == 0.0f)
+            if (q1.LengthSquared == 0.0d)
             {
-                if (q2.LengthSquared == 0.0f)
+                if (q2.LengthSquared == 0.0d)
                 {
                     return Identity;
                 }
@@ -572,20 +652,20 @@ namespace OpenToolkit.Mathematics
                 return q2;
             }
 
-            if (q2.LengthSquared == 0.0f)
+            if (q2.LengthSquared == 0.0d)
             {
                 return q1;
             }
 
             var cosHalfAngle = (q1.W * q2.W) + Vector3d.Dot(q1.Xyz, q2.Xyz);
 
-            if (cosHalfAngle >= 1.0f || cosHalfAngle <= -1.0f)
+            if (cosHalfAngle >= 1.0d || cosHalfAngle <= -1.0d)
             {
-                // angle = 0.0f, so just return one input.
+                // angle = 0.0d, so just return one input.
                 return q1;
             }
 
-            if (cosHalfAngle < 0.0f)
+            if (cosHalfAngle < 0.0d)
             {
                 q2.Xyz = -q2.Xyz;
                 q2.W = -q2.W;
@@ -594,24 +674,24 @@ namespace OpenToolkit.Mathematics
 
             double blendA;
             double blendB;
-            if (cosHalfAngle < 0.99f)
+            if (cosHalfAngle < 0.99d)
             {
                 // do proper slerp for big angles
                 var halfAngle = Math.Acos(cosHalfAngle);
                 var sinHalfAngle = Math.Sin(halfAngle);
-                var oneOverSinHalfAngle = 1.0f / sinHalfAngle;
-                blendA = Math.Sin(halfAngle * (1.0f - blend)) * oneOverSinHalfAngle;
+                var oneOverSinHalfAngle = 1.0d / sinHalfAngle;
+                blendA = Math.Sin(halfAngle * (1.0d - blend)) * oneOverSinHalfAngle;
                 blendB = Math.Sin(halfAngle * blend) * oneOverSinHalfAngle;
             }
             else
             {
                 // do lerp if angle is really small.
-                blendA = 1.0f - blend;
+                blendA = 1.0d - blend;
                 blendB = blend;
             }
 
             var result = new Quaterniond((blendA * q1.Xyz) + (blendB * q2.Xyz), (blendA * q1.W) + (blendB * q2.W));
-            if (result.LengthSquared > 0.0f)
+            if (result.LengthSquared > 0.0d)
             {
                 return Normalize(result);
             }
@@ -625,6 +705,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>The result of the calculation.</returns>
+        [Pure]
         public static Quaterniond operator +(Quaterniond left, Quaterniond right)
         {
             left.Xyz += right.Xyz;
@@ -638,6 +719,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>The result of the calculation.</returns>
+        [Pure]
         public static Quaterniond operator -(Quaterniond left, Quaterniond right)
         {
             left.Xyz -= right.Xyz;
@@ -651,6 +733,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>The result of the calculation.</returns>
+        [Pure]
         public static Quaterniond operator *(Quaterniond left, Quaterniond right)
         {
             Multiply(ref left, ref right, out left);
@@ -663,6 +746,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="quaternion">The instance.</param>
         /// <param name="scale">The scalar.</param>
         /// <returns>A new instance containing the result of the calculation.</returns>
+        [Pure]
         public static Quaterniond operator *(Quaterniond quaternion, double scale)
         {
             Multiply(ref quaternion, scale, out quaternion);
@@ -675,6 +759,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="quaternion">The instance.</param>
         /// <param name="scale">The scalar.</param>
         /// <returns>A new instance containing the result of the calculation.</returns>
+        [Pure]
         public static Quaterniond operator *(double scale, Quaterniond quaternion)
         {
             return new Quaterniond
@@ -692,6 +777,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>True, if left equals right; false otherwise.</returns>
+        [Pure]
         public static bool operator ==(Quaterniond left, Quaterniond right)
         {
             return left.Equals(right);
@@ -703,6 +789,7 @@ namespace OpenToolkit.Mathematics
         /// <param name="left">The first instance.</param>
         /// <param name="right">The second instance.</param>
         /// <returns>True, if left does not equal right; false otherwise.</returns>
+        [Pure]
         public static bool operator !=(Quaterniond left, Quaterniond right)
         {
             return !left.Equals(right);
@@ -722,6 +809,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="other">The other object to be used in the comparison.</param>
         /// <returns>True if both objects are Quaternions of equal value. Otherwise it returns false.</returns>
+        [Pure]
         public override bool Equals(object other)
         {
             if (other is Quaterniond == false)
@@ -749,6 +837,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="other">The other Quaterniond to be used in the comparison.</param>
         /// <returns>True if both instances are equal; false otherwise.</returns>
+        [Pure]
         public bool Equals(Quaterniond other)
         {
             return Xyz == other.Xyz && W == other.W;

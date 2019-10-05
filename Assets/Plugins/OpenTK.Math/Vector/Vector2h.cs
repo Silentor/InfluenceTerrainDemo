@@ -21,6 +21,7 @@ SOFTWARE.
  */
 
 using System;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -221,6 +222,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="v">The Vector2 to convert.</param>
         /// <returns>The resulting Half vector.</returns>
+        [Pure]
         public static explicit operator Vector2h(Vector2 v)
         {
             return new Vector2h(v);
@@ -231,6 +233,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="v">The Vector2d to convert.</param>
         /// <returns>The resulting Half vector.</returns>
+        [Pure]
         public static explicit operator Vector2h(Vector2d v)
         {
             return new Vector2h(v);
@@ -241,6 +244,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="h">The Half2 to convert.</param>
         /// <returns>The resulting Vector2.</returns>
+        [Pure]
         public static explicit operator Vector2(Vector2h h)
         {
             return new Vector2(h.X, h.Y);
@@ -251,9 +255,22 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="h">The Half2 to convert.</param>
         /// <returns>The resulting Vector2d.</returns>
+        [Pure]
         public static explicit operator Vector2d(Vector2h h)
         {
             return new Vector2d(h.X, h.Y);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Vector2h"/> struct using a tuple containing the component
+        /// values.
+        /// </summary>
+        /// <param name="values">A tuple containing the component values.</param>
+        /// <returns>A new instance of the <see cref="Vector2h"/> struct with the given component values.</returns>
+        [Pure]
+        public static implicit operator Vector2h((Half X, Half Y) values)
+        {
+            return new Vector2h(values.X, values.Y);
         }
 
         /// <summary>
@@ -304,6 +321,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="other">OpenToolkit.Half2 to compare to this instance..</param>
         /// <returns>True, if other is equal to this instance; false otherwise.</returns>
+        [Pure]
         public bool Equals(Vector2h other)
         {
             return X.Equals(other.X) && Y.Equals(other.Y);
@@ -322,6 +340,7 @@ namespace OpenToolkit.Mathematics
         /// </summary>
         /// <param name="h">The Half2 to convert.</param>
         /// <returns>The input as byte array.</returns>
+        [Pure]
         public static byte[] GetBytes(Vector2h h)
         {
             var result = new byte[SizeInBytes];
@@ -342,11 +361,24 @@ namespace OpenToolkit.Mathematics
         /// <param name="value">A Half2 in it's byte[] representation.</param>
         /// <param name="startIndex">The starting position within value.</param>
         /// <returns>A new Half2 instance.</returns>
+        [Pure]
         public static Vector2h FromBytes(byte[] value, int startIndex)
         {
             return new Vector2h(
                 Half.FromBytes(value, startIndex),
                 Half.FromBytes(value, startIndex + 2));
+        }
+
+        /// <summary>
+        /// Deconstructs the vector into it's individual components.
+        /// </summary>
+        /// <param name="x">The X component of the vector.</param>
+        /// <param name="y">The Y component of the vector.</param>
+        [Pure]
+        public void Deconstruct(out Half x, out Half y)
+        {
+            x = X;
+            y = Y;
         }
     }
 }
