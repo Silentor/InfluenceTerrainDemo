@@ -128,12 +128,27 @@ namespace TerrainDemo.Spatial
 
         public static explicit operator Bounds2i(Bounds input)
         {
-            return new Bounds2i((GridPos)input.min, (GridPos)input.max);         
+	        var boundsMax = input.max;
+			//Special case for max value vector
+			if ( boundsMax.x % 1 == 0 )
+				boundsMax.x -= 0.1f;
+			if ( boundsMax.z % 1 == 0 )
+				boundsMax.z -= 0.1f;
+
+            return new Bounds2i((GridPos)input.min, (GridPos)boundsMax);         
         }
 
         public static explicit operator Bounds2i(Box2 input)
         {
-            return new Bounds2i((GridPos)input.Min, (GridPos)input.Max);         
+	        var boundsMax = input.Max;
+	        //Special case for max value vector
+	        if ( boundsMax.X % 1 == 0 )
+		        boundsMax.X -= 0.1f;
+	        if ( boundsMax.Y % 1 == 0 )
+		        boundsMax.Y -= 0.1f;
+
+
+            return new Bounds2i((GridPos)input.Min, (GridPos)boundsMax);         
         }
 
         #region Enumerable

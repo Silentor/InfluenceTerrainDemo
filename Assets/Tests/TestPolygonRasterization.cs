@@ -78,6 +78,8 @@ namespace TerrainDemo.Tests
                 {
                     //Draw block bounds
                     var blockBounds = (Bounds2i) bounds;
+					DrawRectangle.ForGizmo( blockBounds, Color.gray / 2 );
+
 
                     //Draw block centers inside bounds
                     foreach (var blockBound in blockBounds)

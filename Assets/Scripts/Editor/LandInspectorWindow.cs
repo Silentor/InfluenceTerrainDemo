@@ -296,6 +296,10 @@ namespace TerrainDemo.Editor
 				DrawHeightVertex(input.SelectedHeightVertex.Value, Color.white);
 			}
 
+			if ( _input.SelectedMicroCell != null )
+				DrawMicroCell( _input.SelectedMicroCell, Color.white );	
+
+
 			//DrawNormals(input);
 		}
 

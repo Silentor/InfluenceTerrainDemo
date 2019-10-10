@@ -37,6 +37,10 @@ namespace TerrainDemo.Tests.Editor
             result = (Bounds2i)source1;
             Assert.That(result, Is.EqualTo(new Bounds2i(new GridPos(-4), new GridPos(-1))));
 
+            source1 = new Bounds() { min = new Vector3(1, 0, 0.5f), max = new Vector3(2, 0, 2.5f) };
+            result  = (Bounds2i)source1;
+            Assert.That(result, Is.EqualTo(new Bounds2i(new GridPos(1, 0), new GridPos(1, 2))));
+
         }
 
         [Test]
@@ -46,9 +50,9 @@ namespace TerrainDemo.Tests.Editor
             var result = (Bounds2i)source1;
             Assert.That(result, Is.EqualTo(new Bounds2i(GridPos.Zero, new GridPos(2))));
 
-            source1 = new Box2(0, 3, 3, 0);
+            source1 = new Box2(0, 0, 3, 3);
             result = (Bounds2i)source1;
-            Assert.That(result, Is.EqualTo(new Bounds2i(GridPos.Zero, new GridPos(3))));
+            Assert.That(result, Is.EqualTo(new Bounds2i(GridPos.Zero, new GridPos(2))));
 
             source1 = new Box2(0, 3.001f, 3.001f, 0);
             result = (Bounds2i)source1;

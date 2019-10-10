@@ -40,11 +40,11 @@ namespace TerrainDemo.Tests.Editor
 
             var isContains = new Predicate<Vector2>( p => HalfPlane.ContainsInConvex(p, new []{h1, h2, h3, h4}));
 
-            var boundingBox = new Box2(-2.4f, 2.3f, 1.2f, -1.55f);
+            var boundingBox = new Box2(-2.4f, -1.55f, 1.2f, 2.3f);
             var result = Rasterization.ConvexToBlocks(isContains, boundingBox);
-            var correctAnswer = new[]{new Vector2i(0, 1), new Vector2i(0, 0), new Vector2i(0, -1), new Vector2i(0, -2),
-                new Vector2i(-1, 1), new Vector2i(-1, 0), new Vector2i(-1, -1),
-                new Vector2i(-2, 0), new Vector2i(-2, -1)};
+            var correctAnswer = new[]{new GridPos(0, 1), new GridPos(0, 0), new GridPos(0, -1), new GridPos(0, -2),
+                new GridPos(-1, 1), new GridPos(-1, 0), new GridPos(-1, -1),
+                new GridPos(-2, 0), new GridPos(-2, -1)};
 
             Assert.That(result, Is.EquivalentTo(correctAnswer));
 

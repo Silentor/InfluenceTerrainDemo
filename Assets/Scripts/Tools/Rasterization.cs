@@ -317,13 +317,13 @@ namespace TerrainDemo.Tools
             //DrawRectangle.ForGizmo(new Box2(minX, maxZ, maxX, minZ), Color.blue / 2);
 
             //Scan bound from bottom  to top
-            for (int z = minZ; z < maxZ; z++)
+            for (int z = minZ; z <= maxZ; z++)
             {
                 int? leftContainingPos = null;
                 int? rightContainingPos = null;
 
                 //Find left and right blocks in cell
-                for (int x = minX; x < maxX; x++)
+                for (int x = minX; x <= maxX; x++)
                 {
                     if (contains(BlockInfo.GetWorldCenter(x, z)))
                     {
