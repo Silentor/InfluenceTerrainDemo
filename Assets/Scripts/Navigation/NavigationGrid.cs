@@ -129,7 +129,4 @@ namespace TerrainDemo.Navigation
 		MediumDownhill,
 		SteepDownhill
 	}
-
-
-
 }

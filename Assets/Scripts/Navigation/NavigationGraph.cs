@@ -11,7 +11,7 @@ namespace TerrainDemo.Navigation
 {
 	public class NavGraph : Graph<NavigationCell, NavEdge>, IWeightedGraph<NavigationCell>
 	{
-		public IEnumerable<(NavigationCell neighbor, float neighborCost)> Neighbors( Locomotor loco, NavigationCell node )
+		public IEnumerable<(NavigationCell neighbor, float neighborCost)> Neighbors( BaseLocomotor loco, NavigationCell node )
 		{
 			foreach ( var (edge, neighbor) in GetNeighbors(node) )
 			{

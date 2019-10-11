@@ -38,42 +38,21 @@ namespace TerrainDemo.Hero
         }
 
         public Navigator Nav { get; }
-        public Locomotor Locomotor { get; }
+        public BaseLocomotor Locomotor { get; }
 
         public bool IsHero => _isHero;
 
         public bool DebugLocomotion = true;
         public bool DebugNavigation = true;
 
-        private readonly MicroMap _mainMap;
-        private Vector2 _inputVelocity;
-        private bool _isStopped = true;
-        private float _rotateDirection;
-        private Vector2? _targetPosition;
-        private Quaternion _targetRotation;
-
-        private BaseBlockMap _currentMap;
-        private BlockOverlapState _currentOverlapState;
-        private float _currentBlockInclinationSpeedModifier = 1;
-        private float _currentBlockMaterialSpeedModifier = 1;
-
-        //Fast n dirty fake falling
-        private float _fallVelocity;
-        private Vector2 _fallDirection;
-        private bool _isFalling;
-
-        private static readonly float SafeAngle = MathHelper.DegreesToRadians(60);
-        private bool _isHero;
-        private bool _autoStop;
-      
         public Actor(MicroMap  map, NavigationMap navMap, GridPos startPosition, Quaternion startRotation, bool fpsMode,
 	        string         name,
-	        Locomotor.Type loco )
+	        BaseLocomotor.Type loco )
         {
 	        Name        = name;
 	        _mainMap    = map;
 	        _currentMap = map;
-	        Locomotor   = new Locomotor( loco, startPosition, startRotation, this, map, navMap );
+	        Locomotor   = BaseLocomotor.Create( loco, startPosition, startRotation, this, map, navMap );
 	        Nav         = new Navigator(this, map, navMap);
 
 	        _isHero = fpsMode;
@@ -139,6 +118,27 @@ namespace TerrainDemo.Hero
         }
 
         public event Action<Actor> Changed;
+
+        private readonly MicroMap   _mainMap;
+        private          Vector2    _inputVelocity;
+        private          bool       _isStopped = true;
+        private          float      _rotateDirection;
+        private          Vector2?   _targetPosition;
+        private          Quaternion _targetRotation;
+
+        private BaseBlockMap      _currentMap;
+        private BlockOverlapState _currentOverlapState;
+        private float             _currentBlockInclinationSpeedModifier = 1;
+        private float             _currentBlockMaterialSpeedModifier    = 1;
+
+        //Fast n dirty fake falling
+        private float   _fallVelocity;
+        private Vector2 _fallDirection;
+        private bool    _isFalling;
+
+        private static readonly float SafeAngle = MathHelper.DegreesToRadians(60);
+        private                 bool  _isHero;
+        private                 bool  _autoStop;
 
         public enum NavState
         {

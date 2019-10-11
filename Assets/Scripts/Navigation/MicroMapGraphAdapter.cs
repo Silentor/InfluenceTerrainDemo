@@ -17,7 +17,7 @@ namespace TerrainDemo.Navigation
 			_map = map;
 		}
 
-		public IEnumerable<(GridPos neighbor, float neighborCost)> Neighbors( Locomotor loco, GridPos @from )
+		public IEnumerable<(GridPos neighbor, float neighborCost)> Neighbors( BaseLocomotor loco, GridPos @from )
 		{
 			foreach (var dir in Directions.Vector2I)
 			{

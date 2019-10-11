@@ -166,9 +166,9 @@ namespace TerrainDemo.Navigation
 		{
 			private readonly HexPos FromNode;
 			private readonly HexPos ToNode;
-			private readonly Locomotor.Type LocoType;
+			private readonly BaseLocomotor.Type LocoType;
 
-			public PathKey( HexPos fromNode, HexPos node, Locomotor.Type locoType )
+			public PathKey( HexPos fromNode, HexPos node, BaseLocomotor.Type locoType )
 			{
 				FromNode = fromNode;
 				ToNode = node;

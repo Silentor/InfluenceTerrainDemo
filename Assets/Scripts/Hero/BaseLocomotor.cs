@@ -15,12 +15,12 @@ using Vector3 = OpenToolkit.Mathematics.Vector3;
 
 namespace TerrainDemo.Hero
 {
-	public class Locomotor
+	public abstract class BaseLocomotor
 	{
 		public float MaxSpeed = 5;
 		public float MaxRotationAngle = 180;
 
-		public Type LocoType => _type;
+		public abstract Type LocoType { get; }
 
 		public Vector2 Position { get; private set; }
 
@@ -31,11 +31,29 @@ namespace TerrainDemo.Hero
 
 		public GridPos BlockPosition => (GridPos) Position;
 
+		public abstract Bounds2i Bound { get; }
+
 		public bool IsMoving { get; private set; }
 
-		public Locomotor( Type type, Vector2 startPosition, Quaternion startRotation, Actor owner, MicroMap map, NavigationMap navMap )
+		public static BaseLocomotor Create(
+			Type          type, Vector2 startPosition, Quaternion startRotation, Actor owner, MicroMap map,
+			NavigationMap navMap )
 		{
-			_type   = type;
+			switch ( type )
+			{
+				case Type.Biped:
+					return new SmallBiped( startPosition, startRotation, owner, map, navMap );
+				case Type.BigBiped:
+					return new BigBiped( startPosition, startRotation, owner, map, navMap );
+				case Type.Wheeled:
+					return new SmallWheel( startPosition, startRotation, owner, map, navMap );
+				default:
+					throw new ArgumentOutOfRangeException( nameof( type ), type, null );
+			}
+		}
+
+		public BaseLocomotor( Vector2 startPosition, Quaternion startRotation, Actor owner, MicroMap map, NavigationMap navMap )
+		{
 			Position = startPosition;
 			_rotation = startRotation.ToEulerAngles( ).Y;
 			_owner  = owner;
@@ -115,10 +133,7 @@ namespace TerrainDemo.Hero
 			//No pass 
 			return false;
 		}
-		public float GetCost( LocalIncline edgeSlopeness )
-		{
-			return LocalInclinationCost[(int)_type, (int)edgeSlopeness];
-		}
+		public abstract float GetCost( LocalIncline edgeSlopeness );
 
 		public bool Update( float deltaTime )
 		{
@@ -133,32 +148,10 @@ namespace TerrainDemo.Hero
 			return isChanged;
 		}
 
-		private readonly Type _type;
-		private readonly Actor _owner;
+		protected readonly Actor _owner;
 		private readonly MicroMap _map;
-		private readonly NavigationMap _navMap;
-		private static readonly float[,] LocalInclinationCost = {
-																	//Biped
-			                                                        {
-				                                                        1, 
-				                                                        1.5f, 
-				                                                        10, 
-				                                                        float.NaN,
-																		0.5f,
-																		2,
-																		float.NaN
-																	},
-																	//Wheel
-			                                                        {
-				                                                        1,
-				                                                        1.5f,
-				                                                        float.NaN,
-				                                                        float.NaN,
-				                                                        1f,
-				                                                        10,
-				                                                        float.NaN
-																	}
-																};
+		protected readonly NavigationMap _navMap;
+		
 
 		private Vector2 _targetVelocity;
 		private Vector2? _targetPosition;
@@ -280,69 +273,13 @@ namespace TerrainDemo.Hero
 			//toMap = fromMap;
 			return toPos;
 		}
-		private bool CheckBlock( in NavigationGrid.Block block )
-		{
-			if ( block.Normal.Slope == Incline.Blocked )
-				return false;
 
-			if ( _type == Type.Biped )
-			{
-				return block.Normal.Slope <= Incline.Medium;
-			}
-			else
-			{
-				return block.Normal.Slope <= Incline.Small;
-			}
-		}
+		protected abstract Vector2 ResolveBlockCollision( GridPos blockPosition, Vector2 position );
 
-		private Vector2 ResolveBlockCollision( GridPos blockPosition, Vector2 position)
-		{
-			var fracPosX = position.X - blockPosition.X;
-			var fracPosZ = position.Y - blockPosition.Z;
-
-			if ( fracPosX < 0.5 && !CheckBlock( in _navMap.NavGrid.GetBlock( blockPosition + Vector2i.Left ) ) )
-			{
-				fracPosX = 0.5f;
-
-				if ( _owner.DebugLocomotion )
-				{
-					DebugDrawCollisionPlane( blockPosition, Side2d.Left );
-				}
-			}
-			else if ( fracPosX > 0.5 && !CheckBlock( in _navMap.NavGrid.GetBlock( blockPosition + Vector2i.Right ) ) )
-			{
-				fracPosX = 0.5f;
-
-				if ( _owner.DebugLocomotion )
-				{
-					DebugDrawCollisionPlane( blockPosition, Side2d.Right );
-				}
-			}
-
-			if ( fracPosZ < 0.5 && !CheckBlock( in _navMap.NavGrid.GetBlock( blockPosition + Vector2i.Back ) ) )
-			{
-				fracPosZ = 0.5f;
-
-				if ( _owner.DebugLocomotion )
-				{
-					DebugDrawCollisionPlane( blockPosition, Side2d.Back );
-				}
-			}
-			else if ( fracPosZ > 0.5 && !CheckBlock( in _navMap.NavGrid.GetBlock( blockPosition + Vector2i.Forward ) ) )
-			{
-				fracPosZ = 0.5f;
-
-				if ( _owner.DebugLocomotion )
-				{
-					DebugDrawCollisionPlane( blockPosition, Side2d.Forward );
-				}
-			}
-
-			return new Vector2(blockPosition.X + fracPosX, blockPosition.Z + fracPosZ);
-		}
+		protected abstract bool CheckBlock( in NavigationGrid.Block block );
 
 		[Conditional("UNITY_EDITOR")]
-		private void DebugDrawCollisionPlane( GridPos block, Side2d side )
+		protected void DebugDrawCollisionPlane( GridPos block, Side2d side )
 		{
 			var yPosition = _owner.Position.Y + 1;
 			var blockSideLocalPos = Directions.BlockSide[(int)side];
@@ -359,8 +296,7 @@ namespace TerrainDemo.Hero
 		private void DebugDrawBounds( )
 		{
 			var yPosition = _owner.Position.Y + 1;
-			var currentBlockBounds = BlockInfo.GetBounds(BlockPosition);
-			DrawRectangle.ForDebug(currentBlockBounds, yPosition, Color.blue);
+			DrawRectangle.ForDebug(Bound, yPosition, Color.blue);
 
 			if ( IsMoving )
 			{
@@ -372,6 +308,7 @@ namespace TerrainDemo.Hero
 		public enum Type
 		{
 			Biped,
+			BigBiped,
 			Wheeled
 		}
 	}

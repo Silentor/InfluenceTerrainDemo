@@ -11,7 +11,7 @@ namespace TerrainDemo.Navigation
 {
     public interface IWeightedGraph<TNode> where TNode : IEquatable<TNode>
     {
-        IEnumerable<(TNode neighbor, float neighborCost)> Neighbors(Locomotor loco, TNode from);
+        IEnumerable<(TNode neighbor, float neighborCost)> Neighbors(BaseLocomotor loco, TNode from);
 
         float Heuristic(TNode @from, TNode to);
     }
