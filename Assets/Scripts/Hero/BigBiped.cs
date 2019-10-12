@@ -63,7 +63,7 @@ namespace TerrainDemo.Hero
 					DebugDrawCollisionPlane( blockPosition + Vector2i.Left, Side2d.Left );
 				}
 			}
-			else if ( fracPosX > 0.5 && (!CheckBlock( in right1 ) || !CheckBlock( in right2 ) || !CheckBlock( in right3 )) )
+			else if ( fracPosX >= 0.5 && (!CheckBlock( in right1 ) || !CheckBlock( in right2 ) || !CheckBlock( in right3 )) )
 			{
 				fracPosX = 0.5f;
 
@@ -82,7 +82,7 @@ namespace TerrainDemo.Hero
 					DebugDrawCollisionPlane( blockPosition + Vector2i.Back, Side2d.Back );
 				}
 			}
-			else if ( fracPosZ > 0.5 && (!CheckBlock( in forward1 ) || !CheckBlock( in forward2 ) || !CheckBlock( in forward3 )) )
+			else if ( fracPosZ >= 0.5 && (!CheckBlock( in forward1 ) || !CheckBlock( in forward2 ) || !CheckBlock( in forward3 )) )
 			{
 				fracPosZ = 0.5f;
 

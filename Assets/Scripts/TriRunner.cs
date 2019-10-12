@@ -198,7 +198,7 @@ namespace TerrainDemo
 
 			NavMap = new NavigationMap( Macro, Micro, this );            
 
-            _hero = new Actor(Micro, NavMap, (-11, 7), Quaternion.Identity, true, "Hero", BaseLocomotor.Type.BigBiped);
+            _hero = new Actor(Micro, NavMap, (-11, 7), Quaternion.Identity, true, "Hero", BaseLocomotor.Type.MedBiped);
             Micro.AddActor(_hero);
 
             _npc = new Actor(Micro, NavMap, (-37, -57), Quaternion.Identity, false, "Npc", BaseLocomotor.Type.Biped);

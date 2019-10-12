@@ -43,7 +43,9 @@ namespace TerrainDemo.Hero
 			{
 				case Type.Biped:
 					return new SmallBiped( startPosition, startRotation, owner, map, navMap );
-				case Type.BigBiped:
+                case Type.MedBiped:
+                    return new MedBiped(startPosition, startRotation, owner, map, navMap);
+                case Type.BigBiped:
 					return new BigBiped( startPosition, startRotation, owner, map, navMap );
 				case Type.Wheeled:
 					return new SmallWheel( startPosition, startRotation, owner, map, navMap );
@@ -52,7 +54,7 @@ namespace TerrainDemo.Hero
 			}
 		}
 
-		public BaseLocomotor( Vector2 startPosition, Quaternion startRotation, Actor owner, MicroMap map, NavigationMap navMap )
+        protected BaseLocomotor( Vector2 startPosition, Quaternion startRotation, Actor owner, MicroMap map, NavigationMap navMap )
 		{
 			Position = startPosition;
 			_rotation = startRotation.ToEulerAngles( ).Y;
@@ -308,6 +310,7 @@ namespace TerrainDemo.Hero
 		public enum Type
 		{
 			Biped,
+            MedBiped,
 			BigBiped,
 			Wheeled
 		}

@@ -44,7 +44,7 @@ namespace TerrainDemo.Hero
 					DebugDrawCollisionPlane( blockPosition, Side2d.Left );
 				}
 			}
-			else if ( fracPosX > 0.5 && !CheckBlock( in _navMap.NavGrid.GetBlock( blockPosition + Vector2i.Right ) ) )
+			else if ( fracPosX >= 0.5 && !CheckBlock( in _navMap.NavGrid.GetBlock( blockPosition + Vector2i.Right ) ) )
 			{
 				fracPosX = 0.5f;
 
@@ -63,7 +63,7 @@ namespace TerrainDemo.Hero
 					DebugDrawCollisionPlane( blockPosition, Side2d.Back );
 				}
 			}
-			else if ( fracPosZ > 0.5 && !CheckBlock( in _navMap.NavGrid.GetBlock( blockPosition + Vector2i.Forward ) ) )
+			else if ( fracPosZ >= 0.5 && !CheckBlock( in _navMap.NavGrid.GetBlock( blockPosition + Vector2i.Forward ) ) )
 			{
 				fracPosZ = 0.5f;
 
