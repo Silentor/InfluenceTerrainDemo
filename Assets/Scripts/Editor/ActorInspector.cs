@@ -36,6 +36,9 @@ namespace TerrainDemo.Editor
         {
             base.OnInspectorGUI();
 
+			if(!Application.isPlaying)
+				return;
+
             if (_currentWaypointStyle == null)
             {
                 _currentWaypointStyle = new GUIStyle(GUI.skin.label) {normal = {textColor = Color.red}};

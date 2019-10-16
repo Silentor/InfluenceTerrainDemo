@@ -11,33 +11,7 @@ namespace TerrainDemo.Hero
 	{
 		public override Type LocoType => Type.MedBiped;
 
-		public override Bounds2i Bound
-        {
-            get
-            {
-                var blockX = BlockPosition.X;
-                var blockZ = BlockPosition.Z;
-                var fracX = Position.X - blockX;
-                var fracZ = Position.Y - blockZ;
-
-                if ( fracX < 0.5 && fracZ < 0.5 )
-                {
-                    return new Bounds2i(new GridPos(blockX - 1, blockZ - 1), 2, 2);
-                }
-                else if (fracX >= 0.5 && fracZ < 0.5)
-                {
-                    return new Bounds2i(new GridPos(blockX, blockZ - 1), 2, 2);
-                }
-                else if (fracX < 0.5 && fracZ >= 0.5)
-                {
-                    return new Bounds2i(new GridPos(blockX - 1, blockZ), 2, 2);
-                }
-                else
-                {
-                    return new Bounds2i(new GridPos(blockX, blockZ), 2, 2);
-                }
-            }
-        }
+		public override Bounds2i Bound => GetBound( Position );
 
 		public override float GetCost( LocalIncline edgeSlopeness ) => LocalInclinationCost[(int)edgeSlopeness];
 
@@ -58,9 +32,8 @@ namespace TerrainDemo.Hero
 
 		protected override Vector2 ResolveBlockCollision( GridPos blockPosition, Vector2 position)
 		{
-			var fracPosX = position.X - blockPosition.X;
-			var fracPosZ = position.Y - blockPosition.Z;
-            var boundsMin = Bound.Min;
+			var newBound = GetBound( position );
+            var boundsMin = newBound.Min;
 
             var leftPos = boundsMin + Vector2i.Left;
             ref readonly var left1 = ref _navMap.NavGrid.GetBlock( leftPos );
@@ -78,46 +51,47 @@ namespace TerrainDemo.Hero
 			ref readonly var back1    = ref _navMap.NavGrid.GetBlock( backPos );
 			ref readonly var back2    = ref _navMap.NavGrid.GetBlock( backPos + Vector2i.Right );
 
-            wip понять как ограничить актора
-			if ( fracPosX < ? && (!CheckBlock( in left1 ) || !CheckBlock( in left2 )) )
+			var restrictedPosition = (Vector2)(boundsMin + Vector2i.One);
+
+			if ( position.X < restrictedPosition.X && (!CheckBlock( in left1 ) || !CheckBlock( in left2 )) )
 			{
-				fracPosX = 0;
+				position.X = restrictedPosition.X;
 
 				if ( _owner.DebugLocomotion )
 				{
-					DebugDrawCollisionPlane( blockPosition + Vector2i.Left, Side2d.Left );
+					DebugDrawCollisionPlane( restrictedPosition + Vector2i.Left, Side2d.Left );
 				}
 			}
-			else if ( fracPosX >= 0.5 && (!CheckBlock( in right1 ) || !CheckBlock( in right2 ) ) )
+			else if ( position.X > restrictedPosition.X && (!CheckBlock( in right1 ) || !CheckBlock( in right2 ) ) )
 			{
-				fracPosX = 0.5f;
+				position.X = restrictedPosition.X;
 
 				if ( _owner.DebugLocomotion )
 				{
-					DebugDrawCollisionPlane( blockPosition + Vector2i.Right, Side2d.Right );
+					DebugDrawCollisionPlane( restrictedPosition + Vector2i.Right, Side2d.Right );
 				}
 			}
 
-			if ( fracPosZ < 0.5 && (!CheckBlock( in back1 ) || !CheckBlock( in back2 )) )
+			if ( position.Y < restrictedPosition.Y && (!CheckBlock( in back1 ) || !CheckBlock( in back2 )) )
 			{
-				fracPosZ = 0.5f;
+				position.Y = restrictedPosition.Y;
 
 				if ( _owner.DebugLocomotion )
 				{
-					DebugDrawCollisionPlane( blockPosition + Vector2i.Back, Side2d.Back );
+					DebugDrawCollisionPlane( restrictedPosition + Vector2i.Back, Side2d.Back );
 				}
 			}
-			else if ( fracPosZ >= 0.5 && (!CheckBlock( in forward1 ) || !CheckBlock( in forward2 )) )
+			else if ( position.Y > restrictedPosition.Y && (!CheckBlock( in forward1 ) || !CheckBlock( in forward2 )) )
 			{
-				fracPosZ = 0.5f;
+				position.Y = restrictedPosition.Y;
 
 				if ( _owner.DebugLocomotion )
 				{
-					DebugDrawCollisionPlane( blockPosition + Vector2i.Forward, Side2d.Forward );
+					DebugDrawCollisionPlane( restrictedPosition + Vector2i.Forward, Side2d.Forward );
 				}
 			}
 
-			return new Vector2(blockPosition.X + fracPosX, blockPosition.Z + fracPosZ);
+			return position;
 		}
 
 		protected override bool CheckBlock( in NavigationGrid.Block block )
@@ -127,6 +101,10 @@ namespace TerrainDemo.Hero
 
 			return block.Normal.Slope <= Incline.Medium;
 		}
-
+		private static Bounds2i GetBound( Vector2 position )
+		{
+			var minBlockPosition = (GridPos) ( position - new Vector2( 0.5f, 0.5f ) );
+			return new Bounds2i( minBlockPosition, 2, 2 );
+		}
 	}
 }

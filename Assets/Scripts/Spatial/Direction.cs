@@ -45,7 +45,7 @@ namespace TerrainDemo.Spatial
         };
 
         /// <summary>
-        /// Directions on grid as Vector2i
+        /// Directions on grid as Vector2
         /// </summary>
         public static readonly Vector2[] Vector2 =
         {

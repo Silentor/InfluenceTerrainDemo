@@ -294,6 +294,28 @@ namespace TerrainDemo.Hero
 			);
 		}
 
+		private static readonly (Vector3, Vector3, Vector3, Vector3) VertRectangleX =
+			( new Vector3( -0.5f,  -1, 0 ), new Vector3( -0.5f, 1, 0 ), new Vector3( 0.5f, 1, 0 ),
+				new Vector3( 0.5f, -1, 0 ) );
+		private static readonly (Vector3, Vector3, Vector3, Vector3) VertRectangleZ =
+			( new Vector3( 0,  -1, -0.5f ), new Vector3( 0, 1, -0.5f ), new Vector3( 0, 1, 0.5f ),
+				new Vector3( 0, -1, 0.5f ) );
+		[Conditional( "UNITY_EDITOR")]
+		protected void DebugDrawCollisionPlane( Vector2 position, Side2d side )
+		{
+			var yPosition         = _owner.Position.Y + 1;
+			var centerPosition = position.ToVector3( yPosition );
+
+			var points = side == Side2d.Forward || side == Side2d.Back ? VertRectangleX : VertRectangleZ;
+			DrawRectangle.ForDebug(
+				(points.Item1 + centerPosition),
+				(points.Item2 + centerPosition),
+				(points.Item3 + centerPosition),
+				(points.Item4 + centerPosition),
+				Color.red, 0, true
+			);
+		}
+
 		[Conditional( "UNITY_EDITOR")]
 		private void DebugDrawBounds( )
 		{
