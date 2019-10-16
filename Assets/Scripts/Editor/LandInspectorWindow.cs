@@ -1,4 +1,5 @@
-﻿using OpenToolkit.Mathematics;
+﻿using System;
+using OpenToolkit.Mathematics;
 using System.Collections.Generic;
 using System.Linq;
 using TerrainDemo.Macro;
@@ -945,16 +946,9 @@ namespace TerrainDemo.Editor
 
 		private InspectorMode GetInspectorMode(InspectorMode oldMode)
 		{
-			GUILayout.BeginHorizontal();
-			var navMode = GUILayout.Toggle(oldMode == InspectorMode.Navigation, "Navigation");
-			GUILayout.EndHorizontal();
-
-			if (navMode)
-				oldMode = InspectorMode.Navigation;
-			else
-				oldMode = InspectorMode.Default;
-
-			return oldMode;
+			var modes = Enum.GetNames( typeof( InspectorMode ) );
+			var newSelection = (InspectorMode)GUILayout.SelectionGrid((int)oldMode, modes, modes.Length, EditorStyles.radioButton);
+			return newSelection;
 		}
 
 		#region Unity
@@ -1205,6 +1199,7 @@ namespace TerrainDemo.Editor
 		private enum InspectorMode
 		{
 			Default,
+			Macro,
 			Navigation
 		}
 	}

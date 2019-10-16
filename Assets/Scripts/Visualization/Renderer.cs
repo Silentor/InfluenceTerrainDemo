@@ -153,7 +153,7 @@ namespace TerrainDemo.Visualization
 
         private readonly Dictionary<Vector2i, GameObject> _renderChunksCache = new Dictionary<Vector2i, GameObject>();
         private readonly Dictionary<ObjectMap, GameObject> _renderObjectCache = new Dictionary<ObjectMap, GameObject>();
-        private readonly Dictionary<Actor, GameObject> _renderActorCache = new Dictionary<Actor, GameObject>();
+        private readonly Dictionary<Actor, ActorView> _renderActorCache = new Dictionary<Actor, ActorView>();
         private Camera _observer;
         private Actor _observed;
 

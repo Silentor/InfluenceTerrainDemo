@@ -679,13 +679,31 @@ namespace TerrainDemo.Visualization
             }
         }
 
-        public GameObject CreateActorObject(Actor actor, TriRunner settings)
+        public ActorView CreateActorObject(Actor actor, TriRunner settings)
         {
-            var newActor = Object.Instantiate(settings.ActorPrefab, actor.Position, actor.Rotation);
+	        ActorView prefab;
+	        switch ( actor.Locomotor.LocoType )
+	        {
+		        case BaseLocomotor.Type.Biped:
+			        prefab = settings.SmallBipedActorPrefab;
+					break;
+		        case BaseLocomotor.Type.MedBiped:
+			        prefab = settings.MedBipedActorPrefab;
+			        break;
+		        case BaseLocomotor.Type.BigBiped:
+			        prefab = settings.BigBipedActorPrefab;
+			        break;
+		        case BaseLocomotor.Type.Wheeled:
+			        throw new NotImplementedException(  );
+			        break;
+		        default:
+			        throw new ArgumentOutOfRangeException( );
+	        }
+
+            var newActor = Object.Instantiate(prefab, actor.Position, actor.Rotation);
 
             //Setup actor view...
-            var view = newActor.GetComponent<ActorView>();
-            view.Init(actor);
+            newActor.Init(actor);
 
             return newActor;
         }

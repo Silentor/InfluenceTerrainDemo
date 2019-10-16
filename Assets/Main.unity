@@ -177,7 +177,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Seed: 118615998
-  RandomizeSeed: 0
+  RandomizeSeed: 1
   LandSize: 150
   CellSide: 10
   GridPerturbFreq: 0.01
@@ -185,7 +185,10 @@ MonoBehaviour:
   InfluencePerturbFreq: 0.08
   InfluencePerturbPower: 3
   Biomes:
-  - {fileID: 11400000, guid: 1f9f41e982c9413439b174f347342fc4, type: 2}
+  - {fileID: 11400000, guid: b0bde4e1a0e0d9343bea7f8586c7fbcb, type: 2}
+  - {fileID: 11400000, guid: d189b4f8006ca0b489a82c5f5ddbe6e0, type: 2}
+  - {fileID: 11400000, guid: 4757fe4311966e740b7ceb0d4952327a, type: 2}
+  - {fileID: 11400000, guid: 7d12ec13390231c48be2cfeead9a9303, type: 2}
   RenderMode: 0
   RenderLayer: 2
   MacroCellInfluenceVisualization: 0
@@ -193,7 +196,11 @@ MonoBehaviour:
   TextureMode: 3
   TexturedMat: {fileID: 2100000, guid: cf4bbfe466f303742b1c4030ee57c04b, type: 2}
   ObstaclesMat: {fileID: 2100000, guid: 58b91be52d62b6a49a54b6e201c5d04b, type: 2}
-  ActorPrefab: {fileID: 6868431656227549215, guid: f10e202aef0fbc647a294987b6423608,
+  SmallBipedActorPrefab: {fileID: 9121655701841352804, guid: a105e9423a64e034b98b3ada25489814,
+    type: 3}
+  MedBipedActorPrefab: {fileID: 5915516888473377848, guid: 0b4dcde6ee5b7bb4a924c5b97d87c41b,
+    type: 3}
+  BigBipedActorPrefab: {fileID: 3066626669603308457, guid: 6a5d65499ca4d3b47a6ab856226c6bd7,
     type: 3}
 --- !u!1 &914146329
 GameObject:
