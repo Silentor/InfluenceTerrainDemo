@@ -18,11 +18,14 @@ namespace TerrainDemo.Visualization
             if (!Actor.IsHero)
             {
                 var renderer = GetComponentInChildren<UnityEngine.Renderer>();
-                renderer.material.color = Color.blue;
+                renderer.material.color = Color.gray;
                 gameObject.name = actor.Name;
             }
             else
             {
+	            var renderer = GetComponentInChildren<UnityEngine.Renderer>();
+	            renderer.material.color = Color.white;
+
                 gameObject.name = actor.Name;
             }
         }
