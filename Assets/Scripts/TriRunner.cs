@@ -42,7 +42,7 @@ namespace TerrainDemo
         public BiomeSettings[] Biomes = new BiomeSettings[0];
 
         [Header("Visualizer settings")]
-        public Renderer.TerrainRenderMode RenderMode = Renderer.TerrainRenderMode.Terrain;
+        //public Renderer.TerrainRenderMode RenderMode = Renderer.TerrainRenderMode.Terrain;
         public Renderer.TerrainLayerToRender RenderLayer = Renderer.TerrainLayerToRender.Main;
 
         [Header("Macro")]
@@ -103,9 +103,9 @@ namespace TerrainDemo
             _renderer.Clear();
 
             //Visualization
-            if (renderSettings.RenderMode == Renderer.TerrainRenderMode.Macro)
-                _renderer.Render(Macro, renderSettings);
-            else
+            //if (renderSettings.RenderMode == Renderer.TerrainRenderMode.Macro)
+                //_renderer.Render(Macro, renderSettings);
+            //else
                 //_renderer.Render(Micro, mode);
                 _renderer.Render(Micro, renderSettings);               //Experimental renderer
 

@@ -922,12 +922,6 @@ namespace TerrainDemo.Visualization
             }
         }
 
-        private void CreateObstacle( List<Vector3> vertices, List<Color> colors, List<int> indices )
-        {
-
-        }
-
-
         private Color InfluenceToColorSmooth(Influence influence)
         {
             if (influence.IsEmpty)

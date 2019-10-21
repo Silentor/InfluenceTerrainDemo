@@ -39,6 +39,7 @@ namespace TerrainDemo.Settings
         Lake,
         Snow,
         Caves,
+        Forest,
         
 
         TestBegin = TestFlat,

@@ -45,7 +45,7 @@ namespace TerrainDemo.Visualization
 
         public void Render(MicroMap map, TriRunner renderSettings)
         {
-            Assert.IsTrue(renderSettings.RenderMode != TerrainRenderMode.Macro);
+            //Assert.IsTrue(renderSettings.RenderMode != TerrainRenderMode.Macro);
 
             //Break map to render chunks (rounded to ChunkSize)
             var microBounds = map.Bounds;
@@ -61,14 +61,14 @@ namespace TerrainDemo.Visualization
                     meshGO.transform.SetParent(GetMeshRoot());
 
                     var chunkBound = new Bounds2i(new GridPos(x, z), ChunkSize, ChunkSize);
-                    if (renderSettings.RenderMode == TerrainRenderMode.Blocks)
-                    {
-                        var chunkMeshes = _mesher.CreateMinecraftMesh(map, chunkBound, renderSettings);
-                        CreateRenderingGameObject(chunkMeshes.Base.Item1, chunkMeshes.Base.Item2, "BaseMesh", meshGO.transform);
-                        CreateRenderingGameObject(chunkMeshes.Under.Item1, chunkMeshes.Under.Item2, "UnderMesh", meshGO.transform);
-                        CreateRenderingGameObject(chunkMeshes.Main.Item1, chunkMeshes.Main.Item2, "MainMesh", meshGO.transform);
-                    }
-                    else
+                    //if (renderSettings.RenderMode == TerrainRenderMode.Blocks)
+                    //{
+                    //    var chunkMeshes = _mesher.CreateMinecraftMesh(map, chunkBound, renderSettings);
+                    //    CreateRenderingGameObject(chunkMeshes.Base.Item1, chunkMeshes.Base.Item2, "BaseMesh", meshGO.transform);
+                    //    CreateRenderingGameObject(chunkMeshes.Under.Item1, chunkMeshes.Under.Item2, "UnderMesh", meshGO.transform);
+                    //    CreateRenderingGameObject(chunkMeshes.Main.Item1, chunkMeshes.Main.Item2, "MainMesh", meshGO.transform);
+                    //}
+                    //else
                     {
                         var chunkMesh = _mesher.CreateTerrainMesh(map, chunkBound, renderSettings);
                         CreateRenderingGameObject(chunkMesh.mesh, chunkMesh.texture, "MainMesh", meshGO.transform);
@@ -79,16 +79,16 @@ namespace TerrainDemo.Visualization
             //Render map objects
             foreach (var mapChild in map.Childs)
             {
-                if (renderSettings.RenderMode == TerrainRenderMode.Blocks)
-                {
-                    var objectMesh = _mesher.CreateMinecraftMesh(mapChild, mapChild.Bounds, _settings);
-                    var objectRoot = new GameObject(mapChild.Name);
-                    objectRoot.transform.SetParent(GetMeshRoot());
-                    CreateRenderingGameObject(objectMesh.Base.Item1, objectMesh.Base.Item2, "BaseMesh", objectRoot.transform);
-                    CreateRenderingGameObject(objectMesh.Under.Item1, objectMesh.Under.Item2, "UnderMesh", objectRoot.transform);
-                    CreateRenderingGameObject(objectMesh.Main.Item1, objectMesh.Main.Item2, "MainMesh", objectRoot.transform);
-                }
-                else
+                //if (renderSettings.RenderMode == TerrainRenderMode.Blocks)
+                //{
+                //    var objectMesh = _mesher.CreateMinecraftMesh(mapChild, mapChild.Bounds, _settings);
+                //    var objectRoot = new GameObject(mapChild.Name);
+                //    objectRoot.transform.SetParent(GetMeshRoot());
+                //    CreateRenderingGameObject(objectMesh.Base.Item1, objectMesh.Base.Item2, "BaseMesh", objectRoot.transform);
+                //    CreateRenderingGameObject(objectMesh.Under.Item1, objectMesh.Under.Item2, "UnderMesh", objectRoot.transform);
+                //    CreateRenderingGameObject(objectMesh.Main.Item1, objectMesh.Main.Item2, "MainMesh", objectRoot.transform);
+                //}
+                //else
                 {
                     var objectMesh = _mesher.CreateObjectMesh((ObjectMap)mapChild, _settings);
                     var objectRoot = new GameObject(mapChild.Name);

@@ -87,39 +87,39 @@ namespace TerrainDemo.Editor
 					isSelected = true;
 				}
 
-				if (@event.keyCode == KeyCode.B && @event.type == EventType.KeyUp && @event.control && @event.alt)
-				{
-					Debug.Log("Block mode");
-					_runner.RenderMode = Renderer.TerrainRenderMode.Blocks;
-				}
+				//if (@event.keyCode == KeyCode.B && @event.type == EventType.KeyUp && @event.control && @event.alt)
+				//{
+				//	Debug.Log("Block mode");
+				//	_runner.RenderMode = Renderer.TerrainRenderMode.Blocks;
+				//}
 
-				if (@event.keyCode == KeyCode.T && @event.type == EventType.KeyUp && @event.control && @event.alt)
-				{
-					Debug.Log("Terrain mode");
-					_runner.RenderMode = Renderer.TerrainRenderMode.Terrain;
-				}
+				//if (@event.keyCode == KeyCode.T && @event.type == EventType.KeyUp && @event.control && @event.alt)
+				//{
+				//	Debug.Log("Terrain mode");
+				//	_runner.RenderMode = Renderer.TerrainRenderMode.Terrain;
+				//}
 
 			}
 
-			switch (_runner.RenderMode)
+			//switch (_runner.RenderMode)
 			{
-				case Renderer.TerrainRenderMode.Blocks:
-					result = PrepareBlockModeInput(result);
+				//case Renderer.TerrainRenderMode.Blocks:
+				//	result = PrepareBlockModeInput(result);
 
-					if (isSelected)
-					{
-						if (_selectedBlock == result.HoveredBlock)
-							_selectedBlock = null;
-						else
-							_selectedBlock = result.HoveredBlock;
+				//	if (isSelected)
+				//	{
+				//		if (_selectedBlock == result.HoveredBlock)
+				//			_selectedBlock = null;
+				//		else
+				//			_selectedBlock = result.HoveredBlock;
 
-						if (_selectedBlock.HasValue)
-							Debug.Log($"Selected block {_selectedBlock.Value}");
-					}
-					result.SelectedBlock = _selectedBlock;
+				//		if (_selectedBlock.HasValue)
+				//			Debug.Log($"Selected block {_selectedBlock.Value}");
+				//	}
+				//	result.SelectedBlock = _selectedBlock;
 
-					break;
-				case Renderer.TerrainRenderMode.Terrain:
+				//	break;
+				//case Renderer.TerrainRenderMode.Terrain:
 					result = PrepareTerrainModeInput(result);
 
 					if (isSelected)
@@ -153,38 +153,38 @@ namespace TerrainDemo.Editor
 					result.SelectedHeightVertex = _selectedVertex;
 
 
-					break;
+					//break;
 				//Macro mode
-				case Renderer.TerrainRenderMode.Macro:
-				{
-					if (MacroMap != null)
-					{
-						var selectedCell = MacroMap.Raycast(result.CursorRay);
-						if (selectedCell.Item1 != null)
-						{
-							result.IsMapSelected = true;
-							result.CursorPosition = selectedCell.Item2;
-							result.Distance = Vector3.Distance(result.CursorPosition, result.View.Origin);
-							result.HoveredMacroCell = selectedCell.Item1;
-							result.SelectedVert = MacroMap.Vertices.FirstOrDefault(v => Vector3.Distance(
-																							new Vector3(v.Position.X, v.Height.Nominal, v.Position.Y), result.CursorPosition) < 1);
+				//case Renderer.TerrainRenderMode.Macro:
+				//{
+				//	if (MacroMap != null)
+				//	{
+				//		var selectedCell = MacroMap.Raycast(result.CursorRay);
+				//		if (selectedCell.Item1 != null)
+				//		{
+				//			result.IsMapSelected = true;
+				//			result.CursorPosition = selectedCell.Item2;
+				//			result.Distance = Vector3.Distance(result.CursorPosition, result.View.Origin);
+				//			result.HoveredMacroCell = selectedCell.Item1;
+				//			result.SelectedVert = MacroMap.Vertices.FirstOrDefault(v => Vector3.Distance(
+				//																			new Vector3(v.Position.X, v.Height.Nominal, v.Position.Y), result.CursorPosition) < 1);
 
-							/*
-                            if (MicroMap != null)
-                            {
-                                result.SelectedMicroCell = MicroMap.GetCell(result.SelectedMacroCell);
-                                var blockPos = (Vector2i)result.CursorPosition;
-                                if (MicroMap.Bounds.Contains(blockPos))
-                                {
-                                    result.HoveredBlock2 = blockPos;
-                                }
-                            }
-                            */
-						}
-					}
+				//			/*
+    //                        if (MicroMap != null)
+    //                        {
+    //                            result.SelectedMicroCell = MicroMap.GetCell(result.SelectedMacroCell);
+    //                            var blockPos = (Vector2i)result.CursorPosition;
+    //                            if (MicroMap.Bounds.Contains(blockPos))
+    //                            {
+    //                                result.HoveredBlock2 = blockPos;
+    //                            }
+    //                        }
+    //                        */
+				//		}
+				//	}
 
-					break;
-				}
+				//	break;
+				//}
 			}
 
 			return result;
@@ -331,6 +331,30 @@ namespace TerrainDemo.Editor
 
 			}
 		}
+
+		private void DrawMacroModeHandles(Input input)
+		{
+			//Draw all macro map cells
+			foreach (var meshCell in MacroMap.Cells)
+			{
+				DrawMacroCell(meshCell);
+			}
+
+			//Draw all zones
+			foreach ( var zone in MacroMap.Zones )
+			{
+				DrawMacroZone( zone, zone.Biome.LayoutColor, 5 );
+			}
+
+			//Draw selected macrocell and zone
+			if (_input.HoveredMacroCell != null)
+			{
+				DrawMacroCell(_input.HoveredMacroCell, Active, 5, true, true);
+				DrawMacroZone(_input.HoveredMacroCell.Zone, _input.HoveredMacroCell.Zone.Biome.LayoutColor, 10);
+			}
+		}
+
+
 
 		private void DrawNormals(Input input)
 		{
@@ -669,13 +693,15 @@ namespace TerrainDemo.Editor
 		/// Draw zone border
 		/// </summary>
 		/// <param name="zone"></param>
-		private void DrawMacroZone(Macro.Zone zone, Color color)
+		private void DrawMacroZone(Macro.Zone zone, Color color, int width)
 		{
+			//Get zone outer border
 			Handles.color = color;
 
-			//Get zone outer border
-			foreach (var edge in zone.Edges)
-				Handles.DrawLine(VertexToPosition(edge.Vertex1), VertexToPosition(edge.Vertex2));
+			foreach ( var edge in zone.Edges )
+			{
+				Handles.DrawAAPolyLine( width, VertexToPosition(edge.Vertex1), VertexToPosition( edge.Vertex2 ) );	
+			}
 		}
 
 		#endregion
@@ -706,6 +732,14 @@ namespace TerrainDemo.Editor
 
 			if (input.HoveredHeightVertex.HasValue && input.HoveredHeightVertex != input.SelectedHeightVertex)
 				ShowHeightVertexInfo(input.HoveredHeightVertex.Value, false);
+		}
+		private void ShowMacroModeContent(Input input)
+		{
+			if (input.HoveredMacroCell != null)
+			{
+				ShowMacroCellInfo(_input.HoveredMacroCell);
+				ShowMacroZoneInfo(_input.HoveredMacroCell.Zone);
+			}
 		}
 
 		private void ShowNavigationModeContent(Input input)
@@ -932,7 +966,7 @@ namespace TerrainDemo.Editor
 				_runner = FindObjectOfType<TriRunner>();
 
 				_oldRenderLayer = _runner.RenderLayer;
-				_oldRenderMode = _runner.RenderMode;
+				//_oldRenderMode = _runner.RenderMode;
 
 				_defaultBlockColor.Clear();
 				foreach (var blockSetting in _runner.AllBlocks)
@@ -989,23 +1023,33 @@ namespace TerrainDemo.Editor
 
 			_input = PrepareInput(Event.current);
 
-			if (_runner.RenderMode == Renderer.TerrainRenderMode.Blocks)
+			//if (_runner.RenderMode == Renderer.TerrainRenderMode.Blocks)
+			//{
+			//	DrawBlockModeHandles(_input);
+			//	return;
+			//}
+			//else 
+			//if (_runner.RenderMode == Renderer.TerrainRenderMode.Terrain)
 			{
-				DrawBlockModeHandles(_input);
+				switch ( _inspectorMode )
+				{
+					case InspectorMode.Navigation:
+						DrawNavigationModeHandles(_input);
+						break;
+					case InspectorMode.Default:
+						DrawTerrainModeHandles(_input);
+						break;
+					case InspectorMode.Macro:
+						DrawMacroModeHandles( _input );
+						break;
+				}
+
 				return;
 			}
-			else if (_runner.RenderMode == Renderer.TerrainRenderMode.Terrain)
-			{
-				if (_inspectorMode == InspectorMode.Navigation)
-					DrawNavigationModeHandles(_input);
-				else
-					DrawTerrainModeHandles(_input);
-				return;
-			}
-			else
-			{
-				return;
-			}
+			//else
+			//{
+			//	return;
+			//}
 
 			if (_drawLayout)
 			{
@@ -1026,12 +1070,7 @@ namespace TerrainDemo.Editor
 
 			}
 
-			//Draw selected macrocell
-			if (_input.HoveredMacroCell != null)
-			{
-				DrawMacroCell(_input.HoveredMacroCell, Active, 5, true, true);
-				DrawMacroZone(_input.HoveredMacroCell.Zone, _drawLayout ? Active : _input.HoveredMacroCell.Zone.Biome.LayoutColor);
-			}
+			
 
 			//Draw selected vertex
 			if (_input.SelectedVert != null)
@@ -1075,64 +1114,67 @@ namespace TerrainDemo.Editor
 			if (!Application.isPlaying || _runner == null || !_enabled || _input == null)
 				return;
 
-			if (_oldRenderLayer != _runner.RenderLayer || _oldRenderMode != _runner.RenderMode)
+			if (_oldRenderLayer != _runner.RenderLayer /*|| _oldRenderMode != _runner.RenderMode*/)
 			{
 				_oldRenderLayer = _runner.RenderLayer;
-				_oldRenderMode = _runner.RenderMode;
+				//_oldRenderMode = _runner.RenderMode;
 
 				_runner.Render(_runner);
 			}
 
 			EditorGUILayout.Separator();
 
-			if (_runner.RenderMode == Renderer.TerrainRenderMode.Blocks)
+			//if (_runner.RenderMode == Renderer.TerrainRenderMode.Blocks)
+			//{
+			//	ShowBlockModeContent(_input);
+			//}
+			//else 
+			//if (_runner.RenderMode == Renderer.TerrainRenderMode.Terrain)
 			{
-				ShowBlockModeContent(_input);
-			}
-			else if (_runner.RenderMode == Renderer.TerrainRenderMode.Terrain)
-			{
-				if (_inspectorMode == InspectorMode.Default)
-					ShowTerrainModeContent(_input);
-				else if (_inspectorMode == InspectorMode.Navigation)
-					ShowNavigationModeContent(_input);
-			}
-			else
-			{
-				_drawLayout = GUILayout.Toggle(_drawLayout, "Draw layout");
-				_drawMicro = GUILayout.Toggle(_drawMicro, "Draw micro");
-
-				if (GUILayout.Button("Generate"))
-					_runner.Generate();
-
-
-				if (_input.IsMapSelected)
+				switch ( _inspectorMode )
 				{
-					ShowCursorInfo(_input);
-				}
-
-				if (_input.HoveredBlock.HasValue)
-				{
-					ShowBlockInfo(_input.HoveredBlock.Value, false, true);
-				}
-
-				if (_input.HoveredMacroCell != null)
-				{
-					ShowMacroCellInfo(_input.HoveredMacroCell);
-					ShowMacroZoneInfo(_input.HoveredMacroCell.Zone);
-				}
-
-				if (_input.SelectedVert != null)
-				{
-					ShowTriVertInfo(_input.SelectedVert, _input.Distance);
-				}
-
-				_showZonesList = GUILayout.Toggle(_showZonesList, "Show all zones");
-				if (_showZonesList)
-				{
-					foreach (var macroZone in MacroMap.Zones)
-						GUILayout.Label($"{macroZone.Id}, {macroZone.Biome.name}");
+					case InspectorMode.Default:
+						ShowTerrainModeContent(_input);
+						break;
+					case InspectorMode.Navigation:
+						ShowNavigationModeContent(_input);
+						break;
+					case InspectorMode.Macro:
+						ShowMacroModeContent( _input );
+						break;
 				}
 			}
+			//else
+			//{
+			//	_drawLayout = GUILayout.Toggle(_drawLayout, "Draw layout");
+			//	_drawMicro = GUILayout.Toggle(_drawMicro, "Draw micro");
+
+			//	if (GUILayout.Button("Generate"))
+			//		_runner.Generate();
+
+
+			//	if (_input.IsMapSelected)
+			//	{
+			//		ShowCursorInfo(_input);
+			//	}
+
+			//	if (_input.HoveredBlock.HasValue)
+			//	{
+			//		ShowBlockInfo(_input.HoveredBlock.Value, false, true);
+			//	}
+				
+			//	if (_input.SelectedVert != null)
+			//	{
+			//		ShowTriVertInfo(_input.SelectedVert, _input.Distance);
+			//	}
+
+			//	_showZonesList = GUILayout.Toggle(_showZonesList, "Show all zones");
+			//	if (_showZonesList)
+			//	{
+			//		foreach (var macroZone in MacroMap.Zones)
+			//			GUILayout.Label($"{macroZone.Id}, {macroZone.Biome.name}");
+			//	}
+			//}
 
 		}
 

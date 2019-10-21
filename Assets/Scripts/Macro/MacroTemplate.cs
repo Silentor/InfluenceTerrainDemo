@@ -267,6 +267,8 @@ namespace TerrainDemo.Macro
             {
                 case BiomeType.Mountain:
                     return new MountainsGenerator(map, cells, zoneId, biome, settings);
+                case BiomeType.Forest:
+                    return new ForestGenerator(map, cells, zoneId, biome, settings);
                 case BiomeType.Desert:
                     return new DesertGenerator(map, cells, zoneId, biome, settings);
                 case BiomeType.Caves:

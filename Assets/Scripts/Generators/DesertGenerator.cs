@@ -63,7 +63,7 @@ namespace TerrainDemo.Generators
                 new Vector3(1, v11.Nominal - v00.Nominal, 1)
             ).Normalized();
 
-            var isObstacle = _zoneRandom.Value( ) < 0.5;
+            var isObstacle = _zoneRandom.Value( ) < 0.01;
 
             if(Vector3.CalculateAngle(normal, Vector3.UnitY) <= MathHelper.DegreesToRadians(45))
                 return new BlockLayers(BlockType.Sand, BlockType.GoldOre, isObstacle);
