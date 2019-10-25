@@ -32,8 +32,5 @@ UnityVS.VersionSpecific.*
 # Ignore Resharper caches
 _ReSharper.Caches/
 
-
-
-
-
-
+# Ignore Rider stuff
+.idea/
