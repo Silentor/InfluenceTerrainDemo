@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Haus.Math;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -11,30 +13,36 @@ namespace TerrainDemo.Tools
     {
         public readonly int Seed;
 
+        public Random( ) : this (Guid.NewGuid().GetHashCode())
+        {
+        }
+
         public Random(int seed)
         {
             Seed = seed;
-            _random = new System.Random(seed);
+            _random = new XorShiftRandom( (ulong)seed );
         }
 
         public int Range(int min, int maxInclusive)
         {
-            return _random.Next(min, maxInclusive + 1);
+            var range = maxInclusive - min + 1;
+            return (int)(_random.NextUInt32() % range) + min;
         }
 
         public float Range(float min, float max)
         {
-            return (float)(_random.NextDouble() * (max - min) + min);
+            var range = max - min;
+            return (_random.NextFloat() % range) + min;
         }
 
         public int Range(Vector2Int range)
         {
-            return _random.Next(range.x, range.y + 1);
+            return Range(range.x, range.y);
         }
 
         public int Range(int maxExclusive)
         {
-            return _random.Next(maxExclusive);
+            return (int)(_random.NextUInt32() % maxExclusive);
         }
 
         public double Value()
@@ -44,14 +52,14 @@ namespace TerrainDemo.Tools
 
         public T Item<T>(IEnumerable<T> collection)
         {
-            return collection.ElementAt(_random.Next(collection.Count()));
+            return collection.ElementAt(Range(collection.Count()));
         }
 
         public T Item<T>(IList<T> collection)
         {
-            return collection[_random.Next(collection.Count)];
+            return collection[Range(collection.Count)];
         }
 
-        private readonly System.Random _random;
+        private readonly XorShiftRandom _random;
     }
 }
