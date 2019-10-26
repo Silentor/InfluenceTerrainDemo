@@ -38,7 +38,7 @@ namespace Haus.Math
         ///   Constructs a new  generator using two
         ///   random Guid hash codes as a seed.
         /// </summary>
-        public XorShiftRandom() :this((ulong)(Guid.NewGuid().GetHashCode() << 32) | (ulong)(Guid.NewGuid().GetHashCode()))
+        public XorShiftRandom() :this((ulong)(Guid.NewGuid().GetHashCode()) << 32 | (ulong)(Guid.NewGuid().GetHashCode()) )
         {
 
         }
