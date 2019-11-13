@@ -103,7 +103,7 @@ namespace TerrainDemo.Navigation
 
 	    public static NavigationNodeBase CreateMicroCellNavigation( Micro.Cell cell, MicroMap map, NavigationGrid navGrid, TriRunner settings )
 	    {
-		    var avgSpeedModifier = 0f;
+		    var movementCost = 0f;
 		    var avgNormal        = OpenToolkit.Mathematics.Vector3.Zero;
 		    var normalDeviation = 0f;
 		    float roughness = 0;
@@ -112,13 +112,15 @@ namespace TerrainDemo.Navigation
 		    {
 			    //Calculate average movement cost for cell
 			    ref readonly var block = ref map.GetBlockRef(blockPosition);
-			    avgSpeedModifier += settings.AllBlocksDict[block.Top].SpeedModifier;
+			    movementCost += settings.AllBlocksDict[block.Top].MovementCost;
 
 			    //Calculate average normal
 			    ref readonly var blockData = ref map.GetBlockData(blockPosition);
 			    avgNormal += blockData.Normal;
 
 			    ref readonly var navBlock = ref navGrid.GetBlock(blockPosition);
+
+				roughness must be a dispersion around avg normal!
 			    switch (navBlock.Normal.Slope)
 			    {
 				    case Incline.Flat:   roughness += 1; break;
@@ -131,7 +133,7 @@ namespace TerrainDemo.Navigation
 
 			}
 
-			avgSpeedModifier /= cell.BlockPositions.Length;
+			movementCost /= cell.BlockPositions.Length;
 		    avgNormal        =  (avgNormal / cell.BlockPositions.Length).Normalized();
 		    roughness /= cell.BlockPositions.Length;
 
@@ -147,7 +149,7 @@ namespace TerrainDemo.Navigation
 
 		    //normalDeviation = Mathf.Sqrt(normalDispersion / cell.BlockPositions.Length);
 
-			return new NavigationCell( cell, avgSpeedModifier, avgNormal, roughness );
+			return new NavigationCell( cell, movementCost, avgNormal, roughness );
         }
 
     }

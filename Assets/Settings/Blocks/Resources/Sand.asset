@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Block: 5
   DefaultColor: {r: 1, g: 0.8746814, b: 0, a: 1}
-  SpeedModifier: 0.5
+  MovementCost: 2

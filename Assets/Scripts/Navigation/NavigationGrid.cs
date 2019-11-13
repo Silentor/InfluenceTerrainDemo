@@ -108,25 +108,42 @@ namespace TerrainDemo.Navigation
 			Slope = slope;
 			Orientation = orientation;
 		}
+
+		public LocalIncline Project ( Side2d side )
+		{
+			if ( Slope == Incline.Flat )
+				return LocalIncline.Flat;
+			if ( Orientation == side )
+				return (LocalIncline) Slope;
+			if ( Orientation.IsPerpendicular ( side ) )
+				return LocalIncline.Flat;
+			return (LocalIncline)((int) Slope + 7);
+		}
 	}
 
 	public enum Incline			: byte
 	{
 		Flat, 
+		
 		Small, 
 		Medium, 
 		Steep,
-		Blocked				//Block is completely blocked
+		
+		Blocked				= 15			//Block is completely blocked
 	}
 
 	public enum LocalIncline : byte
 	{
-		Flat,
-		SmallUphill,
-		MediumUphill,
-		SteepUphill,
-		SmallDownhill,
+		Flat 				= Incline.Flat,
+		
+		SmallUphill 		= Incline.Small, 
+		MediumUphill 		= Incline.Medium,
+		SteepUphill 		= Incline.Steep,
+		
+		SmallDownhill		= 8,
 		MediumDownhill,
-		SteepDownhill
+		SteepDownhill,
+		
+		Blocked 			= 15,
 	}
 }

@@ -137,6 +137,33 @@ namespace TerrainDemo.Hero
 		}
 		public abstract float GetCost( LocalIncline edgeSlopeness );
 
+		public float GetInclineCost ( LocalIncline incline )
+		{
+			switch ( incline )
+			{
+				case LocalIncline.Flat:           return 1;
+				case LocalIncline.SmallUphill:    return 1.2f;
+				case LocalIncline.MediumUphill:   return 2;
+				case LocalIncline.SteepUphill:    return 10;
+				case LocalIncline.SmallDownhill:  return 0.9f;
+				case LocalIncline.MediumDownhill: return 1.5f;
+				case LocalIncline.SteepDownhill:  return 10;
+				case LocalIncline.Blocked:        return float.NaN;
+				default:
+					throw new ArgumentOutOfRangeException ( nameof (incline), incline, null );
+			}
+		}
+
+		public float GetMovementCost ( BlockType block )
+		{
+			return _map.GetBlockSettings ( block ).MovementCost;
+		}
+
+		public float GetRoughnessCost ( float roughness )
+		{
+
+		}
+
 		public bool Update( float deltaTime )
 		{
 			var isChanged = false;

@@ -1,4 +1,5 @@
-﻿using OpenToolkit.Mathematics;
+﻿using System;
+using OpenToolkit.Mathematics;
 
 namespace TerrainDemo.Spatial
 {
@@ -66,6 +67,11 @@ namespace TerrainDemo.Spatial
         public static Vector2 ToVector2(this Side2d direction)
         {
             return Directions.Vector2[(int) direction];
+        }
+
+        public static bool IsPerpendicular(this Side2d first, Side2d second)
+        {
+            return (((int)first ^ (int)second) & 0x01) == 0x01;
         }
     }
 }
