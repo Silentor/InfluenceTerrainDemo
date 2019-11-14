@@ -156,7 +156,7 @@ namespace TerrainDemo.Hero
 
 		public float GetMovementCost ( BlockType block )
 		{
-			return _map.GetBlockSettings ( block ).MovementCost;
+			return _map.GetBlockSettings ( block ).MaterialCost;
 		}
 
 		public float GetRoughnessCost ( float roughness )

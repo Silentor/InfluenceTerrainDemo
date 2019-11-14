@@ -323,7 +323,7 @@ namespace TerrainDemo.Editor
 			{
 				var hoveredNode = navMap.Nodes[input.SelectedMicroCell.Id];
 				HandleMap.DrawNavigationNode(hoveredNode, 10, true);
-				foreach (var neighbor in navMap.MacroGraph.GetNeighbors(hoveredNode))
+				foreach (var neighbor in navMap.NavGraph.GetNeighbors(hoveredNode))
 				{
 					DrawArrow.ForDebug(neighbor.edge.From.Cell.Macro.CenterPoint, neighbor.edge.To.Cell.Macro.CenterPoint - neighbor.edge.From.Cell.Macro.CenterPoint, Color.blue, 0, false);
 					HandleMap.DrawNavigationNode(neighbor.neighbor, 5, true);
@@ -756,7 +756,7 @@ namespace TerrainDemo.Editor
 				ShowNavigationCellInfo(hoveredNode);
 
 				//Show macro navigate cost info
-				foreach (var (edge, neighbor) in _runner.NavMap.MacroGraph.GetNeighbors( hoveredNode ))
+				foreach (var (edge, neighbor) in _runner.NavMap.NavGraph.GetNeighbors( hoveredNode ))
 				{
 					GUILayout.Label($"Edge to {neighbor.Cell.Id}, distance {edge.Distance:N2}, slope {edge.Slopeness}");
 				}

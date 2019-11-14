@@ -9,8 +9,16 @@ using Vector3 = OpenToolkit.Mathematics.Vector3;
 
 namespace TerrainDemo.Navigation
 {
-	public class NavGraph : Graph<NavigationCell, NavEdge>, IWeightedGraph<NavigationCell>
+	/// <summary>
+	/// Macro level navigation: A* compartible graph of macro cells. NavNode = macro cell, NavEdge - 6 edges of macro cell
+	/// todo implement more detailed NavGraph - NavNode = each edge of macro cell, so we can create a much more detailed macro path. But amount of nodes/edges is much more then in former case
+	/// </summary>
+	public class NavGraph : Graph<NavigationCell, NavEdge>, IAStarGraph<NavigationCell>
 	{
+		public NavGraph( )
+		{
+		}
+
 		public IEnumerable<(NavigationCell neighbor, float neighborCost)> Neighbors( BaseLocomotor loco, NavigationCell node )
 		{
 			foreach ( var (edge, neighbor) in GetNeighbors(node) )
@@ -26,7 +34,7 @@ namespace TerrainDemo.Navigation
 				yield return (neighbor, Math.Max(result, 0));
 			}
 		}
-		public float Heuristic( NavigationCell @from, NavigationCell to )
+		public float Heuristic( [NotNull] NavigationCell @from, [NotNull] NavigationCell to )
 		{
 			return Vector2.Distance( from.Cell.Macro.Center, to.Cell.Macro.Center );
 		}
@@ -103,7 +111,7 @@ namespace TerrainDemo.Navigation
 
 	    public static NavigationNodeBase CreateMicroCellNavigation( Micro.Cell cell, MicroMap map, NavigationGrid navGrid, TriRunner settings )
 	    {
-		    var movementCost = 0f;
+		    var materialCost = 0f;
 		    var avgNormal        = OpenToolkit.Mathematics.Vector3.Zero;
 		    var normalDeviation = 0f;
 		    float roughness = 0;
@@ -112,7 +120,7 @@ namespace TerrainDemo.Navigation
 		    {
 			    //Calculate average movement cost for cell
 			    ref readonly var block = ref map.GetBlockRef(blockPosition);
-			    movementCost += settings.AllBlocksDict[block.Top].MovementCost;
+			    materialCost += settings.AllBlocksDict[block.Top].MaterialCost;
 
 			    //Calculate average normal
 			    ref readonly var blockData = ref map.GetBlockData(blockPosition);
@@ -133,7 +141,7 @@ namespace TerrainDemo.Navigation
 
 			}
 
-			movementCost /= cell.BlockPositions.Length;
+			materialCost /= cell.BlockPositions.Length;
 		    avgNormal        =  (avgNormal / cell.BlockPositions.Length).Normalized();
 		    roughness /= cell.BlockPositions.Length;
 
@@ -149,7 +157,7 @@ namespace TerrainDemo.Navigation
 
 		    //normalDeviation = Mathf.Sqrt(normalDispersion / cell.BlockPositions.Length);
 
-			return new NavigationCell( cell, movementCost, avgNormal, roughness );
+			return new NavigationCell( cell, materialCost, avgNormal, roughness );
         }
 
     }

@@ -11,6 +11,6 @@ namespace TerrainDemo.Settings
         public Color DefaultColor         = Color.white;
 
         [Range( 0.1f, 10)]
-        public float MovementCost         = 1;
+        public float MaterialCost         = 1;
     }
 }

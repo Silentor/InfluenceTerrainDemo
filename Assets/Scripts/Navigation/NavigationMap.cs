@@ -12,12 +12,12 @@ using Vector2 = UnityEngine.Vector2;
 namespace TerrainDemo.Navigation
 {
 	/// <summary>
-	/// Storage for navigational data of land
+	/// Storage for navigational data of land (macro and micro level). 
 	/// </summary>
 	public class NavigationMap
 	{
 		public IReadOnlyDictionary<HexPos, NavigationCell> Nodes => _nodes;
-		public readonly NavGraph MacroGraph;
+		public readonly NavGraph NavGraph;
 		public readonly Pathfinder Pathfinder;
 		public readonly NavigationGrid NavGrid;
 
@@ -30,28 +30,28 @@ namespace TerrainDemo.Navigation
 
 			NavGrid = new NavigationGrid( micromap );
 
-			MacroGraph = new NavGraph();
+			NavGraph = new NavGraph();
 			var navCells = new List<NavigationCell>();
 
 			//Prepare navigation graph
 			foreach (var micromapCell in micromap.Cells)
 			{
 				var navCell = (NavigationCell)NavigationNodeBase.CreateMicroCellNavigation(micromapCell, micromap, NavGrid, settings);
-				MacroGraph.AddNode(navCell);
+				NavGraph.AddNode(navCell);
 				navCells.Add(navCell);
 				_nodes[micromapCell.Id] = navCell;
 			}
 
-			foreach (var fromCell in MacroGraph.Nodes)
+			foreach (var fromCell in NavGraph.Nodes)
 			{
 				foreach (var neighbor in fromCell.Cell.Macro.NeighborsSafe)
 				{
 					var toCell = navCells.Find(nc => nc.Cell.Macro == neighbor);
-					MacroGraph.AddEdge(fromCell, toCell, new NavEdge(fromCell, toCell));
+					NavGraph.AddEdge(fromCell, toCell, new NavEdge(fromCell, toCell));
 				}
 			}
 
-			foreach ( var edge in MacroGraph.Edges )
+			foreach ( var edge in NavGraph.Edges )
 			{
 				var from     = edge.from.Cell.Macro.CenterPoint;
 				var to       = edge.to.Cell.Macro.CenterPoint;
@@ -65,7 +65,7 @@ namespace TerrainDemo.Navigation
 
 			Pathfinder = new Pathfinder(this, _micromap, settings);
 
-			UnityEngine.Debug.Log($"Prepared navigation map in {timer.ElapsedMilliseconds} msec, macrograph nodes {MacroGraph.NodesCount}, macrograph edges {MacroGraph.EdgesCount}");
+			UnityEngine.Debug.Log($"Prepared navigation map in {timer.ElapsedMilliseconds} msec, macrograph nodes {NavGraph.NodesCount}, macrograph edges {NavGraph.EdgesCount}");
 		}
 
 		public NavigationCell GetNavNode(GridPos position)

@@ -8,7 +8,7 @@ namespace TerrainDemo.Navigation
 	/// <summary>
 	/// Micro map adapter for generic A*
 	/// </summary>
-	public class MicroMapGraphAdapter : IWeightedGraph<GridPos>
+	public class MicroMapGraphAdapter : IAStarGraph<GridPos>
 	{
 		private readonly MicroMap _map;
 

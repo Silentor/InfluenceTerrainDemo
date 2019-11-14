@@ -9,7 +9,7 @@ using TerrainDemo.Hero;
 
 namespace TerrainDemo.Navigation
 {
-    public interface IWeightedGraph<TNode> where TNode : IEquatable<TNode>
+    public interface IAStarGraph<TNode> where TNode : IEquatable<TNode>
     {
         IEnumerable<(TNode neighbor, float neighborCost)> Neighbors(BaseLocomotor loco, TNode from);
 
@@ -17,16 +17,14 @@ namespace TerrainDemo.Navigation
     }
 
     public class AStarSearch<TGraph, TNode> 
-	    where TGraph : IWeightedGraph<TNode> 
+	    where TGraph : IAStarGraph<TNode> 
 	    where TNode : IEquatable<TNode>	
     {
-        private TGraph _graph;
+        private readonly TGraph _graph;
 
-        private readonly Dictionary<TNode, TNode> _cameFrom
-            = new Dictionary<TNode, TNode>();
+        private readonly Dictionary<TNode, TNode> _cameFrom = new Dictionary<TNode, TNode>();
 
-        private readonly Dictionary<TNode, float> _costSoFar
-            = new Dictionary<TNode, float>();
+        private readonly Dictionary<TNode, float> _costSoFar = new Dictionary<TNode, float>();
 
 
         public AStarSearch(TGraph graph)

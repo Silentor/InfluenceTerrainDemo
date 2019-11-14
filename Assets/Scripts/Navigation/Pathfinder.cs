@@ -24,7 +24,7 @@ namespace TerrainDemo.Navigation
         public Pathfinder([NotNull] NavigationMap navMap, MicroMap baseMap, TriRunner settings)
         {
             _microAStar = new MicroAStar(new MicroMapGraphAdapter(baseMap));
-            _macroNavAstar2 = new AStarSearch<NavGraph, NavigationCell>( navMap.MacroGraph );
+            _macroNavAstar2 = new AStarSearch<NavGraph, NavigationCell>( navMap.NavGraph );
         }
 
 
