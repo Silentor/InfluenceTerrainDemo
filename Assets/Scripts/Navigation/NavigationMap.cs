@@ -16,7 +16,7 @@ namespace TerrainDemo.Navigation
 	/// </summary>
 	public class NavigationMap
 	{
-		public IReadOnlyDictionary<HexPos, NavigationCell> Nodes => _nodes;
+		public IReadOnlyDictionary<HexPos, NavNode> Nodes => _nodes;
 		public readonly NavGraph NavGraph;
 		public readonly Pathfinder Pathfinder;
 		public readonly NavigationGrid NavGrid;
@@ -30,36 +30,8 @@ namespace TerrainDemo.Navigation
 
 			NavGrid = new NavigationGrid( micromap );
 
-			NavGraph = new NavGraph();
-			var navCells = new List<NavigationCell>();
-
-			//Prepare navigation graph
-			foreach (var micromapCell in micromap.Cells)
-			{
-				var navCell = (NavigationCell)NavigationNodeBase.CreateMicroCellNavigation(micromapCell, micromap, NavGrid, settings);
-				NavGraph.AddNode(navCell);
-				navCells.Add(navCell);
-				_nodes[micromapCell.Id] = navCell;
-			}
-
-			foreach (var fromCell in NavGraph.Nodes)
-			{
-				foreach (var neighbor in fromCell.Cell.Macro.NeighborsSafe)
-				{
-					var toCell = navCells.Find(nc => nc.Cell.Macro == neighbor);
-					NavGraph.AddEdge(fromCell, toCell, new NavEdge(fromCell, toCell));
-				}
-			}
-
-			foreach ( var edge in NavGraph.Edges )
-			{
-				var from     = edge.from.Cell.Macro.CenterPoint;
-				var to       = edge.to.Cell.Macro.CenterPoint;
-				var distance = Vector2.Distance( @from.Xz, to.Xz );
-				var slopeRatio    = ( to.Y - from.Y ) / distance;
-				edge.edge.Slopeness = SlopeRatioToLocalIncline( slopeRatio );
-				edge.edge.Distance  = distance;
-			}
+			NavGraph = new NavGraph(micromap, settings);
+			
 
 			timer.Stop();
 
@@ -68,7 +40,7 @@ namespace TerrainDemo.Navigation
 			UnityEngine.Debug.Log($"Prepared navigation map in {timer.ElapsedMilliseconds} msec, macrograph nodes {NavGraph.NodesCount}, macrograph edges {NavGraph.EdgesCount}");
 		}
 
-		public NavigationCell GetNavNode(GridPos position)
+		public NavNode GetNavNode(GridPos position)
 		{
 			var microCell = _micromap.GetCell(position);
 			return Nodes[microCell.Id];
@@ -79,7 +51,7 @@ namespace TerrainDemo.Navigation
 			var fromNode = GetNavNode( from );
 			var toNode = GetNavNode( to );
 
-			var pathKey = new PathKey(fromNode.Cell.Id, toNode.Cell.Id, actor.Locomotor.LocoType);
+			var pathKey = new PathKey(fromNode, toNode, actor.Locomotor.LocoType);
 			if ( _sharedPathes.TryGetValue( pathKey, out var sharedPath ) )
 			{
 				UnityEngine.Debug.Log( $"Path {pathKey} for {actor} was finded at cache" );
@@ -107,68 +79,21 @@ namespace TerrainDemo.Navigation
 			}
 		}
 
-		private readonly Dictionary<HexPos, NavigationCell> _nodes = new Dictionary<HexPos, NavigationCell>();
+		private readonly Dictionary<HexPos, NavNode> _nodes = new Dictionary<HexPos, NavNode>();
 		private readonly Dictionary<PathKey, PathCacheEntry> _sharedPathes = new Dictionary<PathKey, PathCacheEntry>();
 
 		private readonly MicroMap _micromap;
 		private readonly MacroMap _macromap;
 
-
-		internal static readonly float MostlyFlat  = MathHelper.DegreesToRadians(10);
-		internal static readonly float SmallSlope  = MathHelper.DegreesToRadians(40);
-		internal static readonly float MediumSlope = MathHelper.DegreesToRadians(70);
-		internal static readonly float SteepSlope  = MathHelper.DegreesToRadians(90);
-
-
-		private static readonly float MostyFlatSin = (float)Math.Sin(MostlyFlat);
-		private static readonly float SmallSlopeSin = (float)Math.Sin(SmallSlope);
-		private static readonly float MediumSlopeSin = (float)Math.Sin(MediumSlope);
-		private static readonly float SteepSlopeSin = (float)Math.Sin(SteepSlope);
-
-		internal static LocalIncline SlopeRatioToLocalIncline( float slopeRatio )
-		{
-			if ( Math.Abs( slopeRatio ) < MostyFlatSin )
-				return LocalIncline.Flat;
-			else if ( slopeRatio > 0 )
-			{
-				if ( slopeRatio < SmallSlopeSin )
-					return LocalIncline.SmallUphill;
-				else if ( slopeRatio < MediumSlopeSin )
-					return LocalIncline.MediumUphill;
-				else
-					return LocalIncline.SteepUphill;
-			}
-			else
-			{
-				slopeRatio = -slopeRatio;
-				if (slopeRatio < SmallSlopeSin)
-					return LocalIncline.SmallDownhill;
-				else if (slopeRatio < MediumSlopeSin)
-					return LocalIncline.MediumDownhill;
-				else
-					return LocalIncline.SteepDownhill;
-			}
-		}
-
-		internal static Incline AngleToIncline( float angleRad )
-		{
-			if (angleRad < NavigationMap.MostlyFlat)
-				return Incline.Flat;
-			else if (angleRad < NavigationMap.SmallSlope)
-				return Incline.Small;
-			else if (angleRad < NavigationMap.MediumSlope)
-				return Incline.Medium;
-			else
-				return Incline.Steep;
-		}
+		
 
 		private struct PathKey : IEquatable<PathKey>
 		{
-			private readonly HexPos FromNode;
-			private readonly HexPos ToNode;
+			private readonly NavNode FromNode;
+			private readonly NavNode ToNode;
 			private readonly BaseLocomotor.Type LocoType;
 
-			public PathKey( HexPos fromNode, HexPos node, BaseLocomotor.Type locoType )
+			public PathKey(NavNode fromNode, NavNode node, BaseLocomotor.Type locoType )
 			{
 				FromNode = fromNode;
 				ToNode = node;
@@ -212,9 +137,9 @@ namespace TerrainDemo.Navigation
 	{
 		public readonly List<Path.Segment> Segments;
 		public readonly uint ElapsedTime;	
-		public readonly IReadOnlyDictionary<NavigationCell, float> CostsDebug;
+		public readonly IReadOnlyDictionary<NavNode, float> CostsDebug;
 
-		public PathCacheEntry( List<Path.Segment> segments, uint elapsedTime, IReadOnlyDictionary<NavigationCell, float> costsDebug )
+		public PathCacheEntry( List<Path.Segment> segments, uint elapsedTime, IReadOnlyDictionary<NavNode, float> costsDebug )
 		{
 			Segments = segments;
 			ElapsedTime = elapsedTime;
@@ -222,7 +147,7 @@ namespace TerrainDemo.Navigation
 		}
 	}
 
-	//public class NavigationCellBorderNode : NavigationNodeBase, IEquatable<NavigationCellBorderNode>
+	//public class NavigationCellBorderNode : NavNode, IEquatable<NavigationCellBorderNode>
 	//{
 	// public MacroEdge Edge { get; }
 	// public readonly Vector2i Position;

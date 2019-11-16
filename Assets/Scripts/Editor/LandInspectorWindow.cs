@@ -890,7 +890,7 @@ namespace TerrainDemo.Editor
 		private void ShowNavigationCellInfo(NavigationCell cell)
 		{
 			GUILayout.Label($"Navigation cell {cell.Cell.Id}", EditorStyles.boldLabel);
-			GUILayout.Label($"Avg speed {cell.SpeedModifier:N2}");
+			GUILayout.Label($"Avg speed {cell.MaterialCost:N2}");
 			GUILayout.Label($"Avg normal {cell.Normal.ToString(1)}");
 			GUILayout.Label($"Roughness {cell.Rougness:N2}");
 		}

@@ -34,13 +34,13 @@ namespace TerrainDemo.Navigation
 		    }
 	    }
 
-	    public NavigationCell FinishNavNode => _finishSegment.Node;
+	    public NavNode FinishNavNode => _finishSegment.Node;
 
-        public NavigationCell StartNavNode => _startSegment.Node;
+        public NavNode StartNavNode => _startSegment.Node;
 
         #region Debug
 
-		public IEnumerable<(NavigationCell, float)> ProcessedCosts => _sharedPath.CostsDebug.Select( c => (c.Key, c.Value) );
+		public IEnumerable<(NavNode, float)> ProcessedCosts => _sharedPath.CostsDebug.Select( c => (c.Key, c.Value) );
 
         #endregion
 
@@ -51,7 +51,7 @@ namespace TerrainDemo.Navigation
         /// <param name="to"></param>
         /// <param name="actor"></param>
         /// <param name="segments"></param>
-        internal Path(GridPos from, GridPos to, Actor actor, NavigationCell fromNode, NavigationCell toNode, PathCacheEntry sharedPath, [NotNull] NavigationMap map)
+        internal Path(GridPos from, GridPos to, Actor actor, NavNode fromNode, NavNode toNode, PathCacheEntry sharedPath, [NotNull] NavigationMap map)
         {
             Start   = from;
             Finish  = to;
@@ -97,7 +97,7 @@ namespace TerrainDemo.Navigation
 
 		private readonly int _segmentsCount;
 		private readonly NavigationMap _map;
-		private readonly (NavigationCell, float)[] _processCosts;
+		private readonly (NavNode, float)[] _processCosts;
 		private readonly Segment _startSegment;
 		private readonly Segment _finishSegment;
 		private readonly PathCacheEntry _sharedPath;
@@ -124,13 +124,13 @@ namespace TerrainDemo.Navigation
 	        var prevIndex = Math.Max( nodeIndex - 1, 0 );
 	        var nextIndex = Math.Min( nodeIndex + 1, _segmentsCount - 1 );
 
-	        prevPoint = prevIndex == 0 ? Start : GetSegment(prevIndex).Node.Cell.Center;
-	        nextPoint = nextIndex == _segmentsCount - 1 ? Finish : GetSegment(nextIndex).Node.Cell.Center;
+	        prevPoint = prevIndex == 0 ? Start : GetSegment(prevIndex).Node.Position;
+	        nextPoint = nextIndex == _segmentsCount - 1 ? Finish : GetSegment(nextIndex).Node.Position;
 	        myPoint = nodeIndex == 0 
 		        ? Start 
 		        : nodeIndex  == _segmentsCount - 1 
 			        ? Finish 
-			        : GetSegment(nodeIndex).Node.Cell.Center;
+			        : GetSegment(nodeIndex).Node.Position;
 
 	        var from = GridPos.Average( prevPoint, myPoint );
 	        var to = GridPos.Average(myPoint, nextPoint);
@@ -148,16 +148,16 @@ namespace TerrainDemo.Navigation
 
         public class Segment
         {
-	        public readonly NavigationCell Node;
+	        public readonly NavNode Node;
 	        public IReadOnlyList<GridPos> Points => _points;
 	        public          bool           IsRefined { get; private set; }
 
-	        internal Segment( NavigationCell node )
+	        internal Segment(NavNode node )
 	        {
 		        Node = node;
 	        }
 
-	        internal Segment(NavigationCell node, params GridPos[] initPoints) : this(node)
+	        internal Segment(NavNode node, params GridPos[] initPoints) : this(node)
 	        {
 		        _points.AddRange(initPoints);
 	        }
@@ -187,7 +187,7 @@ namespace TerrainDemo.Navigation
 
 	        public override string ToString()
 	        {
-		        return $"Node {Node.Cell.Id}, points {Points.ToJoinedString( )}";
+		        return $"Node {Node}, points {Points.ToJoinedString( )}";
 	        }
 
 			private readonly List<GridPos> _points = new List<GridPos>();
@@ -204,7 +204,7 @@ namespace TerrainDemo.Navigation
 		        _lastPosition = path.Finish;
 	        }
 
-	        public (NavigationCell node, GridPos position) Current
+	        public (NavNode node, GridPos position) Current
 	        {
 		        get
 		        {

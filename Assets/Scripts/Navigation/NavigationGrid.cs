@@ -43,7 +43,7 @@ namespace TerrainDemo.Navigation
 					{
 						var    normal = blockData.Normal;
 						var    angle  = Vector3.CalculateAngle( Vector3.UnitY, normal );
-						slope  = NavigationMap.AngleToIncline( angle );
+						slope  = CreateIncline.FromRadians( angle );
 						if ( Math.Abs( normal.Z ) > Math.Abs( normal.X ) )
 						{
 							if ( normal.Z > 0 )
@@ -121,29 +121,5 @@ namespace TerrainDemo.Navigation
 		}
 	}
 
-	public enum Incline			: byte
-	{
-		Flat, 
-		
-		Small, 
-		Medium, 
-		Steep,
-		
-		Blocked				= 15			//Block is completely blocked
-	}
-
-	public enum LocalIncline : byte
-	{
-		Flat 				= Incline.Flat,
-		
-		SmallUphill 		= Incline.Small, 
-		MediumUphill 		= Incline.Medium,
-		SteepUphill 		= Incline.Steep,
-		
-		SmallDownhill		= 8,
-		MediumDownhill,
-		SteepDownhill,
-		
-		Blocked 			= 15,
-	}
+	
 }

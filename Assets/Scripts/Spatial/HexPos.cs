@@ -47,7 +47,7 @@ namespace TerrainDemo.Spatial
             return X == other.X && Z == other.Z;
         }
 
-        public override int GetHashCode() => X | (Z << 16);
+        public override int GetHashCode() => (ushort)X | ((ushort)Z << 16);
 
         public override bool Equals(object obj)
         {

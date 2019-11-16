@@ -24,7 +24,7 @@ namespace TerrainDemo.Navigation
         public Pathfinder([NotNull] NavigationMap navMap, MicroMap baseMap, TriRunner settings)
         {
             _microAStar = new MicroAStar(new MicroMapGraphAdapter(baseMap));
-            _macroNavAstar2 = new AStarSearch<NavGraph, NavigationCell>( navMap.NavGraph );
+            _macroNavAstar2 = new AStarSearch<NavGraph, NavNode>( navMap.NavGraph );
         }
 
 
@@ -141,7 +141,7 @@ namespace TerrainDemo.Navigation
             return true;
         }
 
-        public AStarSearch<NavGraph, NavigationCell>.SearchResult GetMacroRoute( NavigationCell from, NavigationCell to, Actor actor )
+        public AStarSearch<NavGraph, NavNode>.SearchResult GetMacroRoute(NavNode from, NavNode to, Actor actor )
         {
 	        var result = _macroNavAstar2.CreatePath( actor, from, to );
 	        return result;
@@ -179,7 +179,7 @@ namespace TerrainDemo.Navigation
         }
 
         private readonly AStarSearch<MicroMapGraphAdapter, GridPos> _microAStar;
-        private readonly AStarSearch<NavGraph, NavigationCell> _macroNavAstar2;
+        private readonly AStarSearch<NavGraph, NavNode> _macroNavAstar2;
 
         /// <summary>
         /// Simplify path straight lines

@@ -115,6 +115,11 @@ namespace TerrainDemo.Spatial
 			return new GridPos((short)Math.Floor(v.x), (short)Math.Floor(v.y));
 		}
 
+		public static explicit operator GridPos(Vector3 v)
+		{
+			return new GridPos((short)Math.Floor(v.X), (short)Math.Floor(v.Z));
+		}
+
 		public static explicit operator GridPos(UnityEngine.Vector3 v)
 		{
 			return new GridPos((short)Math.Floor(v.x), (short)Math.Floor(v.z));
