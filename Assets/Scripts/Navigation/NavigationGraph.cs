@@ -54,8 +54,8 @@ namespace TerrainDemo.Navigation
 		{
 			foreach ( var (edge, neighbor) in GetNeighbors(node) )
 			{
-				var edgeSlopeCost = loco.GetCost( edge.Slopeness );
-				var roughnessCost = neighbor.Rougness;
+				var edgeSlopeCost = loco.GetInclineCost( edge.Slopeness );
+				var roughnessCost = loco.GetRoughnessCost( edge.Roughness );
 				var speedCost = neighbor.MaterialCost;
 
 				var result = edge.Distance * edgeSlopeCost * roughnessCost * speedCost;
@@ -108,7 +108,7 @@ namespace TerrainDemo.Navigation
 			var center = cell.Macro.Center;
 			ref readonly var centerData = ref map.GetBlockData(cell.Center);
 
-			return new NavNode(materialCost, avgNormal, roughness, new Vector3(center.X, centerData.Height, center.Y), cell.Id.ToString (  ));
+			return new NavNode(materialCost, avgNormal, roughness, new Vector3(center.X, centerData.Height, center.Y), cell.BlockPositions, cell.Id.ToString (  ));
 		}
 	}
 
@@ -140,13 +140,16 @@ namespace TerrainDemo.Navigation
 		/// </summary>
 		public readonly GridPos Position;
 
-		internal NavNode(float materialCost, Vector3 normal, float rougness, Vector3 position, string debugName)
+		public readonly GridPos[] Area;
+
+		internal NavNode(float materialCost, Vector3 normal, float rougness, Vector3 position, GridPos[] area, string debugName)
 	    {
 		    MaterialCost = materialCost;
 		    Normal        = normal.Normalized();
 		    Rougness      = rougness;
 		    Position3d		= position;
 		    Position		= (GridPos) position;
+		    Area = area;
 		    _debugName		= debugName;
 	    }
 
@@ -166,8 +169,9 @@ namespace TerrainDemo.Navigation
 
     public class NavEdge
     {
-	    public float Distance;
-	    public LocalIncline Slopeness;
+	    public float				Distance;
+	    public LocalIncline			Slopeness;
+	    public float				Roughness				=> To.Rougness;
 
 	    public readonly NavNode From;
 	    public readonly NavNode To;
@@ -175,7 +179,7 @@ namespace TerrainDemo.Navigation
 	    internal NavEdge( NavNode from, NavNode to )
 	    {
 		    From = from;
-		    To = to;
+		    To   = to;
 	    }
     }
 }
