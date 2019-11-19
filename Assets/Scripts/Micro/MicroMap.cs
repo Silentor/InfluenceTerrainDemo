@@ -168,9 +168,8 @@ namespace TerrainDemo.Micro
 
             //Modify vertices
             var vertexCounter = 0;
-            for (int i = 0; i < flatVertices.Length; i++)
+            foreach ( var fv in flatVertices )
             {
-                var fv = flatVertices[i];
                 var localPos = fv - Bounds.Min;
                 var h = _heightMap[localPos.X, localPos.Z];
                 var vertex = new Vector3(fv.X, h.Nominal, fv.Z);

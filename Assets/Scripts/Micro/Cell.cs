@@ -15,7 +15,7 @@ namespace TerrainDemo.Micro
         public readonly HexPos Id;
         public readonly Macro.Cell Macro;
         public readonly GridPos Center;
-        public readonly GridPos[] BlockPositions;
+        public readonly GridArea BlockPositions;
         public readonly GridPos[] VertexPositions;
         public readonly Bounds2i Bounds;
 

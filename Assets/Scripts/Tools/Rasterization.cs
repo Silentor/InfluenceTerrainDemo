@@ -305,9 +305,9 @@ namespace TerrainDemo.Tools
         /// Bounds scan algorithm for convex polygon. Not very fast but accurate. As fast as bounding box is tight
         /// </summary>
         /// <returns>Collection of blocks coords</returns>
-        public static GridPos[] ConvexToBlocks(Predicate<Vector2> contains, Box2 bounds)
+        public static GridArea ConvexToBlocks(Predicate<Vector2> contains, Box2 bounds)
         {
-            var result = new List<GridPos>();
+            var result = new List<(GridPos, GridPos)>();
             var boundI = (Bounds2i) bounds;
             var minZ = boundI.Min.Z;
             var maxZ = boundI.Max.Z;
@@ -349,12 +349,12 @@ namespace TerrainDemo.Tools
                     //Add block pos from left to right
                     for (int x = leftContainingPos.Value; x <= rightContainingPos.Value; x++)
                     {
-                        result.Add(new GridPos(x, z));
+                        result.Add((new GridPos(leftContainingPos.Value, z), new GridPos(rightContainingPos.Value, z)));
                     }
                 }
             }
 
-            return result.ToArray();
+            return new GridArea ( result );
         }
 
         /// <summary>
