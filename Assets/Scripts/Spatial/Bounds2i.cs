@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Serialization.Advanced;
 using JetBrains.Annotations;
 using OpenToolkit.Mathematics;
 using UnityEngine;
@@ -23,8 +24,13 @@ namespace TerrainDemo.Spatial
 
         public bool IsEmpty => Size == Vector2i.Zero;
 
+        public int Area => Size.X * Size.Z;
+
         public static readonly Bounds2i Empty = new Bounds2i(GridPos.Zero, GridPos.Zero);
         public static readonly Bounds2i Infinite = new Bounds2i(GridPos.Min, GridPos.Max);
+
+
+
         private const float RoundBiasValue = 0.5f;
         //private static readonly Vector3 RoundBias = new Vector3(RoundBiasValue, RoundBiasValue);
 

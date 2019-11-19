@@ -151,7 +151,7 @@ namespace TerrainDemo.Macro
                 var heightBuffer = new Heights[bufferSize.Size.X + 1, bufferSize.Size.Z + 1];
                 var heightBuffer2 = new List<Heights>();
                 var influenceBuffer = new Influence[bufferSize.Size.X + 1, bufferSize.Size.Z + 1];      //Shared block/vertex influence buffer
-                var blockBuffer2 = new List<Blocks>(microcell.BlockPositions.Length);
+                var blockBuffer2 = new List<Blocks>(microcell.BlockPositions.Bound.Area);
 
                 mainGenerator.BeginCellGeneration(microcell);
 

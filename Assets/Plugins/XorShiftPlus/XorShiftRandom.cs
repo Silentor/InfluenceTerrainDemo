@@ -3,6 +3,7 @@
   ============================================================================= */
 
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Haus.Math
 {
@@ -38,7 +39,7 @@ namespace Haus.Math
         ///   Constructs a new  generator using two
         ///   random Guid hash codes as a seed.
         /// </summary>
-        public XorShiftRandom() :this((ulong)(Guid.NewGuid().GetHashCode()) << 32 | (ulong)(Guid.NewGuid().GetHashCode()) )
+        public XorShiftRandom() :this( GenerateSeed (  ) )
         {
 
         }
@@ -372,6 +373,13 @@ namespace Haus.Math
         }
 
         #endregion
+
+	    private static ulong GenerateSeed ( )
+	    {
+		    var guid = Guid.NewGuid ( );
+		    var result = Unsafe.As<Guid, ulong> ( ref guid );
+		    return result;
+	    }
 
     }
 

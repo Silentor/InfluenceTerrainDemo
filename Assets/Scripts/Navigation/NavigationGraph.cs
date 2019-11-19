@@ -76,6 +76,7 @@ namespace TerrainDemo.Navigation
 			var   avgNormal       = Vector3.Zero;
 			var   normalDeviation = 0f;
 			float roughness       = 0;
+			var totalBlocks = 0;
 
 			foreach (var blockPosition in cell.BlockPositions)
 			{
@@ -86,12 +87,12 @@ namespace TerrainDemo.Navigation
 				//Calculate average normal
 				ref readonly var blockData = ref map.GetBlockData(blockPosition);
 				avgNormal += blockData.Normal;
-
+				totalBlocks++;
 			}
 
-			materialCost /= cell.BlockPositions.Length;
-			avgNormal    =  (avgNormal / cell.BlockPositions.Length).Normalized();
-			roughness    /= cell.BlockPositions.Length;
+			materialCost /= totalBlocks;
+			avgNormal    =  (avgNormal / totalBlocks).Normalized();
+			roughness    /= totalBlocks;
 
 			//float normalDispersion = 0f;
 

@@ -89,7 +89,8 @@ namespace TerrainDemo.Tests
                     }
 
                     var blocks = Rasterization.ConvexToBlocks(isContains, bounds);
-                    Assert.IsTrue(blocks.Length == blocks.Distinct().Count());
+                    var blockArray = blocks.ToArray ( );
+                    Assert.IsTrue(blockArray.Length == blocks.Distinct().Count());
 
                     //Draw rasterized blocks
                     foreach (var p in blocks)
