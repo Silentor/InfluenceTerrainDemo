@@ -135,8 +135,7 @@ namespace TerrainDemo.Hero
 			//No pass 
 			return false;
 		}
-		public abstract float GetCost( LocalIncline edgeSlopeness );
-
+		
 		public float GetInclineCost ( LocalIncline incline )
 		{
 			switch ( incline )
@@ -154,14 +153,14 @@ namespace TerrainDemo.Hero
 			}
 		}
 
-		public float GetMovementCost ( BlockType block )
+		public float GetMaterialCost ( BlockType block )
 		{
 			return _map.GetBlockSettings ( block ).MaterialCost;
 		}
 
 		public float GetRoughnessCost ( float roughness )
 		{
-
+			return roughness;
 		}
 
 		public bool Update( float deltaTime )

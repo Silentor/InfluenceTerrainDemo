@@ -309,24 +309,24 @@ namespace TerrainDemo.Editor
 			//Draw hovered block
 			var blockInfo = input.HoveredBlock?.source.GetBlock(input.HoveredBlock.Value.position);
 			if (blockInfo != null)
-				DrawBlock(blockInfo.Value, Color.blue, 0, true);
+				DrawMap.DrawBlock(blockInfo.Value, Color.blue);
 
-			//Draw all navigation cells
+			//Draw all navigation nodes (expensive)
 			var navMap = _runner.NavMap;
-			foreach (var navCell in navMap.Nodes.Values)
+			foreach (var navNode in navMap.Nodes.Values)
 			{
-				HandleMap.DrawNavigationNode(navCell, 0, false);
+				DrawMap.DrawNavigationNode(navNode, MicroMap, 0, Color.blue, false);
 			}
 
 			//Draw hovered nav node
 			if (input.HoveredMacroCell != null)
 			{
 				var hoveredNode = navMap.Nodes[input.SelectedMicroCell.Id];
-				HandleMap.DrawNavigationNode(hoveredNode, 10, true);
+				DrawMap.DrawNavigationNode(hoveredNode, MicroMap, 10, Color.blue, true);
 				foreach (var neighbor in navMap.NavGraph.GetNeighbors(hoveredNode))
 				{
-					DrawArrow.ForDebug(neighbor.edge.From.Cell.Macro.CenterPoint, neighbor.edge.To.Cell.Macro.CenterPoint - neighbor.edge.From.Cell.Macro.CenterPoint, Color.blue, 0, false);
-					HandleMap.DrawNavigationNode(neighbor.neighbor, 5, true);
+					DrawArrow.ForDebug(neighbor.edge.From.Position3d, neighbor.edge.To.Position3d - neighbor.edge.From.Position3d, Color.blue, 0, false);
+					DrawMap.DrawNavigationNode(neighbor.neighbor, MicroMap, 5, Color.blue, true);
 				}
 
 			}
@@ -337,7 +337,7 @@ namespace TerrainDemo.Editor
 			//Draw all macro map cells
 			foreach (var meshCell in MacroMap.Cells)
 			{
-				DrawMacroCell(meshCell);
+				DrawMap.DrawMacroCell(meshCell, input.View);
 			}
 
 			//Draw all zones
@@ -349,7 +349,7 @@ namespace TerrainDemo.Editor
 			//Draw selected macrocell and zone
 			if (_input.HoveredMacroCell != null)
 			{
-				DrawMacroCell(_input.HoveredMacroCell, Active, 5, true, true);
+				DrawMap.DrawMacroCell(_input.HoveredMacroCell, Active, input.View, 5, true, true);
 				DrawMacroZone(_input.HoveredMacroCell.Zone, _input.HoveredMacroCell.Zone.Biome.LayoutColor, 10);
 			}
 		}
@@ -395,114 +395,12 @@ namespace TerrainDemo.Editor
 			DebugExtension.DebugPoint(position, Color.white, 0.25f, 0, true);
 		}
 
-		private void DrawMacroCell(Cell cell)
-		{
-			DrawMacroCell(cell, cell.Biome != null ? cell.Biome.LayoutColor : Inactive, 0, false, false);
-		}
-
-		private void DrawMacroCell(Cell cell, Color color, int width, bool labelVertices, bool filled)
-		{
-			var oldzTest = Handles.zTest;
-
-			Handles.color = color;
-
-			var perimeter = new[]
-			{
-				VertexToPosition(cell.Vertices[0]),
-				VertexToPosition(cell.Vertices[1]),
-				VertexToPosition(cell.Vertices[2]),
-				VertexToPosition(cell.Vertices[3]),
-				VertexToPosition(cell.Vertices[4]),
-				VertexToPosition(cell.Vertices[5]),
-				VertexToPosition(cell.Vertices[0])
-			};
-
-			//Draw perimeter
-			if (width == 0)
-			{
-				Handles.zTest = CompareFunction.LessEqual;
-				Handles.color = color;
-				Handles.DrawPolyLine(perimeter);
-				Handles.zTest = CompareFunction.Greater;
-				Handles.color = color / 2;
-				Handles.DrawPolyLine(perimeter);
-			}
-			else
-			{
-				Handles.zTest = CompareFunction.LessEqual;
-				Handles.color = color;
-				Handles.DrawAAPolyLine(width, perimeter);
-				Handles.zTest = CompareFunction.Greater;
-				Handles.color = color / 2;
-				Handles.DrawAAPolyLine(width, perimeter);
-			}
-
-			if (filled)
-			{
-				var fill = new UnityEngine.Vector3[]
-				{
-					VertexToPosition(cell.Vertices[0]), cell.CenterPoint,
-					VertexToPosition(cell.Vertices[1]), cell.CenterPoint,
-					VertexToPosition(cell.Vertices[2]), cell.CenterPoint,
-					VertexToPosition(cell.Vertices[3]), cell.CenterPoint,
-					VertexToPosition(cell.Vertices[4]), cell.CenterPoint,
-					VertexToPosition(cell.Vertices[5]), cell.CenterPoint,
-				};
-				Handles.DrawLines(fill);
-			}
-
-			var cellDistance = Vector3.Distance((Vector3)cell.Center, _input.View.Origin);
-
-			//Scale font size based on cell-camera distance
-			var fontSize = Mathf.RoundToInt(Mathf.Lerp(10, 25, Mathf.InverseLerp(100, 3, cellDistance)));
-
-			if (cellDistance < 80 && cellDistance > 3 && fontSize > 0)
-			{
-				Handles.zTest = CompareFunction.LessEqual;
-				var colorLabelStyle = new GUIStyle(GUI.skin.label);
-				//var contrastColor = (new Color(1, 1, 1, 2) - cell.Biome.LayoutColor) * 2;
-				colorLabelStyle.normal.textColor = color;
-				colorLabelStyle.fontSize = fontSize;
-				Handles.Label(cell.CenterPoint, cell.HexPoses.ToString(), colorLabelStyle);
-				Handles.color = color;
-				Handles.DrawWireDisc(cell.CenterPoint, _input.View.Direction, 0.1f);
-
-				Handles.zTest = CompareFunction.Greater;
-				colorLabelStyle.normal.textColor /= 3;
-				Handles.Label(cell.CenterPoint, cell.HexPoses.ToString(), colorLabelStyle);
-				Handles.color /= 3;
-				Handles.DrawWireDisc(cell.CenterPoint, _input.View.Direction, 0.1f);
-
-				if (labelVertices)
-				{
-					Handles.zTest = CompareFunction.Always;
-					Handles.color = color;
-					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[0]), cell.CenterPoint, 0.2f), cell.Vertices[0].Id.ToString(), colorLabelStyle);
-					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[1]), cell.CenterPoint, 0.2f), cell.Vertices[1].Id.ToString(), colorLabelStyle);
-					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[2]), cell.CenterPoint, 0.2f), cell.Vertices[2].Id.ToString(), colorLabelStyle);
-					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[3]), cell.CenterPoint, 0.2f), cell.Vertices[3].Id.ToString(), colorLabelStyle);
-					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[4]), cell.CenterPoint, 0.2f), cell.Vertices[4].Id.ToString(), colorLabelStyle);
-					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[5]), cell.CenterPoint, 0.2f), cell.Vertices[5].Id.ToString(), colorLabelStyle);
-				}
-			}
-
-			Handles.zTest = oldzTest;
-		}
-
-		private void DrawNavigationCell(NavigationCell cell, Color color)
-		{
-			DrawMacroCell(cell.Cell.Macro, color, 0, false, false);
-			DrawArrow.ForDebug(cell.Cell.Macro.CenterPoint, cell.Normal * 5, color);
-		}
-
 		private void DrawMicroCell(Micro.Cell cell, Color color)
 		{
 			Handles.color = color;
 			foreach (var block in cell.GetBlocks())
 			{
-				//Cull backface blocks
-				if (Vector3.CalculateAngle(_input.View.Direction, block.Normal) > Deg90ToRadians)
-					DrawBlock(block, color);
+				
 			}
 		}
 
@@ -518,22 +416,7 @@ namespace TerrainDemo.Editor
 			Handles.color = Color.white;
 			Handles.DrawWireDisc(new Vector3(vert.Position.X, vert.Height.Nominal, vert.Position.Y), _input.View.Direction, 1);
 		}
-
-		/// <summary>
-		/// Draw flat 2d block rectangle
-		/// </summary>
-		/// <param name="position"></param>
-		/// <param name="color"></param>
-		/// <param name="width"></param>
-		/// <param name="normal"></param>
-		private void DrawBlock(GridPos position, Color color, uint width = 0, Vector3? normal = null)
-		{
-			Handles.color = color;
-			DrawRectangle.ForHandle(BlockInfo.GetBounds(position), color, width);
-
-			if (normal.HasValue)
-				DrawArrow.ForDebug(BlockInfo.GetWorldCenter(position), normal.Value);
-		}
+		
 
 		private void DrawBlock(in BlockInfo block, Color color, uint width = 0, bool drawNormal = false)
 		{
@@ -758,7 +641,7 @@ namespace TerrainDemo.Editor
 				//Show macro navigate cost info
 				foreach (var (edge, neighbor) in _runner.NavMap.NavGraph.GetNeighbors( hoveredNode ))
 				{
-					GUILayout.Label($"Edge to {neighbor.Cell.Id}, distance {edge.Distance:N2}, slope {edge.Slopeness}");
+					GUILayout.Label($"Edge to {neighbor}, distance {edge.Distance:N2}, slope {edge.Slopeness}");
 				}
 			}
 		}
@@ -887,9 +770,9 @@ namespace TerrainDemo.Editor
 			}
 		}
 
-		private void ShowNavigationCellInfo(NavigationCell cell)
+		private void ShowNavigationCellInfo(NavNode cell)
 		{
-			GUILayout.Label($"Navigation cell {cell.Cell.Id}", EditorStyles.boldLabel);
+			GUILayout.Label($"Navigation cell {cell}", EditorStyles.boldLabel);
 			GUILayout.Label($"Avg speed {cell.MaterialCost:N2}");
 			GUILayout.Label($"Avg normal {cell.Normal.ToString(1)}");
 			GUILayout.Label($"Roughness {cell.Rougness:N2}");
@@ -1061,7 +944,7 @@ namespace TerrainDemo.Editor
 				//Draw macro cell outlines
 				foreach (var meshCell in MacroMap.Cells)
 				{
-					DrawMacroCell(meshCell);
+					//DrawMacroCell(meshCell);
 				}
 			}
 

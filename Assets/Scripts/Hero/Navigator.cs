@@ -19,7 +19,7 @@ namespace TerrainDemo.Hero
 
         public Path Path { get; private set; }
 
-		public (NavigationCell node, GridPos position) DebugCurrentWaypoint { get; private set; }
+		public (NavNode node, GridPos position) DebugCurrentWaypoint { get; private set; }
 
         public Navigator(Actor owner, MicroMap map, NavigationMap navMap)
         {

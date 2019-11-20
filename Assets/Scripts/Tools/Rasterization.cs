@@ -347,7 +347,7 @@ namespace TerrainDemo.Tools
                 if (leftContainingPos.HasValue && rightContainingPos.HasValue)
                 {
                     //Add block pos from left to right
-                    for (int x = leftContainingPos.Value; x <= rightContainingPos.Value; x++)
+                    //for (int x = leftContainingPos.Value; x <= rightContainingPos.Value; x++)
                     {
                         result.Add((new GridPos(leftContainingPos.Value, z), new GridPos(rightContainingPos.Value, z)));
                     }

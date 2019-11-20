@@ -178,7 +178,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Seed: 1966571908
   RandomizeSeed: 1
-  LandSize: 150
+  LandSize: 50
   CellSide: 10
   GridPerturbFreq: 0.01
   GridPerturbPower: 10

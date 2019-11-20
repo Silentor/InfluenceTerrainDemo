@@ -141,9 +141,9 @@ namespace TerrainDemo.Navigation
 		/// </summary>
 		public readonly GridPos Position;
 
-		public readonly GridPos[] Area;
+		public readonly GridArea Area;
 
-		internal NavNode(float materialCost, Vector3 normal, float rougness, Vector3 position, GridPos[] area, string debugName)
+		internal NavNode(float materialCost, Vector3 normal, float rougness, Vector3 position, GridArea area, string debugName)
 	    {
 		    MaterialCost = materialCost;
 		    Normal        = normal.Normalized();

@@ -184,7 +184,7 @@ namespace TerrainDemo.Editor
 	            foreach (var navCell in _actor.Nav.Path.ProcessedCosts)
 	            {
 		            if(_actor.Nav.Path.Segments.All(s => s.Node != navCell.Item1))
-			            HandleMap.DrawNavigationNode( navCell.Item1, 20, Color.red, false );
+			            DrawMap.DrawNavigationNode( navCell.Item1, _microMap, 20, Color.red, false );
 
 		            //var mapPosition = BlockInfo.GetWorldCenter(wp.Position);
 		            //var position = new UnityEngine.Vector3(mapPosition.X, wp.Map.GetBlockData(wp.Position).Height,
@@ -195,7 +195,7 @@ namespace TerrainDemo.Editor
 	            foreach (var node in _actor.Nav.Path.Segments)
 	            {
 		            //Draw node
-		            HandleMap.DrawNavigationNode( node.Node, 20, true );
+		            DrawMap.DrawNavigationNode( node.Node, _microMap, 20, Color.blue, true );
 
 					//Draw resolved waypoints
 					Handles.color = Color.blue;

@@ -12,8 +12,6 @@ namespace TerrainDemo.Hero
 
 		public override Bounds2i Bound => new Bounds2i(BlockPosition, 0);
 
-		public override float GetCost( LocalIncline edgeSlopeness ) => LocalInclinationCost[(int)edgeSlopeness];
-
 		public SmallBiped( Vector2 startPosition, Quaternion startRotation, Actor owner, MicroMap map, NavigationMap navMap ) : base( startPosition, startRotation, owner, map, navMap )
 		{
 		}
