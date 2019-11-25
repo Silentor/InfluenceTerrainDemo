@@ -7,7 +7,7 @@ using UnityEngine;
 namespace TerrainDemo.Spatial
 {
 	/// <summary>
-	/// Immutable. Handy way to store convex area rasterized to Grid
+	/// Immutable. Compact way to store convex area rasterized to Grid
 	/// todo support flipped from Z to Z GridArea if 
 	/// </summary>
 	public class GridArea : IEnumerable<GridPos>
@@ -62,10 +62,11 @@ namespace TerrainDemo.Spatial
 		{
 			for ( int z = 0; z < _elements.Length; z++ )
 			{
+				var resultZ = z + Bound.Min.Z;
 				var (min, max) = _elements [ z ];
 				for ( int x = min; x <= max; x++ )
 				{
-					yield return new GridPos(x, z);
+					yield return new GridPos(x, resultZ );
 				}
 			}
 		}
