@@ -16,7 +16,6 @@ namespace TerrainDemo.Navigation
 	/// </summary>
 	public class NavigationMap
 	{
-		public IReadOnlyDictionary<HexPos, NavNode> Nodes => _nodes;
 		public readonly NavGraph NavGraph;
 		public readonly Pathfinder Pathfinder;
 		public readonly NavigationGrid NavGrid;
@@ -25,12 +24,11 @@ namespace TerrainDemo.Navigation
 		{
 			var timer = Stopwatch.StartNew();
 
-			_macromap = macromap;
 			_micromap = micromap;
 
 			NavGrid = new NavigationGrid( micromap );
 
-			NavGraph = new NavGraph(micromap, settings);
+			NavGraph = new NavGraph(macromap, micromap, settings);
 			
 
 			timer.Stop();
@@ -42,8 +40,8 @@ namespace TerrainDemo.Navigation
 
 		public NavNode GetNavNode(GridPos position)
 		{
-			var microCell = _micromap.GetCell(position);
-			return Nodes[microCell.Id];
+			var node = NavGraph.Nodes.FirstOrDefault( n => n.Area.Contains( position ) );
+			return node;
 		}
 
 		public Path CreatePath(GridPos from, GridPos to, Actor actor)
@@ -79,14 +77,9 @@ namespace TerrainDemo.Navigation
 			}
 		}
 
-		private readonly Dictionary<HexPos, NavNode> _nodes = new Dictionary<HexPos, NavNode>();
 		private readonly Dictionary<PathKey, PathCacheEntry> _sharedPathes = new Dictionary<PathKey, PathCacheEntry>();
-
 		private readonly MicroMap _micromap;
-		private readonly MacroMap _macromap;
-
 		
-
 		private struct PathKey : IEquatable<PathKey>
 		{
 			private readonly NavNode FromNode;

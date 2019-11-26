@@ -225,6 +225,9 @@ namespace TerrainDemo.Editor
 				//Find hovered cell
 				input.SelectedMicroCell = MicroMap.GetCell(hoveredBlock.Value.position);
 				input.HoveredMacroCell = input.SelectedMicroCell.Macro;
+
+				//Find hovered navnode
+				input.HoveredNavNode = NavMap.GetNavNode( hoveredBlock.Value.position );
 			}
 
 			return input;
@@ -313,15 +316,15 @@ namespace TerrainDemo.Editor
 
 			//Draw all navigation nodes (expensive)
 			var navMap = _runner.NavMap;
-			foreach (var navNode in navMap.Nodes.Values)
+			foreach (var navNode in navMap.NavGraph.Nodes)
 			{
 				DrawMap.DrawNavigationNode(navNode, MicroMap, 0, Color.blue, false);
 			}
 
 			//Draw hovered nav node
-			if (input.HoveredMacroCell != null)
+			if (input.HoveredNavNode != null)
 			{
-				var hoveredNode = navMap.Nodes[input.SelectedMicroCell.Id];
+				var hoveredNode = input.HoveredNavNode;
 				DrawMap.DrawNavigationNode(hoveredNode, MicroMap, 10, Color.blue, true);
 				foreach (var neighbor in navMap.NavGraph.GetNeighbors(hoveredNode))
 				{
@@ -633,9 +636,9 @@ namespace TerrainDemo.Editor
 				ShowNavigationBlockInfo( input.HoveredBlock.Value.position, false );
 			}
 
-			if (input.HoveredMacroCell != null)
+			if (input.HoveredNavNode != null)
 			{
-				var hoveredNode = _runner.NavMap.Nodes[input.HoveredMacroCell.HexPoses];
+				var hoveredNode = input.HoveredNavNode;
 				ShowNavigationCellInfo(hoveredNode);
 
 				//Show macro navigate cost info
@@ -1117,6 +1120,8 @@ namespace TerrainDemo.Editor
 			public (GridPos position, Heights vertex, BaseBlockMap source)? HoveredHeightVertex;
 
 			public (GridPos position, Heights vertex, BaseBlockMap source)? SelectedHeightVertex;
+
+			public NavNode HoveredNavNode;
 
 			public int FrameCount;
 		}

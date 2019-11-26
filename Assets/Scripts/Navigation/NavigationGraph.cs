@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using TerrainDemo.Hero;
+using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
 using UnityEngine;
+using Cell = TerrainDemo.Micro.Cell;
 using Vector3 = OpenToolkit.Mathematics.Vector3;
 
 namespace TerrainDemo.Navigation
@@ -15,7 +17,7 @@ namespace TerrainDemo.Navigation
 	/// </summary>
 	public class NavGraph : Graph<NavNode, NavEdge>, IAStarGraph<NavNode>
 	{
-		public NavGraph( MicroMap micromap, TriRunner settings )
+		public NavGraph( MacroMap macromap, MicroMap micromap, TriRunner settings )
 		{
 			var navNodes = new List<NavNode>();
 
@@ -33,7 +35,8 @@ namespace TerrainDemo.Navigation
 				var fromNode = navNodes [ i ];
 				foreach ( var neighbor in fromCell.Macro.NeighborsSafe )
 				{
-					var toIndex = Array.IndexOf ( micromap.Cells, neighbor );
+					
+					var toIndex = macromap.Cells.IndexOf(neighbor);
 					var toNode = navNodes[toIndex];
 					AddEdge ( fromNode, toNode, new NavEdge ( fromNode, toNode ) );
 				}
