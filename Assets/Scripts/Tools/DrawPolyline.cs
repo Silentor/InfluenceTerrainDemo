@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Linq;
 using JetBrains.Annotations;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TerrainDemo.Tools
 {
@@ -13,7 +16,7 @@ namespace TerrainDemo.Tools
 
         public static void ForGizmo([NotNull] Vector3[] line, Color color, bool closePolygon)
         {
-            if (line == null) throw new ArgumentNullException("line");
+            if (line == null) throw new ArgumentNullException(nameof( line ));
             if(line.Length < 2)
                 return;
 
@@ -31,7 +34,7 @@ namespace TerrainDemo.Tools
 
         public static void ForDebug([NotNull] Vector3[] line, Color color, bool closePolygon)
         {
-            if (line == null) throw new ArgumentNullException("line");
+            if (line == null) throw new ArgumentNullException(nameof( line ));
             if (line.Length < 2)
                 return;
 
@@ -39,6 +42,41 @@ namespace TerrainDemo.Tools
                 Debug.DrawLine(line[i], line[i + 1], color, 0);
             if (closePolygon)
                 Debug.DrawLine(line[line.Length - 1], line[0], color, 0);
+        }
+
+        public static void ForHandle(Vector3[] points, Color color, int width, bool filled )
+        {
+	        var oldzTest = Handles.zTest;
+	        Handles.color = color;
+
+	        //Draw perimeter
+	        if ( width == 0 )
+	        {
+		        Handles.zTest = CompareFunction.LessEqual;
+		        Handles.color = color;
+		        Handles.DrawPolyLine( points );
+		        Handles.zTest = CompareFunction.Greater;
+		        Handles.color = color / 2;
+		        Handles.DrawPolyLine( points );
+	        }
+	        else
+	        {
+		        Handles.zTest = CompareFunction.LessEqual;
+		        Handles.color = color;
+		        Handles.DrawAAPolyLine( width, points );
+		        Handles.zTest = CompareFunction.Greater;
+		        Handles.color = color / 2;
+		        Handles.DrawAAPolyLine( width, points );
+	        }
+
+	        if ( filled )
+	        {
+				var centerPoint = points.Aggregate( (a, b) => a + b) / points.Length ;
+				var fill = points.SelectMany( p => new[] {p, centerPoint} ).ToArray( );
+		        Handles.DrawLines( fill );
+	        }
+
+	        Handles.zTest = oldzTest;
         }
     }
 }

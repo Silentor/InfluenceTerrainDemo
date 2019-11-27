@@ -23,6 +23,7 @@ namespace TerrainDemo.Editor
 	{
 		public static void DrawNavigationNode( NavNode node, MicroMap map, uint width, Color color, Boolean showId )
 		{
+			todo draw line on border blocks only
 			DrawGridArea( node.Area, map, color, width );
 			if(showId)
 				DrawLabel( node.ToString(  ), node.Position3d, color, 10 );
@@ -39,50 +40,16 @@ namespace TerrainDemo.Editor
 
 			Handles.color = color;
 
-			var perimeter = new[]
-			{
-				VertexToPosition(cell.Vertices[0]),
-				VertexToPosition(cell.Vertices[1]),
-				VertexToPosition(cell.Vertices[2]),
-				VertexToPosition(cell.Vertices[3]),
-				VertexToPosition(cell.Vertices[4]),
-				VertexToPosition(cell.Vertices[5]),
-				VertexToPosition(cell.Vertices[0])
-			};
-
-			//Draw perimeter
-			if (width == 0)
-			{
-				Handles.zTest = CompareFunction.LessEqual;
-				Handles.color = color;
-				Handles.DrawPolyLine(perimeter);
-				Handles.zTest = CompareFunction.Greater;
-				Handles.color = color / 2;
-				Handles.DrawPolyLine(perimeter);
-			}
-			else
-			{
-				Handles.zTest = CompareFunction.LessEqual;
-				Handles.color = color;
-				Handles.DrawAAPolyLine(width, perimeter);
-				Handles.zTest = CompareFunction.Greater;
-				Handles.color = color / 2;
-				Handles.DrawAAPolyLine(width, perimeter);
-			}
-
-			if (filled)
-			{
-				var fill = new UnityEngine.Vector3[]
-				{
-					VertexToPosition(cell.Vertices[0]), cell.CenterPoint,
-					VertexToPosition(cell.Vertices[1]), cell.CenterPoint,
-					VertexToPosition(cell.Vertices[2]), cell.CenterPoint,
-					VertexToPosition(cell.Vertices[3]), cell.CenterPoint,
-					VertexToPosition(cell.Vertices[4]), cell.CenterPoint,
-					VertexToPosition(cell.Vertices[5]), cell.CenterPoint,
-				};
-				Handles.DrawLines(fill);
-			}
+			var points = new[]
+			             {
+				             VertexToPosition( cell.Vertices[0] ),
+				             VertexToPosition( cell.Vertices[1] ),
+				             VertexToPosition( cell.Vertices[2] ),
+				             VertexToPosition( cell.Vertices[3] ),
+				             VertexToPosition( cell.Vertices[4] ),
+				             VertexToPosition( cell.Vertices[5] ),
+			             };
+			DrawPolyline.ForHandle( points, color, width, filled );
 
 			var cellDistance = Vector3.Distance((Vector3)cell.Center, view.Origin);
 
