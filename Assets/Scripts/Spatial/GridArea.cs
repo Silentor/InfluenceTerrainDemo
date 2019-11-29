@@ -58,6 +58,41 @@ namespace TerrainDemo.Spatial
 
 		private readonly (short min, short max)[] _elements;
 
+		/// <summary>
+		/// Get border blocks
+		/// </summary>
+		/// <returns></returns>
+		public IEnumerable<GridPos> GetBorder( )
+		{
+			throw new NotImplementedException( "Bugged. Implement via enumerate and test all blocks" );
+
+			//Left side from bottom to top
+			for ( int z = 0; z < Bound.Size.Z; z++ )
+			{
+				yield return new GridPos(_elements[z].min, z + Bound.Min.Z);
+			}
+
+			//Top side
+			var topRow = _elements[Bound.Size.Z - 1];
+			for ( int x = topRow.min + 1; x < topRow.max; x++ )
+			{
+				yield return new GridPos(x, Bound.Max.Z);
+			}
+
+			//Right side from top to bottom
+			for ( int z = Bound.Size.Z - 1; z >= 0; z-- )
+			{
+				yield return new GridPos(_elements[z].max, z + Bound.Min.Z);
+			}
+
+			//Bottom side
+			var bottomRow = _elements[0];
+			for ( int x = bottomRow.max - 1; x > bottomRow.min; x-- )
+			{
+				yield return new GridPos(x, 0);
+			}
+		}
+
 		public IEnumerator<GridPos> GetEnumerator ( )
 		{
 			for ( int z = 0; z < _elements.Length; z++ )

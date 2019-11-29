@@ -23,7 +23,6 @@ namespace TerrainDemo.Editor
 	{
 		public static void DrawNavigationNode( NavNode node, MicroMap map, uint width, Color color, Boolean showId )
 		{
-			todo draw line on border blocks only
 			DrawGridArea( node.Area, map, color, width );
 			if(showId)
 				DrawLabel( node.ToString(  ), node.Position3d, color, 10 );
@@ -88,6 +87,13 @@ namespace TerrainDemo.Editor
 
 			Handles.zTest = oldzTest;
 		}
+		/// <summary>
+		/// Draw all blocks of area
+		/// </summary>
+		/// <param name="area"></param>
+		/// <param name="map"></param>
+		/// <param name="color"></param>
+		/// <param name="width"></param>
 		private static void DrawGridArea( GridArea area, MicroMap map, Color color, uint width )
 		{
 			var viewDir = SceneView.currentDrawingSceneView.camera.transform.forward;
