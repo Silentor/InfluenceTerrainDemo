@@ -10,7 +10,7 @@ namespace TerrainDemo.Spatial
 	/// Immutable. Compact way to store convex area rasterized to Grid
 	/// todo support flipped from Z to Z GridArea if 
 	/// </summary>
-	public class GridArea : IEnumerable<GridPos>
+	public readonly struct GridArea : IEnumerable<GridPos>
 	{
 		public readonly Bounds2i Bound;
 
@@ -59,37 +59,39 @@ namespace TerrainDemo.Spatial
 		private readonly (short min, short max)[] _elements;
 
 		/// <summary>
-		/// Get border blocks
+		/// Calculate border blocks
 		/// </summary>
 		/// <returns></returns>
-		public IEnumerable<GridPos> GetBorder( )
+		public IEnumerable<GridPos> GetBorderBlocks( )
 		{
-			throw new NotImplementedException( "Bugged. Implement via enumerate and test all blocks" );
-
-			//Left side from bottom to top
-			for ( int z = 0; z < Bound.Size.Z; z++ )
+			foreach ( var block in this )
 			{
-				yield return new GridPos(_elements[z].min, z + Bound.Min.Z);
+				if(IsContains( block + Vector2i.Forward) 
+				   && IsContains( block + Vector2i.Back) 
+				   && IsContains( block + Vector2i.Left) 
+				   && IsContains( block + Vector2i.Right))
+				   continue;
+
+				yield return block;
 			}
+		}
 
-			//Top side
-			var topRow = _elements[Bound.Size.Z - 1];
-			for ( int x = topRow.min + 1; x < topRow.max; x++ )
+		/// <summary>
+		/// Calculate border block-sides
+		/// </summary>
+		/// <returns></returns>
+		public IEnumerable<GridPosSide> GetBorderSides( )
+		{
+			foreach ( var block in this )
 			{
-				yield return new GridPos(x, Bound.Max.Z);
-			}
-
-			//Right side from top to bottom
-			for ( int z = Bound.Size.Z - 1; z >= 0; z-- )
-			{
-				yield return new GridPos(_elements[z].max, z + Bound.Min.Z);
-			}
-
-			//Bottom side
-			var bottomRow = _elements[0];
-			for ( int x = bottomRow.max - 1; x > bottomRow.min; x-- )
-			{
-				yield return new GridPos(x, 0);
+				if(!IsContains( block    + Vector2i.Forward) )
+				   yield return new GridPosSide(block, Side2d.Forward);
+				if(!IsContains( block    + Vector2i.Right) )
+				   yield return new GridPosSide(block, Side2d.Right);
+				if(!IsContains( block + Vector2i.Back) )
+					yield return new GridPosSide(block, Side2d.Back);
+				if(!IsContains( block + Vector2i.Left) )
+					yield return new GridPosSide(block, Side2d.Left);
 			}
 		}
 
