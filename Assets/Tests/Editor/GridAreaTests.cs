@@ -26,7 +26,7 @@ namespace TerrainDemo.Tests.Editor
 			var isContains = new Predicate<Vector2>( p => HalfPlane.ContainsInConvex(p, new []{h1, h2, h3, h4}));
 
 			var boundingBox = new Box2(-2.4f, -1.55f, 1.2f, 2.3f);
-			var result      = Rasterization.ConvexToBlocks(isContains, boundingBox).GetBorder(  ).ToArray(  );
+			var result      = Rasterization.ConvexToBlocks(isContains, boundingBox).GetBorderBlocks(  ).ToArray(  );
 			var correctAnswer = new GridPos[]
 			                    {
 				                    ( -2, -1 ), ( -2, 0 ), ( -1, 1 ), ( 0, 1 ), ( 0, 0 ), ( 0, -1 ), ( 0, -2 ),

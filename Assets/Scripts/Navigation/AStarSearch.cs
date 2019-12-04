@@ -11,28 +11,26 @@ namespace TerrainDemo.Navigation
 {
     public interface IAStarGraph<TNode> where TNode : IEquatable<TNode>
     {
-        IEnumerable<(TNode neighbor, float neighborCost)> Neighbors(BaseLocomotor loco, TNode from);
+        IEnumerable<(TNode neighbor, float neighborCost)> Neighbors(TNode from);
 
         float Heuristic(TNode @from, TNode to);
     }
 
-    public class AStarSearch<TGraph, TNode> 
-	    where TGraph : IAStarGraph<TNode> 
-	    where TNode : IEquatable<TNode>	
+    public class AStarSearch<TNode> where TNode : IEquatable<TNode>	
     {
-        private readonly TGraph _graph;
+        //private readonly TGraph _graph;
 
         private readonly Dictionary<TNode, TNode> _cameFrom = new Dictionary<TNode, TNode>();
 
         private readonly Dictionary<TNode, float> _costSoFar = new Dictionary<TNode, float>();
 
 
-        public AStarSearch(TGraph graph)
+        public AStarSearch( )
         {
-            _graph = graph;
+            //_graph = graph;
         }
 
-        public SearchResult CreatePath(Actor actor, TNode from, TNode to, Predicate<TNode> isValidNode = null)
+        public SearchResult CreatePath(IAStarGraph<TNode> graph, TNode from, TNode to, Predicate<TNode> isValidNode = null)
         {
             if (from.Equals(to))
 				return new SearchResult( new List<TNode>(), SearchState.Success, 0, new Dictionary<TNode, TNode>(), new Dictionary<TNode, float>());
@@ -60,7 +58,7 @@ namespace TerrainDemo.Navigation
                     break;
 
                 var currentCost = _costSoFar[current];
-				foreach (var (neighbor, neighborCost) in _graph.Neighbors(actor.Locomotor, current))
+				foreach (var (neighbor, neighborCost) in graph.Neighbors(current))
                 {
                     if(isValidNode != null && !isValidNode(neighbor))
                         continue;
@@ -70,7 +68,7 @@ namespace TerrainDemo.Navigation
                     if (!_costSoFar.TryGetValue(neighbor, out var storedNextCost) || newCost < storedNextCost)
                     {
                         _costSoFar[neighbor] = newCost;
-                        var h = _graph.Heuristic(neighbor, goal);
+                        var h = graph.Heuristic(neighbor, goal);
                         var priority = newCost + h;
                         frontier.Enqueue(neighbor, priority);
                         _cameFrom[neighbor] = current;
@@ -99,7 +97,7 @@ namespace TerrainDemo.Navigation
 				float nearestCost = float.MaxValue;
 				foreach ( var cost in _costSoFar )
 				{
-					var neighborCost = /*cost.Value + */_graph.Heuristic( cost.Key, goal );
+					var neighborCost = /*cost.Value + */graph.Heuristic( cost.Key, goal );
 					if ( neighborCost < nearestCost )
 					{
 						nearestCost = neighborCost;
@@ -132,73 +130,73 @@ namespace TerrainDemo.Navigation
         /// <param name="cameFrom"></param>
         /// <param name="costSoFar"></param>
         /// <returns></returns>
-        public IEnumerable<SearchResult> 
-            CreatePathStepByStep(Actor actor, TNode from, TNode to, Predicate<TNode> isValidNode = null)
-        {
-            int processedNodes = 0, maxFrontierCount = 0;
-            _cameFrom.Clear();
-            _costSoFar.Clear();
+        //public IEnumerable<SearchResult> 
+        //    CreatePathStepByStep(Actor actor, TNode from, TNode to, Predicate<TNode> isValidNode = null)
+        //{
+        //    int processedNodes = 0, maxFrontierCount = 0;
+        //    _cameFrom.Clear();
+        //    _costSoFar.Clear();
 
-            var frontier = new SimplePriorityQueue<TNode>();
-            var start = from;
-            var goal = to;
-            frontier.Enqueue(start, 0);
+        //    var frontier = new SimplePriorityQueue<TNode>();
+        //    var start = from;
+        //    var goal = to;
+        //    frontier.Enqueue(start, 0);
 
-            _cameFrom[start] = start;
-            _costSoFar[start] = 0;
+        //    _cameFrom[start] = start;
+        //    _costSoFar[start] = 0;
 
-            while (frontier.Count > 0)
-            {
-                processedNodes++;
-                var current = frontier.Dequeue();
+        //    while (frontier.Count > 0)
+        //    {
+        //        processedNodes++;
+        //        var current = frontier.Dequeue();
 
-                if ( current.Equals(to) )
-                    break;
+        //        if ( current.Equals(to) )
+        //            break;
 
-                foreach (var (neighbor, neighborCost) in _graph.Neighbors(actor.Locomotor, current))
-                {
-                    if (isValidNode != null && !isValidNode(neighbor))
-                        continue;
+        //        foreach (var (neighbor, neighborCost) in _graph.Neighbors(actor.Locomotor, current))
+        //        {
+        //            if (isValidNode != null && !isValidNode(neighbor))
+        //                continue;
 
-                    var newCost = _costSoFar[current] + neighborCost;
-                    if (!_costSoFar.TryGetValue(neighbor, out var storedNextCost) || newCost < storedNextCost)
-                    {
-                        _costSoFar[neighbor] = newCost;
-                        var h = _graph.Heuristic(neighbor, goal);
-                        var priority = newCost + h;
-                        frontier.Enqueue(neighbor, priority);
-                        _cameFrom[neighbor] = current;
-                    }
+        //            var newCost = _costSoFar[current] + neighborCost;
+        //            if (!_costSoFar.TryGetValue(neighbor, out var storedNextCost) || newCost < storedNextCost)
+        //            {
+        //                _costSoFar[neighbor] = newCost;
+        //                var h = _graph.Heuristic(neighbor, goal);
+        //                var priority = newCost + h;
+        //                frontier.Enqueue(neighbor, priority);
+        //                _cameFrom[neighbor] = current;
+        //            }
 
-                    yield return new SearchResult(null, SearchState.Searching, 0, _cameFrom, _costSoFar);
-                }
+        //            yield return new SearchResult(null, SearchState.Searching, 0, _cameFrom, _costSoFar);
+        //        }
 
-                if (frontier.Count > maxFrontierCount)
-                    maxFrontierCount = frontier.Count;
-            }
+        //        if (frontier.Count > maxFrontierCount)
+        //            maxFrontierCount = frontier.Count;
+        //    }
 
-            //Reconstruct path
-            var result = new List<TNode>();
-            TNode prev;
-            if (_cameFrom.ContainsKey(goal))
-            {
-                prev = goal;
-                result.Add(prev);
-            }
-            else
-            {
-                yield break;
-            }
+        //    //Reconstruct path
+        //    var result = new List<TNode>();
+        //    TNode prev;
+        //    if (_cameFrom.ContainsKey(goal))
+        //    {
+        //        prev = goal;
+        //        result.Add(prev);
+        //    }
+        //    else
+        //    {
+        //        yield break;
+        //    }
 
-            do
-            {
-                prev = _cameFrom[prev];
-                result.Add(prev);
-            } while (!prev.Equals(start));
-            result.Reverse();
+        //    do
+        //    {
+        //        prev = _cameFrom[prev];
+        //        result.Add(prev);
+        //    } while (!prev.Equals(start));
+        //    result.Reverse();
 
-            yield return new SearchResult(result, SearchState.Success, 0, _cameFrom, _costSoFar);
-        }
+        //    yield return new SearchResult(result, SearchState.Success, 0, _cameFrom, _costSoFar);
+        //}
 
         public class SearchResult
         {

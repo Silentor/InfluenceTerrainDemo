@@ -149,6 +149,11 @@ namespace TerrainDemo.Spatial
 			return new GridPos(v.Item1, v.Item2);
 		}
 
+		public static implicit operator Bounds2i( GridPos position )
+		{
+			return new Bounds2i(position, 1, 1);
+		}
+
 #endregion
 
 		public static float Distance(GridPos a, GridPos b)

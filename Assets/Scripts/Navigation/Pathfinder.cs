@@ -23,8 +23,8 @@ namespace TerrainDemo.Navigation
     {
         public Pathfinder([NotNull] NavigationMap navMap, MicroMap baseMap, TriRunner settings)
         {
-            _microAStar = new MicroAStar(new MicroMapGraphAdapter(baseMap));
-            _macroNavAstar2 = new AStarSearch<NavGraph, NavNode>( navMap.NavGraph );
+            _microAStar = new AStarSearch<GridPos>(  );
+            _macroNavAstar2 = new AStarSearch<NavNode>( );
         }
 
 
@@ -121,7 +121,7 @@ namespace TerrainDemo.Navigation
             return null;
         }
 
-        public static bool IsStraightPathExists(Actor actor, GridPos from, GridPos to)
+        public static bool IsStraightPathExists(BaseLocomotor loco, GridPos from, GridPos to)
         {
             if (from == to)
                 return true;
@@ -130,7 +130,7 @@ namespace TerrainDemo.Navigation
             //var currentMap = from.Map;
             foreach (var intersection in raster)
             {
-                if (actor.Locomotor.IsPassable(/*currentMap, */intersection.prevBlock, intersection.nextBlock/*, out var nextMap*/))
+                if (loco.IsPassable(/*currentMap, */intersection.prevBlock, intersection.nextBlock/*, out var nextMap*/))
                 {
                     //currentMap = nextMap;
                 }
@@ -141,17 +141,17 @@ namespace TerrainDemo.Navigation
             return true;
         }
 
-        public AStarSearch<NavGraph, NavNode>.SearchResult GetMacroRoute(NavNode from, NavNode to, Actor actor )
+        public AStarSearch<NavNode>.SearchResult GetMacroRoute(NavNode from, NavNode to, Actor actor )
         {
-	        var result = _macroNavAstar2.CreatePath( actor, from, to );
+	        var result = _macroNavAstar2.CreatePath( actor.Locomotor, from, to );
 	        return result;
         }
 
-        public MicroAStar.SearchResult GetMicroRoute( GridPos from, GridPos to, Actor actor )
+        public AStarSearch<GridPos>.SearchResult GetMicroRoute( GridPos from, GridPos to, BaseLocomotor loco )
         {
 			//Fast pass
-			if(IsStraightPathExists( actor, from, to ))
-				return new AStarSearch<MicroMapGraphAdapter, GridPos>.SearchResult( 
+			if(IsStraightPathExists( loco, from, to ))
+				return new AStarSearch<GridPos>.SearchResult( 
 					new List<GridPos>(){from, to},
 					SearchState.Success,
 					0, 
@@ -160,26 +160,26 @@ namespace TerrainDemo.Navigation
 					);
 
 			const int searchRadius = 30 * 30;
-			var result = _microAStar.CreatePath( actor, from, to, 
+			var result = _microAStar.CreatePath( loco, from, to, 
 			             pos => GridPos.DistanceSquared( from, pos ) < searchRadius && GridPos.DistanceSquared( to, pos ) < searchRadius);
 
 			var timer = Stopwatch.StartNew( );
 			if ( result.Route != null )
 			{
 				SimplifyStraightLines( result.Route );
-				SimplifyCorners( result.Route, actor );
+				SimplifyCorners( result.Route, loco );
 			}
 			timer.Stop( );
 
-			return new AStarSearch<MicroMapGraphAdapter, GridPos>.SearchResult( 
+			return new AStarSearch<GridPos>.SearchResult( 
 				result.Route, 
 				result.Result,
 				result.ElapsedTimeMs + timer.ElapsedMilliseconds, 
 				result.CameFromDebug, result.CostsDebug );
         }
 
-        private readonly AStarSearch<MicroMapGraphAdapter, GridPos> _microAStar;
-        private readonly AStarSearch<NavGraph, NavNode> _macroNavAstar2;
+        private readonly AStarSearch<GridPos> _microAStar;
+        private readonly AStarSearch<NavNode> _macroNavAstar2;
 
         /// <summary>
         /// Simplify path straight lines
@@ -206,15 +206,15 @@ namespace TerrainDemo.Navigation
         /// Remove excess corners
         /// </summary>
         /// <param name="waypoints"></param>
-        /// <param name="actor"></param>
+        /// <param name="loco"></param>
         /// <returns></returns>
-        private List<GridPos> SimplifyCorners(List<GridPos> waypoints, Actor actor)
+        private List<GridPos> SimplifyCorners(List<GridPos> waypoints, BaseLocomotor loco)
         {
             //Simplify corners
             var i = 0;
             while (i < waypoints.Count - 2)
             {
-                if (IsStraightPathExists(actor, waypoints[i], waypoints[i + 2]))
+                if (IsStraightPathExists(loco, waypoints[i], waypoints[i + 2]))
                 {
                     //Debug.Log($"There is path from {waypoints[i].Position} to {waypoints[i + 2].Position}, remove {waypoints[i + 1].Position}");
                     waypoints.RemoveAt(i + 1);
@@ -227,11 +227,5 @@ namespace TerrainDemo.Navigation
         }
 
     }
-
-    public class MicroAStar : AStarSearch<MicroMapGraphAdapter, GridPos>
-    {
-	    public MicroAStar( MicroMapGraphAdapter graph ) : base( graph )
-	    {
-	    }
-    }
+    
 }

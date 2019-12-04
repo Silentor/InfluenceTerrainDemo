@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using OpenToolkit.Mathematics;
 using TerrainDemo.Micro;
@@ -15,7 +16,7 @@ using Vector3 = OpenToolkit.Mathematics.Vector3;
 
 namespace TerrainDemo.Hero
 {
-	public abstract class BaseLocomotor
+	public abstract class BaseLocomotor : IAStarGraph<NavNode>, IAStarGraph<GridPos>
 	{
 		public float MaxSpeed = 5;
 		public float MaxRotationAngle = 180;
@@ -361,6 +362,42 @@ namespace TerrainDemo.Hero
             MedBiped,
 			BigBiped,
 			Wheeled
+		}
+
+		public IEnumerable<(NavNode neighbor, float neighborCost)> Neighbors( NavNode @from )
+		{
+			foreach ( var (edge, neighbor) in _navMap.NavGraph.GetNeighbors(@from) )
+			{
+				var edgeSlopeCost = GetInclineCost( edge.Slopeness );
+				var roughnessCost = GetRoughnessCost( edge.Roughness );
+				var speedCost     = neighbor.MaterialCost;
+
+				var result = edge.Distance * edgeSlopeCost * roughnessCost * speedCost;
+				if ( float.IsNaN( result ) )
+					continue;
+
+				yield return (neighbor, Math.Max(result, 0));
+			}
+		}
+		public float Heuristic( NavNode @from, NavNode to )
+		{
+			return Vector3.Distance( from.Position3d, to.Position3d );
+		}
+		public IEnumerable<(GridPos neighbor, float neighborCost)> Neighbors( GridPos @from )
+		{
+			foreach (var dir in Directions.Vector2I)
+			{
+				var neighborPos = from + dir;
+				if (_map.Bounds.Contains(neighborPos) && IsPassable(from, neighborPos))
+					yield return (neighborPos, 1);
+			}
+		}
+		public float Heuristic( GridPos @from, GridPos to )
+		{
+			//return Vector2i.ManhattanDistance(from.Position, to.Position); //7980 blocks, 186 msec, 203 meters
+			return GridPos.Distance(@from, to); //11463 blocks, 194 msec, 171 meters
+			//return Vector2i.RoughDistance(from.Position, to.Position);  //11703 blocks, 198 msec, 171 meters
+			//return Vector2i.DistanceSquared(from.Position, to.Position); //231 blocks, 8 msec, 177 meters
 		}
 	}
 }

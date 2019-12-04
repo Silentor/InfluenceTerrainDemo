@@ -308,7 +308,7 @@ namespace TerrainDemo.Micro
             return result;
         }
 
-        public BlockInfo? GetBlock(GridPos blockPos)
+        public BlockInfo? GetBlockInfo(GridPos blockPos)
         {
             if (!Bounds.Contains(blockPos))
                 return null;

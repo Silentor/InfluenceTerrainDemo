@@ -310,7 +310,7 @@ namespace TerrainDemo.Editor
 		private void DrawNavigationModeHandles(Input input)
 		{
 			//Draw hovered block
-			var blockInfo = input.HoveredBlock?.source.GetBlock(input.HoveredBlock.Value.position);
+			var blockInfo = input.HoveredBlock?.source.GetBlockInfo(input.HoveredBlock.Value.position);
 			if (blockInfo != null)
 				DrawMap.DrawBlock(blockInfo.Value, Color.blue);
 
@@ -727,7 +727,7 @@ namespace TerrainDemo.Editor
 				{
 					GUILayout.Label("Vertices:");
 					//Show block vertices info
-					var vertices = source.GetBlock(position);
+					var vertices = source.GetBlockInfo(position);
 					if (vertices.HasValue)
 					{
 						GUILayout.BeginVertical();

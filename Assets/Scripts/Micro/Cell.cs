@@ -47,7 +47,7 @@ namespace TerrainDemo.Micro
         {
             foreach (var blockPosition in BlockPositions)
             {
-                yield return _map.GetBlock(blockPosition).Value;
+                yield return _map.GetBlockInfo(blockPosition).Value;
             }
         }
         private readonly MicroMap _map;

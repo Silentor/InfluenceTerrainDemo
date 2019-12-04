@@ -97,15 +97,18 @@ namespace TerrainDemo.Editor
 		private static void DrawGridArea( GridArea area, MicroMap map, Color color, uint width )
 		{
 			var viewDir = SceneView.currentDrawingSceneView.camera.transform.forward;
-			foreach ( var position in area )
+			foreach ( var blockSide in area.GetBorderSides(  ) )
 			{
-				var block = map.GetBlock( position );
+				var block = map.GetBlockInfo( blockSide.Position );
 				if(block == null)
 					continue;
 
 				//Cull backface blocks
-				if (Vector3.CalculateAngle(viewDir, block.Value.Normal) > Deg90ToRadians)
+				if ( Vector3.CalculateAngle( viewDir, block.Value.Normal ) > Deg90ToRadians )
+				{
+					
 					DrawBlock(block.Value, color, width);
+				}
 			}
 		}
 

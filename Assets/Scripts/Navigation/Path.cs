@@ -135,7 +135,7 @@ namespace TerrainDemo.Navigation
 	        var from = GridPos.Average( prevPoint, myPoint );
 	        var to = GridPos.Average(myPoint, nextPoint);
 
-	        var microRoute = _map.Pathfinder.GetMicroRoute( from, to, Actor );
+	        var microRoute = _map.Pathfinder.GetMicroRoute( from, to, Actor.Locomotor );
 
 			if(microRoute.Route == null)
 				Debug.LogError( $"Segment {nextIndex} refining failed, from {from} to {to}, owner {Actor}. Searched {microRoute.CameFromDebug.Count} blocks for {microRoute.ElapsedTimeMs} ms" );

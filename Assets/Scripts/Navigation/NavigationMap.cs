@@ -27,10 +27,8 @@ namespace TerrainDemo.Navigation
 			_micromap = micromap;
 
 			NavGrid = new NavigationGrid( micromap );
-
 			NavGraph = new NavGraph(macromap, micromap, settings);
 			
-
 			timer.Stop();
 
 			Pathfinder = new Pathfinder(this, _micromap, settings);
@@ -50,14 +48,14 @@ namespace TerrainDemo.Navigation
 			var toNode = GetNavNode( to );
 
 			var pathKey = new PathKey(fromNode, toNode, actor.Locomotor.LocoType);
-			if ( _sharedPathes.TryGetValue( pathKey, out var sharedPath ) )
-			{
-				UnityEngine.Debug.Log( $"Path {pathKey} for {actor} was finded at cache" );
+			//if ( _sharedPathes.TryGetValue( pathKey, out var sharedPath ) )
+			//{
+			//	UnityEngine.Debug.Log( $"Path {pathKey} for {actor} was finded at cache" );
 
-				var result = new Path(from, to, actor, fromNode, toNode, sharedPath, this);
-				return result;
-			}
-			else
+			//	var result = new Path(from, to, actor, fromNode, toNode, sharedPath, this);
+			//	return result;
+			//}
+			//else
 			{
 				var newPath = Pathfinder.GetMacroRoute(fromNode, toNode, actor);
 
@@ -68,7 +66,7 @@ namespace TerrainDemo.Navigation
 
 				var segments = newPath.Route.Select( n => new Path.Segment( n, new GridPos[0] ) ).ToList( );
 				var newSharedPath = new PathCacheEntry( segments, newPath.ElapsedTimeMs, newPath.CostsDebug);
-				_sharedPathes[pathKey] = newSharedPath;
+				//_sharedPathes[pathKey] = newSharedPath;
 				
 				UnityEngine.Debug.Log( $"Created new path {pathKey} for {actor}" );
 
@@ -77,7 +75,7 @@ namespace TerrainDemo.Navigation
 			}
 		}
 
-		private readonly Dictionary<PathKey, PathCacheEntry> _sharedPathes = new Dictionary<PathKey, PathCacheEntry>();
+		//private readonly Dictionary<PathKey, PathCacheEntry> _sharedPathes = new Dictionary<PathKey, PathCacheEntry>();
 		private readonly MicroMap _micromap;
 		
 		private struct PathKey : IEquatable<PathKey>
