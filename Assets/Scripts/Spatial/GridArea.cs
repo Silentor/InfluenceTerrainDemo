@@ -85,13 +85,13 @@ namespace TerrainDemo.Spatial
 			foreach ( var block in this )
 			{
 				if(!IsContains( block    + Vector2i.Forward) )
-				   yield return new GridPosSide(block, Side2d.Forward);
+				   yield return new GridPosSide(block, Direction.Forward);
 				if(!IsContains( block    + Vector2i.Right) )
-				   yield return new GridPosSide(block, Side2d.Right);
+				   yield return new GridPosSide(block, Direction.Right);
 				if(!IsContains( block + Vector2i.Back) )
-					yield return new GridPosSide(block, Side2d.Back);
+					yield return new GridPosSide(block, Direction.Back);
 				if(!IsContains( block + Vector2i.Left) )
-					yield return new GridPosSide(block, Side2d.Left);
+					yield return new GridPosSide(block, Direction.Left);
 			}
 		}
 

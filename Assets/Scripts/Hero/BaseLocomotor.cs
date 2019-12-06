@@ -108,47 +108,56 @@ namespace TerrainDemo.Hero
 			IsMoving = false;
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="fromMap"></param>
-		/// <param name="fromPos"></param>
-		/// <param name="toPos"></param>
-		/// <param name="toMap"></param>
-		/// <returns></returns>
-		public bool IsPassable(/*BaseBlockMap fromMap, */GridPos fromPos, GridPos toPos/*, out BaseBlockMap toMap*/) //todo move to Locomotor component
+		public float GetBlockCost( GridPos blockPosition, Direction walkDirection )
 		{
-			//ref readonly var fromData = ref fromMap.GetBlockData(fromPos);
-			ref readonly var toData     = ref _map.GetBlockData(toPos);
-			ref readonly var toNavBlock = ref _navMap.NavGrid.GetBlock( toPos );
-			//toMap = fromMap;
+			var block    = _map.GetBlockRef( blockPosition );
+			var navBlock = _navMap.NavGrid.GetBlock( blockPosition );
 
-			if (toData != BlockData.Empty)
-			{
-				if (CheckBlock( toNavBlock ))
-				{
-					//Can step on new block
-					//Assert.IsNotNull(toMap);
-					return true;
-				}
-			}
+			//Get block inclination relative to direction
+			//var direct = Directions.From( walkDirection );
+			var walkIncline = navBlock.Normal.Project( walkDirection );
 
-			//No pass 
-			return false;
+			var inclineCost = GetInclineCost( walkIncline );
+			var surfaceCost = GetMaterialCost( block.Top );
+
+			return inclineCost * surfaceCost;
 		}
-		
-		public float GetInclineCost ( LocalIncline incline )
+
+		public bool CheckBlock( GridPos blockPosition, Direction walkDirection )
+		{
+			var cost = GetBlockCost( blockPosition, walkDirection );
+			return !float.IsNaN( cost ) && !float.IsInfinity( cost );
+		}
+		public bool CheckBlock( GridPos blockPosition1, GridPos blockPosition2, Direction walkDirection )
+		{
+			return CheckBlock( blockPosition1, walkDirection ) && CheckBlock( blockPosition2, walkDirection );
+		}
+
+		public bool CheckBlock( GridPos blockPosition1, GridPos blockPosition2, GridPos blockPosition3, Direction walkDirection )
+		{
+			return CheckBlock( blockPosition1, walkDirection ) && CheckBlock( blockPosition2, walkDirection ) &&
+			       CheckBlock( blockPosition3, walkDirection );
+		}
+
+		public virtual float GetInclineCost ( LocalIncline incline )
 		{
 			switch ( incline )
 			{
 				case LocalIncline.Flat:           return 1;
-				case LocalIncline.SmallUphill:    return 1.2f;
-				case LocalIncline.MediumUphill:   return 2;
-				case LocalIncline.SteepUphill:    return 10;
+
+				case LocalIncline.SmallUphill:    return 1.5f;
+				case LocalIncline.MediumUphill:   return 5;
+				case LocalIncline.SteepUphill:    return 100;
+
 				case LocalIncline.SmallDownhill:  return 0.9f;
 				case LocalIncline.MediumDownhill: return 1.5f;
 				case LocalIncline.SteepDownhill:  return 10;
-				case LocalIncline.Blocked:        return float.NaN;
+
+				case LocalIncline.SmallSidehill:  return 1f;
+				case LocalIncline.MediumSidehill: return 2f;
+				case LocalIncline.SteepSidehill:  return 10;
+
+				case LocalIncline.Blocked:        return float.PositiveInfinity;
 				default:
 					throw new ArgumentOutOfRangeException ( nameof (incline), incline, null );
 			}
@@ -305,10 +314,8 @@ namespace TerrainDemo.Hero
 
 		protected abstract Vector2 ResolveBlockCollision( GridPos blockPosition, Vector2 position );
 
-		protected abstract bool CheckBlock( in NavigationGrid.Block block );
-
 		[Conditional("UNITY_EDITOR")]
-		protected void DebugDrawCollisionPlane( GridPos block, Side2d side )
+		protected void DebugDrawCollisionPlane( GridPos block, Direction side )
 		{
 			var yPosition = _owner.Position.Y + 1;
 			var blockSideLocalPos = Directions.BlockSide[(int)side];
@@ -328,12 +335,12 @@ namespace TerrainDemo.Hero
 			( new Vector3( 0,  -1, -0.5f ), new Vector3( 0, 1, -0.5f ), new Vector3( 0, 1, 0.5f ),
 				new Vector3( 0, -1, 0.5f ) );
 		[Conditional( "UNITY_EDITOR")]
-		protected void DebugDrawCollisionPlane( Vector2 position, Side2d side )
+		protected void DebugDrawCollisionPlane( Vector2 position, Direction side )
 		{
 			var yPosition         = _owner.Position.Y + 1;
 			var centerPosition = position.ToVector3( yPosition );
 
-			var points = side == Side2d.Forward || side == Side2d.Back ? VertRectangleX : VertRectangleZ;
+			var points = side == Direction.Forward || side == Direction.Back ? VertRectangleX : VertRectangleZ;
 			DrawRectangle.ForDebug(
 				(points.Item1 + centerPosition),
 				(points.Item2 + centerPosition),
@@ -364,6 +371,8 @@ namespace TerrainDemo.Hero
 			Wheeled
 		}
 
+		#region IAStarGraph
+
 		public IEnumerable<(NavNode neighbor, float neighborCost)> Neighbors( NavNode @from )
 		{
 			foreach ( var (edge, neighbor) in _navMap.NavGraph.GetNeighbors(@from) )
@@ -383,13 +392,17 @@ namespace TerrainDemo.Hero
 		{
 			return Vector3.Distance( from.Position3d, to.Position3d );
 		}
-		public IEnumerable<(GridPos neighbor, float neighborCost)> Neighbors( GridPos @from )
+		public virtual IEnumerable<(GridPos neighbor, float neighborCost)> Neighbors( GridPos @from )
 		{
-			foreach (var dir in Directions.Vector2I)
+			foreach (var dir in Directions.Cardinal)
 			{
-				var neighborPos = from + dir;
-				if (_map.Bounds.Contains(neighborPos) && IsPassable(from, neighborPos))
-					yield return (neighborPos, 1);
+				var neighborPos = from + dir.ToVector2i(  );
+				if ( _map.Bounds.Contains( neighborPos ) )
+				{
+					var cost = GetBlockCost( neighborPos, dir );		todo учитывать размер локомотора
+					if(!float.IsNaN( cost ) && !float.IsInfinity( cost ))
+						yield return ( neighborPos, cost );
+				}
 			}
 		}
 		public float Heuristic( GridPos @from, GridPos to )
@@ -399,5 +412,7 @@ namespace TerrainDemo.Hero
 			//return Vector2i.RoughDistance(from.Position, to.Position);  //11703 blocks, 198 msec, 171 meters
 			//return Vector2i.DistanceSquared(from.Position, to.Position); //231 blocks, 8 msec, 177 meters
 		}
+
+		#endregion
 	}
 }

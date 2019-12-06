@@ -6,9 +6,9 @@ namespace TerrainDemo.Spatial
 	public readonly struct GridPosSide
 	{
 		public readonly GridPos Position;
-		public readonly Side2d Side;
+		public readonly Direction Side;
 
-		public GridPosSide( GridPos position, Side2d side )
+		public GridPosSide( GridPos position, Direction side )
 		{
 			Position = position;
 			Side = side;
@@ -18,10 +18,10 @@ namespace TerrainDemo.Spatial
 		{
 			switch ( Side )
 			{
-				case Side2d.Forward: return ( Position + Vector2i.Forward, Position + Vector2i.One );
-				case Side2d.Right: return (Position + Vector2i.One, Position + Vector2i.Right);
-				case Side2d.Back: return ( Position + Vector2i.Right, Position );
-				case Side2d.Left: return (Position, Position + Vector2i.Forward);
+				case Direction.Forward: return ( Position + Vector2i.Forward, Position + Vector2i.One );
+				case Direction.Right: return (Position + Vector2i.One, Position + Vector2i.Right);
+				case Direction.Back: return ( Position + Vector2i.Right, Position );
+				case Direction.Left: return (Position, Position + Vector2i.Forward);
 				default:
 					throw new ArgumentOutOfRangeException( );
 			}

@@ -34,73 +34,64 @@ namespace TerrainDemo.Hero
 			var fracPosZ = position.Y - blockPosition.Z;
 
 			var leftPos = blockPosition + Vector2i.Left + Vector2i.Left;
-			ref readonly var left1 = ref _navMap.NavGrid.GetBlock( leftPos );
-			ref readonly var left2 = ref _navMap.NavGrid.GetBlock( leftPos + Vector2i.Forward );
-			ref readonly var left3 = ref _navMap.NavGrid.GetBlock( leftPos + Vector2i.Back);
+			var left1 = leftPos;
+			var left2 = leftPos + Vector2i.Forward;
+			var left3 = leftPos + Vector2i.Back;
 			
 			var rightPos = blockPosition + Vector2i.Right + Vector2i.Right;
-			ref readonly var right1 = ref _navMap.NavGrid.GetBlock( rightPos );
-			ref readonly var right2 = ref _navMap.NavGrid.GetBlock( rightPos + Vector2i.Forward );
-			ref readonly var right3 = ref _navMap.NavGrid.GetBlock( rightPos + Vector2i.Back);
+			var right1 = rightPos;
+			var right2 = rightPos + Vector2i.Forward;
+			var right3 = rightPos + Vector2i.Back;
 
 			var              forwardPos = blockPosition + Vector2i.Forward + Vector2i.Forward;
-			ref readonly var forward1 = ref _navMap.NavGrid.GetBlock( forwardPos );
-			ref readonly var forward2 = ref _navMap.NavGrid.GetBlock( forwardPos + Vector2i.Left );
-			ref readonly var forward3 = ref _navMap.NavGrid.GetBlock( forwardPos + Vector2i.Right );
+			var forward1 = forwardPos;
+			var forward2 = forwardPos + Vector2i.Left;
+			var forward3 = forwardPos + Vector2i.Right;
 
 			var              backPos = blockPosition + Vector2i.Back + Vector2i.Back;
-			ref readonly var back1    = ref _navMap.NavGrid.GetBlock( backPos );
-			ref readonly var back2    = ref _navMap.NavGrid.GetBlock( backPos + Vector2i.Left );
-			ref readonly var back3    = ref _navMap.NavGrid.GetBlock( backPos + Vector2i.Right );
+			var back1    = backPos;
+			var back2    = backPos + Vector2i.Left;
+			var back3    = backPos + Vector2i.Right;
 
-			if ( fracPosX < 0.5 && (!CheckBlock( in left1 ) || !CheckBlock( in left2 ) || !CheckBlock( in left3 )) )
+			if ( fracPosX < 0.5 && !CheckBlock( left1, left2, left3, Direction.Left ) )
 			{
 				fracPosX = 0.5f;
 
 				if ( _owner.DebugLocomotion )
 				{
-					DebugDrawCollisionPlane( blockPosition + Vector2i.Left, Side2d.Left );
+					DebugDrawCollisionPlane( blockPosition + Vector2i.Left, Direction.Left );
 				}
 			}
-			else if ( fracPosX >= 0.5 && (!CheckBlock( in right1 ) || !CheckBlock( in right2 ) || !CheckBlock( in right3 )) )
+			else if ( fracPosX >= 0.5 && !CheckBlock( right1, right2, right3, Direction.Right ) )
 			{
 				fracPosX = 0.5f;
 
 				if ( _owner.DebugLocomotion )
 				{
-					DebugDrawCollisionPlane( blockPosition + Vector2i.Right, Side2d.Right );
+					DebugDrawCollisionPlane( blockPosition + Vector2i.Right, Direction.Right );
 				}
 			}
 
-			if ( fracPosZ < 0.5 && (!CheckBlock( in back1 ) || !CheckBlock( in back2 ) || !CheckBlock( in back3 )) )
+			if ( fracPosZ < 0.5 && !CheckBlock( back1, back2, back3, Direction.Back ) )
 			{
 				fracPosZ = 0.5f;
 
 				if ( _owner.DebugLocomotion )
 				{
-					DebugDrawCollisionPlane( blockPosition + Vector2i.Back, Side2d.Back );
+					DebugDrawCollisionPlane( blockPosition + Vector2i.Back, Direction.Back );
 				}
 			}
-			else if ( fracPosZ >= 0.5 && (!CheckBlock( in forward1 ) || !CheckBlock( in forward2 ) || !CheckBlock( in forward3 )) )
+			else if ( fracPosZ >= 0.5 && !CheckBlock( forward1, forward2, forward3, Direction.Forward ) )
 			{
 				fracPosZ = 0.5f;
 
 				if ( _owner.DebugLocomotion )
 				{
-					DebugDrawCollisionPlane( blockPosition + Vector2i.Forward, Side2d.Forward );
+					DebugDrawCollisionPlane( blockPosition + Vector2i.Forward, Direction.Forward );
 				}
 			}
 
 			return new Vector2(blockPosition.X + fracPosX, blockPosition.Z + fracPosZ);
 		}
-
-		protected override bool CheckBlock( in NavigationGrid.Block block )
-		{
-			if ( block.Normal.Slope == Incline.Blocked )
-				return false;
-
-			return block.Normal.Slope <= Incline.Medium;
-		}
-
 	}
 }

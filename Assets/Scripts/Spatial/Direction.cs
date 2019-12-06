@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using OpenToolkit.Mathematics;
 
 namespace TerrainDemo.Spatial
@@ -6,7 +7,7 @@ namespace TerrainDemo.Spatial
     /// <summary>
     /// Cardinal directions on square grid
     /// </summary>
-    public enum Side2d
+    public enum Direction
     {
         /// <summary>
         /// Z+ direction
@@ -32,9 +33,9 @@ namespace TerrainDemo.Spatial
         /// <summary>
         /// Cardinal directions on 2D grid
         /// </summary>
-        public static readonly Side2d[] Cardinal =
+        public static readonly Direction[] Cardinal =
         {
-            Side2d.Forward, Side2d.Right, Side2d.Back, Side2d.Left
+            Direction.Forward, Direction.Right, Direction.Back, Direction.Left
         };
 
         /// <summary>
@@ -60,18 +61,55 @@ namespace TerrainDemo.Spatial
             (new Vector2(1, 0), new Vector2(0, 0)),
             (new Vector2(0, 0), new Vector2(0, 1)),
         };
-    }
 
-    public static class DirectionsExtensions
-    {
-        public static Vector2 ToVector2(this Side2d direction)
+        public static Vector2 ToVector2(this Direction direction)
         {
-            return Directions.Vector2[(int) direction];
+	        return Vector2[(int) direction];
         }
 
-        public static bool IsPerpendicular(this Side2d first, Side2d second)
+        public static Vector2i ToVector2i(this Direction direction)
         {
-            return (((int)first ^ (int)second) & 0x01) == 0x01;
+	        return Vector2I[(int) direction];
+        }
+
+        public static bool IsPerpendicular(this Direction first, Direction second)
+        {
+	        return (((int)first ^ (int)second) & 0x01) == 0x01;
+        }
+
+        public static Direction Inverse( this Direction direction )
+        {
+	        switch ( direction )
+	        {
+		        case Direction.Forward: return Direction.Back;
+		        case Direction.Right: return Direction.Left;
+		        case Direction.Back: return Direction.Forward;
+		        case Direction.Left: return Direction.Right;
+		        default:
+			        throw new ArgumentOutOfRangeException( nameof( direction ), direction, null );
+	        }
+        }
+
+        public static Direction From( Vector2 direction )
+        {
+            //todo consider zero direction
+	        if ( direction == OpenToolkit.Mathematics.Vector2.Zero )
+		        return Direction.Forward;
+
+	        var x = direction.X;
+	        var y = direction.Y;
+
+	        if ( y >= 0 && (x >= 0 ? x <= y : -x < y) )
+		        return Direction.Forward;
+            else if ( y < 0 && (x >= 0 ? x < -y : -x <= -y) )
+		        return Direction.Back;
+            else if ( x >= 0 && (y >= 0 ? y < x : -y <= x) )
+		        return Direction.Right;
+	        else if ( x < 0 && (y >= 0 ? y <= -x : -y < -x) )
+		        return Direction.Left;
+
+	        throw new InvalidOperationException("Algorithm failed");
         }
     }
+
 }

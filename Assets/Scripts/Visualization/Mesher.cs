@@ -401,7 +401,7 @@ namespace TerrainDemo.Visualization
                         uv.Add(new Vector2((chunkLocalX + 1) * uvXCoeff, chunkLocalZ * uvYCoeff));
                     }
 
-                    void DrawBlockSide(List<Vector3> vertices, List<int> indices, List<Vector2> uv, Side2d direction, float topHeight, float bottomHeight)
+                    void DrawBlockSide(List<Vector3> vertices, List<int> indices, List<Vector2> uv, Direction direction, float topHeight, float bottomHeight)
                     {
                         indices.Add(vertices.Count);
                         indices.Add(vertices.Count + 1);
@@ -635,16 +635,16 @@ namespace TerrainDemo.Visualization
                         {
                             switch (dir)
                             {
-                                case Side2d.Forward:
+                                case Direction.Forward:
                                     DrawObjectSide(index01, index11);
                                     break;
-                                case Side2d.Right:
+                                case Direction.Right:
                                     DrawObjectSide(index11, index10);
                                     break;
-                                case Side2d.Back:
+                                case Direction.Back:
                                     DrawObjectSide(index10, index00);
                                     break;
-                                case Side2d.Left:
+                                case Direction.Left:
                                     DrawObjectSide(index00, index01);
                                     break;
                             }

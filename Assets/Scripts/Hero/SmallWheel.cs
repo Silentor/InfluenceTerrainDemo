@@ -33,54 +33,45 @@ namespace TerrainDemo.Hero
 			var fracPosX = position.X - blockPosition.X;
 			var fracPosZ = position.Y - blockPosition.Z;
 
-			if ( fracPosX < 0.5 && !CheckBlock( in _navMap.NavGrid.GetBlock( blockPosition + Vector2i.Left ) ) )
+			if ( fracPosX < 0.5 && !CheckBlock( blockPosition + Vector2i.Left, Direction.Left ) )
 			{
 				fracPosX = 0.5f;
 
 				if ( _owner.DebugLocomotion )
 				{
-					DebugDrawCollisionPlane( blockPosition, Side2d.Left );
+					DebugDrawCollisionPlane( blockPosition, Direction.Left );
 				}
 			}
-			else if ( fracPosX >= 0.5 && !CheckBlock( in _navMap.NavGrid.GetBlock( blockPosition + Vector2i.Right ) ) )
+			else if ( fracPosX >= 0.5 && !CheckBlock( blockPosition + Vector2i.Right, Direction.Right ) )
 			{
 				fracPosX = 0.5f;
 
 				if ( _owner.DebugLocomotion )
 				{
-					DebugDrawCollisionPlane( blockPosition, Side2d.Right );
+					DebugDrawCollisionPlane( blockPosition, Direction.Right );
 				}
 			}
 
-			if ( fracPosZ < 0.5 && !CheckBlock( in _navMap.NavGrid.GetBlock( blockPosition + Vector2i.Back ) ) )
+			if ( fracPosZ < 0.5 && !CheckBlock( blockPosition + Vector2i.Back, Direction.Back ) )
 			{
 				fracPosZ = 0.5f;
 
 				if ( _owner.DebugLocomotion )
 				{
-					DebugDrawCollisionPlane( blockPosition, Side2d.Back );
+					DebugDrawCollisionPlane( blockPosition, Direction.Back );
 				}
 			}
-			else if ( fracPosZ >= 0.5 && !CheckBlock( in _navMap.NavGrid.GetBlock( blockPosition + Vector2i.Forward ) ) )
+			else if ( fracPosZ >= 0.5 && !CheckBlock( blockPosition + Vector2i.Forward, Direction.Forward ) )
 			{
 				fracPosZ = 0.5f;
 
 				if ( _owner.DebugLocomotion )
 				{
-					DebugDrawCollisionPlane( blockPosition, Side2d.Forward );
+					DebugDrawCollisionPlane( blockPosition, Direction.Forward );
 				}
 			}
 
 			return new Vector2(blockPosition.X + fracPosX, blockPosition.Z + fracPosZ);
 		}
-
-		protected override bool CheckBlock( in NavigationGrid.Block block )
-		{
-			if ( block.Normal.Slope == Incline.Blocked )
-				return false;
-
-			return block.Normal.Slope <= Incline.Small;
-		}
-
 	}
 }

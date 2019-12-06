@@ -568,16 +568,16 @@ namespace TerrainDemo.Micro
         public readonly Blocks Back;
         public readonly Blocks Left;
 
-        public Blocks this[Side2d dir]
+        public Blocks this[Direction dir]
         {
             get
             {
                 switch (dir)
                 {
-                    case Side2d.Forward: return Forward;
-                    case Side2d.Right: return Right;
-                    case Side2d.Back: return Back;
-                    case Side2d.Left: return Left;
+                    case Direction.Forward: return Forward;
+                    case Direction.Right: return Right;
+                    case Direction.Back: return Back;
+                    case Direction.Left: return Left;
                     default: throw new ArgumentOutOfRangeException(nameof(dir));
                 }
             }

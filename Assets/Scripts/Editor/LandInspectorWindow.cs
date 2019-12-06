@@ -309,11 +309,6 @@ namespace TerrainDemo.Editor
 
 		private void DrawNavigationModeHandles(Input input)
 		{
-			//Draw hovered block
-			var blockInfo = input.HoveredBlock?.source.GetBlockInfo(input.HoveredBlock.Value.position);
-			if (blockInfo != null)
-				DrawMap.DrawBlock(blockInfo.Value, Color.blue);
-
 			//Draw all navigation nodes (expensive)
 			var navMap = _runner.NavMap;
 			foreach (var navNode in navMap.NavGraph.Nodes)
@@ -321,17 +316,21 @@ namespace TerrainDemo.Editor
 				DrawMap.DrawNavigationNode(navNode, MicroMap, 0, Color.blue, false);
 			}
 
+			//Draw hovered block
+			var blockInfo = input.HoveredBlock?.source.GetBlockInfo(input.HoveredBlock.Value.position);
+			if (blockInfo != null)
+				DrawMap.DrawBlock(blockInfo.Value, Color.white);
+
 			//Draw hovered nav node
 			if (input.HoveredNavNode != null)
 			{
 				var hoveredNode = input.HoveredNavNode;
-				DrawMap.DrawNavigationNode(hoveredNode, MicroMap, 10, Color.blue, true);
+				DrawMap.DrawNavigationNode(hoveredNode, MicroMap, 10, Color.white, true);
 				foreach (var neighbor in navMap.NavGraph.GetNeighbors(hoveredNode))
 				{
 					DrawArrow.ForDebug(neighbor.edge.From.Position3d, neighbor.edge.To.Position3d - neighbor.edge.From.Position3d, Color.blue, 0, false);
-					DrawMap.DrawNavigationNode(neighbor.neighbor, MicroMap, 5, Color.blue, true);
+					//DrawMap.DrawNavigationNode(neighbor.neighbor, MicroMap, 5, Color.blue, true);
 				}
-
 			}
 		}
 

@@ -130,12 +130,9 @@ namespace TerrainDemo.Navigation
             //var currentMap = from.Map;
             foreach (var intersection in raster)
             {
-                if (loco.IsPassable(/*currentMap, */intersection.prevBlock, intersection.nextBlock/*, out var nextMap*/))
-                {
-                    //currentMap = nextMap;
-                }
-                else
-                    return false;
+	            var cost = loco.GetBlockCost( intersection.nextBlock, intersection.normal.Inverse( ) );
+	            if ( float.IsInfinity( cost ) || float.IsNaN( cost ) )
+		            return false;
             }
 
             return true;

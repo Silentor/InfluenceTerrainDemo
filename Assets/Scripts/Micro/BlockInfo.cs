@@ -21,6 +21,12 @@ namespace TerrainDemo.Micro
         public readonly Heights Corner10;
         public readonly Vector3 Normal;
         public readonly float Height;
+
+        public Vector3 Position00 => new Vector3(Position.X, Corner00.Nominal, Position.Z);
+        public Vector3 Position01 => new Vector3(Position.X, Corner01.Nominal, Position.Z + 1);
+        public Vector3 Position10 => new Vector3(Position.X + 1, Corner10.Nominal, Position.Z);
+        public Vector3 Position11 => new Vector3(Position.X + 1, Corner11.Nominal, Position.Z + 1);
+
         private readonly BaseBlockMap _map;
 
         public BlockInfo(GridPos position, BaseBlockMap map)

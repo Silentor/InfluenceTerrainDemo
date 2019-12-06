@@ -32,12 +32,12 @@ namespace TerrainDemo.Navigation
 						continue;
 
 					Incline slope;
-					Side2d orientation;
+					Direction orientation;
 					ref readonly var block = ref map.GetBlockLocalRef( x, z );
 					if ( block.IsObstacle )
 					{
 						slope = Incline.Blocked;
-						orientation = Side2d.Forward;
+						orientation = Direction.Forward;
 					}
 					else
 					{
@@ -47,16 +47,16 @@ namespace TerrainDemo.Navigation
 						if ( Math.Abs( normal.Z ) > Math.Abs( normal.X ) )
 						{
 							if ( normal.Z > 0 )
-								orientation = Side2d.Forward;
+								orientation = Direction.Forward;
 							else
-								orientation = Side2d.Back;
+								orientation = Direction.Back;
 						}
 						else
 						{
 							if ( normal.X > 0 )
-								orientation = Side2d.Right;
+								orientation = Direction.Right;
 							else
-								orientation = Side2d.Left;
+								orientation = Direction.Left;
 						}
 					}
 
@@ -101,21 +101,26 @@ namespace TerrainDemo.Navigation
 	public readonly struct Normal
 	{
 		public readonly Incline Slope;
-		public readonly Side2d Orientation;
+		public readonly Direction Orientation;
 
-		public Normal( Incline slope, Side2d orientation )
+		public Normal( Incline slope, Direction orientation )
 		{
 			Slope = slope;
 			Orientation = orientation;
 		}
 
-		public LocalIncline Project ( Side2d side )
+		/// <summary>
+		/// Get block incline from walk direction point of view
+		/// </summary>
+		/// <param name="walkDirection"></param>
+		/// <returns></returns>
+		public LocalIncline Project ( Direction walkDirection )
 		{
 			if ( Slope == Incline.Flat )
 				return LocalIncline.Flat;
-			if ( Orientation == side )
+			if ( Orientation == walkDirection )
 				return (LocalIncline) Slope;
-			if ( Orientation.IsPerpendicular ( side ) )
+			if ( Orientation.IsPerpendicular ( walkDirection ) )
 				return LocalIncline.Flat;
 			return (LocalIncline)((int) Slope + 7);
 		}

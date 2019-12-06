@@ -34,71 +34,64 @@ namespace TerrainDemo.Hero
             var boundsMin = newBound.Min;
 
             var leftPos = boundsMin + Vector2i.Left;
-            ref readonly var left1 = ref _navMap.NavGrid.GetBlock( leftPos );
-			ref readonly var left2 = ref _navMap.NavGrid.GetBlock( leftPos + Vector2i.Forward );
+            var left1 = leftPos;
+			var left2 = leftPos + Vector2i.Forward;
 			
 			var rightPos = boundsMin + Vector2i.Right + Vector2i.Right;
-			ref readonly var right1 = ref _navMap.NavGrid.GetBlock( rightPos );
-			ref readonly var right2 = ref _navMap.NavGrid.GetBlock( rightPos + Vector2i.Forward );
+			var right1 = rightPos;
+			var right2 = rightPos + Vector2i.Forward;
 
 			var              forwardPos = boundsMin + Vector2i.Forward + Vector2i.Forward;
-			ref readonly var forward1 = ref _navMap.NavGrid.GetBlock( forwardPos );
-			ref readonly var forward2 = ref _navMap.NavGrid.GetBlock( forwardPos + Vector2i.Right );
+			var forward1 = forwardPos;
+			var forward2 = forwardPos + Vector2i.Right;
 
 			var              backPos = boundsMin + Vector2i.Back;
-			ref readonly var back1    = ref _navMap.NavGrid.GetBlock( backPos );
-			ref readonly var back2    = ref _navMap.NavGrid.GetBlock( backPos + Vector2i.Right );
+			var back1    = backPos;
+			var back2    = backPos + Vector2i.Right;
 
 			var restrictedPosition = (Vector2)(boundsMin + Vector2i.One);
 
-			if ( position.X < restrictedPosition.X && (!CheckBlock( in left1 ) || !CheckBlock( in left2 )) )
+			if ( position.X < restrictedPosition.X && !CheckBlock( left1, left2, Direction.Left ) )
 			{
 				position.X = restrictedPosition.X;
 
 				if ( _owner.DebugLocomotion )
 				{
-					DebugDrawCollisionPlane( restrictedPosition + Vector2i.Left, Side2d.Left );
+					DebugDrawCollisionPlane( restrictedPosition + Vector2i.Left, Direction.Left );
 				}
 			}
-			else if ( position.X > restrictedPosition.X && (!CheckBlock( in right1 ) || !CheckBlock( in right2 ) ) )
+			else if ( position.X > restrictedPosition.X && !CheckBlock( right1, right2, Direction.Right ) )
 			{
 				position.X = restrictedPosition.X;
 
 				if ( _owner.DebugLocomotion )
 				{
-					DebugDrawCollisionPlane( restrictedPosition + Vector2i.Right, Side2d.Right );
+					DebugDrawCollisionPlane( restrictedPosition + Vector2i.Right, Direction.Right );
 				}
 			}
 
-			if ( position.Y < restrictedPosition.Y && (!CheckBlock( in back1 ) || !CheckBlock( in back2 )) )
+			if ( position.Y < restrictedPosition.Y && !CheckBlock( back1, back2, Direction.Back ) )
 			{
 				position.Y = restrictedPosition.Y;
 
 				if ( _owner.DebugLocomotion )
 				{
-					DebugDrawCollisionPlane( restrictedPosition + Vector2i.Back, Side2d.Back );
+					DebugDrawCollisionPlane( restrictedPosition + Vector2i.Back, Direction.Back );
 				}
 			}
-			else if ( position.Y > restrictedPosition.Y && (!CheckBlock( in forward1 ) || !CheckBlock( in forward2 )) )
+			else if ( position.Y > restrictedPosition.Y && !CheckBlock( forward1, forward2, Direction.Forward ) )
 			{
 				position.Y = restrictedPosition.Y;
 
 				if ( _owner.DebugLocomotion )
 				{
-					DebugDrawCollisionPlane( restrictedPosition + Vector2i.Forward, Side2d.Forward );
+					DebugDrawCollisionPlane( restrictedPosition + Vector2i.Forward, Direction.Forward );
 				}
 			}
 
 			return position;
 		}
 
-		protected override bool CheckBlock( in NavigationGrid.Block block )
-		{
-			if ( block.Normal.Slope == Incline.Blocked )
-				return false;
-
-			return block.Normal.Slope <= Incline.Medium;
-		}
 		private static Bounds2i GetBound( Vector2 position )
 		{
 			var minBlockPosition = (GridPos) ( position - new Vector2( 0.5f, 0.5f ) );

@@ -1,7 +1,7 @@
 ﻿using System;
 using OpenToolkit.Mathematics;
 
-namespace TerrainDemo.Navigation
+namespace TerrainDemo.Spatial
 {
 	public enum Incline : byte
 	{
@@ -25,6 +25,10 @@ namespace TerrainDemo.Navigation
 		SmallDownhill = 8,
 		MediumDownhill,
 		SteepDownhill,
+
+		SmallSidehill,
+		MediumSidehill,
+		SteepSidehill,
 
 		Blocked			= Incline.Blocked,
 	}

@@ -62,6 +62,13 @@ namespace TerrainDemo.Spatial
                    pos.Z >= Min.Z && pos.Z <= Max.Z;
         }
 
+        [Pure]
+        public bool Contains(Bounds2i bound)
+        {
+	        return bound.Min.X >= Min.X && bound.Max.X <= Max.X &&
+	               bound.Min.Z >= Min.Z && bound.Max.Z <= Max.Z;
+        }
+
         public IEnumerable<GridPos> Substract(Bounds2i b)
         {
             return this.Where(v => !b.Contains(v));

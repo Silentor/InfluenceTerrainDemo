@@ -96,26 +96,54 @@ namespace TerrainDemo.Editor
 		/// <param name="width"></param>
 		private static void DrawGridArea( GridArea area, MicroMap map, Color color, uint width )
 		{
+			_sidesLines.Clear(  );
 			var viewDir = SceneView.currentDrawingSceneView.camera.transform.forward;
-			foreach ( var blockSide in area.GetBorderSides(  ) )
+
+			foreach ( var blockSide in area.GetBorderSides( ) )
 			{
-				var block = map.GetBlockInfo( blockSide.Position );
-				if(block == null)
+				var block2 = map.GetBlockInfo( blockSide.Position );
+				if(block2 == null)
 					continue;
 
+				var block = block2.Value;
 				//Cull backface blocks
-				if ( Vector3.CalculateAngle( viewDir, block.Value.Normal ) > Deg90ToRadians )
+				if ( Vector3.CalculateAngle( viewDir, block.Normal ) > Deg90ToRadians )
 				{
-					
-					DrawBlock(block.Value, color, width);
+					if ( blockSide.Side == Direction.Forward )
+					{
+						_sidesLines.Add( block.Position01 );
+						_sidesLines.Add( block.Position11 );
+					}
+					else if ( blockSide.Side == Direction.Right )
+					{
+						_sidesLines.Add( block.Position11 );
+						_sidesLines.Add( block.Position10 );
+					}
+					else if ( blockSide.Side == Direction.Back )
+					{
+						_sidesLines.Add( block.Position10 );
+						_sidesLines.Add( block.Position00 );
+					}
+					else 
+					{
+						_sidesLines.Add( block.Position00 );
+						_sidesLines.Add( block.Position01 );
+					}
 				}
 			}
+
+			Handles.color = color;
+			//if(width < 2)
+				Handles.DrawLines( _sidesLines.ToArray(  ) );
+			//else
+			//	Handles.Draw( _sidesLines.ToArray(  ) );
 		}
 
 		private static readonly Dictionary<Color32, GUIStyle> _labelStyles = new Dictionary<Color32, GUIStyle>();
 		private static readonly float Deg90ToRadians = MathHelper.DegreesToRadians(90);
+		private static List<UnityEngine.Vector3> _sidesLines = new List<UnityEngine.Vector3>();
 
-		
+
 		private static void DrawLabel( string text, Vector3 position, Color color, int fontSize)
 		{
 			var style = GetLabelStyleFor( color );
