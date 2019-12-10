@@ -122,7 +122,7 @@ namespace TerrainDemo.Generators
         {
 	        if ( _currentCell != null )
 	        {
-		        var isObstacle = _zoneRandom.Value( ) < 0.1;
+		        var isObstacle = _zoneRandom.Value( ) < 0.01;
 		        return new BlockLayers(_currentCellData.Item2, BlockType.Empty, isObstacle);
 	        }
             else //Just defence

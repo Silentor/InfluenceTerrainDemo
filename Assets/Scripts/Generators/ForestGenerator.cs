@@ -38,7 +38,7 @@ namespace TerrainDemo.Generators
             in Heights v10, in Heights v11)
         {
 			//Trees
-            var isObstacle = _zoneRandom.Value( ) < 0.1;
+            var isObstacle = _zoneRandom.Value( ) < 0.01;
             return new BlockLayers(BlockType.Grass, BlockType.Empty, isObstacle);
         }
 

@@ -60,11 +60,18 @@ namespace TerrainDemo.Editor
         {
 	        GUILayout.Label( "Locomotor", EditorStyles.centeredGreyMiniLabel );
 			GUILayout.Label( $"Type: {_actor.Locomotor.LocoType}" );
+			GUILayout.Label( $"Is moving {_actor.Locomotor.IsMoving.ToString()}" );
 	        using ( var speedScope = new EditorGUI.ChangeCheckScope( ) )
 	        {
-		        var newSpeed = EditorGUILayout.DelayedFloatField( "Speed", _actor.Locomotor.MaxRotationAngle );
+				GUILayout.BeginHorizontal(  );
+		        var newSpeed = EditorGUILayout.DelayedFloatField( "Move speed", _actor.Locomotor.MaxSpeed );
+		        var newRot = EditorGUILayout.DelayedFloatField( "Rot speed", _actor.Locomotor.MaxRotationAngle );
+				GUILayout.EndHorizontal(  );
 		        if ( speedScope.changed )
+		        {
 			        _actor.Locomotor.MaxSpeed = newSpeed;
+			        _actor.Locomotor.MaxRotationAngle = newRot;
+		        }
 	        }
 
 	        ref readonly var block       = ref _actor.Map.GetBlockRef( _actor.Locomotor.BlockPosition );

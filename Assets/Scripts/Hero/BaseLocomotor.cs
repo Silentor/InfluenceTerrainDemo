@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using OpenToolkit.Mathematics;
 using TerrainDemo.Micro;
 using TerrainDemo.Navigation;
@@ -34,7 +35,11 @@ namespace TerrainDemo.Hero
 
 		public abstract Bounds2i Bound { get; }
 
-		public bool IsMoving { get; private set; }
+		public bool IsMoving
+		{
+			get; 
+			private set;
+		}
 
 		public static BaseLocomotor Create(
 			Type          type, Vector2 startPosition, Quaternion startRotation, Actor owner, MicroMap map,
@@ -198,6 +203,9 @@ namespace TerrainDemo.Hero
 		private Vector2? _lookAt;
 		private float _rotation;
 
+
+		protected abstract Bounds2i GetBound( GridPos position );
+
 		private bool UpdateRotation( float deltaTime )
 		{
 			if ( _rotateDirection != 0 )
@@ -218,6 +226,7 @@ namespace TerrainDemo.Hero
 			//	}
 			//}
 		}
+
 		private bool UpdateMovement( float deltaTime )
 		{
 			if ( _targetVelocity != Vector2.Zero )
@@ -397,9 +406,10 @@ namespace TerrainDemo.Hero
 			foreach (var dir in Directions.Cardinal)
 			{
 				var neighborPos = from + dir.ToVector2i(  );
-				if ( _map.Bounds.Contains( neighborPos ) )
+				var neighborBound = GetBound(neighborPos);
+				if ( _map.Bounds.Contains( neighborBound ) )
 				{
-					var cost = GetBlockCost( neighborPos, dir );		todo учитывать размер локомотора
+					var cost = neighborBound.Average( blockPos => GetBlockCost( blockPos, dir ) );
 					if(!float.IsNaN( cost ) && !float.IsInfinity( cost ))
 						yield return ( neighborPos, cost );
 				}

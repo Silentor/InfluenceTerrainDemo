@@ -28,6 +28,8 @@ namespace TerrainDemo.Hero
 				float.NaN
 			};
 
+		protected override Bounds2i GetBound( GridPos position ) => new Bounds2i(position, 2, 2);
+		
 		protected override Vector2 ResolveBlockCollision( GridPos blockPosition, Vector2 position)
 		{
 			var newBound = GetBound( position );

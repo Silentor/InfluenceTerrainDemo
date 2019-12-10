@@ -116,6 +116,8 @@ namespace TerrainDemo.Navigation
 		/// <returns></returns>
 		public LocalIncline Project ( Direction walkDirection )
 		{
+			if ( Slope == Incline.Blocked )
+				return LocalIncline.Blocked;
 			if ( Slope == Incline.Flat )
 				return LocalIncline.Flat;
 			if ( Orientation == walkDirection )

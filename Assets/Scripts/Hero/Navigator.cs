@@ -120,6 +120,7 @@ namespace TerrainDemo.Hero
 				//Finish path
 				Owner.Stop();
                 IsNavigated = false;
+                DebugCurrentWaypoint = default;
 
                 UnityEngine.Debug.Log($"{Owner} path completed, stop");
             }

@@ -141,7 +141,7 @@ namespace TerrainDemo.Editor
 
 		private static readonly Dictionary<Color32, GUIStyle> _labelStyles = new Dictionary<Color32, GUIStyle>();
 		private static readonly float Deg90ToRadians = MathHelper.DegreesToRadians(90);
-		private static List<UnityEngine.Vector3> _sidesLines = new List<UnityEngine.Vector3>();
+		private static readonly List<UnityEngine.Vector3> _sidesLines = new List<UnityEngine.Vector3>();
 
 
 		private static void DrawLabel( string text, Vector3 position, Color color, int fontSize)

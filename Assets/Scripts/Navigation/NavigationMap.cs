@@ -60,8 +60,9 @@ namespace TerrainDemo.Navigation
 				var newPath = Pathfinder.GetMacroRoute(fromNode, toNode, actor);
 
 				//Prepare shared path
-				newPath.Route.RemoveAt( 0 );
-				if(newPath.Route.Last() == toNode)
+				if(newPath.Route.Count > 0)
+					newPath.Route.RemoveAt( 0 );
+				if(newPath.Route.Count > 0 && newPath.Route.Last() == toNode)
 					newPath.Route.RemoveAt( newPath.Route.Count - 1 );
 
 				var segments = newPath.Route.Select( n => new Path.Segment( n, new GridPos[0] ) ).ToList( );
