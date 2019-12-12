@@ -47,7 +47,7 @@ namespace TerrainDemo.Navigation
 			var fromNode = GetNavNode( from );
 			var toNode = GetNavNode( to );
 
-			var pathKey = new PathKey(fromNode, toNode, actor.Locomotor.LocoType);
+			//var pathKey = new PathKey(fromNode, toNode, actor.Locomotor.LocoType);
 			//if ( _sharedPathes.TryGetValue( pathKey, out var sharedPath ) )
 			//{
 			//	UnityEngine.Debug.Log( $"Path {pathKey} for {actor} was finded at cache" );
@@ -69,9 +69,12 @@ namespace TerrainDemo.Navigation
 				var newSharedPath = new PathCacheEntry( segments, newPath.ElapsedTimeMs, newPath.CostsDebug);
 				//_sharedPathes[pathKey] = newSharedPath;
 				
-				UnityEngine.Debug.Log( $"Created new path {pathKey} for {actor}" );
+				
 
 				var result = new Path(from, to, actor, fromNode, toNode, newSharedPath, this);
+
+				UnityEngine.Debug.Log( $"Created new path {result} for {actor}" );
+
 				return result;
 			}
 		}

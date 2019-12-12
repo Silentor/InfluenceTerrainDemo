@@ -94,6 +94,12 @@ namespace TerrainDemo.Navigation
 
 		public Iterator Go() => new Iterator( this );
 
+		public override string ToString( )
+		{
+			return
+				$"Path {Start}->{Finish}({StartNavNode} -> {FinishNavNode}), is valid {IsValid}, segments {_segmentsCount}, length ~{GetPathLength( )}";
+		}
+
 
 		private readonly int _segmentsCount;
 		private readonly NavigationMap _map;
@@ -119,29 +125,40 @@ namespace TerrainDemo.Navigation
         //Calculate micro path for given nav node
         private void RefineSegment( int nodeIndex )
         {
-	        GridPos prevPoint, myPoint, nextPoint;
+	        
+	        GridPos from, to;
 
-	        var prevIndex = Math.Max( nodeIndex - 1, 0 );
-	        var nextIndex = Math.Min( nodeIndex + 1, _segmentsCount - 1 );
+			//Fast pass: path inside navnode
+	        if ( _segmentsCount == 1 )
+	        {
+		        from = Start;
+		        to = Finish;
+	        }
+			else
+	        {
+		        GridPos prevPoint, myPoint, nextPoint;
+		        var prevIndex = Math.Max( nodeIndex - 1, 0 );
+		        var nextIndex = Math.Min( nodeIndex + 1, _segmentsCount - 1 );
 
-	        prevPoint = prevIndex == 0 ? Start : GetSegment(prevIndex).Node.Position;
-	        nextPoint = nextIndex == _segmentsCount - 1 ? Finish : GetSegment(nextIndex).Node.Position;
-	        myPoint = nodeIndex == 0 
-		        ? Start 
-		        : nodeIndex  == _segmentsCount - 1 
-			        ? Finish 
-			        : GetSegment(nodeIndex).Node.Position;
+		        prevPoint = prevIndex == 0					? Start		: GetSegment(prevIndex).Node.Position;
+		        nextPoint = nextIndex == _segmentsCount - 1 ? Finish	: GetSegment(nextIndex).Node.Position;
+		        myPoint = nodeIndex == 0 
+			        ? Start 
+			        : nodeIndex == _segmentsCount - 1 
+				        ? Finish 
+				        : GetSegment(nodeIndex).Node.Position;
 
-	        var from = GridPos.Average( prevPoint, myPoint );
-	        var to = GridPos.Average(myPoint, nextPoint);
-
+		        from = GridPos.Average( prevPoint, myPoint );
+		        to   = GridPos.Average(myPoint,    nextPoint);
+	        }
+	        
 	        var microRoute = _map.Pathfinder.GetMicroRoute( from, to, Actor.Locomotor );
 
 			if(microRoute.Route == null)
-				Debug.LogError( $"Segment {nextIndex} refining failed, from {from} to {to}, owner {Actor}. Searched {microRoute.CameFromDebug.Count} blocks for {microRoute.ElapsedTimeMs} ms" );
+				Debug.LogError( $"Segment {nodeIndex} refining failed, from {from} to {to}, owner {Actor}. Searched {microRoute.CameFromDebug.Count} blocks for {microRoute.ElapsedTimeMs} ms" );
 			else
 			{
-				Debug.Log( $"Segment {nextIndex} refined, from {from} to {to}, owner {Actor}. Searched {microRoute.CameFromDebug.Count} blocks for {microRoute.ElapsedTimeMs} ms" );
+				Debug.Log( $"Segment {nodeIndex} refined, from {from} to {to}, owner {Actor}. Searched {microRoute.CameFromDebug.Count} blocks for {microRoute.ElapsedTimeMs} ms" );
 				GetSegment( nodeIndex).Refine(  microRoute.Route );
 			}
         }

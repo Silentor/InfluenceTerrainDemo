@@ -406,15 +406,24 @@ namespace TerrainDemo.Hero
 			foreach (var dir in Directions.Cardinal)
 			{
 				var neighborPos = from + dir.ToVector2i(  );
-				var neighborBound = GetBound(neighborPos);
-				if ( _map.Bounds.Contains( neighborBound ) )
-				{
-					var cost = neighborBound.Average( blockPos => GetBlockCost( blockPos, dir ) );
-					if(!float.IsNaN( cost ) && !float.IsInfinity( cost ))
-						yield return ( neighborPos, cost );
-				}
+				var cost = GetCost( neighborPos, dir );
+				if(!float.IsInfinity( cost ))
+					yield return ( neighborPos, cost );
 			}
 		}
+
+		public float GetCost( GridPos position, Direction walkDirection )
+		{
+			var neighborBound = GetBound(position);
+			if ( _map.Bounds.Contains( neighborBound ) )
+			{
+				var cost = neighborBound.Average( blockPos => GetBlockCost( blockPos, walkDirection ) );
+				return cost;
+			}
+
+			return float.PositiveInfinity;
+		}
+
 		public float Heuristic( GridPos @from, GridPos to )
 		{
 			//return Vector2i.ManhattanDistance(from.Position, to.Position); //7980 blocks, 186 msec, 203 meters

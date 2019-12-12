@@ -142,7 +142,7 @@ namespace TerrainDemo.Navigation
 		/// <summary>
 		/// Nav node center point
 		/// </summary>
-		public readonly GridPos Position;
+		public readonly GridPos Position;		//todo consider hide position, NavNode more like a navigable area
 
 		public readonly GridArea Area;
 

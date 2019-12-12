@@ -130,8 +130,8 @@ namespace TerrainDemo.Navigation
             //var currentMap = from.Map;
             foreach (var intersection in raster)
             {
-	            var cost = loco.GetBlockCost( intersection.nextBlock, intersection.normal.Inverse( ) );
-	            if ( float.IsInfinity( cost ) || float.IsNaN( cost ) )
+	            var cost = loco.GetCost( intersection.nextBlock, intersection.normal.Inverse( ));
+	            if ( float.IsPositiveInfinity( cost ) )
 		            return false;
             }
 
