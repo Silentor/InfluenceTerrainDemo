@@ -129,10 +129,22 @@ namespace TerrainDemo.Navigation
 	        GridPos from, to;
 
 			//Fast pass: path inside navnode or neighbors navnodes
-	        if ( _segmentsCount <= 2 )
+	        if ( _segmentsCount == 1 )
 	        {
 		        from = Start;
 		        to = Finish;
+	        }
+			else if ( _segmentsCount == 2 )
+	        {
+		        if ( nodeIndex == 0 )
+		        {
+			        from = Start;
+			        to   = Finish;
+		        }
+		        else
+		        {
+			        to = from = Finish;
+		        }
 	        }
 			else
 	        {

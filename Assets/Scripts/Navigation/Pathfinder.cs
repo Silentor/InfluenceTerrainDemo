@@ -146,7 +146,17 @@ namespace TerrainDemo.Navigation
 
         public AStarSearch<GridPos>.SearchResult GetMicroRoute( GridPos from, GridPos to, BaseLocomotor loco )
         {
-			//Fast pass
+	        //Fast pass
+	        if ( from == to )
+		        return new AStarSearch<GridPos>.SearchResult(
+			        new List<GridPos>( ) {from},
+			        SearchState.Success,
+			        0,
+			        new Dictionary<GridPos, GridPos>( ),
+			        new Dictionary<GridPos, float>( )
+		        );
+
+	        //Fast pass
 			if(IsStraightPathExists( loco, from, to ))
 				return new AStarSearch<GridPos>.SearchResult( 
 					new List<GridPos>(){from, to},
