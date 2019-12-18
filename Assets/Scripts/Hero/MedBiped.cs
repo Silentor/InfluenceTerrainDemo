@@ -30,8 +30,10 @@ namespace TerrainDemo.Hero
 
 		protected override Bounds2i GetBound( GridPos position ) => new Bounds2i(position, 2, 2);
 		
-		protected override Vector2 ResolveBlockCollision( GridPos blockPosition, Vector2 position)
+		protected override (bool wasCollision, Vector2 resolvedPoint) ResolveBlockCollision( GridPos blockPosition, Vector2 position)
 		{
+			var wasCollision = false;
+
 			var newBound = GetBound( position );
             var boundsMin = newBound.Min;
 
@@ -56,6 +58,7 @@ namespace TerrainDemo.Hero
 			if ( position.X < restrictedPosition.X && !CheckBlock( left1, left2, Direction.Left ) )
 			{
 				position.X = restrictedPosition.X;
+				wasCollision = true;
 
 				if ( _owner.DebugLocomotion )
 				{
@@ -65,6 +68,7 @@ namespace TerrainDemo.Hero
 			else if ( position.X > restrictedPosition.X && !CheckBlock( right1, right2, Direction.Right ) )
 			{
 				position.X = restrictedPosition.X;
+				wasCollision = true;
 
 				if ( _owner.DebugLocomotion )
 				{
@@ -75,6 +79,7 @@ namespace TerrainDemo.Hero
 			if ( position.Y < restrictedPosition.Y && !CheckBlock( back1, back2, Direction.Back ) )
 			{
 				position.Y = restrictedPosition.Y;
+				wasCollision = true;
 
 				if ( _owner.DebugLocomotion )
 				{
@@ -84,6 +89,7 @@ namespace TerrainDemo.Hero
 			else if ( position.Y > restrictedPosition.Y && !CheckBlock( forward1, forward2, Direction.Forward ) )
 			{
 				position.Y = restrictedPosition.Y;
+				wasCollision = true;
 
 				if ( _owner.DebugLocomotion )
 				{
@@ -91,7 +97,7 @@ namespace TerrainDemo.Hero
 				}
 			}
 
-			return position;
+			return  ( wasCollision, position );
 		}
 
 		private static Bounds2i GetBound( Vector2 position )

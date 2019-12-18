@@ -30,8 +30,10 @@ namespace TerrainDemo.Hero
 
 		protected override Bounds2i GetBound( GridPos position ) => new Bounds2i(position, 1);
 		
-		protected override Vector2 ResolveBlockCollision( GridPos blockPosition, Vector2 position)
+		protected override (bool wasCollision, Vector2 resolvedPoint) ResolveBlockCollision( GridPos blockPosition, Vector2 position)
 		{
+			var wasCollision = false;
+
 			var fracPosX = position.X - blockPosition.X;
 			var fracPosZ = position.Y - blockPosition.Z;
 
@@ -57,16 +59,18 @@ namespace TerrainDemo.Hero
 
 			if ( fracPosX < 0.5 && !CheckBlock( left1, left2, left3, Direction.Left ) )
 			{
-				fracPosX = 0.5f;
+				position.X = 0.5f;
+				wasCollision = true;
 
 				if ( _owner.DebugLocomotion )
 				{
 					DebugDrawCollisionPlane( blockPosition + Vector2i.Left, Direction.Left );
 				}
 			}
-			else if ( fracPosX >= 0.5 && !CheckBlock( right1, right2, right3, Direction.Right ) )
+			else if ( fracPosX > 0.5 && !CheckBlock( right1, right2, right3, Direction.Right ) )
 			{
-				fracPosX = 0.5f;
+				position.X = 0.5f;
+				wasCollision = true;
 
 				if ( _owner.DebugLocomotion )
 				{
@@ -76,16 +80,18 @@ namespace TerrainDemo.Hero
 
 			if ( fracPosZ < 0.5 && !CheckBlock( back1, back2, back3, Direction.Back ) )
 			{
-				fracPosZ = 0.5f;
+				position.Y = 0.5f;
+				wasCollision = true;
 
 				if ( _owner.DebugLocomotion )
 				{
 					DebugDrawCollisionPlane( blockPosition + Vector2i.Back, Direction.Back );
 				}
 			}
-			else if ( fracPosZ >= 0.5 && !CheckBlock( forward1, forward2, forward3, Direction.Forward ) )
+			else if ( fracPosZ > 0.5 && !CheckBlock( forward1, forward2, forward3, Direction.Forward ) )
 			{
-				fracPosZ = 0.5f;
+				position.Y = 0.5f;
+				wasCollision = true;
 
 				if ( _owner.DebugLocomotion )
 				{
@@ -93,7 +99,7 @@ namespace TerrainDemo.Hero
 				}
 			}
 
-			return new Vector2(blockPosition.X + fracPosX, blockPosition.Z + fracPosZ);
+			return  ( wasCollision, position );
 		}
 	}
 }

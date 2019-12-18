@@ -54,6 +54,12 @@ namespace TerrainDemo.Hero
             }
         }
 
+        public void Warp( GridPos position )
+        {
+			Cancel( true );
+            Owner.Locomotor.Warp( position );
+        }
+
         /// <summary>
         /// Stop navigation on current path
         /// </summary>

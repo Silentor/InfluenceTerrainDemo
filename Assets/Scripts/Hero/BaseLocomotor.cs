@@ -85,6 +85,11 @@ namespace TerrainDemo.Hero
 			IsMoving = true;
 		}
 
+		public void Warp( GridPos position )
+		{
+			Position = position;
+		}
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -297,7 +302,7 @@ namespace TerrainDemo.Hero
 			if (fromBlock == toBlock)
 			{
 				//toMap = fromMap;
-				return ResolveBlockCollision(fromBlock, toPos);
+				return ResolveBlockCollision(fromBlock, toPos).resolvedPoint;
 			}
 
 			//Default pass: check every intersected block
@@ -305,15 +310,15 @@ namespace TerrainDemo.Hero
 			var pathRay       = new Ray2( fromPos, toPos - fromPos );
 			foreach ( var intersection in intersections )
 			{
-				var intersectPoint = pathRay.GetPoint( intersection.distance );
-				var collidedPos    = ResolveBlockCollision( intersection.prevBlock, intersectPoint );
+				var intersectPoint			= pathRay.GetPoint( intersection.distance );
+				var (wasCollision, resolvedPoint)		= ResolveBlockCollision( intersection.prevBlock, intersectPoint );
 
-				if ( collidedPos == intersectPoint )
+				if ( !wasCollision )
 					continue;
 
 				//Resolve collision of entire step vector
 				var collidedPosEnd = ResolveBlockCollision( intersection.prevBlock, toPos );
-				return Step( collidedPos, collidedPosEnd );
+				return Step( resolvedPoint, collidedPosEnd.resolvedPoint );
 			}
 
 			//No collision, pass is clear
@@ -321,7 +326,7 @@ namespace TerrainDemo.Hero
 			return toPos;
 		}
 
-		protected abstract Vector2 ResolveBlockCollision( GridPos blockPosition, Vector2 position );
+		protected abstract ( bool wasCollision, Vector2 resolvedPoint ) ResolveBlockCollision( GridPos blockPosition, Vector2 position );
 
 		[Conditional("UNITY_EDITOR")]
 		protected void DebugDrawCollisionPlane( GridPos block, Direction side )

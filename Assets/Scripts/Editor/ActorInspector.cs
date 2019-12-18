@@ -2,6 +2,7 @@
 using OpenToolkit.Mathematics;
 using TerrainDemo.Hero;
 using TerrainDemo.Micro;
+using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using TerrainDemo.Visualization;
 using UnityEditor;
@@ -25,6 +26,7 @@ namespace TerrainDemo.Editor
         private GUIStyle _nextWaypointStyle;
         private GUIStyle _oldWaypointStyle;
         private MicroMap _microMap;
+        private GridPos _customGoto;
 
         private void OnEnable()
         {
@@ -117,7 +119,28 @@ namespace TerrainDemo.Editor
 	        GUILayout.Label( "Navigator", EditorStyles.centeredGreyMiniLabel );
 	        GUILayout.Label( $"Is navigated: {_actor.Nav.IsNavigated}" );
 
-	        //List path
+			//Custom movement commands
+			using ( new GUILayout.HorizontalScope() )
+			{
+				GUILayout.Label( "X:", GUILayout.Width( 20 ) );
+				var customX = EditorGUILayout.IntField( _customGoto.X, GUILayout.Width( 50 ) );
+				GUILayout.Label( "  Z:", GUILayout.Width( 20 ) );
+				var customZ = EditorGUILayout.IntField( _customGoto.Z, GUILayout.Width( 50 ) );
+				_customGoto = new GridPos(customX, customZ);
+
+				GUILayout.Space( 10 );
+				if ( GUILayout.Button( "Goto", GUILayout.Width( 50 ) ) )
+				{
+					_actor.Nav.Go( _customGoto );
+				}
+
+				if ( GUILayout.Button( "Warp", GUILayout.Width( 50 ) ) )
+				{
+					_actor.Nav.Warp( _customGoto );
+				}
+			}
+
+			//List path
 	        if ( _actor.Nav.Path != null )
 	        {
 		        var path     = _actor.Nav.Path;
@@ -136,7 +159,7 @@ namespace TerrainDemo.Editor
 			        else
 				        waypointStyle = segmentStyle;
 
-			        using ( var h = new GUILayout.HorizontalScope( ) )
+			        using ( new GUILayout.HorizontalScope( ) )
 			        {
 				        GUILayout.Label( $"  {segment.ToString( )}, refined {segment.IsRefined}", segmentStyle );
 				        if ( GUILayout.Button( "ʘ", GUILayout.Height( 15 ), GUILayout.Width( 15 ) ) )
@@ -152,7 +175,7 @@ namespace TerrainDemo.Editor
 				        if ( waypoint == current.position )
 					        waypointStyle = _currentWaypointStyle;
 
-				        using ( var h = new GUILayout.HorizontalScope( ) )
+				        using ( new GUILayout.HorizontalScope( ) )
 				        {
 					        GUILayout.Label( $"    {waypoint.ToString( )}", waypointStyle );
 					        if ( GUILayout.Button( "ʘ", GUILayout.Height( 15 ), GUILayout.Width( 15 ) ) )
