@@ -122,9 +122,9 @@ namespace TerrainDemo.Editor
 			//Custom movement commands
 			using ( new GUILayout.HorizontalScope() )
 			{
-				GUILayout.Label( "X:", GUILayout.Width( 20 ) );
+				GUILayout.Label( "X:");
 				var customX = EditorGUILayout.IntField( _customGoto.X, GUILayout.Width( 50 ) );
-				GUILayout.Label( "  Z:", GUILayout.Width( 20 ) );
+				GUILayout.Label( "  Z:" );
 				var customZ = EditorGUILayout.IntField( _customGoto.Z, GUILayout.Width( 50 ) );
 				_customGoto = new GridPos(customX, customZ);
 
@@ -138,6 +138,8 @@ namespace TerrainDemo.Editor
 				{
 					_actor.Nav.Warp( _customGoto );
 				}
+
+				GUILayout.FlexibleSpace(  );
 			}
 
 			//List path

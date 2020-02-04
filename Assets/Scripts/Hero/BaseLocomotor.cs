@@ -53,8 +53,8 @@ namespace TerrainDemo.Hero
                     return new MedBiped(startPosition, startRotation, owner, map, navMap);
                 case Type.BigBiped:
 					return new BigBiped( startPosition, startRotation, owner, map, navMap );
-				case Type.Wheeled:
-					return new SmallWheel( startPosition, startRotation, owner, map, navMap );
+				//case Type.Wheeled:
+					//return new SmallWheel( startPosition, startRotation, owner, map, navMap );
 				default:
 					throw new ArgumentOutOfRangeException( nameof( type ), type, null );
 			}

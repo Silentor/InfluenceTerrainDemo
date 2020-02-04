@@ -59,7 +59,7 @@ namespace TerrainDemo.Hero
 
 			if ( fracPosX < 0.5 && !CheckBlock( left1, left2, left3, Direction.Left ) )
 			{
-				position.X = 0.5f;
+				position.X = blockPosition.X + 0.5f;
 				wasCollision = true;
 
 				if ( _owner.DebugLocomotion )
@@ -69,7 +69,7 @@ namespace TerrainDemo.Hero
 			}
 			else if ( fracPosX > 0.5 && !CheckBlock( right1, right2, right3, Direction.Right ) )
 			{
-				position.X = 0.5f;
+				position.X = blockPosition.X + 0.5f;
 				wasCollision = true;
 
 				if ( _owner.DebugLocomotion )
@@ -80,7 +80,7 @@ namespace TerrainDemo.Hero
 
 			if ( fracPosZ < 0.5 && !CheckBlock( back1, back2, back3, Direction.Back ) )
 			{
-				position.Y = 0.5f;
+				position.Y = blockPosition.Z + 0.5f;
 				wasCollision = true;
 
 				if ( _owner.DebugLocomotion )
@@ -90,7 +90,7 @@ namespace TerrainDemo.Hero
 			}
 			else if ( fracPosZ > 0.5 && !CheckBlock( forward1, forward2, forward3, Direction.Forward ) )
 			{
-				position.Y = 0.5f;
+				position.Y = blockPosition.Z + 0.5f;
 				wasCollision = true;
 
 				if ( _owner.DebugLocomotion )

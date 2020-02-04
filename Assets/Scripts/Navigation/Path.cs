@@ -66,7 +66,13 @@ namespace TerrainDemo.Navigation
 	            _finishSegment = _startSegment;
 	            _segmentsCount = 1;
             }
-            else
+            else if ( map.NavGraph.GetNeighbors( fromNode ).Select( n => n.neighbor ).Contains( toNode ) ) 
+            {
+				_startSegment = new Segment( fromNode, from );
+				_finishSegment = new Segment( toNode, to );
+				_segmentsCount = 2;
+            }
+			else
             {
 	            _startSegment = new Segment( fromNode, from );
 				_finishSegment = new Segment( toNode, to );
@@ -125,8 +131,7 @@ namespace TerrainDemo.Navigation
         //Calculate micro path for given nav node
         private void RefineSegment( int nodeIndex )
         {
-	        
-	        GridPos from, to;
+	        GridPos from, to;					//Refine micro path between theese points
 
 			//Fast pass: path inside navnode or neighbors navnodes
 	        if ( _segmentsCount == 1 )
@@ -149,19 +154,26 @@ namespace TerrainDemo.Navigation
 			else
 	        {
 		        GridPos prevPoint, myPoint, nextPoint;
-		        var prevIndex = Math.Max( nodeIndex - 1, 0 );
-		        var nextIndex = Math.Min( nodeIndex + 1, _segmentsCount - 1 );
 
-		        prevPoint = prevIndex == 0					? Start		: GetSegment(prevIndex).Node.Position;
-		        nextPoint = nextIndex == _segmentsCount - 1 ? Finish	: GetSegment(nextIndex).Node.Position;
-		        myPoint = nodeIndex == 0 
-			        ? Start 
-			        : nodeIndex == _segmentsCount - 1 
-				        ? Finish 
-				        : GetSegment(nodeIndex).Node.Position;
+		        if ( nodeIndex == 0 )
+		        {
+			        from = Start;
+					to = GridPos.Average( GetSegment( 0 ).Node.Position, GetSegment( 1 ).Node.Position );
+		        }
+				else if ( nodeIndex == _segmentsCount - 1 )
+		        {
+					from = GridPos.Average( GetSegment( _segmentsCount - 1 ).Node.Position, GetSegment( _segmentsCount - 2 ).Node.Position );
+					to = Finish;
+		        }
+		        else
+		        {
+			        prevPoint = GetSegment( nodeIndex - 1 ).Node.Position;
+			        nextPoint = GetSegment( nodeIndex + 1 ).Node.Position;
+			        myPoint = GetSegment( nodeIndex ).Node.Position;
 
-		        from = GridPos.Average( prevPoint, myPoint );
-		        to   = GridPos.Average(myPoint,    nextPoint);
+			        from = GridPos.Average( prevPoint, myPoint );
+			        to   = GridPos.Average( myPoint,   nextPoint );
+		        }
 	        }
 	        
 	        var microRoute = _map.Pathfinder.GetMicroRoute( from, to, Actor.Locomotor );

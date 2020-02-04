@@ -173,8 +173,8 @@ namespace TerrainDemo.Navigation
 			var timer = Stopwatch.StartNew( );
 			if ( result.Route != null )
 			{
-				//SimplifyStraightLines( result.Route );
-				//SimplifyCorners( result.Route, loco );
+				SimplifyStraightLines( result.Route );
+				SimplifyCorners( result.Route, loco );
 			}
 			timer.Stop( );
 
