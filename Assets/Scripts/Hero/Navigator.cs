@@ -103,13 +103,39 @@ namespace TerrainDemo.Hero
                 return;
             }
 
-            var pathIterator = path.Go( );
+            //var pathIterator = path.Go( );
+            var macroIterator = path.GetMacroIterator( );
+
+            
+            //_navMap.Pathfinder.GetMicroRoute( Owner.Locomotor. )
 
             try
             {
-                while( pathIterator.Next(  ) )
+                while( macroIterator.Next(  ) )
                 {
-                    var waypoint = pathIterator.Current;
+	                var currentSegment = macroIterator.Current;
+
+	                if ( currentSegment.Node == path.FinishNavNode ) //мы в финишной ноде, поиск до финальной точки, ограничение в текущую ноду
+	                {
+		                var segmentPoints =
+			                _navMap.Pathfinder.GetMicroRoute( Owner.Locomotor.BlockPosition, path.Finish, Owner.Locomotor );
+	                }
+                    else if()//Мы в ноде, предыдущей финишной, поиск как выше, но ограничение в 2 ноды
+
+                        //передавать в астар ограничения в виде навнод (обычно это текущая и следующая)
+
+                    //иначе поиск до точки между следующей и послеследующей нодами
+
+	                if ( !currentSegment.IsRefined )
+	                {
+		                var from = Owner.Locomotor.BlockPosition;
+
+		                var nextNode = path.GetNextNode( currentSegment.Node );
+
+	                }
+
+
+                    var waypoint = macroIterator.Current;
                     DebugCurrentWaypoint = waypoint;
                     var waypointPosition = BlockInfo.GetWorldCenter(waypoint.position);
 					Owner.Locomotor.MoveTo( waypointPosition );

@@ -100,6 +100,28 @@ namespace TerrainDemo.Navigation
 
 		public Iterator Go() => new Iterator( this );
 
+		public MacroIterator GetMacroIterator() => new MacroIterator( this );
+
+		public NavNode GetNextNode( NavNode node )
+		{
+			if ( node == FinishNavNode )
+				return node;
+
+			using ( var i = Segments.GetEnumerator( ) )
+			{
+				while ( i.MoveNext( ) )
+				{
+					if ( i.Current.Node == node )
+					{
+						i.MoveNext( );
+						return i.Current.Node;
+					}
+				}
+			}
+
+			throw new ArgumentException(  );
+		}
+
 		public override string ToString( )
 		{
 			return
@@ -309,6 +331,50 @@ namespace TerrainDemo.Navigation
 	        private readonly Path _path;
 	        private GridPos _lastPosition;
 	        private          int  _segmentIndex, _pointIndex = -1;
+	        private          bool _isFinished;
+        }
+
+        public class MacroIterator	 
+        {
+	        internal  MacroIterator( [NotNull] Path path)
+	        {
+		        _path = path ?? throw new ArgumentNullException( nameof( path ) );
+	        }
+
+	        public Segment Current
+	        {
+		        get
+		        {
+			        if ( _segmentIndex < 0 )
+				        throw new InvalidOperationException( "Iterator is not initialized" );
+
+			        if ( _isFinished )
+			        {
+				        return _path.GetSegment( _path._segmentsCount - 1 );
+			        }
+
+			        var segment = _path.GetSegment(_segmentIndex);
+			        return segment;
+		        }
+	        }
+
+	        public bool Next( )
+	        {
+		        if ( _isFinished ) 
+			        return false;
+
+		        if ( _segmentIndex >= _path._segmentsCount )
+		        {
+			        _isFinished = true;
+			        return false;
+		        }
+
+		        _segmentIndex++;
+
+		        return true;
+	        }
+	        private readonly Path _path;
+	        private          int  _segmentIndex = -1;
 	        private          bool _isFinished;
         }
     }
