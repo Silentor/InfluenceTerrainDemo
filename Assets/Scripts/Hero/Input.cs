@@ -47,8 +47,9 @@ namespace TerrainDemo.Hero
 
             //Get horizontal mouse move
             var normalizedPosition = UnityEngine.Input.mousePosition / new Vector2(Screen.width, Screen.height);
-
-            if (UnityEngine.Input.GetMouseButtonDown(1) && normalizedPosition.x >= 0 && normalizedPosition.x <= 1 && normalizedPosition.y >= 0 && normalizedPosition.y <= 1)
+            var isMouseInView = normalizedPosition.x >= 0 && normalizedPosition.x <= 1 && normalizedPosition.y >= 0 &&
+                                normalizedPosition.y <= 1;
+            if ( UnityEngine.Input.GetMouseButtonDown(1) && isMouseInView  )
             {
                 _oldMouseNormalizedPosition = normalizedPosition;
             }
@@ -68,7 +69,7 @@ namespace TerrainDemo.Hero
                 _oldMouseNormalizedPosition = null;
             }
 
-            DoZoom(UnityEngine.Input.mouseScrollDelta.y);
+            DoZoom( isMouseInView ? UnityEngine.Input.mouseScrollDelta.y : 0 ); 
 
             /*
             else if (UnityEngine.Input.GetKey(KeyCode.Q))
