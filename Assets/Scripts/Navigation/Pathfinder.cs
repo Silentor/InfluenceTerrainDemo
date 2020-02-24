@@ -127,6 +127,7 @@ namespace TerrainDemo.Navigation
                 return true;
 
             var raster = Intersections.GridIntersections(from, to);
+
             //var currentMap = from.Map;
             foreach (var intersection in raster)
             {
@@ -138,13 +139,38 @@ namespace TerrainDemo.Navigation
             return true;
         }
 
+        public static GridPos? GetsStraightPath(
+	        GridPos @from, GridPos to, BaseLocomotor loco, Func<GridPos, CheckNodeResult> checkNode )
+        {
+	        if (from == to)
+		        return to;
+
+	        var raster = Intersections.GridIntersections(from, to);
+
+	        //var currentMap = from.Map;
+	        foreach (var intersection in raster)
+	        {
+		        var checkResult = checkNode( intersection.nextBlock );
+		        if ( checkResult == CheckNodeResult.Invalid )
+			        return null;
+                else if ( checkResult == CheckNodeResult.Finish )
+			        return intersection.nextBlock;
+
+		        var cost = loco.GetCost( intersection.nextBlock, intersection.normal.Inverse( ));
+		        if ( float.IsPositiveInfinity( cost ) )
+			        return null;
+	        }
+
+	        return to;
+        }
+
         public AStarSearch<NavNode>.SearchResult GetMacroRoute(NavNode from, NavNode to, Actor actor )
         {
 	        var result = _macroNavAstar2.CreatePath( actor.Locomotor, from, to );
 	        return result;
         }
 
-        public AStarSearch<GridPos>.SearchResult GetMicroRoute( GridPos from, GridPos to, BaseLocomotor loco )
+        public AStarSearch<GridPos>.SearchResult GetMicroRoute( GridPos from, GridPos to, BaseLocomotor loco, [CanBeNull] Func<GridPos, CheckNodeResult> checkNode )
         {
 	        //Fast pass
 	        if ( from == to )
@@ -157,18 +183,17 @@ namespace TerrainDemo.Navigation
 		        );
 
 	        //Fast pass
-			if(IsStraightPathExists( loco, from, to ))
-				return new AStarSearch<GridPos>.SearchResult( 
-					new List<GridPos>(){from, to},
+	        var straigtLineResult = GetsStraightPath( from, to, loco, checkNode );
+            if(straigtLineResult.HasValue)
+                return new AStarSearch<GridPos>.SearchResult( 
+					new List<GridPos>(){from, straigtLineResult.Value},
 					SearchState.Success,
 					0, 
 					new Dictionary<GridPos, GridPos>(  ), 
 					new Dictionary<GridPos, float>(  )
 					);
 
-			const int searchRadius = 30 * 30;
-			var result = _microAStar.CreatePath( loco, from, to, 
-			             pos => GridPos.DistanceSquared( from, pos ) < searchRadius && GridPos.DistanceSquared( to, pos ) < searchRadius);
+			var result = _microAStar.CreatePath( loco, from, to, checkNode );
 
 			var timer = Stopwatch.StartNew( );
 			if ( result.Route != null )
@@ -233,6 +258,24 @@ namespace TerrainDemo.Navigation
             return waypoints;
         }
 
+    }
+
+    public enum CheckNodeResult
+    {
+        /// <summary>
+        /// Continue search
+        /// </summary>
+        Valid,      
+
+        /// <summary>
+        /// Bad node, omit it or cancel search
+        /// </summary>
+        Invalid,
+
+        /// <summary>
+        /// Destination node, finish search
+        /// </summary>
+        Finish
     }
     
 }

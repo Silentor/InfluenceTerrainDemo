@@ -182,7 +182,7 @@ MonoBehaviour:
   LandSize: 100
   CellSide: 10
   GridPerturbFreq: 0.01
-  GridPerturbPower: 10
+  GridPerturbPower: 0
   InfluencePerturbFreq: 0.08
   InfluencePerturbPower: 3
   Biomes:

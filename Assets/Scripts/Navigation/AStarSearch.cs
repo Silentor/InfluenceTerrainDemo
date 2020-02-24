@@ -30,10 +30,13 @@ namespace TerrainDemo.Navigation
             //_graph = graph;
         }
 
-        public SearchResult CreatePath(IAStarGraph<TNode> graph, TNode from, TNode to, Predicate<TNode> isValidNode = null)
+        public SearchResult CreatePath(IAStarGraph<TNode> graph, TNode from, TNode to, Func<TNode, CheckNodeResult> checkNode = null)
         {
             if (from.Equals(to))
 				return new SearchResult( new List<TNode>(), SearchState.Success, 0, new Dictionary<TNode, TNode>(), new Dictionary<TNode, float>());
+
+            if ( checkNode == null )
+	            checkNode = _ => CheckNodeResult.Valid;
 
             var timer = Stopwatch.StartNew();
             int processedNodes = 0, maxFrontierCount = 0;
@@ -54,13 +57,16 @@ namespace TerrainDemo.Navigation
                 processedNodes++;
                 var current = frontier.Dequeue();
 
-                if(current.Equals(to))
-                    break;
+                if ( current.Equals( to ) || checkNode( current ) == CheckNodeResult.Finish )
+                {
+	                goal = current;
+	                break;
+                }
 
                 var currentCost = _costSoFar[current];
 				foreach (var (neighbor, neighborCost) in graph.Neighbors(current))
                 {
-                    if(isValidNode != null && !isValidNode(neighbor))
+                    if( checkNode(neighbor) == CheckNodeResult.Invalid )
                         continue;
                     
                     var newCost = currentCost + neighborCost;

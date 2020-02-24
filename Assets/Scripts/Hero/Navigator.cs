@@ -1,11 +1,15 @@
-﻿using System.Threading;
+﻿using System;
+using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using TerrainDemo.Micro;
 using TerrainDemo.Navigation;
 using TerrainDemo.Spatial;
+using TerrainDemo.Tools;
 using UnityEngine.Assertions;
 using Vector2 = OpenToolkit.Mathematics.Vector2;
+using Debug = UnityEngine.Debug;
 
 namespace TerrainDemo.Hero
 {
@@ -75,6 +79,12 @@ namespace TerrainDemo.Hero
             }
         }
 
+        public void Update( float deltaTime )
+        {
+	        if ( _navigateTask != null && _navigateTask.IsFaulted )
+		        throw _navigateTask.Exception.Flatten( );
+        }
+
         private readonly MicroMap _map;
         private readonly NavigationMap _navMap;
         //private readonly Pathfinder _pathfinder;
@@ -85,9 +95,20 @@ namespace TerrainDemo.Hero
         {
             var task = NavigatePath(path, ct.Token);
 
-            using (ct)
+            try
             {
-                await task;
+	            using ( ct )
+	            {
+		            await task;
+	            }
+            }
+            catch ( TaskCanceledException )
+            {
+                //Just skip
+            }
+            catch ( Exception e )
+            {
+	            Debug.LogException( e );
             }
         }
 
@@ -106,47 +127,80 @@ namespace TerrainDemo.Hero
             //var pathIterator = path.Go( );
             var macroIterator = path.GetMacroIterator( );
 
-            
-            //_navMap.Pathfinder.GetMicroRoute( Owner.Locomotor. )
-
             try
             {
                 while( macroIterator.Next(  ) )
                 {
 	                var currentSegment = macroIterator.Current;
+	                var currentNode = currentSegment.Node;
 
-	                if ( currentSegment.Node == path.FinishNavNode ) //мы в финишной ноде, поиск до финальной точки, ограничение в текущую ноду
+	                AStarSearch<GridPos>.SearchResult segmentPoints;
+
+	                //мы в финишной ноде, поиск до финальной точки, ограничение в текущую ноду
+	                if ( currentNode == path.FinishNavNode )
 	                {
-		                var segmentPoints =
-			                _navMap.Pathfinder.GetMicroRoute( Owner.Locomotor.BlockPosition, path.Finish, Owner.Locomotor );
-	                }
-                    else if()//Мы в ноде, предыдущей финишной, поиск как выше, но ограничение в 2 ноды
+		                Func<GridPos, CheckNodeResult> checkNode = pos => path.FinishNavNode.Area.IsContains( pos )
+			                                                           ? CheckNodeResult.Valid
+			                                                           : CheckNodeResult.Invalid;
+		                segmentPoints =
+			                _navMap.Pathfinder.GetMicroRoute( Owner.Locomotor.BlockPosition, path.Finish, Owner.Locomotor, checkNode );
+                        currentSegment.Refine( segmentPoints.Route );
 
-                        //передавать в астар ограничения в виде навнод (обычно это текущая и следующая)
-
-                    //иначе поиск до точки между следующей и послеследующей нодами
-
-	                if ( !currentSegment.IsRefined )
-	                {
-		                var from = Owner.Locomotor.BlockPosition;
-
-		                var nextNode = path.GetNextNode( currentSegment.Node );
-
+		                Debug.Log(  $"Refined final segment, path {segmentPoints.Route.ToJoinedString()}");
 	                }
 
+	                //Мы в ноде, предыдущей финишной, поиск как выше, но ограничение в 2 ноды
+                    else if ( macroIterator.GetNext.Node == path.FinishNavNode )
+	                {
+		                Func<GridPos, CheckNodeResult> checkPos =
+			                p => currentNode.Area.IsContains( p ) || path.FinishNavNode.Area.IsContains( p )
+				                ? CheckNodeResult.Valid
+				                : CheckNodeResult.Invalid;
 
-                    var waypoint = macroIterator.Current;
-                    DebugCurrentWaypoint = waypoint;
-                    var waypointPosition = BlockInfo.GetWorldCenter(waypoint.position);
-					Owner.Locomotor.MoveTo( waypointPosition );
-                    while (Vector2.Distance((Vector2) Owner.Position, waypointPosition) > 0.1f)
-                    {
-                        //Owner.Rotate(waypointPosition);
-                        Owner.Locomotor.MoveTo(waypointPosition /*, waypoint.position == path.Finish*/ );
-                        await Task.Delay(300, ct);
-                    }
+		                segmentPoints =  _navMap.Pathfinder.GetMicroRoute( Owner.Locomotor.BlockPosition, path.Finish, Owner.Locomotor, checkPos );
+		                currentSegment.Refine( segmentPoints.Route );
 
-                    await Task.Delay(300, ct);
+		                Debug.Log(  $"Refined pre-final segment, path {segmentPoints.Route.ToJoinedString()}");
+	                }
+
+	                //иначе поиск до точки между следующей и послеследующей нодами
+	                else
+	                {
+		                var next = macroIterator.GetNext.Node;
+		                var next2 = macroIterator.GetNext2.Node;
+		                var midpoint = GridPos.Average( next.Position, next2.Position );
+
+		                Func<GridPos, CheckNodeResult> checkPos =
+			                p => next.Area.IsContains( p )
+				                ? CheckNodeResult.Finish
+				                : currentNode.Area.IsContains( p )
+					                ? CheckNodeResult.Valid
+					                : CheckNodeResult.Invalid;
+
+		                
+		                segmentPoints = _navMap.Pathfinder.GetMicroRoute( Owner.Locomotor.BlockPosition, midpoint, Owner.Locomotor, checkPos );
+		                currentSegment.Refine( segmentPoints.Route );
+
+		                Debug.Log(  $"Refined segment {currentNode}, path {segmentPoints.Route.ToJoinedString()}");
+	                }
+
+	                Debug.Log( $"Navigating segment {currentSegment.Node}" );
+
+	                foreach ( var point in segmentPoints.Route )
+	                {
+		                DebugCurrentWaypoint = (currentNode, point);
+
+		                var position = BlockInfo.GetWorldCenter(point);
+
+		                Debug.Log( $"Navigating to position {position}..." );
+
+                        var moveTo = Owner.Locomotor.MoveToAsync( position );
+                        await moveTo;
+		                
+		                Debug.Log( $"Navigated to position {position}, result {moveTo.Status}, tread {Thread.CurrentThread.ManagedThreadId}" );
+	                }
+
+	                Debug.Log( $"Finished segment {currentSegment.Node}" );
                 };
 
 				//Finish path

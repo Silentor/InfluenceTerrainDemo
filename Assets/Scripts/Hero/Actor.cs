@@ -78,6 +78,8 @@ namespace TerrainDemo.Hero
 		        Position = new Vector3( newPos.X, newHeight, newPos.Y );
 		        Changed?.Invoke( this );
 	        }
+
+            //Nav.Update( deltaTime );
         }
 
 #if UNITY_EDITOR

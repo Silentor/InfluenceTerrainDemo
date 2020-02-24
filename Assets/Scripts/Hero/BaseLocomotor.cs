@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using OpenToolkit.Mathematics;
 using TerrainDemo.Micro;
 using TerrainDemo.Navigation;
@@ -80,9 +82,35 @@ namespace TerrainDemo.Hero
 		}
 		public void MoveTo( Vector2 position )
 		{
+			if ( Position == position )
+			{
+				Stop(  );
+				return;
+			}
+
 			_targetPosition = position;
 			_targetVelocity = Vector2.Zero;
 			IsMoving = true;
+		}
+
+		public Task MoveToAsync( Vector2 position )
+		{
+			MoveTo( position );
+
+			//Already here
+			if ( !IsMoving )
+			{
+				return Task.CompletedTask;
+			}
+
+			if(_moveToCompletionSource != null && !_moveToCompletionSource.Task.IsCompleted)
+				_moveToCompletionSource.SetCanceled(  );
+
+			_moveToCompletionSource = new TaskCompletionSource<object>();
+
+			UnityEngine.Debug.Log( $"Moving to {position} async" );
+
+			return _moveToCompletionSource.Task;
 		}
 
 		public void Warp( GridPos position )
@@ -116,6 +144,12 @@ namespace TerrainDemo.Hero
 			_targetVelocity = Vector2.Zero;
 			_targetPosition = null;
 			IsMoving = false;
+
+			UnityEngine.Debug.Log( $"Stop" );
+
+			var completion = _moveToCompletionSource;
+			_moveToCompletionSource = null;
+			completion?.SetResult( null );	//todo distinct complete and cancel
 		}
 
 		public float GetBlockCost( GridPos blockPosition, Direction walkDirection )
@@ -199,14 +233,15 @@ namespace TerrainDemo.Hero
 		protected readonly Actor _owner;
 		private readonly MicroMap _map;
 		protected readonly NavigationMap _navMap;
-		
 
-		private Vector2 _targetVelocity;
-		private Vector2? _targetPosition;
-		private float _rotateDirection;
-		private Quaternion _targetRotation;
-		private Vector2? _lookAt;
-		private float _rotation;
+
+		private Vector2                      _targetVelocity;
+		private Vector2?                     _targetPosition;
+		private float                        _rotateDirection;
+		private Quaternion                   _targetRotation;
+		private Vector2?                     _lookAt;
+		private float                        _rotation;
+		private TaskCompletionSource<object> _moveToCompletionSource;
 
 
 		protected abstract Bounds2i GetBound( GridPos position );
@@ -348,6 +383,7 @@ namespace TerrainDemo.Hero
 		private static readonly (Vector3, Vector3, Vector3, Vector3) VertRectangleZ =
 			( new Vector3( 0,  -1, -0.5f ), new Vector3( 0, 1, -0.5f ), new Vector3( 0, 1, 0.5f ),
 				new Vector3( 0, -1, 0.5f ) );
+
 		[Conditional( "UNITY_EDITOR")]
 		protected void DebugDrawCollisionPlane( Vector2 position, Direction side )
 		{

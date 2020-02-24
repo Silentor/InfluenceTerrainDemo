@@ -98,7 +98,7 @@ namespace TerrainDemo.Navigation
             return result;
         }
 
-		public Iterator Go() => new Iterator( this );
+		//public Iterator Go() => new Iterator( this );
 
 		public MacroIterator GetMacroIterator() => new MacroIterator( this );
 
@@ -150,65 +150,6 @@ namespace TerrainDemo.Navigation
 			}
 		}
 
-        //Calculate micro path for given nav node
-        private void RefineSegment( int nodeIndex )
-        {
-	        GridPos from, to;					//Refine micro path between theese points
-
-			//Fast pass: path inside navnode or neighbors navnodes
-	        if ( _segmentsCount == 1 )
-	        {
-		        from = Start;
-		        to = Finish;
-	        }
-			else if ( _segmentsCount == 2 )
-	        {
-		        if ( nodeIndex == 0 )
-		        {
-			        from = Start;
-			        to   = Finish;
-		        }
-		        else
-		        {
-			        to = from = Finish;
-		        }
-	        }
-			else
-	        {
-		        GridPos prevPoint, myPoint, nextPoint;
-
-		        if ( nodeIndex == 0 )
-		        {
-			        from = Start;
-					to = GridPos.Average( GetSegment( 0 ).Node.Position, GetSegment( 1 ).Node.Position );
-		        }
-				else if ( nodeIndex == _segmentsCount - 1 )
-		        {
-					from = GridPos.Average( GetSegment( _segmentsCount - 1 ).Node.Position, GetSegment( _segmentsCount - 2 ).Node.Position );
-					to = Finish;
-		        }
-		        else
-		        {
-			        prevPoint = GetSegment( nodeIndex - 1 ).Node.Position;
-			        nextPoint = GetSegment( nodeIndex + 1 ).Node.Position;
-			        myPoint = GetSegment( nodeIndex ).Node.Position;
-
-			        from = GridPos.Average( prevPoint, myPoint );
-			        to   = GridPos.Average( myPoint,   nextPoint );
-		        }
-	        }
-	        
-	        var microRoute = _map.Pathfinder.GetMicroRoute( from, to, Actor.Locomotor );
-
-			if(microRoute.Route == null)
-				Debug.LogError( $"Segment {nodeIndex} refining failed, from {from} to {to}, owner {Actor}. Searched {microRoute.CameFromDebug.Count} blocks for {microRoute.ElapsedTimeMs} ms" );
-			else
-			{
-				Debug.Log( $"Segment {nodeIndex} refined, from {from} to {to}, owner {Actor}. Searched {microRoute.CameFromDebug.Count} blocks for {microRoute.ElapsedTimeMs} ms" );
-				GetSegment( nodeIndex).Refine(  microRoute.Route );
-			}
-        }
-
         public class Segment
         {
 	        public readonly NavNode Node;
@@ -256,84 +197,6 @@ namespace TerrainDemo.Navigation
 			private readonly List<GridPos> _points = new List<GridPos>();
         }
 
-		/// <summary>
-		/// Used to sequentially retrieve waypoints from path
-		/// </summary>
-        public class Iterator	 
-        {
-	        internal  Iterator( [NotNull] Path path)
-	        {
-		        _path = path ?? throw new ArgumentNullException( nameof( path ) );
-		        _lastPosition = path.Finish;
-	        }
-
-	        public (NavNode node, GridPos position) Current
-	        {
-		        get
-		        {
-			        if ( _pointIndex < 0 )
-				        throw new InvalidOperationException( "Iterator is not initialized" );
-
-			        if ( _isFinished )
-			        {
-				        var lastSegment = _path._finishSegment;
-				        return ( lastSegment.Node, lastSegment.Points[lastSegment.Points.Count - 1] );
-			        }
-
-			        var segment = _path.GetSegment(_segmentIndex);
-			        if ( !segment.IsRefined )
-			        {
-				        _path.RefineSegment( _segmentIndex );
-			        }
-
-			        return ( segment.Node, segment.Points[_pointIndex] );
-		        }
-	        }
-
-	        public bool Next( )
-	        {
-		        if ( _isFinished ) 
-			        return false;
-
-		        while ( true )
-		        {
-			        if ( _segmentIndex >= _path._segmentsCount )
-			        {
-				        _isFinished = true;
-				        return false;
-			        }
-
-			        var segment = _path.GetSegment(_segmentIndex);
-			        if ( !segment.IsRefined )
-			        {
-				        _path.RefineSegment( _segmentIndex );
-			        }
-
-			        _pointIndex++;
-
-			        if ( _pointIndex > segment.Points.Count - 1 )
-			        {
-				        _segmentIndex++;
-				        _pointIndex = 0;
-				        continue;
-			        }
-
-					//Skip duplicate positions
-			        var currentPoint = segment.Points[_pointIndex];
-					if(currentPoint == _lastPosition)
-						continue;
-
-					_lastPosition = currentPoint;
-
-			        return true;
-		        }
-	        }
-	        private readonly Path _path;
-	        private GridPos _lastPosition;
-	        private          int  _segmentIndex, _pointIndex = -1;
-	        private          bool _isFinished;
-        }
-
         public class MacroIterator	 
         {
 	        internal  MacroIterator( [NotNull] Path path)
@@ -358,12 +221,35 @@ namespace TerrainDemo.Navigation
 		        }
 	        }
 
+	        public Segment GetNext
+	        {
+		        get
+		        {
+			        if ( _segmentIndex < 0 )
+				        throw new InvalidOperationException( "Iterator is not initialized" );
+
+			        return _path.GetSegment( Math.Min( _segmentIndex + 1, _path._segmentsCount - 1 ) );
+		        }
+	        }
+
+	        public Segment GetNext2
+	        {
+		        get
+		        {
+			        if ( _segmentIndex < 0 )
+				        throw new InvalidOperationException( "Iterator is not initialized" );
+
+			        return _path.GetSegment( Math.Min( _segmentIndex + 2, _path._segmentsCount - 1 ) );
+		        }
+	        }
+
+
 	        public bool Next( )
 	        {
 		        if ( _isFinished ) 
 			        return false;
 
-		        if ( _segmentIndex >= _path._segmentsCount )
+		        if ( _segmentIndex >= _path._segmentsCount - 1 )
 		        {
 			        _isFinished = true;
 			        return false;
