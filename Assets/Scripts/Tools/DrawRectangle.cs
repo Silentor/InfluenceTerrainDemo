@@ -73,6 +73,26 @@ namespace TerrainDemo.Tools
             Debug.DrawLine(corner4, corner1, color, duration);
         }
 
+        [Conditional( "UNITY_EDITOR")]
+        public static void ForDebug(Bounds2i rectangle, Color color, bool filled)
+        {
+	        var corner1 = new Vector3(rectangle.Min.X, 0, rectangle.Min.Z);
+	        var corner2 = new Vector3(rectangle.Min.X, 0, rectangle.Max.Z + 1);
+	        var corner3 = new Vector3(rectangle.Max.X                     + 1, 0, rectangle.Max.Z + 1);
+	        var corner4 = new Vector3(rectangle.Max.X                     + 1, 0, rectangle.Min.Z);
+
+	        Debug.DrawLine(corner1, corner2, color, 0);
+	        Debug.DrawLine(corner2, corner3, color, 0);
+	        Debug.DrawLine(corner3, corner4, color, 0);
+	        Debug.DrawLine(corner4, corner1, color, 0);
+
+	        if (filled)
+	        {
+		        Debug.DrawLine(corner1, corner3, color, 0);
+		        Debug.DrawLine(corner2, corner4, color, 0);
+	        }
+        }
+
         [Conditional("UNITY_EDITOR")]
         public static void ForDebug(Bounds2i rectangle, float yValue, Color color, float duration = 0)
         {

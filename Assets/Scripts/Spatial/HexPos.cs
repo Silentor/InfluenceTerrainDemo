@@ -4,50 +4,55 @@ using JetBrains.Annotations;
 namespace TerrainDemo.Spatial
 {
     /// <summary>
-    /// Coordinates of Macro Cell in hexagonal grid. https://www.redblobgames.com/grids/hexagons/#coordinates-axial
+    /// Axial coordinates in hexagonal grid. https://www.redblobgames.com/grids/hexagons/#coordinates-axial
     /// </summary>
     public struct HexPos : IEquatable<HexPos>
     {
-        public readonly short X;
-        public readonly short Z;
+        public readonly short Q;
+        public readonly short R;
 
-        public static readonly HexPos ZPlus = new HexPos(0, 1);
-        public static readonly HexPos YPlus = new HexPos(1, 1);
-        public static readonly HexPos XPlus = new HexPos(1, 0);
-        public static readonly HexPos ZMinus = new HexPos(0, -1);
-        public static readonly HexPos YMinus = new HexPos(-1, -1);
-        public static readonly HexPos XMinus = new HexPos(-1, 0);
+        //Basic axes
+        public static readonly HexPos RPlus = new HexPos(0, 1);
+        public static readonly HexPos QPlus = new HexPos(1, 0);
+        public static readonly HexPos RMinus = new HexPos(0, -1);
+        public static readonly HexPos QMinus = new HexPos(-1, 0);
 
-        //From cell "top" clockwise
-        //      Z+
-        // X-  ---  Y+ 
-        //    /   \
-        //    \   /
-        // Y-  ---  X+ 
-        //      Z-
-        public static readonly HexPos[] Directions =
+        public static readonly HexPos Zero = new HexPos(0, 0);
+
+        // From "right" (Q+) clockwise
+		//
+        //         R+
+        //    / \ 
+        //   |   |  Q+
+        //   |   |
+        //    \ /
+        //      
+        //
+
+
+        public static readonly Vector2i[] Directions =
         {
-            ZPlus, YPlus, XPlus, ZMinus, YMinus, XMinus,
+	        ( 1, 0), (1, -1), ( 0, -1), ( -1, 0), (-1, 1), ( 0, 1),
         };
 
-        public HexPos(int x, int z)
+        public HexPos(int q, int r)
         {
-            X = (short)x;
-            Z = (short)z;
+            Q = (short)q;
+            R = (short)r;
         }
 
         [Pure]
-        public HexPos Translated(HexPos offset)
+        public HexPos Translated(Vector2i offset)
         {
-            return new HexPos(X + offset.X, Z + offset.Z);
+            return new HexPos( Q + offset.X, R + offset.Z );
         }
 
         public bool Equals(HexPos other)
         {
-            return X == other.X && Z == other.Z;
+            return Q == other.Q && R == other.R;
         }
 
-        public override int GetHashCode() => (ushort)X | ((ushort)Z << 16);
+        public override int GetHashCode() => (ushort)Q | ((ushort)R << 16);
 
         public override bool Equals(object obj)
         {
@@ -65,21 +70,11 @@ namespace TerrainDemo.Spatial
             return !left.Equals(right);
         }
 
-        public static HexPos operator +(HexPos left, HexPos right)
-        {
-            return new HexPos(left.X + right.X, left.Z + right.Z);
-        }
+        //public static HexPos operator +(HexPos left, HexPos right)
+        //{
+        //    return new HexPos(left.Q + right.Q, left.R + right.R);
+        //}
 
-        public override string ToString() => $"<{X}, {Z}>";
-
-        public enum Sides
-        {
-            ZPositive = 0,
-            YPositive,
-            XPositive,
-            ZNegative,
-            YNegative,
-            XNegative
-        }
+        public override string ToString() => $"<{Q}, {R}>";
     }
 }
