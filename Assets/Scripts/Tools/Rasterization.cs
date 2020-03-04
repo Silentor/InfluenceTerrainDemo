@@ -357,6 +357,57 @@ namespace TerrainDemo.Tools
             return new GridArea ( result );
         }
 
+        public static GridArea ConvexToBlocks(Predicate<GridPos> contains, Bounds2i bound)
+        {
+	        var result = new List<(GridPos, GridPos)>();
+	        var minZ   = bound.Min.Z;
+	        var maxZ   = bound.Max.Z;
+	        var minX   = bound.Min.X;
+	        var maxX   = bound.Max.X;
+
+	        //DrawRectangle.ForGizmo(new Box2(minX, maxZ, maxX, minZ), Color.blue / 2);
+
+	        //Scan bound from bottom  to top
+	        for (int z = minZ; z <= maxZ; z++)
+	        {
+		        int? leftContainingPos  = null;
+		        int? rightContainingPos = null;
+
+		        //Find left and right blocks in cell
+		        for (int x = minX; x <= maxX; x++)
+		        {
+			        if (contains(new GridPos(x, z)))
+			        {
+				        leftContainingPos = x;
+				        break;
+			        }
+		        }
+
+		        if (leftContainingPos != null)
+		        {
+			        for (int x = maxX; x >= minX; x--)
+			        {
+				        if (leftContainingPos.Value == x || contains(new GridPos(x, z)))
+				        {
+					        rightContainingPos = x;
+					        break;
+				        }
+			        }
+		        }
+
+		        if (leftContainingPos.HasValue && rightContainingPos.HasValue)
+		        {
+			        //Add block pos from left to right
+			        //for (int x = leftContainingPos.Value; x <= rightContainingPos.Value; x++)
+			        {
+				        result.Add((new GridPos(leftContainingPos.Value, z), new GridPos(rightContainingPos.Value, z)));
+			        }
+		        }
+	        }
+
+	        return new GridArea ( result );
+        }
+
         /// <summary>
         /// Bounds scan algorithm for convex polygon. Not very fast but accurate. As fast as bounding box is tight
         /// </summary>
@@ -412,6 +463,16 @@ namespace TerrainDemo.Tools
 
             return result.ToArray();
         }
+
+        /// <summary>
+        /// Rasterize hex to blocks
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <returns></returns>
+        //public static GridPos[] HexToBlocks( HexPos pos )
+        //{
+	       // return ConvexToBlocks( HexGrid.BlockToHex( pos ) )
+        //}
 
         /// <summary>
         /// Do not accurately rasterize, need invesigation

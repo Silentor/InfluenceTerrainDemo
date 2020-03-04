@@ -11,6 +11,23 @@ namespace TerrainDemo.Tests
 	{
 		public GridPos MousePos;
 		public HexPos  Hex;
+		private HexGrid<HexPos, int, int> _hex;
+
+		private void Awake( )
+		{
+			_hex = new HexGrid<HexPos, int, int>( 10, 5 );
+
+			for ( int q = -10; q < 10; q++ )
+			{
+				for ( int r = -10; r < 10; r++ )
+				{
+					var h = new HexPos(q, r);
+					if ( _hex.IsContains( h ) )
+						_hex[h] = h;
+				}
+				
+			}
+		}
 
 		private void OnSceneGUI(SceneView sceneView)
 		{
@@ -20,7 +37,7 @@ namespace TerrainDemo.Tests
 			{
 				var worldPoint = worldRay.GetPoint(length);
 				var gridPos    = (GridPos)worldPoint;
-				var hex        = HexGrid.BlockToHex(gridPos);
+				var hex        = _hex.BlockToHex(gridPos);
 
 				MousePos = gridPos;
 				Hex      = hex;
@@ -29,30 +46,33 @@ namespace TerrainDemo.Tests
 			var labelStyle = new GUIStyle(GUI.skin.label);
 			labelStyle.active.textColor = Color.magenta;
 			Handles.color = Color.magenta;
-			
-			for ( int q = -4; q <= 4; q++ )
-				for ( int r = -4; r <= 4; r++ )
+
+			var storage = _hex.GetInternalStorage( );
+			for ( int x = 0; x < storage.GetLength( 0 ); x++ )
+				for ( int z = 0; z < storage.GetLength( 1 ); z++ )
 				{
-					var hexPos = new HexPos( q, r );
-					var hexCenter = HexGrid.GetHexCenter( hexPos );
-					Handles.Label( hexCenter.ConvertTo3D(  ), hexPos.ToString(  ) );
-					Handles.SphereHandleCap( 0, hexCenter, Quaternion.identity, 0.5f, EventType.Repaint );
-
-					var hexCenterBlock = HexGrid.GetHexCenterBlock( hexPos );
-					DrawRectangle.ForHandle( new Bounds2i(hexCenterBlock, 0), Color.magenta );
-
-					//if ( hexPos == HexPos.Zero )
-					{
-						var hexVertices = HexGrid.GetHexVertices( hexPos );
-
-						//for ( var i = 0; i < hexVertices.Length; i++ )
-						{
-							//var v1 = hexVertices[i];
-							//var v2 = hexVertices[(i + 1)% 6];
-							Handles.DrawPolyLine( hexVertices.Select( v => (Vector3)v ).ToArray(  ) );
-						}
-					}
+					var h = storage[x, z];
+					DrawHex( h.Data );
 				}
+
+			//for (int q = -4; q <= 4; q++)
+			//	for (int r = -4; r <= 4; r++)
+			//	{
+			//		var hexPos = new HexPos(q, r);
+			//		DrawHex( hexPos );
+			//	}
+		}
+		private void DrawHex( HexPos hexPos )
+		{
+			var hexCenter = _hex.GetHexCenter( hexPos );
+			Handles.Label( hexCenter.ConvertTo3D( ), hexPos.ToString( ) );
+			Handles.SphereHandleCap( 0, hexCenter, Quaternion.identity, 0.5f, EventType.Repaint );
+
+			var hexCenterBlock = _hex.GetHexCenterBlock( hexPos );
+			DrawRectangle.ForHandle( new Bounds2i( hexCenterBlock, 0 ), Color.magenta );
+
+			var hexVertices = _hex.GetHexVerticesPosition( hexPos );
+			Handles.DrawPolyLine( hexVertices.Select( v => (Vector3) v ).ToArray( ) );
 		}
 
 		void Update( )
@@ -61,23 +81,23 @@ namespace TerrainDemo.Tests
 				for ( int z = -30; z < 30; z++ )
 				{
 					var gridPos = new GridPos(x, z);
-					var hex     = HexGrid.BlockToHex( gridPos );
+					var hex     = _hex.BlockToHex( gridPos );
 
 					var gridPosBounds = new Bounds2i(gridPos, 0);
 					if(hex == new HexPos(0, 0))
 						DrawRectangle.ForDebug( gridPosBounds, Color.white, true );
-					else if(hex == new HexPos(1, 0))
-						DrawRectangle.ForDebug( gridPosBounds, Color.blue, true );
-					else if(hex == new HexPos(0, 1))
-						DrawRectangle.ForDebug( gridPosBounds, Color.green, true );
-					else if(hex == new HexPos(1, 1))
-						DrawRectangle.ForDebug( gridPosBounds, Color.red, true );
-					else if(hex == new HexPos(-1, 0))
-						DrawRectangle.ForDebug( gridPosBounds, Color.cyan, true );
-					else if(hex == new HexPos(0, -1))
-						DrawRectangle.ForDebug( gridPosBounds, Color.green / 2, true );
-					else if(hex == new HexPos(-1, -1))
-						DrawRectangle.ForDebug( gridPosBounds, Color.yellow, true );
+					//else if(hex == new HexPos(1, 0))
+					//	DrawRectangle.ForDebug( gridPosBounds, Color.blue, true );
+					//else if(hex == new HexPos(0, 1))
+					//	DrawRectangle.ForDebug( gridPosBounds, Color.green, true );
+					//else if(hex == new HexPos(1, 1))
+					//	DrawRectangle.ForDebug( gridPosBounds, Color.red, true );
+					//else if(hex == new HexPos(-1, 0))
+					//	DrawRectangle.ForDebug( gridPosBounds, Color.cyan, true );
+					//else if(hex == new HexPos(0, -1))
+					//	DrawRectangle.ForDebug( gridPosBounds, Color.green / 2, true );
+					//else if(hex == new HexPos(-1, -1))
+					//	DrawRectangle.ForDebug( gridPosBounds, Color.yellow, true );
 					//else
 					//{
 					//	var hash = Math.Abs((hex.Q + hex.R) % 3) / 2;

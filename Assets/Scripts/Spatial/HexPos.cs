@@ -12,11 +12,14 @@ namespace TerrainDemo.Spatial
         public readonly short R;
 
         //Basic axes
-        public static readonly HexPos RPlus = new HexPos(0, 1);
-        public static readonly HexPos QPlus = new HexPos(1, 0);
-        public static readonly HexPos RMinus = new HexPos(0, -1);
-        public static readonly HexPos QMinus = new HexPos(-1, 0);
+        public static readonly Vector2i RPlus = new Vector2i(0, 1);
+        public static readonly Vector2i QPlus = new Vector2i(1, 0);
+        public static readonly Vector2i SPlus = new Vector2i(1, -1);
+        public static readonly Vector2i RMinus = new Vector2i(0, -1);
+        public static readonly Vector2i QMinus = new Vector2i(-1, 0);
+        public static readonly Vector2i SMinus = new Vector2i(-1, 1);
 
+        //Origin
         public static readonly HexPos Zero = new HexPos(0, 0);
 
         // From "right" (Q+) clockwise
@@ -26,13 +29,13 @@ namespace TerrainDemo.Spatial
         //   |   |  Q+
         //   |   |
         //    \ /
-        //      
+        //         S+
         //
 
 
         public static readonly Vector2i[] Directions =
         {
-	        ( 1, 0), (1, -1), ( 0, -1), ( -1, 0), (-1, 1), ( 0, 1),
+	        QPlus, SPlus, RMinus, QMinus, SMinus, RPlus,
         };
 
         public HexPos(int q, int r)
@@ -70,11 +73,24 @@ namespace TerrainDemo.Spatial
             return !left.Equals(right);
         }
 
+        public static HexPos operator +(HexPos position, Vector2i offset)
+        {
+	        return new HexPos((short)(position.Q + offset.X), (short)(position.R + offset.Z));
+        }
+
         //public static HexPos operator +(HexPos left, HexPos right)
         //{
         //    return new HexPos(left.Q + right.Q, left.R + right.R);
         //}
 
         public override string ToString() => $"<{Q}, {R}>";
+    }
+
+    /// <summary>
+    /// Clockwise
+    /// </summary>
+    public enum HexDir
+    {
+        QPlus, SPlus, RMinus, QMinus, SMinus, RPlus
     }
 }

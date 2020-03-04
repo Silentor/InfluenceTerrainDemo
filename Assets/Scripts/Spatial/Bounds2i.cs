@@ -63,6 +63,13 @@ namespace TerrainDemo.Spatial
         }
 
         [Pure]
+        public bool Contains(int x, int z)
+        {
+	        return x >= Min.X && x <= Max.X &&
+	               z >= Min.Z && z <= Max.Z;
+        }
+
+        [Pure]
         public bool Contains(Bounds2i bound)
         {
 	        return bound.Min.X >= Min.X && bound.Max.X <= Max.X &&
