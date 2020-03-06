@@ -41,26 +41,37 @@ namespace TerrainDemo.Spatial
 			set => Set( q, r, value );
 		}
 
+		public TEdge GetEdge( HexPos hex, HexDir direction )
+		{
+			return GetEdges( hex )[direction];
+		}
+
 		public Edges GetEdges( HexPos hex )
 		{
-			if ( IsContains( hex ) )
-			{
-				var holder = GetHolder( hex.Q, hex.R );
-				return new Edges( holder );
-			}
+			var holder = GetOrCreateHolder( hex.Q, hex.R );
+			return new Edges( holder );
+		}
 
-			throw new ArgumentOutOfRangeException( nameof(hex), hex, "out of range or null" );
+		public TVertex GetVertex( HexPos hex, int direction )
+		{
+			return GetVertices( hex )[direction];
 		}
 
 		public Vertices GetVertices( HexPos hex )
 		{
-			if ( IsContains( hex ) )
-			{
-				var holder = GetHolder( hex.Q, hex.R );
-				return new Vertices( holder );
-			}
+			var holder = GetOrCreateHolder( hex.Q, hex.R );
+			return new Vertices( holder );
+		}
 
-			throw new ArgumentOutOfRangeException( nameof(hex), hex, "out of range or null" );
+		public IEnumerable<TFace> GetNeighbors( HexPos hex )
+		{
+			for ( var i = 0; i < HexPos.Directions.Length; i++ )
+			{
+				var dir      = HexPos.Directions[i];
+				var neighPos		= hex + dir;
+				if ( IsContains( neighPos ) )
+					yield return this[neighPos];
+			}
 		}
 
 		/// <summary>
@@ -85,8 +96,10 @@ namespace TerrainDemo.Spatial
 		{
 			var (x, y) = HexToArray2d( pos.Q, pos.R );
 
-			return x >= 0 && x < _bound.Size.X && y >= 0 && y < _bound.Size.Z && _faces[x, y] != null;
+			return x >= 0 && x < _bound.Size.X && y >= 0 && y < _bound.Size.Z;
 		}
+
+		#region Layout
 
 		public Vector2 GetHexCenter( HexPos hex )
 		{
@@ -131,6 +144,8 @@ namespace TerrainDemo.Spatial
 			return new Bounds2i(new GridPos(xMin, zMin), new GridPos(xMax, zMax));
 		}
 
+		#endregion
+
 		private readonly FaceHolder[,] _faces;
 		private readonly Vector2d	QBasis ;
 		private readonly Vector2d	RBasis ;
@@ -138,38 +153,46 @@ namespace TerrainDemo.Spatial
 		private readonly Bounds2i _bound;
 
 		[MethodImpl( MethodImplOptions.AggressiveInlining)]
-		private void Set( int q, int r, TFace data )
+		private FaceHolder Set( int q, int r, TFace data )
 		{
-			var (x, y) = HexToArray2d( q, r );
-			
-			if ( _faces[x, y] != null )
-				_faces[x, y].Data = data;
-			else
-			{
-				var newFace = new FaceHolder( new HexPos(q, r), this );
-				newFace.Data = data;
-				_faces[x, y] = newFace;
-			}
+			var holder = GetOrCreateHolder( q, r );
+			holder.Data = data;
+			return holder;
 		}
 
 		[MethodImpl( MethodImplOptions.AggressiveInlining)]
 		private TFace Get( int q, int r )
 		{
-			var (x, y) = HexToArray2d( q, r );
+			var faceHolder = GetHolder( q, r );
+			if ( faceHolder != null )
+				return faceHolder.Data;
 
-			if ( _faces[x, y] == null )
-			{
-				return default;
-			}
-
-			return _faces[x, y].Data;
+			return default;
 		}
 		[MethodImpl( MethodImplOptions.AggressiveInlining)]
 		private FaceHolder GetHolder( int q, int r )
 		{
+			CheckHexPosition( q, r );
+
 			var (x, y) = HexToArray2d( q, r );
 			return _faces[x, y];
 		}
+
+		private FaceHolder GetOrCreateHolder( int q, int r )
+		{
+			CheckHexPosition( q, r );
+
+			var (x, y) = HexToArray2d( q, r );
+			var face = _faces[x, y];
+			
+			if ( face != null )
+				return face;
+
+			face = new FaceHolder( new HexPos(q, r), this );
+			_faces[x, y] = face;
+			return face;
+		}
+
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private (int x, int y) HexToArray2d( int q, int r )
 		{
@@ -178,12 +201,25 @@ namespace TerrainDemo.Spatial
 			
 			return ( x, y );
 		}
+		private void CheckHexPosition( int q, int r )
+		{
+			var (x, y) = HexToArray2d( q, r );
+
+			if ( x < 0 || x >= _bound.Size.X || y < 0 || y >= _bound.Size.Z ) 
+				throw new ArgumentOutOfRangeException( "hex", new HexPos(q, r), 
+				                                       "out of range" );
+		}
+		private void CheckHexPosition( HexPos pos )
+		{
+			CheckHexPosition( pos.Q, pos.R );
+		}
+
 		internal FaceHolder[,] GetInternalStorage( )
 		{
 			return _faces;
 		}
 
-		//[DebuggerDisplay( "{Pos} = {Data}")]
+		[DebuggerDisplay( "{Pos} = {Data}")]
 		public class FaceHolder
 		{
 			public readonly HexPos Pos;
@@ -200,8 +236,9 @@ namespace TerrainDemo.Spatial
 				{
 					var dir      = HexPos.Directions[i];
 					var neighPos = position + dir;
-					var neigh    = owner.GetHolder( neighPos.Q, neighPos.R );
-					if ( neigh != null )
+
+					FaceHolder neigh;
+					if(owner.IsContains( neighPos ) && (neigh = owner.GetHolder( neighPos.Q, neighPos.R )) != null)
 					{
 						var oppositeIndex = ( i + 3 ) % 6;
 						Edges[i] = neigh.Edges[oppositeIndex];
@@ -217,8 +254,8 @@ namespace TerrainDemo.Spatial
 				{
 					var dir      = HexPos.Directions[i];
 					var neighPos = position + dir;
-					var neigh    = owner.GetHolder( neighPos.Q, neighPos.R );
-					if ( neigh != null )
+					FaceHolder neigh;
+					if ( owner.IsContains( neighPos ) && ( neigh = owner.GetHolder( neighPos.Q, neighPos.R )) != null )
 					{
 						var vert1 = i;
 						var vert2 = ( i + 1 ) % 6;
@@ -257,11 +294,11 @@ namespace TerrainDemo.Spatial
 		[DebuggerDisplay( "Edges of {_face.Pos}")]
 		public struct Edges 
 		{
-			public TEdge this[ int index ]
-			{
-				get => _face.Edges[index].Data;
-				set => _face.Edges[index].Data = value;
-			}
+			//public TEdge this[ int index ]
+			//{
+			//	get => _face.Edges[index].Data;
+			//	set => _face.Edges[index].Data = value;
+			//}
 
 			public TEdge this[ HexDir index ]
 			{
@@ -286,11 +323,12 @@ namespace TerrainDemo.Spatial
 				set => _face.Vertices[index].Data = value;
 			}
 
-			public TVertex this[ HexDir index ]
-			{
-				get => _face.Vertices[(int)index].Data;
-				set => _face.Vertices[(int)index].Data = value;
-			}
+			//not applicable
+			//public TVertex this[ HexDir index ]
+			//{
+			//	get => _face.Vertices[(int)index].Data;
+			//	set => _face.Vertices[(int)index].Data = value;
+			//}
 
 			internal Vertices( FaceHolder face )
 			{

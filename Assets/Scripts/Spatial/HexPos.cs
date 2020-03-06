@@ -50,6 +50,14 @@ namespace TerrainDemo.Spatial
             return new HexPos( Q + offset.X, R + offset.Z );
         }
 
+        public int Distance( HexPos to )
+        {
+	        var fromCube = ToCube( );
+	        var toCube = to.ToCube( );
+	        return Vector3i.ManhattanDistance( fromCube, toCube ) / 2;
+        }
+        public Vector3i ToCube( ) =>      new Vector3i( Q, R, -Q - R );
+
         public bool Equals(HexPos other)
         {
             return Q == other.Q && R == other.R;

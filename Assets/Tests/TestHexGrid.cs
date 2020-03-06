@@ -137,6 +137,8 @@ namespace TerrainDemo.Tests
 
 			EditorGUILayout.LabelField( "Mouse:", _target.MousePos.ToString(  ) );
 			EditorGUILayout.LabelField( "Hex:", _target.Hex.ToString(  ) );
+			EditorGUILayout.LabelField( "Cube:", _target.Hex.ToCube(  ).ToString(  ) );
+			EditorGUILayout.LabelField( "Distance:", _target.Hex.Distance( HexPos.Zero ).ToString() );
 		}
 
 		public override bool RequiresConstantRepaint( ) => true;

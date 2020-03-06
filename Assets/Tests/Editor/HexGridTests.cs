@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Linq;
 using NUnit.Framework;
 using TerrainDemo.Spatial;
 using UnityEngine.TestTools;
@@ -41,10 +42,31 @@ namespace TerrainDemo.Tests.Editor
 	        grid[neighbor] = neighbor;
 
 	        //Assert that vertex is shared
+            //Assigned node
 	        Assert.IsTrue( grid.GetVertices( HexPos.Zero + HexPos.SPlus )[5] == 1 );
+            //Unassigned node
 	        Assert.IsTrue( grid.GetVertices( HexPos.Zero + HexPos.QPlus )[3] == 1 );
         }
 
-        
+
+        [Test]
+        public void TestNeighbors( )
+        {
+	        var grid = new HexGrid<HexPos?, int, int>( 10, 2 );
+            grid[HexPos.Zero] = HexPos.Zero;
+            grid[HexPos.Zero + HexPos.QPlus] = HexPos.Zero + HexPos.QPlus;
+            grid[HexPos.Zero + HexPos.QMinus] = HexPos.Zero + HexPos.QMinus;
+
+            Assert.That( 
+	            grid.GetNeighbors(HexPos.Zero).ToArray(  ), 
+	            Is.EquivalentTo( new HexPos?[]
+	                             {
+		                             HexPos.Zero + HexPos.QPlus, null, null, HexPos.Zero + HexPos.QMinus, null, null
+	                             } )
+                         );
+        }
+
+       
+
     }
 }
