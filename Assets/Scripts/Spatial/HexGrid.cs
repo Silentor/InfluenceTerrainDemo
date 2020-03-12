@@ -11,7 +11,7 @@ namespace TerrainDemo.Spatial
 	/// <summary>
 	/// Regular hexagonal grid (top-pointed) optimized to block rasterization
 	/// </summary>
-	public class HexGrid<TFace, TEdge, TVertex>
+	public partial class HexGrid<TFace, TEdge, TVertex>
 	{
 		public readonly float Size;
 		public readonly float Width;
@@ -74,6 +74,16 @@ namespace TerrainDemo.Spatial
 			}
 		}
 
+		public IEnumerable<TFace> FloodFill(HexPos startFace, Predicate<TFace> fillCondition = null)
+		{
+			var distanceEnumerator = new FloodFillEnumerator(this, startFace, fillCondition);
+			for (int distance = 0; distance < 10; distance++)
+			{
+				foreach (var position in distanceEnumerator.GetNeighbors(distance))
+					yield return this[position];
+			}
+		}
+
 		/// <summary>
 		/// Get hex coords for given block oords
 		/// Based on https://www.redblobgames.com/grids/hexagons/more-pixel-to-hex.html (Branchless method)
@@ -120,7 +130,7 @@ namespace TerrainDemo.Spatial
 			return result;
 		}
 
-		#region Layout
+#region Layout
 
 		public Vector2 GetHexCenter( HexPos hex )
 		{
@@ -235,13 +245,24 @@ namespace TerrainDemo.Spatial
 			CheckHexPosition( pos.Q, pos.R );
 		}
 
+		private IEnumerable<HexPos> GetNeighborPositions( HexPos hex )
+		{
+			for ( var i = 0; i < HexPos.Directions.Length; i++ )
+			{
+				var dir      = HexPos.Directions[i];
+				var neighPos = hex + dir;
+				if ( IsContains( neighPos ) )
+					yield return neighPos;
+			}
+		}
+
 		internal FaceHolder[,] GetInternalStorage( )
 		{
 			return _faces;
 		}
 
 		//https://www.redblobgames.com/grids/hexagons/#rounding
-		private Vector3i CubeRound( Vector3 cubeFloat )
+		private static Vector3i CubeRound( Vector3 cubeFloat )
 		{
 			var rx = (int)Math.Round( cubeFloat.X );
 			var ry = (int)Math.Round( cubeFloat.Y );
