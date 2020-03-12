@@ -32,7 +32,7 @@ namespace TerrainDemo.Micro
         public IEnumerable<Actor> Actors => _actors;
        
 
-        public MicroMap(MacroMap macromap, TriRunner settings) : base("MicroMap", (Bounds2i)macromap.Bounds)
+        public MicroMap(MacroMap macromap, TriRunner settings) : base("MicroMap", (Bound2i)macromap.Bounds)
         {
             _macromap = macromap;
             _settings = settings;

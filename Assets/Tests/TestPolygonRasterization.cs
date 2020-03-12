@@ -77,7 +77,7 @@ namespace TerrainDemo.Tests
                 if (Workmode == Mode.Blocks)
                 {
                     //Draw block bounds
-                    var blockBounds = (Bounds2i) bounds;
+                    var blockBounds = (Bound2i) bounds;
 					DrawRectangle.ForGizmo( blockBounds, Color.gray / 2 );
 
 
@@ -85,7 +85,7 @@ namespace TerrainDemo.Tests
                     foreach (var blockBound in blockBounds)
                     {
                         var blockCenter = BlockInfo.GetWorldCenter(blockBound);
-                        DebugExtension.DrawPoint(blockCenter.ConvertTo3D(), Color.white / 2, 0.1f);
+                        DebugExtension.DrawPoint(blockCenter.ToVector3(), Color.white / 2, 0.1f);
                     }
 
                     var blocks = Rasterization.ConvexToBlocks(isContains, bounds);
@@ -94,7 +94,7 @@ namespace TerrainDemo.Tests
 
                     //Draw rasterized blocks
                     foreach (var p in blocks)
-                        DrawRectangle.ForGizmo(new Bounds2i(p, 1, 1), Color.green);
+                        DrawRectangle.ForGizmo(new Bound2i(p, 1, 1), Color.green);
                 }
                 else
                 {

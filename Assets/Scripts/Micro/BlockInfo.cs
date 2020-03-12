@@ -43,9 +43,9 @@ namespace TerrainDemo.Micro
             _map = map;
         }
 
-        public static Bounds2i GetBounds(GridPos worldPosition)
+        public static Bound2i GetBounds(GridPos worldPosition)
         {
-            return new Bounds2i(worldPosition, 1, 1);
+            return new Bound2i(worldPosition, 1, 1);
         }
 
         public static (Vector2 min, Vector2 max) GetWorldBounds(GridPos worldPosition)

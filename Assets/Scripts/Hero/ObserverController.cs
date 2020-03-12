@@ -56,7 +56,7 @@ namespace TerrainDemo.Hero
 
             var result = new List<ChunkPositionValue>();
             //Get all chunk positions in a range
-            foreach (var chunkPos in new Bounds2i(chunkCenterPos, chunkRange))
+            foreach (var chunkPos in new Bound2i(chunkCenterPos, chunkRange))
                 if (GridPos.Distance(chunkCenterPos, chunkPos)*Chunk.Size < range)
                     result.Add(new ChunkPositionValue()
                     {
@@ -132,7 +132,7 @@ namespace TerrainDemo.Hero
         }
       */
 
-        public bool IsBoundVisible(Bounds2i bounds)
+        public bool IsBoundVisible(Bound2i bounds)
         {
             var observerPos = new Vector2(Position.x, Position.z);
 

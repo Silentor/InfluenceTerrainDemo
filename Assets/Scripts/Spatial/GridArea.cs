@@ -12,7 +12,7 @@ namespace TerrainDemo.Spatial
 	/// </summary>
 	public readonly struct GridArea : IEnumerable<GridPos>
 	{
-		public readonly Bounds2i Bound;
+		public readonly Bound2i Bound;
 
 		/// <summary>
 		/// 
@@ -43,7 +43,7 @@ namespace TerrainDemo.Spatial
 				_elements [ index++ ] = (position.min.X, position.max.X);
 			}
 
-			Bound = new Bounds2i(new GridPos(minX, minZ), new GridPos(maxX, maxZ));
+			Bound = new Bound2i(new GridPos(minX, minZ), new GridPos(maxX, maxZ));
 		}
 
 		public bool IsContains ( GridPos position )

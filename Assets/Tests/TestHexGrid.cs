@@ -45,31 +45,36 @@ namespace TerrainDemo.Tests
 
 			var labelStyle = new GUIStyle(GUI.skin.label);
 			labelStyle.active.textColor = Color.magenta;
-			Handles.color = Color.magenta;
 
 			var storage = _hex.GetInternalStorage( );
 			for ( int x = 0; x < storage.GetLength( 0 ); x++ )
 				for ( int z = 0; z < storage.GetLength( 1 ); z++ )
 				{
 					var h = storage[x, z];
-					DrawHex( h.Data );
+					DrawHex( h.Data, Color.magenta );
 				}
 
-			//for (int q = -4; q <= 4; q++)
-			//	for (int r = -4; r <= 4; r++)
-			//	{
-			//		var hexPos = new HexPos(q, r);
-			//		DrawHex( hexPos );
-			//	}
+			//Show rasterized line
+			Handles.color = Color.white;
+			var line = _hex.RasterizeLine( HexPos.Zero, Hex );
+			for ( var i = 0; i < line.Length - 1; i++ )
+			{
+				var linePos = line[i];
+				DrawHex( linePos, Color.white );
+
+				Handles.DrawLine( _hex.GetHexCenter(line[i]).ToVector3( ), _hex.GetHexCenter(line[i + 1]).ToVector3(  ) );
+			}
+			DrawHex( line.Last(), Color.white );
 		}
-		private void DrawHex( HexPos hexPos )
+		private void DrawHex( HexPos hexPos, Color color )
 		{
+			Handles.color = color;
 			var hexCenter = _hex.GetHexCenter( hexPos );
-			Handles.Label( hexCenter.ConvertTo3D( ), hexPos.ToString( ) );
+			Handles.Label( hexCenter.ToVector3( ), hexPos.ToString( ) );
 			Handles.SphereHandleCap( 0, hexCenter, Quaternion.identity, 0.5f, EventType.Repaint );
 
 			var hexCenterBlock = _hex.GetHexCenterBlock( hexPos );
-			DrawRectangle.ForHandle( new Bounds2i( hexCenterBlock, 0 ), Color.magenta );
+			DrawRectangle.ForHandle( new Bound2i( hexCenterBlock, 0 ), color );
 
 			var hexVertices = _hex.GetHexVerticesPosition( hexPos );
 			Handles.DrawPolyLine( hexVertices.Select( v => (Vector3) v ).ToArray( ) );
@@ -83,7 +88,7 @@ namespace TerrainDemo.Tests
 					var gridPos = new GridPos(x, z);
 					var hex     = _hex.BlockToHex( gridPos );
 
-					var gridPosBounds = new Bounds2i(gridPos, 0);
+					var gridPosBounds = new Bound2i(gridPos, 0);
 					if(hex == new HexPos(0, 0))
 						DrawRectangle.ForDebug( gridPosBounds, Color.white, true );
 					//else if(hex == new HexPos(1, 0))

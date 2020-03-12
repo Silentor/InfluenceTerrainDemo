@@ -17,9 +17,9 @@ namespace TerrainDemo.Generators.MapObjects
             _radius = radius;
         }
 
-        protected override Bounds2i CalculateBounds(Vector2 instancePosition)
+        protected override Bound2i CalculateBounds(Vector2 instancePosition)
         {
-            return new Bounds2i((GridPos)instancePosition, _radius);
+            return new Bound2i((GridPos)instancePosition, _radius);
         }
 
         protected override bool IsBlockExist(GridPos blockPosition)

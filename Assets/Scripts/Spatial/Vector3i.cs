@@ -1,5 +1,6 @@
 ﻿using System;
-using UnityEngine;
+using OpenToolkit.Mathematics;
+
 
 namespace TerrainDemo.Spatial
 {
@@ -66,10 +67,9 @@ namespace TerrainDemo.Spatial
 
         public Vector3i(float x, float y, float z)
         {
-            var tempValue = (Vector3i)new Vector3(x, y, z);
-            X = tempValue.X;
-            Y = tempValue.Y;
-            Z = tempValue.Z;
+            X = (int)Math.Floor( x );
+            Y = (int)Math.Floor( y );
+            Z = (int)Math.Floor( z );
         }
 
         public static int DistanceSquared(Vector3i a, Vector3i b)
@@ -91,6 +91,11 @@ namespace TerrainDemo.Spatial
         public int DistanceSquared(Vector3i v)
         {
             return DistanceSquared(this, v);
+        }
+
+        public Vector3i Abs( )
+        {
+	        return new Vector3i( Math.Abs( X ), Math.Abs( Y ), Math.Abs( Z ) );
         }
 
         public override int GetHashCode()
@@ -160,18 +165,24 @@ namespace TerrainDemo.Spatial
             return new Vector3i(v.X, 0, v.Z);
         }
 
+        public static implicit operator UnityEngine.Vector3(Vector3i v)
+        {
+            return new Vector3(v.X, v.Y, v.Z);
+        }
+
         public static implicit operator Vector3(Vector3i v)
         {
-            return new Vector3(v.X, v.Z);
+	        return new Vector3(v.X, v.Y, v.Z);
         }
 
         public static explicit operator Vector3i(Vector3 v)
         {
-            //var resultX = v.x >= 0 ? (int)v.x : (int)(v.x - Vector2i.ConversionOffset);
-            //var resultY = v.y >= 0 ? (int)v.y : (int)(v.y - Vector2i.ConversionOffset);
-            //var resultZ = v.z >= 0 ? (int)v.z : (int)(v.z - Vector2i.ConversionOffset);
-            //return new Vector3i(resultX, resultY, resultZ);
-            return new Vector3i(Mathf.FloorToInt(v.x), Mathf.FloorToInt(v.y), Mathf.FloorToInt(v.z));
+            return new Vector3i(v.X, v.Y, v.Z);
+        }
+
+        public static explicit operator Vector3i(UnityEngine.Vector3 v)
+        {
+	        return new Vector3i(v.x, v.y, v.z);
         }
 
         //public void Set(int x, int y, int z)

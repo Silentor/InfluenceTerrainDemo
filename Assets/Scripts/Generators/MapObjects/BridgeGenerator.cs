@@ -22,11 +22,11 @@ namespace TerrainDemo.Generators.MapObjects
             _archHeight = archHeight;
         }
 
-        protected override Bounds2i CalculateBounds(Vector2 instancePosition)
+        protected override Bound2i CalculateBounds(Vector2 instancePosition)
         {
             var start = -_length / 2;
             var finish = _length / 2;
-            var result = new Bounds2i(
+            var result = new Bound2i(
                 new GridPos(start + instancePosition.X, instancePosition.Y), 
                 new GridPos(finish + instancePosition.X, _width - 1 + instancePosition.Y));
             _bridgeMiddle = (result.Min.X + result.Max.X) / 2;

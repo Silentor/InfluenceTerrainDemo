@@ -17,7 +17,7 @@ namespace TerrainDemo.Micro
         public readonly GridPos Center;
         public readonly GridArea BlockPositions;
         public readonly GridPos[] VertexPositions;
-        public readonly Bounds2i Bounds;
+        public readonly Bound2i Bounds;
 
         public Cell(Macro.Cell macro, MicroMap map)
         {
@@ -27,7 +27,7 @@ namespace TerrainDemo.Micro
             _map = map;
             BlockPositions = Rasterization.ConvexToBlocks(macro.Contains, macro.Bounds);
 
-            Bounds = (Bounds2i) macro.Bounds;
+            Bounds = (Bound2i) macro.Bounds;
 
             var vertices = new List<GridPos>(BlockPositions);
             foreach (var blockPosition in BlockPositions)

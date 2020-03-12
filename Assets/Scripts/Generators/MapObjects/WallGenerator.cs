@@ -20,9 +20,9 @@ namespace TerrainDemo.Generators.MapObjects
             _mainMap = mainMap;
         }
 
-        protected override Bounds2i CalculateBounds(Vector2 instancePosition)
+        protected override Bound2i CalculateBounds(Vector2 instancePosition)
         {
-            return new Bounds2i((GridPos)instancePosition, _xSize, _zSize);
+            return new Bound2i((GridPos)instancePosition, _xSize, _zSize);
         }
 
         protected override bool IsBlockExist(GridPos blockPosition)

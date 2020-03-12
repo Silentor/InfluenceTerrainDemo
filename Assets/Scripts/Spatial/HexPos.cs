@@ -58,6 +58,11 @@ namespace TerrainDemo.Spatial
         }
         public Vector3i ToCube( ) =>      new Vector3i( Q, R, -Q - R );
 
+        public static HexPos FromCube( Vector3i source )
+        {
+            return new HexPos(source.X, source.Y);
+        }
+
         public bool Equals(HexPos other)
         {
             return Q == other.Q && R == other.R;

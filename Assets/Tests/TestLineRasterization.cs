@@ -52,7 +52,7 @@ namespace TerrainDemo.Tests
 
                 if (counter % 20 < 10)
                     foreach (var p in pointsDDA)
-                        DrawRectangle.ForGizmo(new Bounds2i(p, 1, 1), Color.white);
+                        DrawRectangle.ForGizmo(new Bound2i(p, 1, 1), Color.white);
 
                 /*
                 else if (counter % 21 < 14)
@@ -62,7 +62,7 @@ namespace TerrainDemo.Tests
 
                 else //if (counter % 21 >= 14)
                     foreach (var p in pointsBresFloat)
-                        DrawRectangle.ForGizmo(new Bounds2i(p, 1, 1), Color.green);
+                        DrawRectangle.ForGizmo(new Bound2i(p, 1, 1), Color.green);
 
                 counter++;
             }

@@ -13,7 +13,7 @@ namespace TerrainDemo.Micro
     {
         public readonly MicroMap ParentMap;
 
-        public ObjectMap(string name, Bounds2i bounds, MicroMap parentMap) : base(name, bounds)
+        public ObjectMap(string name, Bound2i bounds, MicroMap parentMap) : base(name, bounds)
         {
             ParentMap = parentMap;
             _originalHeightmap = new Heights[Bounds.Size.X + 1, Bounds.Size.Z + 1];

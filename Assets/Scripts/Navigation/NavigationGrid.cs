@@ -7,7 +7,7 @@ namespace TerrainDemo.Navigation
 {
 	public class NavigationGrid
 	{
-		public readonly Bounds2i Bounds;
+		public readonly Bound2i Bounds;
 
 		/// <summary>
 		/// Prepare navigation grid from micro map

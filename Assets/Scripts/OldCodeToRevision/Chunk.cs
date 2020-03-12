@@ -121,11 +121,11 @@ namespace TerrainDemo.OldCodeToRevision
         /// </summary>
         /// <param name="position">Chunk position</param>
         /// <returns>World bounds in blocks</returns>
-        public static Bounds2i GetBounds(GridPos position)
+        public static Bound2i GetBounds(GridPos position)
         {
             var min = new GridPos(position.X << Shift, position.Z << Shift);
             var max = new GridPos(min.X + Size - 1, min.Z + Size - 1);
-            return new Bounds2i(min, max);
+            return new Bound2i(min, max);
         }
 
         public static Vector2i GetLocalPosition(Vector2 worldPosition)

@@ -38,22 +38,12 @@ namespace TerrainDemo.Tools
             return new OpenTK.Vector2(v.X, v.Z);
         }
 
-        /// <summary>
-        /// I prefer custom Vector2 - Vector3 conversion logic
-        /// </summary>
-        /// <param name="v"></param>
-        /// <returns></returns>
-        public static OpenTK.Vector3 ConvertTo3D(this OpenTK.Vector2 v)
-        {
-            return new OpenTK.Vector3(v.X, 0, v.Y);
-        }
-
         public static Vector3 ConvertTo3D(this Vector2i v)
         {
             return ((Vector2)v).ConvertTo3D();
         }
 
-        public static OpenTK.Vector3 ToVector3(this OpenTK.Vector2 v, float yValue)
+        public static OpenTK.Vector3 ToVector3(this OpenTK.Vector2 v, float yValue = 0)
         {
 	        return new Vector3(v.X, yValue, v.Y);
         }

@@ -24,7 +24,7 @@ namespace TerrainDemo.OldCodeToRevision
 
         //bool IsZoneVisible(ZoneLayout zone);
 
-        bool IsBoundVisible(Bounds2i bounds);
+        bool IsBoundVisible(Bound2i bounds);
 
         IEnumerable<ObserverController.ChunkPositionValue> ValuableChunkPos(float range);
 

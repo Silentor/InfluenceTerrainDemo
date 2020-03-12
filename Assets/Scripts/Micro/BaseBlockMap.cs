@@ -17,9 +17,9 @@ namespace TerrainDemo.Micro
     public abstract class BaseBlockMap
     {
         public readonly string Name;
-        public readonly Bounds2i Bounds;
+        public readonly Bound2i Bounds;
 
-        protected BaseBlockMap(string name, Bounds2i bounds)
+        protected BaseBlockMap(string name, Bound2i bounds)
         {
             Name = name;
             Bounds = bounds;
@@ -274,7 +274,7 @@ namespace TerrainDemo.Micro
             return _blocks;
         }
 
-        public Blocks[,] GetBlockMapRegion(Bounds2i bounds, Func<Blocks, Blocks> transform = null)
+        public Blocks[,] GetBlockMapRegion(Bound2i bounds, Func<Blocks, Blocks> transform = null)
         {
             var result = new Blocks[bounds.Size.X, bounds.Size.Z];
 

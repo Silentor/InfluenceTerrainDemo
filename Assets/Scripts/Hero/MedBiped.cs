@@ -11,7 +11,7 @@ namespace TerrainDemo.Hero
 	{
 		public override Type LocoType => Type.MedBiped;
 
-		public override Bounds2i Bound => GetBound( Position );
+		public override Bound2i Bound => GetBound( Position );
 
 		public MedBiped( Vector2 startPosition, Quaternion startRotation, Actor owner, MicroMap map, NavigationMap navMap ) : base( startPosition, startRotation, owner, map, navMap )
 		{
@@ -28,7 +28,7 @@ namespace TerrainDemo.Hero
 				float.NaN
 			};
 
-		protected override Bounds2i GetBound( GridPos position ) => new Bounds2i(position, 2, 2);
+		protected override Bound2i GetBound( GridPos position ) => new Bound2i(position, 2, 2);
 		
 		protected override (bool wasCollision, Vector2 resolvedPoint) ResolveBlockCollision( GridPos blockPosition, Vector2 position)
 		{
@@ -100,10 +100,10 @@ namespace TerrainDemo.Hero
 			return  ( wasCollision, position );
 		}
 
-		private static Bounds2i GetBound( Vector2 position )
+		private static Bound2i GetBound( Vector2 position )
 		{
 			var minBlockPosition = (GridPos) ( position - new Vector2( 0.5f, 0.5f ) );
-			return new Bounds2i( minBlockPosition, 2, 2 );
+			return new Bound2i( minBlockPosition, 2, 2 );
 		}
 	}
 }

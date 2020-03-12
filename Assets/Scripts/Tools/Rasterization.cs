@@ -274,7 +274,7 @@ namespace TerrainDemo.Tools
             foreach (var edge in cell.Edges)
                 edges.AddRange(DDA(edge.Vertex1.Position, edge.Vertex2.Position, false));
 
-            var bounds = (Bounds2i)cell.Bounds;
+            var bounds = (Bound2i)cell.Bounds;
 
             Debug.Log(bounds);
 
@@ -308,7 +308,7 @@ namespace TerrainDemo.Tools
         public static GridArea ConvexToBlocks(Predicate<Vector2> contains, Box2 bounds)
         {
             var result = new List<(GridPos, GridPos)>();
-            var boundI = (Bounds2i) bounds;
+            var boundI = (Bound2i) bounds;
             var minZ = boundI.Min.Z;
             var maxZ = boundI.Max.Z;
             var minX = boundI.Min.X;
@@ -357,7 +357,7 @@ namespace TerrainDemo.Tools
             return new GridArea ( result );
         }
 
-        public static GridArea ConvexToBlocks(Predicate<GridPos> contains, Bounds2i bound)
+        public static GridArea ConvexToBlocks(Predicate<GridPos> contains, Bound2i bound)
         {
 	        var result = new List<(GridPos, GridPos)>();
 	        var minZ   = bound.Min.Z;
@@ -415,7 +415,7 @@ namespace TerrainDemo.Tools
         public static GridPos[] ConvexToVertices(Predicate<Vector2> contains, Box2 bounds)
         {
             var result = new List<GridPos>();
-            var boundI = (Bounds2i) bounds;
+            var boundI = (Bound2i) bounds;
             var minZ   = boundI.Min.Z;
             var maxZ   = boundI.Max.Z;
             var minX   = boundI.Min.X;

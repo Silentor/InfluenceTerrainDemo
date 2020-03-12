@@ -10,7 +10,7 @@ namespace TerrainDemo.Hero
 	{
 		public override Type LocoType => Type.BigBiped;
 
-		public override Bounds2i Bound => GetBound( BlockPosition );
+		public override Bound2i Bound => GetBound( BlockPosition );
 
 		
 		public BigBiped( Vector2 startPosition, Quaternion startRotation, Actor owner, MicroMap map, NavigationMap navMap ) : base( startPosition, startRotation, owner, map, navMap )
@@ -28,7 +28,7 @@ namespace TerrainDemo.Hero
 				                                                        float.NaN
 			                                                        };
 
-		protected override Bounds2i GetBound( GridPos position ) => new Bounds2i(position, 1);
+		protected override Bound2i GetBound( GridPos position ) => new Bound2i(position, 1);
 		
 		protected override (bool wasCollision, Vector2 resolvedPoint) ResolveBlockCollision( GridPos blockPosition, Vector2 position)
 		{

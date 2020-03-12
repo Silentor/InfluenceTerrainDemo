@@ -25,7 +25,7 @@ namespace TerrainDemo.Spatial
 			QBasis = new Vector2d(Width,     0);
 			RBasis = new Vector2d(Width / 2, 3d /4 *Height);
 
-			_bound = new Bounds2i(GridPos.Zero, gridRadius);
+			_bound = new Bound2i(GridPos.Zero, gridRadius);
 			_faces = new FaceHolder[_bound.Size.X, _bound.Size.Z];
 		}
 
@@ -99,6 +99,27 @@ namespace TerrainDemo.Spatial
 			return x >= 0 && x < _bound.Size.X && y >= 0 && y < _bound.Size.Z;
 		}
 
+		//https://www.redblobgames.com/grids/hexagons/#line-drawing
+		public HexPos[] RasterizeLine( HexPos from, HexPos to )
+		{
+			if(from == to)
+				return new []{ from };
+
+			var distance = from.Distance( to );
+			var result = new HexPos[distance + 1];
+			var from3 = (Vector3)from.ToCube( );
+			var to3   = (Vector3)to.ToCube( );
+
+			for ( int i = 0; i <= distance; i++ )
+			{
+				var lerperVector = Vector3.Lerp( from3, to3, 1f / distance * i );
+				var roundedVector = CubeRound( lerperVector );
+				result[i] = HexPos.FromCube( roundedVector );
+			}
+
+			return result;
+		}
+
 		#region Layout
 
 		public Vector2 GetHexCenter( HexPos hex )
@@ -131,7 +152,7 @@ namespace TerrainDemo.Spatial
 			return result;
 		}
 
-		public Bounds2i GetHexBound( HexPos hex )
+		public Bound2i GetHexBound( HexPos hex )
 		{
 			//Get extreme vertices (internal knowledge)
 			var vertices = GetHexVerticesPosition( hex );
@@ -141,7 +162,7 @@ namespace TerrainDemo.Spatial
 			var xMin = vertices[3].X;
 			var zMax = vertices[5].Y;
 
-			return new Bounds2i(new GridPos(xMin, zMin), new GridPos(xMax, zMax));
+			return new Bound2i(new GridPos(xMin, zMin), new GridPos(xMax, zMax));
 		}
 
 		#endregion
@@ -150,7 +171,7 @@ namespace TerrainDemo.Spatial
 		private readonly Vector2d	QBasis ;
 		private readonly Vector2d	RBasis ;
 		private const           float		Sqrt3  = 1.732050807568877f;
-		private readonly Bounds2i _bound;
+		private readonly Bound2i _bound;
 
 		[MethodImpl( MethodImplOptions.AggressiveInlining)]
 		private FaceHolder Set( int q, int r, TFace data )
@@ -217,6 +238,27 @@ namespace TerrainDemo.Spatial
 		internal FaceHolder[,] GetInternalStorage( )
 		{
 			return _faces;
+		}
+
+		//https://www.redblobgames.com/grids/hexagons/#rounding
+		private Vector3i CubeRound( Vector3 cubeFloat )
+		{
+			var rx = (int)Math.Round( cubeFloat.X );
+			var ry = (int)Math.Round( cubeFloat.Y );
+			var rz = (int)Math.Round( cubeFloat.Z );
+
+			var diffx = Math.Abs( rx - cubeFloat.X );
+			var diffy = Math.Abs( ry - cubeFloat.Y );
+			var diffz = Math.Abs( rz - cubeFloat.Z );
+
+			if ( diffx > diffy && diffx > diffz )
+				rx = -ry - rz;
+			else if ( diffy > diffz )
+				ry = -rx - rz;
+			else
+				rz = -rx - ry;
+
+			return new Vector3i(rx, ry, rz);
 		}
 
 		[DebuggerDisplay( "{Pos} = {Data}")]

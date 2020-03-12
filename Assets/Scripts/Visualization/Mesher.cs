@@ -63,7 +63,7 @@ namespace TerrainDemo.Visualization
             return result;
         }
 
-        public (Mesh mesh, Texture texture) CreateTerrainMesh(MicroMap map, Bounds2i bounds, TriRunner renderSettings)
+        public (Mesh mesh, Texture texture) CreateTerrainMesh(MicroMap map, Bound2i bounds, TriRunner renderSettings)
         {
             bounds = bounds.Intersect(map.Bounds);
 
@@ -254,7 +254,7 @@ namespace TerrainDemo.Visualization
             return (groundMesh, mainTexture);
         }
 
-        public ((Mesh, Texture) Base, (Mesh, Texture) Under, (Mesh, Texture) Main) CreateMinecraftMesh(BaseBlockMap map, Bounds2i bounds, TriRunner renderSettings)
+        public ((Mesh, Texture) Base, (Mesh, Texture) Under, (Mesh, Texture) Main) CreateMinecraftMesh(BaseBlockMap map, Bound2i bounds, TriRunner renderSettings)
         {
             const float baseLayerVisibleWidth = 0.1f;
 
@@ -708,7 +708,7 @@ namespace TerrainDemo.Visualization
             return newActor;
         }
 
-        private Texture CreateBlockTexture(BaseBlockMap map, Bounds2i bounds, TriRunner mode)
+        private Texture CreateBlockTexture(BaseBlockMap map, Bound2i bounds, TriRunner mode)
         {
             bounds = bounds.Intersect(map.Bounds);
 
@@ -800,7 +800,7 @@ namespace TerrainDemo.Visualization
             return result;
         }
 
-        private (Texture Base, Texture Under, Texture Main) CreateBlockTexture2(BaseBlockMap map, Bounds2i bounds)
+        private (Texture Base, Texture Under, Texture Main) CreateBlockTexture2(BaseBlockMap map, Bound2i bounds)
         {
             bounds = bounds.Intersect(map.Bounds);
 

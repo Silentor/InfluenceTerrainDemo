@@ -64,14 +64,14 @@ namespace TerrainDemo.Generators.MapObjects
 
         protected Vector2 InstancePosition;
         protected float InstanceHeight;
-        protected Bounds2i InstanceBounds;
+        protected Bound2i InstanceBounds;
 
         /// <summary>
         /// Preliminary bounds for object instance in given position
         /// </summary>
         /// <param name="instancePosition"></param>
         /// <returns></returns>
-        protected abstract Bounds2i CalculateBounds(Vector2 instancePosition);
+        protected abstract Bound2i CalculateBounds(Vector2 instancePosition);
 
         protected abstract bool IsBlockExist(GridPos blockPosition);
 
@@ -83,13 +83,13 @@ namespace TerrainDemo.Generators.MapObjects
 
     public readonly struct MapObjectContent
     {
-        public readonly Bounds2i Bounds;
+        public readonly Bound2i Bounds;
         public readonly IEnumerable<GridPos> VertexPositions;
         public readonly Heights[,] Heightmap;
         public readonly IEnumerable<GridPos> BlockPositions;
         public readonly Blocks[,] Blockmap;
 
-        public MapObjectContent(Bounds2i bounds, IEnumerable<GridPos> vertexPositions, Heights[,] heightmap, IEnumerable<GridPos> blockPositions, Blocks[,] blockmap)
+        public MapObjectContent(Bound2i bounds, IEnumerable<GridPos> vertexPositions, Heights[,] heightmap, IEnumerable<GridPos> blockPositions, Blocks[,] blockmap)
         {
             Bounds = bounds;
             VertexPositions = vertexPositions;

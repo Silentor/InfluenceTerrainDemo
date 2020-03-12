@@ -349,7 +349,7 @@ namespace TerrainDemo.Macro
             Debug.LogFormat("Average diff {0}, max diff {1} on cell {2}", averageDiff, maxDiff, maxDiffCell?.HexPoses);
         }
 
-        protected GridPos World2Local(GridPos worldPosition, Bounds2i bounds)
+        protected GridPos World2Local(GridPos worldPosition, Bound2i bounds)
         {
 	        return new GridPos(worldPosition.X - bounds.Min.X, worldPosition.Z - bounds.Min.Z);
         }

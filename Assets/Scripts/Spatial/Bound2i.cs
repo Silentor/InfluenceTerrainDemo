@@ -11,7 +11,7 @@ using Vector3 = UnityEngine.Vector3;
 
 namespace TerrainDemo.Spatial
 {
-    public readonly struct Bounds2i : IEnumerable<GridPos>, IEquatable<Bounds2i>
+    public readonly struct Bound2i : IEnumerable<GridPos>, IEquatable<Bound2i>
     {
         public readonly GridPos Min;
         public readonly GridPos Max;
@@ -26,15 +26,15 @@ namespace TerrainDemo.Spatial
 
         public int Area => Size.X * Size.Z;
 
-        public static readonly Bounds2i Empty = new Bounds2i(GridPos.Zero, GridPos.Zero);
-        public static readonly Bounds2i Infinite = new Bounds2i(GridPos.Min, GridPos.Max);
+        public static readonly Bound2i Empty = new Bound2i(GridPos.Zero, GridPos.Zero);
+        public static readonly Bound2i Infinite = new Bound2i(GridPos.Min, GridPos.Max);
 
 
 
         private const float RoundBiasValue = 0.5f;
         //private static readonly Vector3 RoundBias = new Vector3(RoundBiasValue, RoundBiasValue);
 
-        public Bounds2i(GridPos min, GridPos max)
+        public Bound2i(GridPos min, GridPos max)
         {
             if(min.X > max.X || min.Z > max.Z) throw new ArgumentException($"Min point {min} greater then Max {max} ");
 
@@ -47,11 +47,11 @@ namespace TerrainDemo.Spatial
         /// </summary>
         /// <param name="center"></param>
         /// <param name="extends"></param>
-        public Bounds2i(GridPos center, int extends) : this(center - Vector2i.One * extends, center + Vector2i.One * extends)
+        public Bound2i(GridPos center, int extends) : this(center - Vector2i.One * extends, center + Vector2i.One * extends)
         {
         }
 
-        public Bounds2i(GridPos min, int xSize, int zSize) : this(min, new GridPos(min.X + xSize - 1, min.Z + zSize - 1))
+        public Bound2i(GridPos min, int xSize, int zSize) : this(min, new GridPos(min.X + xSize - 1, min.Z + zSize - 1))
         {
         }
     
@@ -70,19 +70,19 @@ namespace TerrainDemo.Spatial
         }
 
         [Pure]
-        public bool Contains(Bounds2i bound)
+        public bool Contains(Bound2i bound)
         {
 	        return bound.Min.X >= Min.X && bound.Max.X <= Max.X &&
 	               bound.Min.Z >= Min.Z && bound.Max.Z <= Max.Z;
         }
 
-        public IEnumerable<GridPos> Substract(Bounds2i b)
+        public IEnumerable<GridPos> Substract(Bound2i b)
         {
             return this.Where(v => !b.Contains(v));
         }
 
         [Pure]
-        public Bounds2i Intersect(Bounds2i b)
+        public Bound2i Intersect(Bound2i b)
         {
             int x = Math.Max(Min.X, b.Min.X);
             int num2 = Math.Min(Min.X + Size.X, b.Min.X + b.Size.X);
@@ -90,7 +90,7 @@ namespace TerrainDemo.Spatial
             int num4 = Math.Min(Min.Z + Size.Z, b.Min.Z + b.Size.Z);
 
             if ((num2 > x) && (num4 > z))
-                return new Bounds2i(new GridPos(x, z), num2 - x, num4 - z);
+                return new Bound2i(new GridPos(x, z), num2 - x, num4 - z);
 
             return Empty;
         }
@@ -100,9 +100,9 @@ namespace TerrainDemo.Spatial
         /// </summary>
         /// <param name="offset"></param>
         /// <returns></returns>
-        public Bounds2i Translate(Vector2i offset)
+        public Bound2i Translate(Vector2i offset)
         {
-            return new Bounds2i(Min + offset, Max + offset);
+            return new Bound2i(Min + offset, Max + offset);
         }
 
         public override string ToString() => $"Bounds2i(min = {Min}, max = {Max})";
@@ -114,7 +114,7 @@ namespace TerrainDemo.Spatial
 
         #region Equality
 
-        public bool Equals(Bounds2i other)
+        public bool Equals(Bound2i other)
         {
             if (IsEmpty && other.IsEmpty) return true;
             return Min == other.Min && Max == other.Max;
@@ -122,31 +122,31 @@ namespace TerrainDemo.Spatial
 
         public override bool Equals(object other)
         {
-            if (!(other is Bounds2i)) return false;
-            var b = (Bounds2i)other;
+            if (!(other is Bound2i)) return false;
+            var b = (Bound2i)other;
             return Equals(b);
         }
 
-        public static bool operator ==(Bounds2i a, Bounds2i b)
+        public static bool operator ==(Bound2i a, Bound2i b)
         {
             return a.Equals(b);
         }
 
-        public static bool operator !=(Bounds2i a, Bounds2i b)
+        public static bool operator !=(Bound2i a, Bound2i b)
         {
             return !a.Equals(b);
         }
 
         #endregion
 
-        public static explicit operator Bounds(Bounds2i input)
+        public static explicit operator Bounds(Bound2i input)
         {
             var size = new Vector3(input.Max.X - input.Min.X + 1, 0, input.Max.Z - input.Min.Z + 1);
             var center = new Vector3(input.Min.X + size.x / 2, 0, input.Min.Z + size.z / 2);
             return new Bounds(center, size);
         }
 
-        public static explicit operator Bounds2i(Bounds input)
+        public static explicit operator Bound2i(Bounds input)
         {
 	        var boundsMax = input.max;
 			//Special case for max value vector
@@ -155,10 +155,10 @@ namespace TerrainDemo.Spatial
 			if ( boundsMax.z % 1 == 0 )
 				boundsMax.z -= 0.1f;
 
-            return new Bounds2i((GridPos)input.min, (GridPos)boundsMax);         
+            return new Bound2i((GridPos)input.min, (GridPos)boundsMax);         
         }
 
-        public static explicit operator Bounds2i(Box2 input)
+        public static explicit operator Bound2i(Box2 input)
         {
 	        var boundsMax = input.Max;
 	        //Special case for max value vector
@@ -168,7 +168,7 @@ namespace TerrainDemo.Spatial
 		        boundsMax.Y -= 0.1f;
 
 
-            return new Bounds2i((GridPos)input.Min, (GridPos)boundsMax);         
+            return new Bound2i((GridPos)input.Min, (GridPos)boundsMax);         
         }
 
         #region Enumerable

@@ -66,7 +66,20 @@ namespace TerrainDemo.Tests.Editor
                          );
         }
 
-       
+        [Test]
+        public void TestLineasterization( )
+        {
+	        var grid = new HexGrid<HexPos?, int, int>( 10, 5 );
+	        var line = grid.RasterizeLine( HexPos.Zero, new HexPos( 3, 0 ) );
+
+            Assert.That( line, Is.EquivalentTo( new HexPos[]
+                                                {
+	                                                new HexPos(0, 0),
+	                                                new HexPos(1, 0),
+	                                                new HexPos(2, 0),
+	                                                new HexPos(3, 0),
+                                                }) );
+        }
 
     }
 }

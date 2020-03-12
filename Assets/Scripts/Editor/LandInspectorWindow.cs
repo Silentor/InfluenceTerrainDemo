@@ -362,7 +362,7 @@ namespace TerrainDemo.Editor
 		{
 			//Find near blocks
 			const int visualizeRadius = 20;
-			var bounds = new Bounds2i((GridPos)input.CursorRay.Origin.ConvertTo2D(), visualizeRadius);
+			var bounds = new Bound2i((GridPos)input.CursorRay.Origin.ConvertTo2D(), visualizeRadius);
 			foreach (var position in bounds)
 			{
 				var overlap = MicroMap.GetOverlapState(position);

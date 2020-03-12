@@ -33,13 +33,13 @@ namespace TerrainDemo.Tools
         }
 
         [Conditional("UNITY_EDITOR")]
-        public static void ForGizmo(Bounds2i rectangle)
+        public static void ForGizmo(Bound2i rectangle)
         {
             ForGizmo(rectangle, Gizmos.color);
         }
 
         [Conditional("UNITY_EDITOR")]
-        public static void ForGizmo(Bounds2i rectangle, Color color, bool filled = false)
+        public static void ForGizmo(Bound2i rectangle, Color color, bool filled = false)
         {
             var corner1 = new Vector3(rectangle.Min.X, 0, rectangle.Min.Z);
             var corner2 = new Vector3(rectangle.Min.X, 0, rectangle.Max.Z + 1);
@@ -60,7 +60,7 @@ namespace TerrainDemo.Tools
         }
 
         [Conditional("UNITY_EDITOR")]
-        public static void ForDebug(Bounds2i rectangle, Color color, float duration = 0)
+        public static void ForDebug(Bound2i rectangle, Color color, float duration = 0)
         {
             var corner1 = new Vector3(rectangle.Min.X, 0, rectangle.Min.Z);
             var corner2 = new Vector3(rectangle.Min.X, 0, rectangle.Max.Z + 1);
@@ -74,7 +74,7 @@ namespace TerrainDemo.Tools
         }
 
         [Conditional( "UNITY_EDITOR")]
-        public static void ForDebug(Bounds2i rectangle, Color color, bool filled)
+        public static void ForDebug(Bound2i rectangle, Color color, bool filled)
         {
 	        var corner1 = new Vector3(rectangle.Min.X, 0, rectangle.Min.Z);
 	        var corner2 = new Vector3(rectangle.Min.X, 0, rectangle.Max.Z + 1);
@@ -94,7 +94,7 @@ namespace TerrainDemo.Tools
         }
 
         [Conditional("UNITY_EDITOR")]
-        public static void ForDebug(Bounds2i rectangle, float yValue, Color color, float duration = 0)
+        public static void ForDebug(Bound2i rectangle, float yValue, Color color, float duration = 0)
         {
             var corner1 = new Vector3(rectangle.Min.X, yValue, rectangle.Min.Z);
             var corner2 = new Vector3(rectangle.Min.X, yValue, rectangle.Max.Z + 1);
@@ -124,7 +124,7 @@ namespace TerrainDemo.Tools
 
 #if UNITY_EDITOR
         [Conditional("UNITY_EDITOR")]
-        public static void ForHandle(Bounds2i rectangle, Color color, uint width = 0, bool filled = false)
+        public static void ForHandle(Bound2i rectangle, Color color, uint width = 0, bool filled = false)
         {
             var corner1 = new Vector3(rectangle.Min.X, 0, rectangle.Min.Z);
             var corner2 = new Vector3(rectangle.Min.X, 0, rectangle.Max.Z + 1);

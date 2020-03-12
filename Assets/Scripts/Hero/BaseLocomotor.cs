@@ -35,7 +35,7 @@ namespace TerrainDemo.Hero
 
 		public GridPos BlockPosition => (GridPos) Position;
 
-		public abstract Bounds2i Bound { get; }
+		public abstract Bound2i Bound { get; }
 
 		public bool IsMoving
 		{
@@ -244,7 +244,7 @@ namespace TerrainDemo.Hero
 		private TaskCompletionSource<object> _moveToCompletionSource;
 
 
-		protected abstract Bounds2i GetBound( GridPos position );
+		protected abstract Bound2i GetBound( GridPos position );
 
 		private bool UpdateRotation( float deltaTime )
 		{
