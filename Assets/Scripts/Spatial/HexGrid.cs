@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -6,16 +7,21 @@ using JetBrains.Annotations;
 using OpenToolkit.Mathematics;
 using UnityEditor;
 
+
+[assembly: InternalsVisibleToAttribute( "Assembly-CSharp-Editor")] //Unit tests
+
 namespace TerrainDemo.Spatial
 {
 	/// <summary>
 	/// Regular hexagonal grid (top-pointed) optimized to block rasterization
 	/// </summary>
-	public partial class HexGrid<TFace, TEdge, TVertex>
+	public partial class HexGrid<TFace, TEdge, TVertex> : IEnumerable<HexPos>
 	{
 		public readonly float Size;
 		public readonly float Width;
 		public readonly float Height;
+
+		public Bound2i Bound => _bound;
 
 		public HexGrid( float hexSide, int gridRadius )
 		{
@@ -25,8 +31,12 @@ namespace TerrainDemo.Spatial
 			QBasis = new Vector2d(Width,     0);
 			RBasis = new Vector2d(Width / 2, 3d /4 *Height);
 
-			_bound = new Bound2i(GridPos.Zero, gridRadius);
-			_faces = new FaceHolder[_bound.Size.X, _bound.Size.Z];
+			_faces = new FaceHolder[ gridRadius * 2, gridRadius * 2 ];
+			var bound1 = GetHexBound( new HexPos(Array2dToHex( 0, 0 )) );
+			var bound2 = GetHexBound( new HexPos(Array2dToHex( gridRadius * 2 - 1, 0 )) );
+			var bound3 = GetHexBound( new HexPos(Array2dToHex( 0, gridRadius * 2 - 1 )) );
+			var bound4 = GetHexBound( new HexPos(Array2dToHex( gridRadius * 2 - 1, gridRadius * 2 - 1 )) );
+			_bound = bound1.Add( bound2 ).Add( bound3 ).Add( bound4 );
 		}
 
 		public TFace this[ HexPos position ]
@@ -225,12 +235,20 @@ namespace TerrainDemo.Spatial
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private (int x, int y) HexToArray2d( int q, int r )
+		internal (int x, int y) HexToArray2d( int q, int r )
 		{
-			var x = q + r / 2	- _bound.Min.Z;
+			var x = q + r / 2	- _bound.Min.X;
 			var y = r			- _bound.Min.Z;
 			
 			return ( x, y );
+		}
+		
+		internal (int q, int r) Array2dToHex( int x, int y )
+		{
+			var r = y + _bound.Min.Z;
+			var q = x - r / 2 + _bound.Min.X;
+			
+			return ( q, r );
 		}
 		private void CheckHexPosition( int q, int r )
 		{
@@ -281,6 +299,19 @@ namespace TerrainDemo.Spatial
 
 			return new Vector3i(rx, ry, rz);
 		}
+
+		#region IEnumerator
+
+		public IEnumerator<HexPos> GetEnumerator( )
+		{
+			throw new NotImplementedException(  );
+		}
+		IEnumerator IEnumerable.GetEnumerator( )
+		{
+			return GetEnumerator( );
+		}
+
+		#endregion
 
 		[DebuggerDisplay( "{Pos} = {Data}")]
 		public class FaceHolder
@@ -355,7 +386,7 @@ namespace TerrainDemo.Spatial
 		}
 
 		[DebuggerDisplay( "Edges of {_face.Pos}")]
-		public struct Edges 
+		public struct Edges : IEnumerable<TEdge>
 		{
 			//public TEdge this[ int index ]
 			//{
@@ -375,11 +406,28 @@ namespace TerrainDemo.Spatial
 			}
 
 			private readonly FaceHolder _face;
+			public IEnumerator<TEdge> GetEnumerator( )
+			{
+				var edges = _face.Edges;
+				yield return edges[0].Data;
+				yield return edges[1].Data;
+				yield return edges[2].Data;
+				yield return edges[3].Data;
+				yield return edges[4].Data;
+				yield return edges[5].Data;
+			}
+
+			IEnumerator IEnumerable.GetEnumerator( )
+			{
+				return GetEnumerator( );
+			}
 		}
 
 		[DebuggerDisplay( "Vertices of {_face.Pos}")]
-		public struct Vertices
+		public struct Vertices : IReadOnlyList<TVertex>
 		{
+			public int Count { get; }
+
 			public TVertex this[ int index ]
 			{
 				get => _face.Vertices[index].Data;
@@ -396,9 +444,25 @@ namespace TerrainDemo.Spatial
 			internal Vertices( FaceHolder face )
 			{
 				_face = face;
+				Count = 6;
 			}
 
 			private readonly FaceHolder _face;
+
+			public IEnumerator<TVertex> GetEnumerator( )
+			{
+				var vertices = _face.Vertices;
+				yield return vertices[0].Data;
+				yield return vertices[1].Data;
+				yield return vertices[2].Data;
+				yield return vertices[3].Data;
+				yield return vertices[4].Data;
+				yield return vertices[5].Data;
+			}
+			IEnumerator IEnumerable.GetEnumerator( )
+			{
+				return GetEnumerator( );
+			}
 		}
 	}
 }

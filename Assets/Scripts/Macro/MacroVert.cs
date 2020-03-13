@@ -9,7 +9,7 @@ using Vector2 = OpenToolkit.Mathematics.Vector2;
 
 namespace TerrainDemo.Macro
 {
-    public class MacroVert : MacroMap.CellMesh.IVertexOwner
+    public class MacroVert
     {
         public const int MaxNeighborsCount = 3;
 
@@ -58,7 +58,7 @@ namespace TerrainDemo.Macro
             //_vertex.Data = this;
         }
 
-        public override string ToString() => $"Vert {Id}, cells: {Cells?.ToJoinedString(c => c.HexPoses.ToString())}";
+        public override string ToString() => $"Vert {Id}, cells: {Cells?.ToJoinedString(c => c.HexPos.ToString())}";
 
         private MacroMap.CellMesh.Vertex _vertex;
         private readonly MacroMap _map;
@@ -110,7 +110,5 @@ namespace TerrainDemo.Macro
             return result;
             */
         }
-
-        MacroMap.CellMesh.Vertex MacroMap.CellMesh.IVertexOwner.Vertex => _vertex;
     }
 }

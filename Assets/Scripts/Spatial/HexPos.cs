@@ -44,6 +44,10 @@ namespace TerrainDemo.Spatial
             R = (short)r;
         }
 
+        public HexPos((int q, int r) tuple) : this(tuple.q, tuple.r)
+        {
+        }
+
         [Pure]
         public HexPos Translated(Vector2i offset)
         {

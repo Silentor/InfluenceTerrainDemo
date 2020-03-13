@@ -62,13 +62,13 @@ namespace TerrainDemo.Editor
 				//var contrastColor = (new Color(1, 1, 1, 2) - cell.Biome.LayoutColor) * 2;
 				colorLabelStyle.normal.textColor = color;
 				colorLabelStyle.fontSize = fontSize;
-				Handles.Label(cell.CenterPoint, cell.HexPoses.ToString(), colorLabelStyle);
+				Handles.Label(cell.CenterPoint, cell.HexPos.ToString(), colorLabelStyle);
 				Handles.color = color;
 				Handles.DrawWireDisc(cell.CenterPoint, view.Direction, 0.1f);
 
 				Handles.zTest = CompareFunction.Greater;
 				colorLabelStyle.normal.textColor /= 3;
-				Handles.Label(cell.CenterPoint, cell.HexPoses.ToString(), colorLabelStyle);
+				Handles.Label(cell.CenterPoint, cell.HexPos.ToString(), colorLabelStyle);
 				Handles.color /= 3;
 				Handles.DrawWireDisc(cell.CenterPoint, view.Direction, 0.1f);
 

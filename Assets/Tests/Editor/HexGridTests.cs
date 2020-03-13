@@ -67,7 +67,7 @@ namespace TerrainDemo.Tests.Editor
         }
 
         [Test]
-        public void TestLineasterization( )
+        public void TestLineRasterization( )
         {
 	        var grid = new HexGrid<HexPos?, int, int>( 10, 5 );
 	        var line = grid.RasterizeLine( HexPos.Zero, new HexPos( 3, 0 ) );
@@ -79,6 +79,18 @@ namespace TerrainDemo.Tests.Editor
 	                                                new HexPos(2, 0),
 	                                                new HexPos(3, 0),
                                                 }) );
+        }
+
+        [Test]
+        public void TestCoordsConversion( )
+        {
+	        var grid = new HexGrid<HexPos, int, int>( 10, 5 );
+
+            var source = new HexPos(2, -1);
+            var dest = grid.HexToArray2d( source.Q, source.R );
+            var dest2 = grid.Array2dToHex( dest.x, dest.y );
+
+            Assert.IsTrue( source.Q == dest2.q && source.R == dest2.r );
         }
 
     }

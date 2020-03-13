@@ -346,7 +346,7 @@ namespace TerrainDemo.Macro
 
             averageDiff /= map.Cells.Count * Heights.LayersCount;
 
-            Debug.LogFormat("Average diff {0}, max diff {1} on cell {2}", averageDiff, maxDiff, maxDiffCell?.HexPoses);
+            Debug.LogFormat("Average diff {0}, max diff {1} on cell {2}", averageDiff, maxDiff, maxDiffCell?.HexPos);
         }
 
         protected GridPos World2Local(GridPos worldPosition, Bound2i bounds)

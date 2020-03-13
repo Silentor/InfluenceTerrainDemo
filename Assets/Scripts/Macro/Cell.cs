@@ -16,27 +16,26 @@ using Vector3 = OpenToolkit.Mathematics.Vector3;
 namespace TerrainDemo.Macro
 {
     //[DebuggerDisplay("TriCell {Id}({North.Id}, {East.Id}, {South.Id})")]
-    public class Cell : MacroMap.CellMesh.IFaceOwner, IEquatable<Cell>
+    public class Cell : IEquatable<Cell>
     {
         public const int MaxNeighborsCount = 6;
         public const int InvalidCellId = -1;
 
-        public int Id => _face.Id;
-        public readonly HexPos HexPoses;
+        public readonly HexPos HexPos;
         public int ZoneId = Zone.InvalidId;
         public readonly MacroMap Map;
-        public Box2 Bounds => _face.Bounds;
+        public readonly Box2 Bound;
 
         //Vertices
 
-        public IReadOnlyList<MacroVert> Vertices => _vertices;
+        public IReadOnlyList<MacroVert> Vertices => _grid.GetVertices( HexPos );
 
         public IEnumerable<Cell> NeighborsSafe => _neighbors.Where(n => n != null);
 
         public IEnumerable<Cell> Neighbors => _neighbors;
         
 
-        public IEnumerable<MacroEdge> Edges => _edges;
+        public IEnumerable<MacroEdge> Edges => _grid.GetEdges( HexPos );
        
         /// <summary>
         /// Planned height for this cell
@@ -102,17 +101,11 @@ namespace TerrainDemo.Macro
         }
         */
 
-        public Cell(MacroMap map, HexPos coords, [NotNull] MacroMap.CellMesh.Face face, IEnumerable<MacroVert> vertices, IEnumerable<MacroEdge> edges)
+        public Cell(MacroMap map, MacroMap.CellMesh grid, HexPos coords )
         {
-            if (face == null) throw new ArgumentNullException(nameof(face));
-            Assert.IsTrue(face.Vertices.Count() == MaxNeighborsCount);
-            Assert.IsTrue(face.Edges.Count() == MaxNeighborsCount);
-
-            _face = face;
-            _vertices = vertices.ToArray();
-            _edges = edges.ToArray();
-            Map = map;
-            HexPoses = coords;
+	        _grid = grid;
+	        Map      = map;
+	        HexPos = coords;
         }   
 
         public void Init(IEnumerable<Cell> neighbors)
@@ -154,7 +147,7 @@ namespace TerrainDemo.Macro
         /// <returns></returns>
         public bool Contains(Vector2 point)
         {
-            return _face.Contains(point);
+	        return _grid.BlockToHex( (GridPos)point ) == HexPos;
         }
 
         public Vector3? Raycast(Ray ray)
@@ -175,10 +168,9 @@ namespace TerrainDemo.Macro
 
         public override string ToString()
         {
-            return $"TriCell {HexPoses}({_neighbors[0]?.HexPoses.ToString() ?? "?"}, {_neighbors[1]?.HexPoses.ToString() ?? "?"}, {_neighbors[2]?.HexPoses.ToString() ?? "?"}, {_neighbors[3]?.HexPoses.ToString() ?? "?"}, {_neighbors[4]?.HexPoses.ToString() ?? "?"}, {_neighbors[5]?.HexPoses.ToString() ?? "?"})";
+            return $"TriCell {HexPos}({_neighbors[0]?.HexPos.ToString() ?? "?"}, {_neighbors[1]?.HexPos.ToString() ?? "?"}, {_neighbors[2]?.HexPos.ToString() ?? "?"}, {_neighbors[3]?.HexPos.ToString() ?? "?"}, {_neighbors[4]?.HexPos.ToString() ?? "?"}, {_neighbors[5]?.HexPos.ToString() ?? "?"})";
         }
 
-        private readonly MacroMap.CellMesh.Face _face;
         private Zone _zone;
         private double[] _influence;
         private readonly MacroVert[] _vertices;
@@ -186,8 +178,8 @@ namespace TerrainDemo.Macro
         private Cell[] _neighbors;
         private OpenToolkit.Mathematics.Vector3? _centerPoint;
         private OpenToolkit.Mathematics.Vector3[] _corners;
+        private readonly MacroMap.CellMesh _grid;
 
-        
 
         /*
         /// <summary>
@@ -222,10 +214,6 @@ namespace TerrainDemo.Macro
             }
         }
         */
-        Mesh<Cell, MacroEdge, MacroVert>.Face Mesh<Cell, MacroEdge, MacroVert>.IFaceOwner.Face
-        {
-            get { return _face; }
-        }
 
         #region IEquatable
 
@@ -233,7 +221,7 @@ namespace TerrainDemo.Macro
         {
             if (other is null) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Equals(HexPoses, other.HexPoses);
+            return Equals(HexPos, other.HexPos);
         }
 
         public override bool Equals(object obj)
@@ -246,7 +234,7 @@ namespace TerrainDemo.Macro
 
         public override int GetHashCode()
         {
-            return HexPoses.GetHashCode();
+            return HexPos.GetHashCode();
         }
 
         public static bool operator ==(Cell left, Cell right)

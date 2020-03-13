@@ -6,7 +6,7 @@ using UnityEngine.Assertions;
 
 namespace TerrainDemo.Macro
 {
-    public class MacroEdge : IEquatable<MacroEdge>, MacroMap.CellMesh.IEdgeOwner
+    public class MacroEdge : IEquatable<MacroEdge>
     {
         public int Id => _edge.Id;
         public MacroVert Vertex1 { get; }
@@ -69,7 +69,7 @@ namespace TerrainDemo.Macro
             throw new ArgumentOutOfRangeException(nameof(cell), "Unknown cell");
         }
 
-        public override string ToString() => $"Edge {Id}, {Cell1?.HexPoses.ToString() ?? "?"}|{Cell2?.HexPoses.ToString() ?? "?"}, {Vertex1.Id}-{Vertex2.Id}";
+        public override string ToString() => $"Edge {Id}, {Cell1?.HexPos.ToString() ?? "?"}|{Cell2?.HexPos.ToString() ?? "?"}, {Vertex1.Id}-{Vertex2.Id}";
 
         private readonly MacroMap _map;
         private readonly MacroMap.CellMesh _mesh;
@@ -106,7 +106,5 @@ namespace TerrainDemo.Macro
         }
 
         #endregion
-
-        MacroMap.CellMesh.Edge MacroMap.CellMesh.IEdgeOwner.Edge => _edge;
     }
 }

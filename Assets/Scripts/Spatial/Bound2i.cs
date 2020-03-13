@@ -76,6 +76,22 @@ namespace TerrainDemo.Spatial
 	               bound.Min.Z >= Min.Z && bound.Max.Z <= Max.Z;
         }
 
+        public Bound2i Add( Bound2i another )
+        {
+	        if ( another == Empty )
+		        return this;
+
+	        if ( this == Empty )
+		        return another;
+
+	        var minX = Math.Min( Min.X, another.Min.X );
+	        var minZ = Math.Min( Min.Z, another.Min.Z );
+	        var maxX = Math.Min( Max.X, another.Max.X );
+	        var maxZ = Math.Min( Max.Z, another.Max.Z );
+
+            return new Bound2i((minX, minZ), (maxX, maxZ));
+        }
+
         public IEnumerable<GridPos> Substract(Bound2i b)
         {
             return this.Where(v => !b.Contains(v));
@@ -144,6 +160,13 @@ namespace TerrainDemo.Spatial
             var size = new Vector3(input.Max.X - input.Min.X + 1, 0, input.Max.Z - input.Min.Z + 1);
             var center = new Vector3(input.Min.X + size.x / 2, 0, input.Min.Z + size.z / 2);
             return new Bounds(center, size);
+        }
+
+        public static explicit operator Box2(Bound2i input)
+        {
+	        var min = (Vector2)input.Min;
+	        var max = (Vector2)(input.Max + Vector2i.One);
+	        return new Box2(min, max);
         }
 
         public static explicit operator Bound2i(Bounds input)

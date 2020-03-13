@@ -652,13 +652,13 @@ namespace TerrainDemo.Editor
 		private void ShowMacroZoneInfo(Macro.Zone zone)
 		{
 			GUILayout.Label($"Macro.Zone {zone.Id}", EditorStyles.boldLabel);
-			GUILayout.Label($"Cells: {zone.Cells.ToJoinedString(c => c.HexPoses.ToString())}");
+			GUILayout.Label($"Cells: {zone.Cells.ToJoinedString(c => c.HexPos.ToString())}");
 			GUILayout.Label($"Biome: {zone.Biome.name}");
 		}
 
 		private void ShowMacroCellInfo(Cell cell)
 		{
-			GUILayout.Label($"Macro.Cell {cell.HexPoses}", EditorStyles.boldLabel);
+			GUILayout.Label($"Macro.Cell {cell.HexPos}", EditorStyles.boldLabel);
 			GUILayout.Label($"Zone: {cell.ZoneId} - {cell.Biome.name}");
 			GUILayout.Label($"Height: {cell.DesiredHeight} desired, {cell.CenterPoint.Y:F1} true");
 		}
@@ -667,7 +667,7 @@ namespace TerrainDemo.Editor
 		{
 			GUILayout.Label("MacroVert", EditorStyles.boldLabel);
 			GUILayout.Label($"Id: {vert.Id}, pos: {vert.Position.ToString(GetZoomLevel(distance))}");
-			GUILayout.Label($"Cells: {vert.Cells.Select(c => c.HexPoses).ToJoinedString()}");
+			GUILayout.Label($"Cells: {vert.Cells.Select(c => c.HexPos).ToJoinedString()}");
 			GUILayout.Label($"Influence: {vert.Influence}");
 		}
 
