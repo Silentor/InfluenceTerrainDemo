@@ -15,7 +15,7 @@ namespace TerrainDemo.Spatial
 	/// <summary>
 	/// Regular hexagonal grid (top-pointed) optimized to block rasterization
 	/// </summary>
-	public partial class HexGrid<TFace, TEdge, TVertex> : IEnumerable<HexPos>
+	public partial class HexGrid<TCell, TEdge, TVertex> : IEnumerable<HexPos>
 	{
 		public readonly float Size;
 		public readonly float Width;
@@ -31,7 +31,7 @@ namespace TerrainDemo.Spatial
 			QBasis = new Vector2d(Width,     0);
 			RBasis = new Vector2d(Width / 2, 3d /4 *Height);
 
-			_faces = new FaceHolder[ gridRadius * 2, gridRadius * 2 ];
+			_faces = new CellHolder[ gridRadius * 2, gridRadius * 2 ];
 			var bound1 = GetHexBound( new HexPos(Array2dToHex( 0, 0 )) );
 			var bound2 = GetHexBound( new HexPos(Array2dToHex( gridRadius * 2 - 1, 0 )) );
 			var bound3 = GetHexBound( new HexPos(Array2dToHex( 0, gridRadius * 2 - 1 )) );
@@ -39,13 +39,13 @@ namespace TerrainDemo.Spatial
 			_bound = bound1.Add( bound2 ).Add( bound3 ).Add( bound4 );
 		}
 
-		public TFace this[ HexPos position ]
+		public TCell this[ HexPos position ]
 		{
 			get => Get( position.Q, position.R );
 			set => Set( position.Q, position.R, value );
 		}
 
-		public TFace this[ int q, int r ]
+		public TCell this[ int q, int r ]
 		{
 			get => Get( q, r );
 			set => Set( q, r, value );
@@ -73,7 +73,7 @@ namespace TerrainDemo.Spatial
 			return new Vertices( holder );
 		}
 
-		public IEnumerable<TFace> GetNeighbors( HexPos hex )
+		public IEnumerable<TCell> GetNeighbors( HexPos hex )
 		{
 			for ( var i = 0; i < HexPos.Directions.Length; i++ )
 			{
@@ -84,7 +84,7 @@ namespace TerrainDemo.Spatial
 			}
 		}
 
-		public IEnumerable<TFace> FloodFill(HexPos startFace, Predicate<TFace> fillCondition = null)
+		public IEnumerable<TCell> FloodFill(HexPos startFace, Predicate<TCell> fillCondition = null)
 		{
 			var distanceEnumerator = new FloodFillEnumerator(this, startFace, fillCondition);
 			for (int distance = 0; distance < 10; distance++)
@@ -187,14 +187,14 @@ namespace TerrainDemo.Spatial
 
 		#endregion
 
-		private readonly FaceHolder[,] _faces;
+		private readonly CellHolder[,] _faces;
 		private readonly Vector2d	QBasis ;
 		private readonly Vector2d	RBasis ;
 		private const           float		Sqrt3  = 1.732050807568877f;
 		private readonly Bound2i _bound;
 
 		[MethodImpl( MethodImplOptions.AggressiveInlining)]
-		private FaceHolder Set( int q, int r, TFace data )
+		private CellHolder Set( int q, int r, TCell data )
 		{
 			var holder = GetOrCreateHolder( q, r );
 			holder.Data = data;
@@ -202,7 +202,7 @@ namespace TerrainDemo.Spatial
 		}
 
 		[MethodImpl( MethodImplOptions.AggressiveInlining)]
-		private TFace Get( int q, int r )
+		private TCell Get( int q, int r )
 		{
 			var faceHolder = GetHolder( q, r );
 			if ( faceHolder != null )
@@ -211,7 +211,7 @@ namespace TerrainDemo.Spatial
 			return default;
 		}
 		[MethodImpl( MethodImplOptions.AggressiveInlining)]
-		private FaceHolder GetHolder( int q, int r )
+		private CellHolder GetHolder( int q, int r )
 		{
 			CheckHexPosition( q, r );
 
@@ -219,7 +219,7 @@ namespace TerrainDemo.Spatial
 			return _faces[x, y];
 		}
 
-		private FaceHolder GetOrCreateHolder( int q, int r )
+		private CellHolder GetOrCreateHolder( int q, int r )
 		{
 			CheckHexPosition( q, r );
 
@@ -229,7 +229,7 @@ namespace TerrainDemo.Spatial
 			if ( face != null )
 				return face;
 
-			face = new FaceHolder( new HexPos(q, r), this );
+			face = new CellHolder( new HexPos(q, r), this );
 			_faces[x, y] = face;
 			return face;
 		}
@@ -274,7 +274,7 @@ namespace TerrainDemo.Spatial
 			}
 		}
 
-		internal FaceHolder[,] GetInternalStorage( )
+		internal CellHolder[,] GetInternalStorage( )
 		{
 			return _faces;
 		}
@@ -314,14 +314,14 @@ namespace TerrainDemo.Spatial
 		#endregion
 
 		[DebuggerDisplay( "{Pos} = {Data}")]
-		public class FaceHolder
+		public class CellHolder
 		{
 			public readonly HexPos Pos;
-			public TFace Data;
+			public TCell Data;
 			public readonly EdgeHolder[] Edges = new EdgeHolder[6];
 			public readonly VertexHolder[] Vertices = new VertexHolder[6];
 
-			internal FaceHolder( HexPos position, HexGrid<TFace, TEdge, TVertex> owner )
+			internal CellHolder( HexPos position, HexGrid<TCell, TEdge, TVertex> owner )
 			{
 				Pos = position;
 
@@ -331,7 +331,7 @@ namespace TerrainDemo.Spatial
 					var dir      = HexPos.Directions[i];
 					var neighPos = position + dir;
 
-					FaceHolder neigh;
+					CellHolder neigh;
 					if(owner.IsContains( neighPos ) && (neigh = owner.GetHolder( neighPos.Q, neighPos.R )) != null)
 					{
 						var oppositeIndex = ( i + 3 ) % 6;
@@ -339,7 +339,7 @@ namespace TerrainDemo.Spatial
 					}
 					else
 					{
-						Edges[i] = new EdgeHolder(  );
+						Edges[i] = new EdgeHolder( position, neighPos );
 					}
 				}
 
@@ -348,7 +348,7 @@ namespace TerrainDemo.Spatial
 				{
 					var dir      = HexPos.Directions[i];
 					var neighPos = position + dir;
-					FaceHolder neigh;
+					CellHolder neigh;
 					if ( owner.IsContains( neighPos ) && ( neigh = owner.GetHolder( neighPos.Q, neighPos.R )) != null )
 					{
 						var vert1 = i;
@@ -364,51 +364,77 @@ namespace TerrainDemo.Spatial
 						var vert1 = i;
 						var vert2 = ( i + 1 ) % 6;
 
-						if(Vertices[vert1] == null)
-							Vertices[vert1] = new VertexHolder(  );
-						if(Vertices[vert2] == null)
-							Vertices[vert2] = new VertexHolder(  );
+						if ( Vertices [ vert1 ] == null )
+						{
+							var prevNeighPos = position + HexPos.Directions [ (i - 1) % 6 ];
+							Vertices[vert1] = new VertexHolder( position, neighPos, prevNeighPos );
+						}
+
+						if ( Vertices [ vert2 ] == null )
+						{
+							var nextNeighPos = position + HexPos.Directions[vert2];
+							Vertices[vert2] = new VertexHolder( position, neighPos, nextNeighPos );
+						}
 					}
 				}
 			}
 		}
 
-		[DebuggerDisplay( "{Data}")]
+		[DebuggerDisplay ( "{Data}" )]
 		public class EdgeHolder
 		{
+			private readonly HexPos _cell1;
+			private readonly HexPos _cell2;
 			public TEdge Data;
-		}
 
+			public EdgeHolder ( HexPos cell1, HexPos cell2 )
+			{
+				_cell1 = cell1;
+				_cell2 = cell2;
+			}
+		}
+	
 		[DebuggerDisplay("{Data}")]
 		public class VertexHolder
 		{
+			public HexPos Cell1 { get; }
+			public HexPos Cell2 { get; }
+			public HexPos Cell3 { get; }
+
 			public TVertex Data;
+
+			public VertexHolder ( HexPos cell1, HexPos cell2, HexPos cell3 )
+			{
+				Cell1 = cell1;
+				Cell2 = cell2;
+				Cell3 = cell3;
+			}
 		}
 
-		[DebuggerDisplay( "Edges of {_face.Pos}")]
+		[DebuggerDisplay( "Edges of {_cell.Pos}")]
 		public struct Edges : IEnumerable<TEdge>
 		{
 			//public TEdge this[ int index ]
 			//{
-			//	get => _face.Edges[index].Data;
-			//	set => _face.Edges[index].Data = value;
+			//	get => _cell.Edges[index].Data;
+			//	set => _cell.Edges[index].Data = value;
 			//}
 
 			public TEdge this[ HexDir index ]
 			{
-				get => _face.Edges[(int)index].Data;
-				set => _face.Edges[(int)index].Data = value;
+				get => _cell.Edges[(int)index].Data;
+				set => _cell.Edges[(int)index].Data = value;
 			}
 
-			internal Edges( FaceHolder face )
+			internal Edges( CellHolder cell )
 			{
-				_face = face;
+				_cell = cell;
 			}
 
-			private readonly FaceHolder _face;
+			private readonly CellHolder _cell;
 			public IEnumerator<TEdge> GetEnumerator( )
 			{
-				var edges = _face.Edges;
+				var edges = _cell.Edges;
 				yield return edges[0].Data;
 				yield return edges[1].Data;
 				yield return edges[2].Data;
@@ -423,35 +449,35 @@ namespace TerrainDemo.Spatial
 			}
 		}
 
-		[DebuggerDisplay( "Vertices of {_face.Pos}")]
+		[DebuggerDisplay( "Vertices of {_cell.Pos}")]
 		public struct Vertices : IReadOnlyList<TVertex>
 		{
 			public int Count { get; }
 
 			public TVertex this[ int index ]
 			{
-				get => _face.Vertices[index].Data;
-				set => _face.Vertices[index].Data = value;
+				get => _cell.Vertices[index].Data;
+				set => _cell.Vertices[index].Data = value;
 			}
 
 			//not applicable
 			//public TVertex this[ HexDir index ]
 			//{
-			//	get => _face.Vertices[(int)index].Data;
-			//	set => _face.Vertices[(int)index].Data = value;
+			//	get => _cell.Vertices[(int)index].Data;
+			//	set => _cell.Vertices[(int)index].Data = value;
 			//}
 
-			internal Vertices( FaceHolder face )
+			internal Vertices( CellHolder cell )
 			{
-				_face = face;
+				_cell = cell;
 				Count = 6;
 			}
 
-			private readonly FaceHolder _face;
+			private readonly CellHolder _cell;
 
 			public IEnumerator<TVertex> GetEnumerator( )
 			{
-				var vertices = _face.Vertices;
+				var vertices = _cell.Vertices;
 				yield return vertices[0].Data;
 				yield return vertices[1].Data;
 				yield return vertices[2].Data;
