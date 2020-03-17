@@ -32,8 +32,8 @@ namespace TerrainDemo.Generators
 
             zoneAverageCenterPoint /= Zone.Cells.Count;
 
-            var peak = Zone.Submesh.GetNearestFace(zoneAverageCenterPoint);
-            var cellsInDistanceOrder = Zone.Submesh.FloodFill(peak).ToArray();
+            var peak = Zone.Cluster.GetNearestFace(zoneAverageCenterPoint);
+            var cellsInDistanceOrder = Zone.Cluster.FloodFill(peak).ToArray();
 
             //Make one-peak conus mountain
             var height = 5 * cellsInDistanceOrder.Length;

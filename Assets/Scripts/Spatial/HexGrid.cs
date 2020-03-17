@@ -2,10 +2,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using OpenToolkit.Mathematics;
 using UnityEditor;
+using UnityEngine.Experimental.AI;
 
 
 [assembly: InternalsVisibleToAttribute( "Assembly-CSharp-Editor")] //Unit tests
@@ -136,6 +138,18 @@ namespace TerrainDemo.Spatial
 				var roundedVector = CubeRound( lerperVector );
 				result[i] = HexPos.FromCube( roundedVector );
 			}
+
+			return result;
+		}
+
+		public Cluster GetCluster( IEnumerable<HexPos> cluster )
+		{
+			var result = new Cluster( this );
+			if(cluster != null)
+				foreach ( var hexPos in cluster )
+				{
+					result.Add( hexPos );
+				}
 
 			return result;
 		}
@@ -313,6 +327,85 @@ namespace TerrainDemo.Spatial
 
 		#endregion
 
+		/// <summary>
+		/// Connected group of Cells
+		/// </summary>
+		public class Cluster : IReadOnlyCollection<HexPos>
+		{
+			public readonly HexGrid<TFace, TEdge, TVertex> Grid;
+
+			public TFace this[ HexPos position ]
+			{
+				get
+				{
+					if ( _cluster.Contains( position ) )
+						return Grid[position];
+					throw new ArgumentOutOfRangeException( nameof(position), position, "Out of cluster" );
+				}
+			}
+
+			public int Count => _cluster.Count;
+
+			internal Cluster( HexGrid<TFace, TEdge, TVertex> grid )
+			{
+				Grid = grid;
+			}
+
+			public bool IsContain( HexPos cell )
+			{
+				return _cluster.Contains( cell );
+			}
+
+			public bool NotContain( HexPos cell )
+			{
+				return !_cluster.Contains( cell );
+			}
+
+			public void Add( HexPos cell )
+			{
+				if ( Grid.IsContains( cell ) )
+					_cluster.Add( cell );
+			}
+
+			public void Remove( HexPos cell )
+			{
+				_cluster.Remove( cell );
+			}
+
+			public IEnumerable<HexPos> GetBorderCells( )
+			{
+				foreach ( var cell in _cluster )
+				{
+					if ( Grid.GetNeighborPositions( cell ).Any( hp => !Grid.IsContains( hp ) ) )
+						yield return cell;
+				}
+			}
+
+			public IEnumerable<EdgeHolder> GetBorderEdges( )
+			{
+				foreach ( var borderCell in GetBorderCells() )
+				{
+					foreach ( var edge in Grid.GetEdges( borderCell )
+					                          .Where( e => NotContain( e.OppositeCell( borderCell ) ) ) )
+					{
+						yield return edge;
+					}
+				}
+			}
+
+
+			private readonly HashSet<HexPos> _cluster = new HashSet<HexPos>();
+
+			public IEnumerator<HexPos> GetEnumerator( )
+			{
+				return _cluster.GetEnumerator(  );
+			}
+			IEnumerator IEnumerable.GetEnumerator( )
+			{
+				return GetEnumerator( );
+			}
+		}
+
 		[DebuggerDisplay( "{Pos} = {Data}")]
 		public class FaceHolder
 		{
@@ -373,20 +466,32 @@ namespace TerrainDemo.Spatial
 			}
 		}
 
-		[DebuggerDisplay( "{Data}")]
+		[DebuggerDisplay( "{Data}" )]
 		public class EdgeHolder
 		{
+			public readonly HexPos Cell1;
+			public readonly HexPos Cell2;
 			public TEdge Data;
+
+			public HexPos OppositeCell( HexPos cell )
+			{
+				if ( Cell1 == cell )
+					return Cell2;
+				else if ( Cell2 == cell )
+					return Cell1;
+
+				throw new ArgumentOutOfRangeException(  );
+			}
 		}
 
-		[DebuggerDisplay("{Data}")]
+		[DebuggerDisplay( "{Data}" )]
 		public class VertexHolder
 		{
 			public TVertex Data;
 		}
 
 		[DebuggerDisplay( "Edges of {_face.Pos}")]
-		public struct Edges : IEnumerable<TEdge>
+		public struct Edges : IEnumerable<EdgeHolder>
 		{
 			//public TEdge this[ int index ]
 			//{
@@ -406,15 +511,16 @@ namespace TerrainDemo.Spatial
 			}
 
 			private readonly FaceHolder _face;
-			public IEnumerator<TEdge> GetEnumerator( )
+
+			public IEnumerator<EdgeHolder> GetEnumerator( )
 			{
 				var edges = _face.Edges;
-				yield return edges[0].Data;
-				yield return edges[1].Data;
-				yield return edges[2].Data;
-				yield return edges[3].Data;
-				yield return edges[4].Data;
-				yield return edges[5].Data;
+				yield return edges[0];
+				yield return edges[1];
+				yield return edges[2];
+				yield return edges[3];
+				yield return edges[4];
+				yield return edges[5];
 			}
 
 			IEnumerator IEnumerable.GetEnumerator( )
