@@ -4,23 +4,23 @@ using UnityEngine.Assertions;
 
 namespace TerrainDemo.Spatial
 {
-	public partial class HexGrid<TFace, TEdge, TVertex>
+	public partial class HexGrid<TCell, TEdge, TVertex>
 	{
-		public struct FloodFillEnumerator
+		public struct DistanceEnumerator
 		{
-			private readonly HexGrid<TFace, TEdge, TVertex> _grid;
+			private readonly HexGrid<TCell, TEdge, TVertex> _grid;
 			private readonly List<List<HexPos>>             _neighbors;
-			private readonly Predicate<TFace>               _fillCondition;
+			private readonly Predicate<HexPos>               _fillCondition;
 
 			/// <summary>
 			/// Create flood-fill around <see cref="start"> cell
 			/// </summary>
 			/// <param name="grid"></param>
 			/// <param name="start"></param>
-			public FloodFillEnumerator(HexGrid<TFace, TEdge, TVertex> grid, HexPos start, Predicate<TFace> fillCondition = null)
+			public DistanceEnumerator(HexGrid<TCell, TEdge, TVertex> grid, HexPos start, Predicate<HexPos> fillCondition = null)
 			{
 				Assert.IsTrue(grid.IsContains(start));
-				Assert.IsTrue(fillCondition == null || fillCondition(grid[start]));
+				Assert.IsTrue(fillCondition == null || fillCondition(start));
 
 				_grid          = grid;
 				_neighbors     = new List<List<HexPos>> {new List<HexPos> {start}};
@@ -87,7 +87,7 @@ namespace TerrainDemo.Spatial
 					foreach (var neigh2 in _grid.GetNeighborPositions( neigh1 ) )
 					{
 						if (_grid.IsContains(neigh2) 
-						    && ( _fillCondition == null || _fillCondition(_grid[neigh2]) )
+						    && ( _fillCondition == null || _fillCondition(neigh2) )
 						    && !result.Contains(neigh2) && !faces.Contains(neigh2) && !alreadyProcessed.Contains(neigh2))
 							result.Add(neigh2);
 					}

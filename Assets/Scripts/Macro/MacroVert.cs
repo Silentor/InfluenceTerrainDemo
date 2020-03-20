@@ -19,8 +19,6 @@ namespace TerrainDemo.Macro
 
         public Cell[] Cells => _cells ?? (_cells = _mesh2.GetAdjacentFaces(this).ToArray());
 
-        public MacroEdge[] Edges => _edges ?? (_edges = _mesh2.GetAdjacentEdges(this).ToArray());
-
         public Influence Influence
         {
             get
@@ -46,11 +44,8 @@ namespace TerrainDemo.Macro
         /// </summary>
         /// <param name="map"></param>
         /// <param name="id"></param>
-        public MacroVert(MacroMap map, MacroMap.CellMesh mesh2, MacroMap.CellMesh.Vertex vertex, TriRunner settings)
+        public MacroVert(MacroMap map, MacroMap.CellMesh mesh2, MacroMap.CellMesh.VertexHolder vertex, TriRunner settings)
         {
-            Assert.IsTrue(vertex.AdjacentEdges.Count >=1 && vertex.AdjacentEdges.Count <= 3);
-            Assert.IsTrue(vertex.AdjacentFaces.Count >= 1 && vertex.AdjacentFaces.Count <= 3);
-
             _map = map;
             _mesh2 = mesh2;
             _vertex = vertex;
@@ -60,7 +55,7 @@ namespace TerrainDemo.Macro
 
         public override string ToString() => $"Vert {Id}, cells: {Cells?.ToJoinedString(c => c.HexPos.ToString())}";
 
-        private MacroMap.CellMesh.Vertex _vertex;
+        private readonly MacroMap.CellMesh.VertexHolder _vertex;
         private readonly MacroMap _map;
         private BiomeSettings[] _biomes;
         private Influence? _influence;
@@ -73,42 +68,6 @@ namespace TerrainDemo.Macro
         private Influence CalculateInfluence(Cell[] neighbors)
         {
             return _map.GetInfluence(Position);
-
-            /*
-            var result = new double[_biomes.Length];
-            var sum = 0d;
-
-            //Collect influence of neighbor cells
-            for (var i = 0; i < neighbors.Length; i++)
-            {
-                result[neighbors[i].Biome.Index] += 1;
-                sum++;
-            }
-
-            //Normalize
-            for (var i = 0; i < result.Length; i++)
-                result[i] /= sum;
-
-            //Filter weak cells
-            /*
-            sum = 0d;
-            for (var i = 0; i < result.Length; i++)
-            {
-                if (result[i] <= 1/6d)
-                    result[i] = 0;
-                else if (result[i] <= 1/3d && neighbors.Length > 3)
-                    result[i] = 1 / 6d;
-                sum += result[i];
-            }
-
-
-            //Renormalize
-            for (var i = 0; i < result.Length; i++)
-                result[i] /= sum;
-                */
-            /*
-            return result;
-            */
         }
     }
 }
