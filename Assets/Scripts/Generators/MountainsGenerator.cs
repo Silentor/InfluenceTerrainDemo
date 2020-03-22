@@ -32,8 +32,8 @@ namespace TerrainDemo.Generators
 
             zoneAverageCenterPoint /= Zone.Cells.Count;
 
-            var peak = Zone.Cluster.GetNearestFace(zoneAverageCenterPoint);
-            var cellsInDistanceOrder = Zone.Cluster.FloodFill(peak).ToArray();
+            var peak = Zone.Cluster.GetNearestCell((GridPos)zoneAverageCenterPoint);
+            var cellsInDistanceOrder = Zone.Cluster.FloodFill(peak).Select( pos => Zone.Cluster.Grid[pos] ).ToArray();
 
             //Make one-peak conus mountain
             var height = 5 * cellsInDistanceOrder.Length;
