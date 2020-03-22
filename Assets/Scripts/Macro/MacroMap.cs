@@ -93,9 +93,9 @@ namespace TerrainDemo.Macro
             return _mesh.FloodFill(startCell, fillCondition);
         }
 
-        public CellMesh.Submesh GetSubmesh(IEnumerable<Cell> cells)
+        public CellMesh.Cluster GetSubmesh(IEnumerable<Cell> cells)
         {
-            return _mesh.GetSubmesh(cells);
+            return _mesh.GetCluster(cells);
         }
 
         public string InfluenceToString(double[] influence)

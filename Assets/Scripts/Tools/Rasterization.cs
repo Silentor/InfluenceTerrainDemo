@@ -268,38 +268,38 @@ namespace TerrainDemo.Tools
             }
         }
 
-        public static IEnumerable<GridPos> Polygon(Macro.Cell cell)
-        {
-            var edges = new List<GridPos>();
-            foreach (var edge in cell.Edges)
-                edges.AddRange(DDA(edge.Vertex1.Position, edge.Vertex2.Position, false));
+        //public static IEnumerable<GridPos> Polygon(Macro.Cell cell)
+        //{
+        //    var edges = new List<GridPos>();
+        //    foreach (var edge in cell.Edges)
+        //        edges.AddRange(DDA(edge.Vertex1.Position, edge.Vertex2.Position, false));
 
-            var bounds = (Bound2i)cell.Bounds;
+        //    var bounds = (Bound2i)cell.Bounds;
 
-            Debug.Log(bounds);
+        //    Debug.Log(bounds);
 
-            edges = edges.Where(e => bounds.Contains(e)).Distinct().ToList();
-            edges.Sort();
+        //    edges = edges.Where(e => bounds.Contains(e)).Distinct().ToList();
+        //    edges.Sort();
 
-            for (int i = 0; i < edges.Count;)
-            {
-                if (i == edges.Count - 1)
-                {
-                    yield return edges.Last();
-                    yield break;
-                }
+        //    for (int i = 0; i < edges.Count;)
+        //    {
+        //        if (i == edges.Count - 1)
+        //        {
+        //            yield return edges.Last();
+        //            yield break;
+        //        }
 
-                var z1 = edges[i].Z;
-                var j = i;
-                while (j < edges.Count - 1 && edges[j + 1].Z == z1)
-                    j++;
+        //        var z1 = edges[i].Z;
+        //        var j = i;
+        //        while (j < edges.Count - 1 && edges[j + 1].Z == z1)
+        //            j++;
 
-                for (var x = edges[i].X; x <= edges[j].X; x++)
-                    yield return new GridPos(x, z1);
+        //        for (var x = edges[i].X; x <= edges[j].X; x++)
+        //            yield return new GridPos(x, z1);
 
-                i = j + 1;
-            }
-        }
+        //        i = j + 1;
+        //    }
+        //}
 
         /// <summary>
         /// Bounds scan algorithm for convex polygon. Not very fast but accurate. As fast as bounding box is tight
