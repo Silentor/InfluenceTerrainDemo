@@ -25,9 +25,9 @@ namespace TerrainDemo.Micro
             Macro = macro;
             Center = (GridPos)macro.Center;
             _map = map;
-            BlockPositions = Rasterization.ConvexToBlocks(macro.Contains, macro.Bounds);
+            BlockPositions = Rasterization.ConvexToBlocks(macro.Contains, macro.Bound);
 
-            Bounds = (Bound2i) macro.Bounds;
+            Bounds = (Bound2i) macro.Bound;
 
             var vertices = new List<GridPos>(BlockPositions);
             foreach (var blockPosition in BlockPositions)

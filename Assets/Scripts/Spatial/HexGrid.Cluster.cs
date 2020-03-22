@@ -98,20 +98,11 @@ namespace TerrainDemo.Spatial
 				return minHex;
 			}
 
-			public IEnumerable<HexPos> FloodFill( HexPos start, Predicate<HexPos> fillCondition = null )
+			public IEnumerable<HexPos> FloodFill( HexPos start, Predicate<TCell> fillCondition = null )
 			{
-				if ( fillCondition == null )
-					fillCondition = IsContain;
-				else
-				{
-					var oldConsition = fillCondition;
-					fillCondition = pos => oldConsition( pos ) && IsContain( pos );
-				}
-
-				return Grid.FloodFill( start, fillCondition );
+				return Grid.FloodFill( start, IsContain, fillCondition );
 			}
-
-
+			
 			private readonly HashSet<HexPos> _cluster = new HashSet<HexPos>();
 
 			public IEnumerator<HexPos> GetEnumerator( )

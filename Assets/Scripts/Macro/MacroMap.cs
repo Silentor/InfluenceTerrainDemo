@@ -90,12 +90,12 @@ namespace TerrainDemo.Macro
 
         public IEnumerable<Cell> FloodFill(HexPos startCell, Predicate<Cell> fillCondition = null)
         {
-            return _mesh.FloodFill(startCell, fillCondition);
+            return _mesh.FloodFill(startCell, fillCondition ).Select ( hex =>_mesh[hex] );
         }
 
         public CellMesh.Cluster GetSubmesh(IEnumerable<Cell> cells)
         {
-            return _mesh.GetCluster(cells);
+            return _mesh.GetCluster(cells.Select ( c => c.HexPos ));
         }
 
         public string InfluenceToString(double[] influence)

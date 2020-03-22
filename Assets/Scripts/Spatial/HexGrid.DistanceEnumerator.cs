@@ -10,19 +10,21 @@ namespace TerrainDemo.Spatial
 		{
 			private readonly HexGrid<TCell, TEdge, TVertex> _grid;
 			private readonly List<List<HexPos>>             _neighbors;
-			private readonly Predicate<HexPos>               _fillCondition;
+			private readonly Predicate<TCell>               _fillCondition;		//User condition
+			private readonly Predicate<HexPos>               _boundCondition;	//System condition (clusters support)
 
 			/// <summary>
 			/// Create flood-fill around <see cref="start"> cell
 			/// </summary>
 			/// <param name="grid"></param>
 			/// <param name="start"></param>
-			public DistanceEnumerator(HexGrid<TCell, TEdge, TVertex> grid, HexPos start, Predicate<HexPos> fillCondition = null)
+			public DistanceEnumerator(HexGrid<TCell, TEdge, TVertex> grid, HexPos start, Predicate<HexPos> boundCondition, Predicate<TCell> fillCondition = null)
 			{
-				Assert.IsTrue(grid.IsContains(start));
-				Assert.IsTrue(fillCondition == null || fillCondition(start));
+				Assert.IsTrue(boundCondition(start));
+				Assert.IsTrue(fillCondition == null || fillCondition(grid[start]));
 
 				_grid          = grid;
+				_boundCondition = boundCondition;
 				_neighbors     = new List<List<HexPos>> {new List<HexPos> {start}};
 				_fillCondition = fillCondition;
 			}
@@ -86,8 +88,8 @@ namespace TerrainDemo.Spatial
 				{
 					foreach (var neigh2 in _grid.GetNeighborPositions( neigh1 ) )
 					{
-						if (_grid.IsContains(neigh2) 
-						    && ( _fillCondition == null || _fillCondition(neigh2) )
+						if (   _boundCondition(neigh2) 
+						    && ( _fillCondition == null || _fillCondition(_grid[neigh2]) )
 						    && !result.Contains(neigh2) && !faces.Contains(neigh2) && !alreadyProcessed.Contains(neigh2))
 							result.Add(neigh2);
 					}

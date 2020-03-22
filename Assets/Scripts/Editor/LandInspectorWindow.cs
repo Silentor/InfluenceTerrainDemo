@@ -666,7 +666,7 @@ namespace TerrainDemo.Editor
 		private void ShowTriVertInfo(MacroVert vert, float distance)
 		{
 			GUILayout.Label("MacroVert", EditorStyles.boldLabel);
-			GUILayout.Label($"Id: {vert.Id}, pos: {vert.Position.ToString(GetZoomLevel(distance))}");
+			GUILayout.Label($"Id: {vert}, pos: {vert.Position.ToString(GetZoomLevel(distance))}");
 			GUILayout.Label($"Cells: {vert.Cells.Select(c => c.HexPos).ToJoinedString()}");
 			GUILayout.Label($"Influence: {vert.Influence}");
 		}

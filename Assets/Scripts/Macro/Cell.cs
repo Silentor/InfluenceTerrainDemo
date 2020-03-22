@@ -21,30 +21,28 @@ namespace TerrainDemo.Macro
         public const int MaxNeighborsCount = 6;
         public const int InvalidCellId = -1;
 
-        public readonly HexPos HexPos;
+        public HexPos HexPos => _cell.Pos;
         public int ZoneId = Zone.InvalidId;
+
         public readonly MacroMap Map;
         public readonly Box2 Bound;
 
         //Vertices
 
-        public IReadOnlyList<MacroVert> Vertices => _grid.GetVertices( HexPos );
+        public MacroMap.CellMesh.VerticesData Vertices => _grid.GetVerticesData( HexPos );
 
         public IEnumerable<Cell> NeighborsSafe => _neighbors.Where(n => n != null);
 
-        public IEnumerable<Cell> Neighbors => _neighbors;
-        
+        public IEnumerable<Cell> Neighbors => _grid.GetNeighbors ( HexPos );
 
-        public IEnumerable<MacroEdge> Edges => _grid.GetEdges( HexPos );
+        public MacroMap.CellMesh.EdgesData Edges => _grid.GetEdgesData ( HexPos );
        
         /// <summary>
         /// Planned height for this cell
         /// </summary>
         public Heights DesiredHeight;
 
-        public float[] MicroHeights { get; private set; }
-
-        public Vector2 Center => _face.Center;
+        public Vector2 Center => _cell.Center;
 
         public Zone Zone
         {
@@ -101,22 +99,14 @@ namespace TerrainDemo.Macro
         }
         */
 
-        public Cell(MacroMap map, MacroMap.CellMesh grid, HexPos coords )
+        public Cell(MacroMap map, MacroMap.CellMesh grid, MacroMap.CellMesh.CellHolder cell )
         {
 	        _grid = grid;
 	        Map      = map;
-	        HexPos = coords;
+	        _cell = cell;
         }   
 
-        public void Init(IEnumerable<Cell> neighbors)
-        {
-            _neighbors = neighbors.ToArray();
-
-            Assert.IsTrue(_neighbors.Count() == Cell.MaxNeighborsCount);
-            //Do not accept same neigbours for different sides
-            Assert.IsTrue(NeighborsSafe.Count() == NeighborsSafe.Distinct().Count());
-        }
-
+        
         /*
         /// <summary>
         /// From https://stackoverflow.com/a/20861130
@@ -171,6 +161,7 @@ namespace TerrainDemo.Macro
             return $"TriCell {HexPos}({_neighbors[0]?.HexPos.ToString() ?? "?"}, {_neighbors[1]?.HexPos.ToString() ?? "?"}, {_neighbors[2]?.HexPos.ToString() ?? "?"}, {_neighbors[3]?.HexPos.ToString() ?? "?"}, {_neighbors[4]?.HexPos.ToString() ?? "?"}, {_neighbors[5]?.HexPos.ToString() ?? "?"})";
         }
 
+        private readonly MacroMap.CellMesh.CellHolder _cell;
         private Zone _zone;
         private double[] _influence;
         private readonly MacroVert[] _vertices;
