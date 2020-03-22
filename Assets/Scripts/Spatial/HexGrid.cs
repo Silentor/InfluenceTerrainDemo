@@ -24,7 +24,10 @@ namespace TerrainDemo.Spatial
 		public readonly float Width;
 		public readonly float Height;
 
-		public Bound2i Bound => _bound;
+		/// <summary>
+		/// Block bound of grid
+		/// </summary>
+		public Bound2i Bound => _blockBound;
 
 		public HexGrid( float hexSide, int gridRadius )
 		{
@@ -35,11 +38,13 @@ namespace TerrainDemo.Spatial
 			RBasis = new Vector2d(Width / 2, 3d /4 *Height);
 
 			_faces = new CellHolder[ gridRadius * 2, gridRadius * 2 ];
+			_gridBound = new Bound2i( GridPos.Zero, gridRadius );
+
 			var bound1 = GetHexBound( new HexPos(Array2dToHex( 0, 0 )) );
 			var bound2 = GetHexBound( new HexPos(Array2dToHex( gridRadius * 2 - 1, 0 )) );
 			var bound3 = GetHexBound( new HexPos(Array2dToHex( 0, gridRadius * 2 - 1 )) );
 			var bound4 = GetHexBound( new HexPos(Array2dToHex( gridRadius * 2 - 1, gridRadius * 2 - 1 )) );
-			_bound = bound1.Add( bound2 ).Add( bound3 ).Add( bound4 );
+			_blockBound = bound1.Add( bound2 ).Add( bound3 ).Add( bound4 );
 		}
 
 		public TCell this[ HexPos position ]
@@ -115,7 +120,7 @@ namespace TerrainDemo.Spatial
 		}
 
 		/// <summary>
-		/// Get hex coords for given block oords
+		/// Get hex coords for given block coords
 		/// Based on https://www.redblobgames.com/grids/hexagons/more-pixel-to-hex.html (Branchless method)
 		/// </summary>
 		/// <param name="pos"></param>
@@ -136,7 +141,7 @@ namespace TerrainDemo.Spatial
 		{
 			var (x, y) = HexToArray2d( pos.Q, pos.R );
 
-			return x >= 0 && x < _bound.Size.X && y >= 0 && y < _bound.Size.Z;
+			return x >= 0 && x < _gridBound.Size.X && y >= 0 && y < _gridBound.Size.Z;
 		}
 
 		//https://www.redblobgames.com/grids/hexagons/#line-drawing
@@ -224,7 +229,8 @@ namespace TerrainDemo.Spatial
 		private readonly Vector2d	QBasis ;
 		private readonly Vector2d	RBasis ;
 		private const           float		Sqrt3  = 1.732050807568877f;
-		private readonly Bound2i _bound;
+		private readonly Bound2i _gridBound;
+		private readonly Bound2i _blockBound;
 
 		[MethodImpl( MethodImplOptions.AggressiveInlining)]
 		private CellHolder Set( int q, int r, TCell data )
@@ -270,16 +276,16 @@ namespace TerrainDemo.Spatial
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		internal (int x, int y) HexToArray2d( int q, int r )
 		{
-			var x = q + r / 2	- _bound.Min.X;
-			var y = r			- _bound.Min.Z;
+			var x = q + r / 2	- _gridBound.Min.X;
+			var y = r			- _gridBound.Min.Z;
 			
 			return ( x, y );
 		}
 		
 		internal (int q, int r) Array2dToHex( int x, int y )
 		{
-			var r = y + _bound.Min.Z;
-			var q = x - r / 2 + _bound.Min.X;
+			var r = y + _gridBound.Min.Z;
+			var q = x - r / 2 + _gridBound.Min.X;
 			
 			return ( q, r );
 		}
@@ -287,7 +293,7 @@ namespace TerrainDemo.Spatial
 		{
 			var (x, y) = HexToArray2d( q, r );
 
-			if ( x < 0 || x >= _bound.Size.X || y < 0 || y >= _bound.Size.Z ) 
+			if ( x < 0 || x >= _gridBound.Size.X || y < 0 || y >= _gridBound.Size.Z ) 
 				throw new ArgumentOutOfRangeException( "hex", new HexPos(q, r), 
 				                                       "out of range" );
 		}
