@@ -37,7 +37,7 @@ namespace TerrainDemo.Spatial
 			QBasis = new Vector2d(Width,     0);
 			RBasis = new Vector2d(Width / 2, 3d /4 *Height);
 
-			_faces = new CellHolder[ gridRadius * 2, gridRadius * 2 ];
+			_faces = new CellHolder[ (gridRadius + 1) * 2, (gridRadius + 1) * 2 ];
 			_gridBound = new Bound2i( GridPos.Zero, gridRadius );
 
 			var bound1 = GetHexBound( new HexPos(Array2dToHex( 0, 0 )) );

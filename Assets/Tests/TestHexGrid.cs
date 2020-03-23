@@ -51,7 +51,8 @@ namespace TerrainDemo.Tests
 				for ( int z = 0; z < storage.GetLength( 1 ); z++ )
 				{
 					var h = storage[x, z];
-					DrawHex( h.Data, Color.magenta );
+					if(h != null)
+						DrawHex( h.Pos, Color.magenta );
 				}
 
 			//Show rasterized line
