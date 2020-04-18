@@ -65,7 +65,7 @@ namespace TerrainDemo
         public MicroMap Micro { get; private set; }
 
         public NavigationMap NavMap { get; private set; }
-        public MacroTemplate Land { get; private set; }
+        public LandGenerator Land { get; private set; }
 
         public IReadOnlyCollection<BlockSettings> AllBlocks => _allBlocks;
         public IReadOnlyDictionary<BlockType, BlockSettings> AllBlocksDict 
@@ -118,7 +118,7 @@ namespace TerrainDemo
         {
             Prepare();
 
-            var template = new MacroTemplate(_random);
+            var template = new LandGenerator(_random);
             Land = template;
 
             //Fully generate Macro Map

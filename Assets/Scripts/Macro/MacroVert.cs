@@ -48,7 +48,7 @@ namespace TerrainDemo.Macro
         /// </summary>
         /// <param name="map"></param>
         /// <param name="id"></param>
-        public MacroVert(MacroMap map, MacroMap.CellMesh.VertexHolder vertex, TriRunner settings)
+        public MacroVert(MacroMap map, MacroGrid.VertexHolder vertex, TriRunner settings)
         {
             _map = map;
             _vertex = vertex;
@@ -56,7 +56,7 @@ namespace TerrainDemo.Macro
 
         public override string ToString() => $"Vert, cells: {Cells?.ToJoinedString(c => c.HexPos.ToString())}";
 
-        private readonly MacroMap.CellMesh.VertexHolder _vertex;
+        private readonly MacroGrid.VertexHolder _vertex;
         private readonly MacroMap _map;
         private Influence? _influence;
         private Heights? _height;

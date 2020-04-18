@@ -27,7 +27,6 @@ namespace TerrainDemo.Macro
         public readonly List<Cell> Cells = new List<Cell>();
         public readonly List<MacroVert> Vertices = new List<MacroVert>();
         public readonly List<MacroEdge> Edges = new List<MacroEdge>();
-        public readonly float[] Heights;
         public readonly List<Zone> Zones = new List<Zone>();
         public readonly List<BaseZoneGenerator> Generators = new List<BaseZoneGenerator>();
 
@@ -37,10 +36,8 @@ namespace TerrainDemo.Macro
             _random = random;
             _side = settings.CellSide;
 
-            _mesh = new CellMesh( _settings.CellSide, (int)_settings.LandSize );
-            GenerateGrid();
-
-            Heights = new float[Vertices.Count];
+            var mesh = new MacroGrid( _settings.CellSide, (int)_settings.LandSize );
+            mesh = GenerateGrid( mesh );
 
             Bounds = (Box2)_mesh.Bound;
 
@@ -93,7 +90,7 @@ namespace TerrainDemo.Macro
             return _mesh.FloodFill(startCell, fillCondition ).Select ( hex =>_mesh[hex] );
         }
 
-        public CellMesh.Cluster GetSubmesh(IEnumerable<Cell> cells)
+        public MacroGrid.Cluster GetSubmesh(IEnumerable<Cell> cells)
         {
             return _mesh.GetCluster(cells.Select ( c => c.HexPos ));
         }
@@ -121,9 +118,9 @@ namespace TerrainDemo.Macro
         private int[] _nearestCellsTags = new int[0];
         private readonly double[] EmptyInfluence;
         private readonly List<(Cell, float)> _getInfluenceBuffer = new List<(Cell, float)>();
-        private readonly CellMesh _mesh;
+        private readonly MacroGrid _mesh;
 
-        private void GenerateGrid()
+        private MacroGrid GenerateGrid( MacroGrid grid )
         {
             //var gridPerturbator = new FastNoise(unchecked (_settings.Seed + 10));
             //gridPerturbator.SetFrequency(_settings.GridPerturbFreq);
@@ -198,6 +195,7 @@ namespace TerrainDemo.Macro
             //    var neighbors = HexPos.Directions.Select(dir => Cells.Find(c => c.HexPoses == cell.HexPoses.Translated(dir)));
             //    cell.Init(neighbors);
             //}
+
 
 
             Debug.LogFormat("Generated macromap of {0} vertices, {1} cells, {2} edges", Vertices.Count, Cells.Count, Edges.Count);
@@ -395,13 +393,6 @@ namespace TerrainDemo.Macro
             }
 
             return result;
-        }
-
-        public class CellMesh : HexGrid<Cell, MacroEdge, MacroVert>
-        {
-	        public CellMesh( float hexSide, int gridRadius ) : base( hexSide, gridRadius )
-	        {
-	        }
         }
 
         private readonly struct CellCandidate

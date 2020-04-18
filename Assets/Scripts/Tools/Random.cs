@@ -7,7 +7,7 @@ using UnityEngine;
 namespace TerrainDemo.Tools
 {
     /// <summary>
-    /// Wrapper around some random generator (currently BCL Random)
+    /// Wrapper around some random generator (currently XOR Shift)
     /// </summary>
     public class Random
     {

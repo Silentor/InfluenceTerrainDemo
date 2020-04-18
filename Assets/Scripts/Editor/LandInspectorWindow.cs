@@ -30,7 +30,7 @@ namespace TerrainDemo.Editor
 		private MicroMap MicroMap => _runner ? _runner.Micro : null;
 		private NavigationMap NavMap => _runner ? _runner.NavMap : null;
 
-		private MacroTemplate _land;
+		private LandGenerator _land;
 		private Input _input;
 		private bool _enabled = true;
 		private bool _drawLayout;

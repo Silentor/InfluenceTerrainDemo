@@ -17,7 +17,7 @@ namespace TerrainDemo.Macro
         public Cell Cell2 => _edge.Grid [ _edge.Cell2] ;
 
 
-        public MacroEdge([NotNull] MacroMap map, MacroMap.CellMesh.EdgeHolder edge )
+        public MacroEdge([NotNull] MacroMap map, MacroGrid.EdgeHolder edge )
         {
             _edge = edge;
             _map = map ?? throw new ArgumentNullException(nameof(map));
@@ -43,8 +43,8 @@ namespace TerrainDemo.Macro
         public override string ToString() => $"Edge, {Cell1?.HexPos.ToString() ?? "?"}|{Cell2?.HexPos.ToString() ?? "?"}";
 
         private readonly MacroMap _map;
-        private readonly MacroMap.CellMesh _mesh;
-        private readonly MacroMap.CellMesh.EdgeHolder _edge;
+        private readonly MacroGrid _mesh;
+        private readonly MacroGrid.EdgeHolder _edge;
         private Cell _cell2;
         private Cell _cell1;
 

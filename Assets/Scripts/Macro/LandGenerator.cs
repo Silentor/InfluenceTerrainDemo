@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using OpenToolkit.Mathematics;
+using TerrainDemo.Assets.Scripts.Generators;
 using TerrainDemo.Generators;
 using TerrainDemo.Micro;
 using TerrainDemo.Settings;
@@ -18,21 +19,34 @@ using Vector3 = OpenToolkit.Mathematics.Vector3;
 namespace TerrainDemo.Macro
 {
     /// <summary>
-    /// Это типа LandGenerator?
+    /// Generate entire land and produces Macro and Micro maps
     /// </summary>
-    public class MacroTemplate
+    public class LandGenerator
     {
         private readonly Random _random;
+        private readonly TriRunner _settings;
         private Dictionary<Vector2i, CellMixVertex> _mixBufferDebug = new Dictionary<Vector2i, CellMixVertex>();
+        private readonly List<BaseZoneGenerator> _generators = new List<BaseZoneGenerator>();
 
-        public MacroTemplate(Random random)
+        public LandGenerator(Random random, TriRunner settings)
         {
-            _random = random;
+	        _random = random;
+	        _settings = settings;
+
+            //Prepare hex macro grid
+	        var mesh = new MacroGrid( _settings.CellSide, (int)_settings.LandSize );
+
+            //Divide macro grid to zones
+
         }
 
         public MacroMap CreateMacroMap(TriRunner settings)
         {
             var timer = Stopwatch.StartNew();
+
+            var layout = new LayoutGrid( _settings.CellSide, (int)_settings.LandSize );
+
+
 
             var result = new MacroMap(settings, _random);
             var zoneGenerators = RandomClusterZonesDivider(result, settings);
@@ -261,6 +275,31 @@ namespace TerrainDemo.Macro
             return zones;
         }
 
+        private LayoutGrid DivideGrid( LayoutGrid layout )
+        {
+	        foreach ( var hex in layout )
+	        {
+		        if ( layout[hex] == null )
+		        {
+			        var biome    = _random.Item(_settings.Biomes);
+			        var zoneSize = _random.Range(biome.SizeRange);
+			        var startCell = hex;
+
+                    //var zoneGenerator = GetZoneGenerator( biome )
+
+			        var zonePositions = layout.FloodFill(hex, (_, c) => c == null).Take(zoneSize).ToArray();
+                    //todo check minimal zone size, prevent too small zones
+                    foreach (var zonePos in zonePositions)
+                    {
+	                    var cell = macro.GetCell( zonePos );
+                        var macroCell = new Macro.Cell(  );
+	                    triCell.ZoneId = zoneId;
+                    }
+
+		        }
+	        }
+        }
+
         private BaseZoneGenerator GetZoneGenerator(BiomeSettings biome, MacroMap map, IEnumerable<Cell> cells, int zoneId, TriRunner settings)
         {
             switch (biome.Type)
@@ -369,5 +408,9 @@ namespace TerrainDemo.Macro
             //3) Generate result microheight in given vertex mixing all influenced zone microheights
             public Heights ResultHeight;
         }
+
+		
+
+        
     }
 }

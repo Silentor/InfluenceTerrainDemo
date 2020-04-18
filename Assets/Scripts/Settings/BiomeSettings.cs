@@ -1,4 +1,5 @@
-﻿using TerrainDemo.Micro;
+﻿using TerrainDemo.Macro;
+using TerrainDemo.Micro;
 using UnityEngine;
 
 namespace TerrainDemo.Settings
@@ -19,6 +20,11 @@ namespace TerrainDemo.Settings
         /// Biome size at cells
         /// </summary>
         public Vector2Int SizeRange = new Vector2Int(5, 20);
+
+        /// <summary>
+        /// Default macro cell
+        /// </summary>
+        public MacroCellType DefaultCell = MacroCellType.Field;
 
         //Add some settings about general biome look and feel
         public BlockSettings DefaultMainBlock;

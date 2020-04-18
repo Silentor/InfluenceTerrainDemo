@@ -21,7 +21,8 @@ namespace TerrainDemo.Generators
     /// </summary>
     public class BaseZoneGenerator
     {
-        protected readonly MacroMap _macroMap;
+	    private readonly BiomeSettings _zoneSettings;
+	    protected readonly MacroMap _macroMap;
         protected readonly TriRunner _settings;
         private Cell[] _cells;
         public readonly Macro.Zone Zone;
@@ -36,7 +37,26 @@ namespace TerrainDemo.Generators
 
             Assert.IsTrue(zoneCells.All(c => c.ZoneId == id));
 
-            Zone = new Macro.Zone(_macroMap, _macroMap.GetSubmesh(zoneCells), id, biome, settings);
+            Zone = new Macro.Zone( _macroMap.GetSubmesh(zoneCells), id, biome, settings);
+        }
+
+        public BaseZoneGenerator( int seed, BiomeSettings zoneSettings )
+        {
+            _zoneRandom = new Random( seed );
+	        _zoneSettings = zoneSettings;
+        }
+
+        public bool GenerateLayout( HexPos startCell, MacroGrid macroGrid )
+        {
+            Assert.IsTrue( macroGrid[startCell] == null );
+
+            var zoneSize = _zoneRandom.Range(_zoneSettings.SizeRange);
+            var zonePositions = macroGrid.FloodFill(startCell, c => c == null).Take(zoneSize).ToArray();
+			//todo check for minimum zone size, discard zone, return false
+			foreach ( var zonePosition in zonePositions )
+			{
+				macroGrid[zonePosition] = new Cell(  );
+			}
         }
 
         #region Macrolevel generation

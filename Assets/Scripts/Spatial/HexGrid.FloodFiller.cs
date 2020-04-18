@@ -6,22 +6,22 @@ namespace TerrainDemo.Spatial
 {
 	public partial class HexGrid<TCell, TEdge, TVertex>
 	{
-		public struct DistanceEnumerator
+		public struct FloodFiller
 		{
 			private readonly HexGrid<TCell, TEdge, TVertex> _grid;
 			private readonly List<List<HexPos>>             _neighbors;
-			private readonly Predicate<TCell>               _fillCondition;		//User condition
-			private readonly Predicate<HexPos>               _boundCondition;	//System condition (clusters support)
+			private readonly CheckCellPredicate				_fillCondition;		//User condition
+			private readonly Predicate<HexPos>              _boundCondition;				//System condition (clusters support)
 
 			/// <summary>
 			/// Create flood-fill around <see cref="start"> cell
 			/// </summary>
 			/// <param name="grid"></param>
 			/// <param name="start"></param>
-			public DistanceEnumerator(HexGrid<TCell, TEdge, TVertex> grid, HexPos start, Predicate<HexPos> boundCondition, Predicate<TCell> fillCondition = null)
+			public FloodFiller(HexGrid<TCell, TEdge, TVertex> grid, HexPos start, Predicate<HexPos> boundCondition, CheckCellPredicate fillCondition = null)
 			{
 				Assert.IsTrue(boundCondition(start));
-				Assert.IsTrue(fillCondition == null || fillCondition(grid[start]));
+				Assert.IsTrue(fillCondition == null || fillCondition(grid, grid[start]));
 
 				_grid          = grid;
 				_boundCondition = boundCondition;
@@ -84,19 +84,21 @@ namespace TerrainDemo.Spatial
 			private List<HexPos> GetNeighbors(List<HexPos> faces, List<HexPos> alreadyProcessed)
 			{
 				var result = new List<HexPos>();
-				foreach (var neigh1 in faces)
+				foreach (var checkPos in faces)
 				{
-					foreach (var neigh2 in _grid.GetNeighborPositions( neigh1 ) )
+					foreach (var resultPos in _grid.GetNeighborPositions( checkPos ) )
 					{
-						if (   _boundCondition(neigh2) 
-						    && ( _fillCondition == null || _fillCondition(_grid[neigh2]) )
-						    && !result.Contains(neigh2) && !faces.Contains(neigh2) && !alreadyProcessed.Contains(neigh2))
-							result.Add(neigh2);
+						if (   _boundCondition(resultPos) 
+						    && ( _fillCondition == null || _fillCondition(resultPos, _grid[resultPos]) )
+						    && !result.Contains(resultPos) && !faces.Contains(resultPos) && !alreadyProcessed.Contains(resultPos))
+							result.Add(resultPos);
 					}
 				}
 
 				return result;
 			}
 		}
+
+		public delegate bool CheckCellPredicate(HexPos position, TCell data);
 	}
 }

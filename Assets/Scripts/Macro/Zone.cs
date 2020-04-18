@@ -12,7 +12,7 @@ namespace TerrainDemo.Macro
 
         public readonly int Id;
 
-        public readonly MacroMap.CellMesh.Cluster Cluster;
+        public readonly MacroGrid.Cluster Cluster;
 
         public readonly Influence Influence;
         public int Count => Cluster.Count;
@@ -28,9 +28,8 @@ namespace TerrainDemo.Macro
 
         public BiomeSettings Biome { get; private set; }
 
-        public Zone(MacroMap mesh, MacroMap.CellMesh.Cluster cells, int id, BiomeSettings biome, TriRunner settings)
+        public Zone( int id, MacroGrid.Cluster cells, BiomeSettings biome )
         {
-            _mesh = mesh;
             Cluster = cells;
             Id = id;
             Biome = biome;
@@ -51,6 +50,6 @@ namespace TerrainDemo.Macro
 	        return GetEnumerator( );
         }
 
-        private readonly MacroMap _mesh;
+        //private readonly MacroMap _mesh;
     }
 }

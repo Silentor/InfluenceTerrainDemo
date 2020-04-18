@@ -24,18 +24,14 @@ namespace TerrainDemo.Macro
         public HexPos HexPos => _cell.Pos;
         public int ZoneId = Zone.InvalidId;
 
-        public readonly MacroMap Map;
+        //public readonly MacroMap Map;
         public readonly Box2 Bound;
 
         //Vertices
 
-        public MacroMap.CellMesh.VerticesData Vertices => _grid.GetVerticesData( HexPos );
-
         public IEnumerable<Cell> NeighborsSafe => _neighbors.Where(n => n != null);
 
         public IEnumerable<Cell> Neighbors => _grid.GetNeighbors ( HexPos );
-
-        public MacroMap.CellMesh.EdgesData Edges => _grid.GetEdgesData ( HexPos );
        
         /// <summary>
         /// Planned height for this cell
@@ -44,10 +40,7 @@ namespace TerrainDemo.Macro
 
         public Vector2 Center => _cell.Center;
 
-        public Zone Zone
-        {
-            get { return _zone ?? (_zone = Map.Zones.First(z => z.Id == ZoneId)); }
-        }
+        public Zone Zone { get; }
 
         public BiomeSettings Biome => Zone?.Biome;
 
@@ -55,34 +48,34 @@ namespace TerrainDemo.Macro
         #region 3D properties   
 
         ///Actual height based on neighbor cells 
-        public OpenToolkit.Mathematics.Vector3 CenterPoint
-        {
-            get
-            {
-                if (!_centerPoint.HasValue)
-                    _centerPoint = new Vector3(Center.X, Map.GetHeight(Center).Nominal, Center.Y);
+        //public OpenToolkit.Mathematics.Vector3 CenterPoint
+        //{
+        //    get
+        //    {
+        //        if (!_centerPoint.HasValue)
+        //            _centerPoint = new Vector3(Center.X, Map.GetHeight(Center).Nominal, Center.Y);
 
-                return _centerPoint.Value;
-            }
-        }
+        //        return _centerPoint.Value;
+        //    }
+        //}
 
-        public IReadOnlyList<Vector3> GetCorners()
-        {
-            if (_corners == null)
-            {
-                _corners = new[]
-                {
-                    new Vector3(Vertices[0].Position.X, Map.GetHeight(Vertices[0].Position).Nominal, Vertices[0].Position.Y),
-                    new Vector3(Vertices[1].Position.X, Map.GetHeight(Vertices[1].Position).Nominal, Vertices[1].Position.Y),
-                    new Vector3(Vertices[2].Position.X, Map.GetHeight(Vertices[2].Position).Nominal, Vertices[2].Position.Y),
-                    new Vector3(Vertices[3].Position.X, Map.GetHeight(Vertices[3].Position).Nominal, Vertices[3].Position.Y),
-                    new Vector3(Vertices[4].Position.X, Map.GetHeight(Vertices[4].Position).Nominal, Vertices[4].Position.Y),
-                    new Vector3(Vertices[5].Position.X, Map.GetHeight(Vertices[5].Position).Nominal, Vertices[5].Position.Y),
-                };
-            }
+        //public IReadOnlyList<Vector3> GetCorners()
+        //{
+        //    if (_corners == null)
+        //    {
+        //        _corners = new[]
+        //        {
+        //            new Vector3(Vertices[0].Position.X, Map.GetHeight(Vertices[0].Position).Nominal, Vertices[0].Position.Y),
+        //            new Vector3(Vertices[1].Position.X, Map.GetHeight(Vertices[1].Position).Nominal, Vertices[1].Position.Y),
+        //            new Vector3(Vertices[2].Position.X, Map.GetHeight(Vertices[2].Position).Nominal, Vertices[2].Position.Y),
+        //            new Vector3(Vertices[3].Position.X, Map.GetHeight(Vertices[3].Position).Nominal, Vertices[3].Position.Y),
+        //            new Vector3(Vertices[4].Position.X, Map.GetHeight(Vertices[4].Position).Nominal, Vertices[4].Position.Y),
+        //            new Vector3(Vertices[5].Position.X, Map.GetHeight(Vertices[5].Position).Nominal, Vertices[5].Position.Y),
+        //        };
+        //    }
 
-            return _corners;
-        }
+        //    return _corners;
+        //}
 
 
         #endregion
@@ -99,11 +92,10 @@ namespace TerrainDemo.Macro
         }
         */
 
-        public Cell(MacroMap map, MacroMap.CellMesh grid, MacroMap.CellMesh.CellHolder cell )
+        public Cell( MacroGrid.CellHolder cell, Zone zone )
         {
-	        _grid = grid;
-	        Map      = map;
 	        _cell = cell;
+	        Zone = zone;
         }   
 
         
@@ -137,31 +129,31 @@ namespace TerrainDemo.Macro
         /// <returns></returns>
         public bool Contains(Vector2 point)
         {
-	        return _grid.BlockToHex( (GridPos)point ) == HexPos;
+	        return _cell.IsContains( point );
         }
 
-        public Vector3? Raycast(Ray ray)
-        {
-            var corners = GetCorners();
+        //public Vector3? Raycast(Ray ray)
+        //{
+        //    var corners = GetCorners();
 
-            for (int i = 0; i < corners.Count; i++)
-            {
-                var v1 = corners[i];
-                var v2 = corners[(i + 1) % corners.Count];
+        //    for (int i = 0; i < corners.Count; i++)
+        //    {
+        //        var v1 = corners[i];
+        //        var v2 = corners[(i + 1) % corners.Count];
 
-                if (Intersections.LineTriangleIntersection(ray, v1, v2, CenterPoint, out var distance) == 1)
-                    return ray.GetPoint(distance);
-            }
+        //        if (Intersections.LineTriangleIntersection(ray, v1, v2, CenterPoint, out var distance) == 1)
+        //            return ray.GetPoint(distance);
+        //    }
 
-            return null;
-        }
+        //    return null;
+        //}
 
         public override string ToString()
         {
             return $"TriCell {HexPos}({_neighbors[0]?.HexPos.ToString() ?? "?"}, {_neighbors[1]?.HexPos.ToString() ?? "?"}, {_neighbors[2]?.HexPos.ToString() ?? "?"}, {_neighbors[3]?.HexPos.ToString() ?? "?"}, {_neighbors[4]?.HexPos.ToString() ?? "?"}, {_neighbors[5]?.HexPos.ToString() ?? "?"})";
         }
 
-        private readonly MacroMap.CellMesh.CellHolder _cell;
+        private readonly MacroGrid.CellHolder _cell;
         private Zone _zone;
         private double[] _influence;
         private readonly MacroVert[] _vertices;
@@ -169,7 +161,7 @@ namespace TerrainDemo.Macro
         private Cell[] _neighbors;
         private OpenToolkit.Mathematics.Vector3? _centerPoint;
         private OpenToolkit.Mathematics.Vector3[] _corners;
-        private readonly MacroMap.CellMesh _grid;
+        private readonly MacroGrid _grid;
 
 
         /*

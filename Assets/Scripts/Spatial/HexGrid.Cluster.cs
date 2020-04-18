@@ -98,7 +98,7 @@ namespace TerrainDemo.Spatial
 				return minHex;
 			}
 
-			public IEnumerable<HexPos> FloodFill( HexPos start, Predicate<TCell> fillCondition = null )
+			public IEnumerable<HexPos> FloodFill( HexPos start, CheckCellPredicate fillCondition = null )
 			{
 				return Grid.FloodFill( start, IsContain, fillCondition );
 			}
