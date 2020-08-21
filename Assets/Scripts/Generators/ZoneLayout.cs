@@ -47,34 +47,7 @@ namespace TerrainDemo.Assets.Scripts.Generators
 			return true;
 		}
 
-		public ZoneGenerator3 GetZoneGenerator( )
-		{
-			return new ZoneGenerator3( _myCells );
-		}
-	}
-
-	/// <summary>
-	/// A
-	/// </summary>
-	public class ZoneGenerator3
-	{
-		private readonly IEnumerable<CapturedCell> _zoneCells;
-		private readonly MacroGrid _macro;
-
-		public ZoneGenerator3( IEnumerable<CapturedCell> zoneCells, MacroGrid macro)
-		{
-			_zoneCells = zoneCells;
-			_macro = macro;
-		}
-
-		public Zone GenerateMacroZone( int zoneId,  )
-		{
-			var zone = new Zone(  );
-
-			new Macro.Cell(  )
-
-			var result = new Zone(  );
-		}
+		
 	}
 
 	public class LayoutGrid : HexGrid<CapturedCell, bool, bool>

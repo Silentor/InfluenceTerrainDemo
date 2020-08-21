@@ -24,9 +24,7 @@ namespace TerrainDemo.Macro
     public class MacroMap
     {
         public readonly Box2 Bounds;
-        public readonly List<Cell> Cells = new List<Cell>();
-        public readonly List<MacroVert> Vertices = new List<MacroVert>();
-        public readonly List<MacroEdge> Edges = new List<MacroEdge>();
+        public Cell[] Cells { get; private set; }
         public readonly List<Zone> Zones = new List<Zone>();
         public readonly List<BaseZoneGenerator> Generators = new List<BaseZoneGenerator>();
 
@@ -36,8 +34,9 @@ namespace TerrainDemo.Macro
             _random = random;
             _side = settings.CellSide;
 
-            var mesh = new MacroGrid( _settings.CellSide, (int)_settings.LandSize );
-            mesh = GenerateGrid( mesh );
+            _mesh = new MacroGrid( _settings.CellSide, (int)_settings.LandSize );
+            Cells = _mesh.Select( pos => _mesh[pos] ).ToArray( );       //Cells cache
+            //mesh = GenerateGrid( mesh );
 
             Bounds = (Box2)_mesh.Bound;
 
@@ -71,21 +70,21 @@ namespace TerrainDemo.Macro
 	        }
         }
 
-        public ValueTuple<Cell, Vector3> Raycast(Ray ray)
-        {
-            foreach (var cell in Cells.OrderBy(c => Vector3.DistanceSquared(c.CenterPoint, ray.Origin)))
-            {
-                var intersection = cell.Raycast(ray);
-                if (intersection.HasValue)
-                {
-                    return new ValueTuple<Cell, Vector3>(cell, intersection.Value);
-                }
-            }
+        //public ValueTuple<Cell, Vector3> Raycast(Ray ray)
+        //{
+        //    foreach (var cell in Cells.OrderBy(c => Vector3.DistanceSquared(c.CenterPoint, ray.Origin)))
+        //    {
+        //        var intersection = cell.Raycast(ray);
+        //        if (intersection.HasValue)
+        //        {
+        //            return new ValueTuple<Cell, Vector3>(cell, intersection.Value);
+        //        }
+        //    }
 
-            return new ValueTuple<Cell, Vector3>(null, Vector3.Zero);
-        }
+        //    return new ValueTuple<Cell, Vector3>(null, Vector3.Zero);
+        //}
 
-        public IEnumerable<Cell> FloodFill(HexPos startCell, Predicate<Cell> fillCondition = null)
+        public IEnumerable<Cell> FloodFill(HexPos startCell, MacroGrid.CheckCellPredicate fillCondition = null)
         {
             return _mesh.FloodFill(startCell, fillCondition ).Select ( hex =>_mesh[hex] );
         }
@@ -120,87 +119,6 @@ namespace TerrainDemo.Macro
         private readonly List<(Cell, float)> _getInfluenceBuffer = new List<(Cell, float)>();
         private readonly MacroGrid _mesh;
 
-        private MacroGrid GenerateGrid( MacroGrid grid )
-        {
-            //var gridPerturbator = new FastNoise(unchecked (_settings.Seed + 10));
-            //gridPerturbator.SetFrequency(_settings.GridPerturbFreq);
-
-            //var processedCells = new List<CellCandidate>();
-            //var unprocessedCells = new List<CellCandidate>();
-            //unprocessedCells.Add(new CellCandidate(new HexPos(0, 0), Vector2.Zero, CalcVertsPosition(Vector2.Zero, _settings.CellSide)));
-
-            ////Iteratively process flood-fill cell generation algorithm
-            //while (unprocessedCells.Count > 0)
-            //{
-            //    var candidateCell = unprocessedCells[0];
-            //    unprocessedCells.RemoveAt(0);
-
-            //    //Check if cell in land bound
-            //    if (!_settings.LandBounds.Contains(candidateCell.Center)
-            //        || !candidateCell.Vertices.All(v => _settings.LandBounds.Contains(v)))
-            //        continue;
-
-            //    processedCells.Add(candidateCell);
-
-            //    //Prepare neighbors for adding
-            //    const double triangleHeight = 1.732050807568877 / 2d; //https://en.wikipedia.org/wiki/Equilateral_triangle#Principal_properties
-            //    var neighborsCenters = CalcNeighborCellsPosition(candidateCell.Center, triangleHeight * _side * 2);
-            //    for (int i = 0; i < neighborsCenters.Length; i++)
-            //    {
-            //        var coord = candidateCell.HexPoses.Translated(HexPos.Directions[i]);
-            //        if (!unprocessedCells.Exists(c => c.HexPoses == coord) &&
-            //            !processedCells.Exists(c => c.HexPoses == coord))
-            //        {
-            //            unprocessedCells.Add(new CellCandidate(coord, neighborsCenters[i], CalcVertsPosition(neighborsCenters[i], _settings.CellSide)));
-            //        }
-            //    }
-            //}
-
-            ////Perturb grid vertices
-            //foreach (var cell in processedCells)
-            //    for (var i = 0; i < cell.Vertices.Length; i++)
-            //        cell.Vertices[i] = PerturbGridPoint(cell.Vertices[i], gridPerturbator);
-
-            //_mesh = new CellMesh(processedCells.Select(pc => pc.Vertices));
-
-            ////Make MacroMap elements
-            //Vertices.Clear();
-            //Edges.Clear();
-            //Cells.Clear();
-
-            //_mesh.AssignData(
-            //    delegate(CellMesh.Vertex vertex)
-            //    {
-            //        var vert = new MacroVert(this, _mesh, vertex, _settings);
-            //        Vertices.Add(vert);
-            //        return vert;
-            //    },
-            //    delegate(CellMesh.Edge edge, MacroVert vert1, MacroVert vert2)
-            //    {
-            //        var macroEdge = new MacroEdge(this, _mesh, edge, vert1, vert2);
-            //        Edges.Add(macroEdge);
-            //        return macroEdge;
-            //    },
-            //    delegate(CellMesh.Face face, IEnumerable<MacroVert> vertices, IEnumerable<MacroEdge> edges)
-            //    {
-            //        var faceCoord = processedCells[face.Id].HexPoses;
-            //        var cell = new Cell(this, faceCoord, face, vertices, edges);
-            //        Cells.Add(cell);
-            //        return cell;
-            //    });
-
-            ////Init all cells
-            //foreach (var cell in Cells)
-            //{
-            //    var neighbors = HexPos.Directions.Select(dir => Cells.Find(c => c.HexPoses == cell.HexPoses.Translated(dir)));
-            //    cell.Init(neighbors);
-            //}
-
-
-
-            Debug.LogFormat("Generated macromap of {0} vertices, {1} cells, {2} edges", Vertices.Count, Cells.Count, Edges.Count);
-        }
-
         private Vector2 PerturbGridPoint(Vector2 point, FastNoise gridPerturbator)
         {
             var xPerturb = (float)gridPerturbator.GetSimplex(point.X, point.Y) * _settings.GridPerturbPower;
@@ -212,17 +130,17 @@ namespace TerrainDemo.Macro
         {
             if (_idwInfluence == null)
             {
-                var positions = new double[Cells.Count, 2];
-                var tags = new int[Cells.Count];
+                var positions = new double[_mesh.CellsCount, 2];
+                var tags = new int[_mesh.CellsCount];
 
-                for (int i = 0; i < Cells.Count; i++)
+                for (int i = 0; i < _mesh.CellsCount; i++)
                 {
                     positions[i, 0] = Cells[i].Center.X;
                     positions[i, 1] = Cells[i].Center.Y;
                     tags[i] = i;
                 }
 
-                alglib.kdtreebuildtagged(positions, tags, Cells.Count, 2, 0, 2, out _idwInfluence);
+                alglib.kdtreebuildtagged(positions, tags, _mesh.CellsCount, 2, 0, 2, out _idwInfluence);
             }
         }
 

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Xml.XPath;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Settings;
@@ -37,7 +38,7 @@ namespace TerrainDemo.Generators
 
             Assert.IsTrue(zoneCells.All(c => c.ZoneId == id));
 
-            Zone = new Macro.Zone( _macroMap.GetSubmesh(zoneCells), id, biome, settings);
+            Zone = new Macro.Zone( id, _macroMap.GetSubmesh(zoneCells), biome );
         }
 
         public BaseZoneGenerator( int seed, BiomeSettings zoneSettings )
@@ -51,12 +52,14 @@ namespace TerrainDemo.Generators
             Assert.IsTrue( macroGrid[startCell] == null );
 
             var zoneSize = _zoneRandom.Range(_zoneSettings.SizeRange);
-            var zonePositions = macroGrid.FloodFill(startCell, c => c == null).Take(zoneSize).ToArray();
+            var zonePositions = macroGrid.FloodFill(startCell, (_, cell) => cell == null).Take(zoneSize).ToArray();
 			//todo check for minimum zone size, discard zone, return false
 			foreach ( var zonePosition in zonePositions )
 			{
-				macroGrid[zonePosition] = new Cell(  );
+				macroGrid[zonePosition] = new Cell( macroGrid.GetCell(zonePosition), Zone  );
 			}
+
+			return true;
         }
 
         #region Macrolevel generation

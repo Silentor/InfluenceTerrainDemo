@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using JetBrains.Annotations;
 using OpenToolkit.Mathematics;
 using UnityEngine.Assertions;
@@ -27,6 +26,8 @@ namespace TerrainDemo.Spatial
 		/// Block bound of grid
 		/// </summary>
 		public Bound2i Bound => _blockBound;
+
+		public int CellsCount => _faces.Length;
 
 		public HexGrid( float hexSide, int gridRadius )
 		{
