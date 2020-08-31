@@ -257,7 +257,7 @@ namespace TerrainDemo.Macro
                     var biome = _random.Item(settings.Biomes);
                     var zoneSize = _random.Range(biome.SizeRange);
                     var startCell = cell;
-                    var zoneCells = map.FloodFill(startCell.HexPos, c => c.ZoneId == Zone.InvalidId).Take(zoneSize).ToArray();
+                    var zoneCells = map.FloodFill(startCell.HexPos, (c, _) => c.ZoneId == Zone.InvalidId).Take(zoneSize).ToArray();
                     var zoneMesh = map.GetSubmesh(zoneCells);
 
                     foreach (var triCell in zoneCells)

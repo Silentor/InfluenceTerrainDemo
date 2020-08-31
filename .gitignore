@@ -34,3 +34,5 @@ _ReSharper.Caches/
 
 # Ignore Rider stuff
 .idea/
+Logs/Packages-Update.log
+Packages/packages-lock.json

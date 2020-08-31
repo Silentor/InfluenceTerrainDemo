@@ -21,7 +21,7 @@ namespace TerrainDemo.Spatial
 			public FloodFiller(HexGrid<TCell, TEdge, TVertex> grid, HexPos start, Predicate<HexPos> boundCondition, CheckCellPredicate fillCondition = null)
 			{
 				Assert.IsTrue(boundCondition(start));
-				Assert.IsTrue(fillCondition == null || fillCondition(grid, grid[start]));
+				Assert.IsTrue(fillCondition == null || fillCondition(start, grid[start]));
 
 				_grid          = grid;
 				_boundCondition = boundCondition;
