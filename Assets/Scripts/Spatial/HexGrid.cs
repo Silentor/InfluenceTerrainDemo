@@ -59,20 +59,51 @@ namespace TerrainDemo.Spatial
 			set => Set( q, r, value );
 		}
 
-		public CellHolder GetCell( HexPos position )
-		{
-			return GetOrCreateHolder( position.Q, position.R );
-		}
-
-		public IEnumerable<TCell> GetNeighbors( HexPos hex )
+		public IEnumerable<CellHolder> GetNeighbors( HexPos hex )
 		{
 			for ( var i = 0; i < HexPos.Directions.Length; i++ )
 			{
 				var dir      = HexPos.Directions[i];
 				var neighPos		= hex + dir;
 				if ( IsContains( neighPos ) )
-					yield return this[neighPos];
+					yield return GetOrCreateHolder( neighPos.Q, neighPos.R );
 			}
+		}
+		public IEnumerable<TCell> GetNeighborsValue( HexPos hex )
+		{
+			for ( var i = 0; i < HexPos.Directions.Length; i++ )
+			{
+				var dir      = HexPos.Directions[i];
+				var neighPos = hex + dir;
+				if ( IsContains( neighPos ) )
+					yield return GetOrCreateHolder( neighPos.Q, neighPos.R ).Value;
+			}
+		}
+		public Edges GetEdges( HexPos pos )
+		{
+			var holder = GetHolder( pos );
+			if(holder != null)
+				return holder.Edges;
+
+			return Edges.Empty;
+		}
+
+		public EdgesData GetEdgesValue( HexPos pos )
+		{
+			var holder = GetHolder( pos );
+			if(holder != null)
+				return new EdgesData( holder.Edges );
+
+			throw new ArgumentOutOfRangeException(nameof(pos), pos, "Not in hexgrid");
+		}
+
+		public VerticesData GetVerticesValue( HexPos pos )
+		{
+			var holder = GetHolder( pos );
+			if(holder != null)
+				return new VerticesData( holder.Vertices );
+
+			throw new ArgumentOutOfRangeException(nameof(pos), pos, "Not in hexgrid");
 		}
 
 		public IEnumerable<HexPos> FloodFill(HexPos startFace, CheckCellPredicate fillCondition = null)
@@ -207,7 +238,7 @@ namespace TerrainDemo.Spatial
 		private CellHolder Set( int q, int r, TCell data )
 		{
 			var holder = GetOrCreateHolder( q, r );
-			holder.Data = data;
+			holder.Value = data;
 			return holder;
 		}
 
@@ -216,7 +247,7 @@ namespace TerrainDemo.Spatial
 		{
 			var faceHolder = GetHolder( q, r );
 			if ( faceHolder != null )
-				return faceHolder.Data;
+				return faceHolder.Value;
 
 			return default;
 		}
@@ -227,6 +258,12 @@ namespace TerrainDemo.Spatial
 
 			var (x, y) = HexToArray2d( q, r );
 			return _faces[x, y];
+		}
+
+		[MethodImpl( MethodImplOptions.AggressiveInlining)]
+		private CellHolder GetHolder( HexPos pos )
+		{
+			return GetHolder( pos.Q, pos.R );
 		}
 
 		private CellHolder GetOrCreateHolder( int q, int r )
@@ -330,11 +367,11 @@ namespace TerrainDemo.Spatial
 
 		#endregion
 
-		[DebuggerDisplay( "{Pos} = {Data}")]
+		[DebuggerDisplay( "{Pos} = {Value}")]
 		public class CellHolder
 		{
 			public readonly HexPos			Pos;
-			public			TCell			Data;
+			public			TCell			Value;
 			public readonly Edges			Edges;
 			public readonly Vertices		Vertices;
 
@@ -410,7 +447,7 @@ namespace TerrainDemo.Spatial
 			private readonly HexGrid<TCell, TEdge, TVertex> _grid;
 		}
 
-		[DebuggerDisplay( "{Data}" )]
+		[DebuggerDisplay( "{Value}" )]
 		public class EdgeHolder
 		{
 			public readonly HexPos Cell1;
@@ -418,10 +455,10 @@ namespace TerrainDemo.Spatial
 			public readonly HexPos Cell2;
 			public readonly HexGrid<TCell, TEdge, TVertex> Grid;
 
-			public VertexHolder Vertex1		=>	Grid.GetCell(  Cell1 ).Vertices [ Index ];
-			public VertexHolder Vertex2		=>	Grid.GetCell(  Cell1 ).Vertices [ (Index + 1) % 6 ];
+			public VertexHolder Vertex1 =>	Grid.GetHolder(  Cell1 ).Vertices [ Index ];
+			public VertexHolder Vertex2 =>	Grid.GetHolder(  Cell1 ).Vertices [ (Index + 1) % 6 ];
 			
-			public TEdge Data;
+			public TEdge Value;
 
 			public HexPos OppositeCell( HexPos cell )
 			{
@@ -445,7 +482,7 @@ namespace TerrainDemo.Spatial
 			}
 		}
 
-		[DebuggerDisplay( "{Data}" )]
+		[DebuggerDisplay( "{" + nameof( Data ) + "}" )]
 		public class VertexHolder
 		{
 			public readonly HexPos Cell1;
@@ -477,7 +514,7 @@ namespace TerrainDemo.Spatial
 		}
 
 		//[DebuggerDisplay( "Edges of {_cell.Pos}")]
-		public struct Edges : IReadOnlyList<EdgeHolder>
+		public readonly struct Edges : IReadOnlyList<EdgeHolder>
 		{
 			public readonly EdgeHolder Edge1;
 			public readonly EdgeHolder Edge2;
@@ -485,6 +522,8 @@ namespace TerrainDemo.Spatial
 			public readonly EdgeHolder Edge4;
 			public readonly EdgeHolder Edge5;
 			public readonly EdgeHolder Edge6;
+
+			public static readonly Edges Empty = new Edges();
 
 			public int Count { get; }
 
@@ -508,6 +547,9 @@ namespace TerrainDemo.Spatial
 
 			public IEnumerator<EdgeHolder> GetEnumerator( )
 			{
+				if( Edge1 == null )
+					yield break;
+
 				yield return Edge1;
 				yield return Edge2;
 				yield return Edge3;
@@ -530,8 +572,6 @@ namespace TerrainDemo.Spatial
 				Count = 6;
 			}
 
-			//private readonly CellHolder _cell;
-
 			IEnumerator IEnumerable.GetEnumerator( )
 			{
 				return GetEnumerator( );
@@ -539,25 +579,25 @@ namespace TerrainDemo.Spatial
 		}
 
 		//[DebuggerDisplay( "Edges of {_cell.Pos}")]
-		public struct EdgesData : IEnumerable<TEdge>
+		public readonly struct EdgesData : IReadOnlyList<TEdge>
 		{
 			public int Count => _edges.Count;
 
 			public TEdge this[HexDir index]
 			{
-				get => _edges [ index ].Data;
-				set => _edges [ index ].Data = value;
+				get => _edges [ index ].Value;
+				set => _edges [ index ].Value = value;
 			}
 
 			public TEdge this[int index]
 			{
-				get => _edges[ index ].Data;
-				set => _edges[ index ].Data = value;
+				get => _edges[ index ].Value;
+				set => _edges[ index ].Value = value;
 			}
 
 			public IEnumerator<TEdge> GetEnumerator()
 			{
-				return _edges.Select( e => e.Data ).GetEnumerator(  );
+				return _edges.Select( e => e.Value ).GetEnumerator(  );
 			}
 
 			internal EdgesData(Edges edges)

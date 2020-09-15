@@ -62,14 +62,14 @@ namespace TerrainDemo.Spatial
 				}
 			}
 
-			public IEnumerable<EdgeHolder> GetBorderEdges( )
+			public IEnumerable<TEdge> GetBorderEdges( )
 			{
 				foreach ( var borderCell in GetBorderCells() )
 				{
 					foreach ( var edge in Grid.GetEdges( borderCell )
 					                          .Where( e => NotContain( e.OppositeCell( borderCell ) ) ) )
 					{
-						yield return edge;
+						yield return edge.Value;
 					}
 				}
 			}

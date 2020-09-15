@@ -118,7 +118,7 @@ namespace TerrainDemo
         {
             Prepare();
 
-            var template = new LandGenerator(_random);
+            var template = new LandGenerator( _random, this );
             Land = template;
 
             //Fully generate Macro Map

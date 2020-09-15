@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using TerrainDemo.Spatial;
 using TerrainDemo.Tools;
 using Vector2 = OpenToolkit.Mathematics.Vector2;
 
@@ -48,19 +49,21 @@ namespace TerrainDemo.Macro
         /// </summary>
         /// <param name="map"></param>
         /// <param name="id"></param>
-        public MacroVert(MacroMap map, MacroGrid.VertexHolder vertex, TriRunner settings)
+        public MacroVert(MacroMap map, MacroGrid grid, MacroGrid.VertexHolder vertex, TriRunner settings)
         {
-            _map = map;
-            _vertex = vertex;
+	        _map    = map;
+	        _grid   = grid;
+	        _vertex = vertex;
         }
 
         public override string ToString() => $"Vert, cells: {Cells?.ToJoinedString(c => c.HexPos.ToString())}";
 
-        private readonly MacroGrid.VertexHolder _vertex;
-        private readonly MacroMap _map;
-        private Influence? _influence;
-        private Heights? _height;
-        
+        private readonly MacroMap                      _map;
+        private readonly MacroGrid                     _grid;
+        private          Influence?                    _influence;
+        private          Heights?                      _height;
+        private readonly HexGrid<Cell, MacroEdge, MacroVert>.VertexHolder _vertex;
+
         private Influence CalculateInfluence(Cell[] neighbors)
         {
             return _map.GetInfluence(Position);

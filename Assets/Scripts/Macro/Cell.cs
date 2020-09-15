@@ -29,9 +29,12 @@ namespace TerrainDemo.Macro
 
         //Vertices
 
-        public IEnumerable<Cell> NeighborsSafe => _neighbors.Where(n => n != null);
+        public IEnumerable<Cell> NeighborsSafe => Neighbors.Where(n => n != null);
 
-        public IEnumerable<Cell> Neighbors => _grid.GetNeighbors ( HexPos );
+        public IEnumerable<Cell> Neighbors => _grid.GetNeighborsValue ( HexPos );
+
+        public MacroGrid.VerticesData Vertices => _grid.GetVerticesValue( HexPos );
+
        
         /// <summary>
         /// Planned height for this cell
@@ -47,44 +50,44 @@ namespace TerrainDemo.Macro
         //Ready after Macromap building completed
         #region 3D properties   
 
-        ///Actual height based on neighbor cells 
-        //public OpenToolkit.Mathematics.Vector3 CenterPoint
-        //{
-        //    get
-        //    {
-        //        if (!_centerPoint.HasValue)
-        //            _centerPoint = new Vector3(Center.X, Map.GetHeight(Center).Nominal, Center.Y);
+        //Actual height based on neighbor cells
+		public OpenToolkit.Mathematics.Vector3 CenterPoint
+		{
+			get
+			{
+				if (!_centerPoint.HasValue)
+					_centerPoint = new Vector3(Center.X, Map.GetHeight(Center).Nominal, Center.Y);
 
-        //        return _centerPoint.Value;
-        //    }
-        //}
+				return _centerPoint.Value;
+			}
+		}
 
-        //public IReadOnlyList<Vector3> GetCorners()
-        //{
-        //    if (_corners == null)
-        //    {
-        //        _corners = new[]
-        //        {
-        //            new Vector3(Vertices[0].Position.X, Map.GetHeight(Vertices[0].Position).Nominal, Vertices[0].Position.Y),
-        //            new Vector3(Vertices[1].Position.X, Map.GetHeight(Vertices[1].Position).Nominal, Vertices[1].Position.Y),
-        //            new Vector3(Vertices[2].Position.X, Map.GetHeight(Vertices[2].Position).Nominal, Vertices[2].Position.Y),
-        //            new Vector3(Vertices[3].Position.X, Map.GetHeight(Vertices[3].Position).Nominal, Vertices[3].Position.Y),
-        //            new Vector3(Vertices[4].Position.X, Map.GetHeight(Vertices[4].Position).Nominal, Vertices[4].Position.Y),
-        //            new Vector3(Vertices[5].Position.X, Map.GetHeight(Vertices[5].Position).Nominal, Vertices[5].Position.Y),
-        //        };
-        //    }
+		//public IReadOnlyList<Vector3> GetCorners()
+		//{
+		//    if (_corners == null)
+		//    {
+		//        _corners = new[]
+		//        {
+		//            new Vector3(Vertices[0].Position.X, Map.GetHeight(Vertices[0].Position).Nominal, Vertices[0].Position.Y),
+		//            new Vector3(Vertices[1].Position.X, Map.GetHeight(Vertices[1].Position).Nominal, Vertices[1].Position.Y),
+		//            new Vector3(Vertices[2].Position.X, Map.GetHeight(Vertices[2].Position).Nominal, Vertices[2].Position.Y),
+		//            new Vector3(Vertices[3].Position.X, Map.GetHeight(Vertices[3].Position).Nominal, Vertices[3].Position.Y),
+		//            new Vector3(Vertices[4].Position.X, Map.GetHeight(Vertices[4].Position).Nominal, Vertices[4].Position.Y),
+		//            new Vector3(Vertices[5].Position.X, Map.GetHeight(Vertices[5].Position).Nominal, Vertices[5].Position.Y),
+		//        };
+		//    }
 
-        //    return _corners;
-        //}
-
-
-        #endregion
+		//    return _corners;
+		//}
 
 
-        //public static readonly IdComparer IdIncComparer = new IdComparer();
-        //public static readonly CellEqualityComparer CellComparer = new CellEqualityComparer();
+		#endregion
 
-        /*
+
+		//public static readonly IdComparer IdIncComparer = new IdComparer();
+		//public static readonly CellEqualityComparer CellComparer = new CellEqualityComparer();
+
+		/*
         public Cell this[Sides side]
         {
             get { return _neighbors[(int) side]; }
@@ -92,7 +95,7 @@ namespace TerrainDemo.Macro
         }
         */
 
-        public Cell( MacroGrid.CellHolder cell, Zone zone )
+		public Cell( MacroGrid.CellHolder cell, Zone zone )
         {
 	        _cell = cell;
 	        Zone = zone;
@@ -150,15 +153,13 @@ namespace TerrainDemo.Macro
 
         public override string ToString()
         {
-            return $"TriCell {HexPos}({_neighbors[0]?.HexPos.ToString() ?? "?"}, {_neighbors[1]?.HexPos.ToString() ?? "?"}, {_neighbors[2]?.HexPos.ToString() ?? "?"}, {_neighbors[3]?.HexPos.ToString() ?? "?"}, {_neighbors[4]?.HexPos.ToString() ?? "?"}, {_neighbors[5]?.HexPos.ToString() ?? "?"})";
+	        var n = Neighbors.ToArray( );
+            return $"TriCell {HexPos}({n[0]?.HexPos.ToString() ?? "?"}, {n[1]?.HexPos.ToString() ?? "?"}, {n[2]?.HexPos.ToString() ?? "?"}, {n[3]?.HexPos.ToString() ?? "?"}, {n[4]?.HexPos.ToString() ?? "?"}, {n[5]?.HexPos.ToString() ?? "?"})";
         }
 
         private readonly MacroGrid.CellHolder _cell;
         private Zone _zone;
         private double[] _influence;
-        private readonly MacroVert[] _vertices;
-        private readonly MacroEdge[] _edges;
-        private Cell[] _neighbors;
         private OpenToolkit.Mathematics.Vector3? _centerPoint;
         private OpenToolkit.Mathematics.Vector3[] _corners;
         private readonly MacroGrid _grid;
