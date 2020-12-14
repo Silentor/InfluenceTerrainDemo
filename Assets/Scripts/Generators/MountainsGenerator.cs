@@ -12,7 +12,12 @@ namespace TerrainDemo.Generators
 {
     public class MountainsGenerator : BaseZoneGenerator
     {
-        public MountainsGenerator(MacroMap macroMap, IEnumerable<Cell> zoneCells, int id, BiomeSettings biome, TriRunner settings) : base(macroMap, zoneCells, id, biome, settings)
+	    public MountainsGenerator( int seed, BiomeSettings zoneSettings ) : base( seed, zoneSettings )
+	    {
+		    _microReliefNoise = new FastNoise(_zoneRandom.Seed);
+		    _microReliefNoise.SetFrequency(1);
+	    }
+	    public MountainsGenerator(MacroMap macroMap, IEnumerable<Cell> zoneCells, int id, BiomeSettings biome, TriRunner settings) : base(macroMap, zoneCells, id, biome, settings)
         {
             Assert.IsTrue(biome.Type == BiomeType.Mountain);
 

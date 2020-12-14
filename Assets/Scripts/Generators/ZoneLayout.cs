@@ -14,7 +14,7 @@ namespace TerrainDemo.Assets.Scripts.Generators
 		}
 	}
 
-	public class CapturedCell
+	public readonly struct CapturedCell
 	{
 		public readonly MacroCellType Type;
 		public readonly BaseZoneGenerator Owner;

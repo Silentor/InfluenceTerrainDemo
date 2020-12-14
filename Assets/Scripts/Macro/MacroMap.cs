@@ -23,9 +23,9 @@ namespace TerrainDemo.Macro
     /// </summary>
     public class MacroMap
     {
-        public readonly Box2 Bounds;
-        public Cell[] Cells { get; private set; }
-        public readonly List<Zone> Zones = new List<Zone>();
+        public readonly Box2                    Bounds;
+        public          IReadOnlyList<Cell>     Cells => _mesh.GetCellsValue( );
+        public readonly List<Zone>              Zones      = new List<Zone>();
         public readonly List<BaseZoneGenerator> Generators = new List<BaseZoneGenerator>();
 
         public MacroMap(TriRunner settings, Random random)
@@ -35,8 +35,6 @@ namespace TerrainDemo.Macro
             _side = settings.CellSide;
 
             _mesh = new MacroGrid( _settings.CellSide, (int)_settings.LandSize );
-            Cells = _mesh.Select( pos => _mesh[pos] ).ToArray( );       //Cells cache
-            //mesh = GenerateGrid( mesh );
 
             Bounds = (Box2)_mesh.Bound;
 
@@ -45,6 +43,11 @@ namespace TerrainDemo.Macro
             _influenceTurbulance = new FastNoise(random.Seed);
             _influenceTurbulance.SetFrequency(settings.InfluencePerturbFreq);
             _influenceTurbulancePower = settings.InfluencePerturbPower;
+        }
+
+        public void AddZone( )
+        {
+            ?
         }
 
         public Influence GetInfluence(Vector2 worldPosition)
@@ -313,18 +316,5 @@ namespace TerrainDemo.Macro
             return result;
         }
 
-        private readonly struct CellCandidate
-        {
-            public readonly HexPos HexPoses;
-            public readonly Vector2 Center;
-            public readonly Vector2[] Vertices;
-
-            public CellCandidate(HexPos coords, Vector2 center, Vector2[] vertices)
-            {
-                HexPoses = coords;
-                Center = center;
-                Vertices = vertices;
-            }
-        }
     }
 }

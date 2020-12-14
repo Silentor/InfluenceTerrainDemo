@@ -59,6 +59,11 @@ namespace TerrainDemo.Spatial
 			set => Set( q, r, value );
 		}
 
+		public IReadOnlyList<TCell> GetCellsValue( )
+		{
+			return new CellsValue(_faces);
+		}
+
 		public IEnumerable<CellHolder> GetNeighbors( HexPos hex )
 		{
 			for ( var i = 0; i < HexPos.Directions.Length; i++ )
@@ -511,6 +516,47 @@ namespace TerrainDemo.Spatial
 				Cell2 = cell + HexPos.Directions[index];
 				Cell3 = cell + HexPos.Directions[(index + 5) % 6];
 			}
+		}
+
+		public readonly struct CellsValue : IReadOnlyList<TCell>
+		{
+			public IEnumerator<TCell> GetEnumerator( )
+			{
+				for ( int i = 0; i < _faces.GetUpperBound( 0 ); i++ )
+					for ( int j = 0; j < _faces.GetUpperBound( 1 ); j++ )
+					{
+						if ( _faces[i, j] != null )
+							yield return _faces[i, j].Value;
+						else
+							yield return default;
+					}
+			}
+			IEnumerator IEnumerable.  GetEnumerator( )
+			{
+				return GetEnumerator( );
+			}
+			public int Count => _faces.Length;
+
+			public TCell this[ int index ]
+			{
+				get
+				{
+					if( index < 0 || index >= Count )
+						throw new ArgumentOutOfRangeException(nameof(index), index, "cell index");
+
+					var i = index % _faces.GetLength( 0 );
+					var j = index / _faces.GetLength( 0 );
+
+					return _faces[i, j] != null ? _faces[i, j].Value : default;
+				}
+			}
+
+			internal CellsValue( CellHolder[,] faces  )
+			{
+				_faces = faces;
+			}
+
+			private readonly CellHolder[,] _faces;
 		}
 
 		//[DebuggerDisplay( "Edges of {_cell.Pos}")]

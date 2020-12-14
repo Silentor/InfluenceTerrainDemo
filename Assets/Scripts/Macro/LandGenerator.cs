@@ -10,6 +10,7 @@ using TerrainDemo.Settings;
 using TerrainDemo.Spatial;
 using UnityEngine;
 using UnityEngine.Assertions;
+using UnityEngine.UIElements;
 using Debug = UnityEngine.Debug;
 using Random = TerrainDemo.Tools.Random;
 using Vector2 = OpenToolkit.Mathematics.Vector2;
@@ -33,6 +34,10 @@ namespace TerrainDemo.Macro
 	        _random = random;
 	        _settings = settings;
 
+	        var layout = DivideGrid( );
+
+
+
             //Prepare hex macro grid
 	        var mesh = new MacroGrid( _settings.CellSide, (int)_settings.LandSize );
 
@@ -43,10 +48,6 @@ namespace TerrainDemo.Macro
         public MacroMap CreateMacroMap(TriRunner settings)
         {
             var timer = Stopwatch.StartNew();
-
-            var layout = new LayoutGrid( _settings.CellSide, (int)_settings.LandSize );
-
-
 
             var result = new MacroMap(settings, _random);
             var zoneGenerators = RandomClusterZonesDivider(result, settings);
@@ -275,53 +276,53 @@ namespace TerrainDemo.Macro
             return zones;
         }
 
-        private LayoutGrid DivideGrid( LayoutGrid layout )
+        private IReadOnlyList<BaseZoneGenerator> DivideGrid( )
         {
+            var layout = new LayoutGrid( _settings.CellSide, (int)_settings.LandSize );
+            var result = new List<BaseZoneGenerator>();
+
 	        foreach ( var hex in layout )
 	        {
 		        if ( layout[hex] == null )
 		        {
 			        var biome    = _random.Item(_settings.Biomes);
-			        var zoneSize = _random.Range(biome.SizeRange);
-			        var startCell = hex;
+			        var zoneGenerator = GetZoneGenerator( _random.NextInt32( ), biome );
 
-                    //var zoneGenerator = GetZoneGenerator( biome )
-
-			        var zonePositions = layout.FloodFill(hex, (_, c) => c == null).Take(zoneSize).ToArray();
-                    //todo check minimal zone size, prevent too small zones
-                    foreach (var zonePos in zonePositions)
-                    {
-	                    var cell = macro.GetCell( zonePos );
-                        var macroCell = new Macro.Cell(  );
-	                    triCell.ZoneId = zoneId;
-                    }
-
+                    if( !zoneGenerator.GenerateLayout( hex, layout ) )
+                        Debug.Log( "Zone layout generation is failed" );
+                    else
+                        result.Add( zoneGenerator );
 		        }
 	        }
+
+	        return result;
         }
 
-        private BaseZoneGenerator GetZoneGenerator(BiomeSettings biome, MacroMap map, IEnumerable<Cell> cells, int zoneId, TriRunner settings)
+        private BaseZoneGenerator GetZoneGenerator(int seed, BiomeSettings biome)
         {
             switch (biome.Type)
             {
-                case BiomeType.Mountain:
-                    return new MountainsGenerator(map, cells, zoneId, biome, settings);
-                case BiomeType.Forest:
-                    return new ForestGenerator(map, cells, zoneId, biome, settings);
-                case BiomeType.Desert:
-                    return new DesertGenerator(map, cells, zoneId, biome, settings);
-                case BiomeType.Caves:
-                    return new CavesGenerator(map, cells, zoneId, biome, settings);
-                case BiomeType.TestNavigation:
-                    return new NavigationTestGenerator(map, cells, zoneId, biome, settings);
-
                 default:
-                {
-                    if(biome.Type >= BiomeType.TestBegin && biome.Type <= BiomeType.TestEnd)
-                        return new TestZoneGenerator(map, cells, zoneId, biome, settings);
-                    else
-                        return new BaseZoneGenerator(map, cells, zoneId, biome, settings);
-                }
+	                return new MountainsGenerator( seed, biome );
+
+                //case BiomeType.Mountain:
+                //    return new MountainsGenerator( seed, biome );
+                //case BiomeType.Forest:
+                //    return new ForestGenerator(map, cells, zoneId, biome, settings);
+                //case BiomeType.Desert:
+                //    return new DesertGenerator(map, cells, zoneId, biome, settings);
+                //case BiomeType.Caves:
+                //    return new CavesGenerator(map, cells, zoneId, biome, settings);
+                //case BiomeType.TestNavigation:
+                //    return new NavigationTestGenerator(map, cells, zoneId, biome, settings);
+
+                //default:
+                //{
+                //    if(biome.Type >= BiomeType.TestBegin && biome.Type <= BiomeType.TestEnd)
+                //        return new TestZoneGenerator(map, cells, zoneId, biome, settings);
+                //    else
+                //        return new BaseZoneGenerator(map, cells, zoneId, biome, settings);
+                //}
             }
         }
 

@@ -50,6 +50,11 @@ namespace TerrainDemo.Tools
             return _random.NextDouble();
         }
 
+        public int NextInt32()
+        {
+	        return _random.NextInt32(  );
+        }
+
         public T Item<T>(IEnumerable<T> collection)
         {
             return collection.ElementAt(Range(collection.Count()));
