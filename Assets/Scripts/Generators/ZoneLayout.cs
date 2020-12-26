@@ -1,11 +1,12 @@
 ﻿using System;
+using JetBrains.Annotations;
 using TerrainDemo.Generators;
 using TerrainDemo.Macro;
 using TerrainDemo.Settings;
 using TerrainDemo.Spatial;
 using Random = TerrainDemo.Tools.Random;
 
-namespace TerrainDemo.Assets.Scripts.Generators
+namespace TerrainDemo.Generators
 {
 	public class LayoutGrid : HexGrid<CapturedCell, bool, bool>
 	{
@@ -18,10 +19,13 @@ namespace TerrainDemo.Assets.Scripts.Generators
 	{
 		public readonly MacroCellType Type;
 		public readonly BaseZoneGenerator Owner;
-		public CapturedCell( MacroCellType type, BaseZoneGenerator owner  )
+
+		public Boolean IsEmpty				=> Owner == null;
+
+		public CapturedCell( MacroCellType type, [NotNull] BaseZoneGenerator owner  )
 		{
-			Type = type;
-			Owner = owner;
+			Type  = type;
+			Owner = owner ?? throw new ArgumentNullException( nameof( owner ) );
 		}
 	}
 }

@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using OpenToolkit.Mathematics;
+using TerrainDemo.Assets.Scripts.Generators;
 using TerrainDemo.Generators;
 using TerrainDemo.Generators.MapObjects;
 using TerrainDemo.Hero;

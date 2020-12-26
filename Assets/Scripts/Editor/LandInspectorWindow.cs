@@ -2,6 +2,7 @@
 using OpenToolkit.Mathematics;
 using System.Collections.Generic;
 using System.Linq;
+using TerrainDemo.Assets.Scripts.Generators;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Navigation;

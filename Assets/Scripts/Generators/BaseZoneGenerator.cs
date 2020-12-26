@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Xml.XPath;
-using TerrainDemo.Assets.Scripts.Generators;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Settings;
@@ -52,16 +51,13 @@ namespace TerrainDemo.Generators
         {
             Assert.IsTrue( layout[startCell].Equals( default ) );
 
-            var positions     = new List<HexPos>( );
             var zoneSize      = _zoneRandom.Range(_zoneSettings.SizeRange);
-            var zonePositions = layout.FloodFill(startCell, (_, cell) => cell == null).Take(zoneSize).ToArray();
+            var zonePositions = layout.FloodFill(startCell, (_, cell) => cell.IsEmpty ).Take(zoneSize).ToArray();
 			//todo check for minimum zone size, discard zone, return false
 			foreach ( var zonePosition in zonePositions )
 			{
 				layout[zonePosition] = new CapturedCell( _zoneSettings.DefaultCell, this );
-                
 			}
-			positions.AddRange( zonePositions );
 
 			return true;
         }
@@ -73,8 +69,6 @@ namespace TerrainDemo.Generators
         /// </summary>
         public virtual Macro.Zone GenerateMacroZone()
         {
-            var zone = new Macro.Zone(  );
-
             foreach (var cell in Zone.Cells)
             {
                 if (Zone.Biome.Type == BiomeType.Plains)

@@ -2,22 +2,21 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text.RegularExpressions;
 using OpenToolkit.Mathematics;
-using TerrainDemo.Assets.Scripts.Generators;
 using TerrainDemo.Generators;
+using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Settings;
 using TerrainDemo.Spatial;
-using UnityEngine;
 using UnityEngine.Assertions;
-using UnityEngine.UIElements;
+using Cell = TerrainDemo.Macro.Cell;
 using Debug = UnityEngine.Debug;
 using Random = TerrainDemo.Tools.Random;
-using Vector2 = OpenToolkit.Mathematics.Vector2;
 using Vector2i = TerrainDemo.Spatial.Vector2i;
 using Vector3 = OpenToolkit.Mathematics.Vector3;
 
-namespace TerrainDemo.Macro
+namespace TerrainDemo.Generators
 {
     /// <summary>
     /// Generate entire land and produces Macro and Micro maps
@@ -45,18 +44,16 @@ namespace TerrainDemo.Macro
 
         }
 
-        public MacroMap CreateMacroMap(TriRunner settings)
+        public MacroMap CreateMacroMap(LayoutGrid layout, TriRunner settings)
         {
             var timer = Stopwatch.StartNew();
 
             var result = new MacroMap(settings, _random);
-            var zoneGenerators = RandomClusterZonesDivider(result, settings);
 
-            foreach (var generator in zoneGenerators)
+            foreach ( var generator in _generators )
             {
-                result.Generators.Add(generator);
-                var zone = generator.GenerateMacroZone();
-                result.Zones.Add(zone);
+	            var zone = generator.GenerateMacroZone( );
+                result.Zones.Add( zone );
             }
 
             timer.Stop();
@@ -247,43 +244,42 @@ namespace TerrainDemo.Macro
         /// <param name="map"></param>
         /// <param name="settings"></param>
         /// <returns></returns>
-        private IEnumerable<BaseZoneGenerator> RandomClusterZonesDivider(MacroMap map, TriRunner settings)
-        {
-            var zones = new List<BaseZoneGenerator>();
-            var zoneId = 0;
-            foreach (var cell in map.Cells)
-            {
-                if (cell.ZoneId == Zone.InvalidId)
-                {
-                    var biome = _random.Item(settings.Biomes);
-                    var zoneSize = _random.Range(biome.SizeRange);
-                    var startCell = cell;
-                    var zoneCells = map.FloodFill(startCell.HexPos, (c, _) => c.ZoneId == Zone.InvalidId).Take(zoneSize).ToArray();
-                    var zoneMesh = map.GetSubmesh(zoneCells);
+        //private IEnumerable<BaseZoneGenerator> RandomClusterZonesDivider(MacroMap map, TriRunner settings)
+        //{
+        //    var zones = new List<BaseZoneGenerator>();
+        //    var zoneId = 0;
+        //    foreach (var cell in map.Cells)
+        //    {
+        //        if (cell.ZoneId == Zone.InvalidId)
+        //        {
+        //            var biome = _random.Item(settings.Biomes);
+        //            var zoneSize = _random.Range(biome.SizeRange);
+        //            var startCell = cell;
+        //            var zoneCells = map.FloodFill(startCell.HexPos, (c, _) => c.ZoneId == Zone.InvalidId).Take(zoneSize).ToArray();
+        //            var zoneMesh = map.GetSubmesh(zoneCells);
 
-                    foreach (var triCell in zoneCells)
-                    {
-                        triCell.ZoneId = zoneId;
-                    }
+        //            foreach (var triCell in zoneCells)
+        //            {
+        //                triCell.ZoneId = zoneId;
+        //            }
 
-                    zones.Add(GetZoneGenerator(biome, map, zoneCells, zoneId, settings));
+        //            zones.Add(GetZoneGenerator(biome, map, zoneCells, zoneId, settings));
 
-                    zoneId++;
-                }
-            }
+        //            zoneId++;
+        //        }
+        //    }
 
-            //Assert.IsTrue(mesh.Cells.All(c => c.Id != Cell.InvalidZoneId));
-            return zones;
-        }
+        //    //Assert.IsTrue(mesh.Cells.All(c => c.Id != Cell.InvalidZoneId));
+        //    return zones;
+        //}
 
-        private IReadOnlyList<BaseZoneGenerator> DivideGrid( )
+        private LayoutGrid DivideGrid( )
         {
             var layout = new LayoutGrid( _settings.CellSide, (int)_settings.LandSize );
-            var result = new List<BaseZoneGenerator>();
 
 	        foreach ( var hex in layout )
 	        {
-		        if ( layout[hex] == null )
+		        if ( layout[hex].Owner == null )
 		        {
 			        var biome    = _random.Item(_settings.Biomes);
 			        var zoneGenerator = GetZoneGenerator( _random.NextInt32( ), biome );
@@ -291,11 +287,13 @@ namespace TerrainDemo.Macro
                     if( !zoneGenerator.GenerateLayout( hex, layout ) )
                         Debug.Log( "Zone layout generation is failed" );
                     else
-                        result.Add( zoneGenerator );
+                        _generators.Add( zoneGenerator );
 		        }
 	        }
 
-	        return result;
+            Assert.IsTrue( layout.All( pos => !layout[pos].IsEmpty ) );
+
+	        return layout;
         }
 
         private BaseZoneGenerator GetZoneGenerator(int seed, BiomeSettings biome)

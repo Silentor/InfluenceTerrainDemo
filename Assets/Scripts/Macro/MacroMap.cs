@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Xml;
 using OpenToolkit.Mathematics;
 using TerrainDemo.Generators;
 using TerrainDemo.Micro;
@@ -26,7 +25,6 @@ namespace TerrainDemo.Macro
         public readonly Box2                    Bounds;
         public          IReadOnlyList<Cell>     Cells => _mesh.GetCellsValue( );
         public readonly List<Zone>              Zones      = new List<Zone>();
-        public readonly List<BaseZoneGenerator> Generators = new List<BaseZoneGenerator>();
 
         public MacroMap(TriRunner settings, Random random)
         {
@@ -47,7 +45,7 @@ namespace TerrainDemo.Macro
 
         public void AddZone( )
         {
-            ?
+            
         }
 
         public Influence GetInfluence(Vector2 worldPosition)
