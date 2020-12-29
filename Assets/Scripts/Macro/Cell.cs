@@ -51,16 +51,16 @@ namespace TerrainDemo.Macro
         #region 3D properties   
 
         //Actual height based on neighbor cells
-		public OpenToolkit.Mathematics.Vector3 CenterPoint
-		{
-			get
-			{
-				if (!_centerPoint.HasValue)
-					_centerPoint = new Vector3(Center.X, Map.GetHeight(Center).Nominal, Center.Y);
+		//public OpenToolkit.Mathematics.Vector3 CenterPoint
+		//{
+		//	get
+		//	{
+		//		if (!_centerPoint.HasValue)
+		//			_centerPoint = new Vector3(Center.X, Map.GetHeight(Center).Nominal, Center.Y);
 
-				return _centerPoint.Value;
-			}
-		}
+		//		return _centerPoint.Value;
+		//	}
+		//}
 
 		//public IReadOnlyList<Vector3> GetCorners()
 		//{

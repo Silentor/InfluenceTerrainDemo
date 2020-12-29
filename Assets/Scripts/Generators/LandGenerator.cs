@@ -35,16 +35,13 @@ namespace TerrainDemo.Generators
 
 	        var layout = DivideGrid( );
 
-
-
             //Prepare hex macro grid
-	        var mesh = new MacroGrid( _settings.CellSide, (int)_settings.LandSize );
 
             //Divide macro grid to zones
 
         }
 
-        public MacroMap CreateMacroMap(LayoutGrid layout, TriRunner settings)
+        public MacroMap CreateMacroMap( TriRunner settings )
         {
             var timer = Stopwatch.StartNew();
 
@@ -64,6 +61,7 @@ namespace TerrainDemo.Generators
 
             return result;
         }
+       
 
         /*
         /// <summary>
@@ -148,94 +146,101 @@ namespace TerrainDemo.Generators
         /// </summary>
         /// <param name="zone"></param>
         /// <param name="outputMap"></param>
-        public void GenerateMicroZone2(MacroMap inputMap, Zone zone, MicroMap outputMap)
+        public void GenerateMicroZone2(MacroMap inputMap, MicroMap outputMap)
         {
-            //Get generator for this zone
-            var mainGenerator = inputMap.Generators.Find(g => g.Zone == zone);
-            var additionalGeneratorsCache = new List<BaseZoneGenerator>();
+	        foreach ( var zoneGenerator in _generators )
+	        {
+		        var mainGenerator = zoneGenerator;
+		        //Get generator for this zone
+		        var additionalGeneratorsCache = new List<BaseZoneGenerator>( );
+		        var zone                      = zoneGenerator.Zone;
 
-            foreach (var macroCell in zone.Cells)
-            {
-                var microcell = outputMap.Cells.First(c => c.Macro == macroCell);
+		        foreach ( var macroCell in zoneGenerator.Zone.Cells )
+		        {
+			        var microcell = outputMap.Cells.First( c => c.Macro == macroCell );
 
-                //Prepare buffers for microcell
-                var bufferSize = microcell.Bounds;
-                var heightBuffer = new Heights[bufferSize.Size.X + 1, bufferSize.Size.Z + 1];
-                var heightBuffer2 = new List<Heights>();
-                var influenceBuffer = new Influence[bufferSize.Size.X + 1, bufferSize.Size.Z + 1];      //Shared block/vertex influence buffer
-                var blockBuffer2 = new List<Blocks>(microcell.BlockPositions.Bound.Area);
+			        //Prepare buffers for microcell
+			        var bufferSize    = microcell.Bounds;
+			        var heightBuffer  = new Heights[bufferSize.Size.X + 1, bufferSize.Size.Z + 1];
+			        var heightBuffer2 = new List<Heights>( );
+			        var influenceBuffer =
+				        new Influence[bufferSize.Size.X + 1,
+					        bufferSize.Size.Z           + 1]; //Shared block/vertex influence buffer
+			        var blockBuffer2 = new List<Blocks>( microcell.BlockPositions.Bound.Area );
 
-                mainGenerator.BeginCellGeneration(microcell);
+			        mainGenerator.BeginCellGeneration( microcell );
 
-                //First run - generate heights
-                foreach (var vertexPos in microcell.VertexPositions)
-                {
-                    var heightMixBuffer = Vector3.Zero;
-                    var localPos = World2Local( vertexPos, microcell.Bounds);
-                    var influence = inputMap.GetInfluence(vertexPos);
-                    var macroHeight = inputMap.GetHeight(vertexPos);
+			        //First run - generate heights
+			        foreach ( var vertexPos in microcell.VertexPositions )
+			        {
+				        var heightMixBuffer = Vector3.Zero;
+				        var localPos        = World2Local( vertexPos, microcell.Bounds );
+				        var influence       = inputMap.GetInfluence( vertexPos );
+				        var macroHeight     = inputMap.GetHeight( vertexPos );
 
-                    //Collect height data from all influenced zones
-                    for (int i = 0; i < influence.Count; i++)
-                    {
-                        var (zoneId, weight) = influence.GetInfluence(i);
+				        //Collect height data from all influenced zones
+				        for ( int i = 0; i < influence.Count; i++ )
+				        {
+					        var (zoneId, weight) = influence.GetInfluence( i );
 
-                        BaseZoneGenerator generator;
-                        if (zoneId == zone.Id)
-                            generator = mainGenerator;
-                        else
-                        {
-                            generator = additionalGeneratorsCache.Find(g => g.Zone.Id == zoneId);
-                            if (generator == null)
-                            {
-                                generator = inputMap.Generators.Find(g => g.Zone.Id == zoneId);
-                                additionalGeneratorsCache.Add(generator);
-                            }
-                        }
+					        BaseZoneGenerator generator;
+					        if ( zoneId == zone.Id )
+						        generator = mainGenerator;
+					        else
+					        {
+						        generator = additionalGeneratorsCache.Find( g => g.Zone.Id == zoneId );
+						        if ( generator == null )
+						        {
+							        generator = _generators.Find( g => g.Zone.Id == zoneId );
+							        additionalGeneratorsCache.Add( generator );
+						        }
+					        }
 
-                        Assert.IsNotNull(generator);
+					        Assert.IsNotNull( generator );
 
-                        heightMixBuffer += (Vector3)generator.GenerateHeight(vertexPos, macroHeight) * weight;
-                    }
+					        heightMixBuffer += (Vector3) generator.GenerateHeight( vertexPos, macroHeight ) * weight;
+				        }
 
-                    influenceBuffer[localPos.X, localPos.Z] = influence;
-                    var height = (Heights)heightMixBuffer;
-                    heightBuffer[localPos.X, localPos.Z] = height;
-                    heightBuffer2.Add(height);
-                }
+				        influenceBuffer[localPos.X, localPos.Z] = influence;
+				        var height = (Heights) heightMixBuffer;
+				        heightBuffer[localPos.X, localPos.Z] = height;
+				        heightBuffer2.Add( height );
+			        }
 
-                //Second run - generate blocks
-                foreach (var blockPosition in microcell.BlockPositions)
-                {
-                    var localPos = blockPosition - microcell.Bounds.Min;
-                    
-                    //Get block from main zone (but in the future also analyze second influenced zone and mix blocks)
-                    ref readonly var v00 = ref heightBuffer[localPos.X, localPos.Z];
-                    ref readonly var v01 = ref heightBuffer[localPos.X, localPos.Z + 1];
-                    ref readonly var v10 = ref heightBuffer[localPos.X + 1, localPos.Z];
-                    ref readonly var v11 = ref heightBuffer[localPos.X + 1, localPos.Z + 1];
+			        //Second run - generate blocks
+			        foreach ( var blockPosition in microcell.BlockPositions )
+			        {
+				        var localPos = blockPosition - microcell.Bounds.Min;
 
-                    var blockType = mainGenerator.GenerateBlock3(blockPosition, v00, v01, v10, v11);
-                    var main = blockType.Ground;
-                    var under = blockType.Underground;
+				        //Get block from main zone (but in the future also analyze second influenced zone and mix blocks)
+				        ref readonly var v00 = ref heightBuffer[localPos.X, localPos.Z];
+				        ref readonly var v01 = ref heightBuffer[localPos.X, localPos.Z + 1];
+				        ref readonly var v10 = ref heightBuffer[localPos.X             + 1, localPos.Z];
+				        ref readonly var v11 = ref heightBuffer[localPos.X             + 1, localPos.Z + 1];
 
-                    //todo validate block layers and corner heights
-                    if (!v00.IsMainLayerPresent && !v01.IsMainLayerPresent && !v10.IsMainLayerPresent &&
-                        !v11.IsMainLayerPresent)
-                        main = BlockType.Empty;
+				        var blockType = mainGenerator.GenerateBlock3( blockPosition, v00, v01, v10, v11 );
+				        var main      = blockType.Ground;
+				        var under     = blockType.Underground;
 
-                    if (!v00.IsUndergroundLayerPresent && !v01.IsUndergroundLayerPresent && !v10.IsUndergroundLayerPresent &&
-                        !v11.IsUndergroundLayerPresent)
-                        under = BlockType.Empty;
+				        //todo validate block layers and corner heights
+				        if ( !v00.IsMainLayerPresent && !v01.IsMainLayerPresent && !v10.IsMainLayerPresent &&
+				             !v11.IsMainLayerPresent )
+					        main = BlockType.Empty;
 
-                    blockBuffer2.Add(new Blocks(main, under, blockType.Obstacle));
-                }
+				        if ( !v00.IsUndergroundLayerPresent && !v01.IsUndergroundLayerPresent &&
+				             !v10.IsUndergroundLayerPresent &&
+				             !v11.IsUndergroundLayerPresent )
+					        under = BlockType.Empty;
 
-                mainGenerator.EndCellGeneration(microcell);
+				        blockBuffer2.Add( new Blocks( main, under, blockType.Obstacle ) );
+			        }
 
-                outputMap.SetHeights(microcell.VertexPositions, heightBuffer2);
-                outputMap.SetBlocks(microcell.BlockPositions, blockBuffer2, false);
-            }
+			        mainGenerator.EndCellGeneration( microcell );
+
+			        outputMap.SetHeights( microcell.VertexPositions, heightBuffer2 );
+			        outputMap.SetBlocks( microcell.BlockPositions, blockBuffer2, false );
+		        }
+	        }
         }
 
         /// <summary>

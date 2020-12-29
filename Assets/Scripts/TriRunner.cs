@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using OpenToolkit.Mathematics;
-using TerrainDemo.Assets.Scripts.Generators;
 using TerrainDemo.Generators;
 using TerrainDemo.Generators.MapObjects;
 using TerrainDemo.Hero;
@@ -119,19 +118,16 @@ namespace TerrainDemo
         {
             Prepare();
 
-            var template = new LandGenerator( _random, this );
-            Land = template;
+            var landGenerator = new LandGenerator( _random, this );
+            Land = landGenerator;
 
             //Fully generate Macro Map
-            Macro = template.CreateMacroMap(this);
+            Macro = landGenerator.CreateMacroMap(this);
 
             var microtimer = Stopwatch.StartNew();
             Micro = new MicroMap(Macro, this);
 
-            foreach (var zone in Macro.Zones)
-            {
-                template.GenerateMicroZone2(Macro, zone, Micro);
-            }
+            landGenerator.GenerateMicroZone2( Macro, Micro );
             Micro.GenerateHeightmap();
 
             microtimer.Stop();

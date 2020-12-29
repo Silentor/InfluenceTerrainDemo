@@ -52,7 +52,7 @@ namespace TerrainDemo.Visualization
 
             foreach (var cell in mapMesh.Cells)
             {
-                CreateMacroCell(vertices, colors, indices, cell, influence);
+                CreateMacroCell( vertices, colors, indices, cell, influence, mapMesh );
             }
 
             result.SetVertices(vertices);
@@ -863,23 +863,17 @@ namespace TerrainDemo.Visualization
         /// <param name="cell"></param>
         /// <param name="influence"></param>
         private void CreateMacroCell(List<Vector3> vertices, List<Color> colors, List<int> indices, Cell cell,
-            Renderer.MacroCellInfluenceMode influence)
+            Renderer.MacroCellInfluenceMode influence, MacroMap map)
         {
             var baseIndex = vertices.Count;
 
-            vertices.Add(cell.CenterPoint);
-            vertices.Add(new Vector3(cell.Vertices[0].Position.X, cell.Vertices[0].Height.Nominal,
-                cell.Vertices[0].Position.Y));
-            vertices.Add(new Vector3(cell.Vertices[1].Position.X, cell.Vertices[1].Height.Nominal,
-                cell.Vertices[1].Position.Y));
-            vertices.Add(new Vector3(cell.Vertices[2].Position.X, cell.Vertices[2].Height.Nominal,
-                cell.Vertices[2].Position.Y));
-            vertices.Add(new Vector3(cell.Vertices[3].Position.X, cell.Vertices[3].Height.Nominal,
-                cell.Vertices[3].Position.Y));
-            vertices.Add(new Vector3(cell.Vertices[4].Position.X, cell.Vertices[4].Height.Nominal,
-                cell.Vertices[4].Position.Y));
-            vertices.Add(new Vector3(cell.Vertices[5].Position.X, cell.Vertices[5].Height.Nominal,
-                cell.Vertices[5].Position.Y));
+            vertices.Add( cell.Center.ToUnityVector3( map.GetHeight( cell.Center ).Nominal ) );
+            vertices.Add(cell.Vertices[0].Position.ToUnityVector3( cell.Vertices[0].Height.Nominal ));
+            vertices.Add(cell.Vertices[1].Position.ToUnityVector3( cell.Vertices[1].Height.Nominal ));
+            vertices.Add(cell.Vertices[2].Position.ToUnityVector3( cell.Vertices[2].Height.Nominal ));
+            vertices.Add(cell.Vertices[3].Position.ToUnityVector3( cell.Vertices[3].Height.Nominal ));
+            vertices.Add(cell.Vertices[4].Position.ToUnityVector3( cell.Vertices[4].Height.Nominal ));
+            vertices.Add(cell.Vertices[5].Position.ToUnityVector3( cell.Vertices[5].Height.Nominal ));
 
             indices.Add(baseIndex);
             indices.Add(baseIndex + 1);

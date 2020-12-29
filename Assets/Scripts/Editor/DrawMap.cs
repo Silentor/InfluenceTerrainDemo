@@ -62,7 +62,7 @@ namespace TerrainDemo.Editor
 				//var contrastColor = (new Color(1, 1, 1, 2) - cell.Biome.LayoutColor) * 2;
 				colorLabelStyle.normal.textColor = color;
 				colorLabelStyle.fontSize = fontSize;
-				Handles.Label(cell.CenterPoint, cell.HexPos.ToString(), colorLabelStyle);
+				Handles.Label(  cell.CenterPoint, cell.HexPos.ToString(), colorLabelStyle);
 				Handles.color = color;
 				Handles.DrawWireDisc(cell.CenterPoint, view.Direction, 0.1f);
 

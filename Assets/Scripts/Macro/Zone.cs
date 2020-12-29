@@ -24,7 +24,7 @@ namespace TerrainDemo.Macro
         /// </summary>
         public IEnumerable<Cell> Border => Cluster.GetBorderCells(  ).Select( hx => Cluster[hx] );
 
-        public IEnumerable<MacroEdge> Edges => Cluster.GetBorderEdges( ).Select( e => e.Data );
+        public IEnumerable<MacroEdge> Edges => Cluster.GetBorderEdges( );
 
         public BiomeSettings Biome { get; private set; }
 

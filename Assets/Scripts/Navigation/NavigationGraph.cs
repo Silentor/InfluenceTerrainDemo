@@ -5,6 +5,7 @@ using TerrainDemo.Hero;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
+using TerrainDemo.Tools;
 using UnityEngine;
 using Cell = TerrainDemo.Micro.Cell;
 using Vector3 = OpenToolkit.Mathematics.Vector3;
@@ -35,7 +36,6 @@ namespace TerrainDemo.Navigation
 				var fromNode = navNodes [ i ];
 				foreach ( var neighbor in fromCell.Macro.NeighborsSafe )
 				{
-					
 					var toIndex = macromap.Cells.IndexOf(neighbor);
 					var toNode = navNodes[toIndex];
 					AddEdge ( fromNode, toNode, new NavEdge ( fromNode, toNode ) );

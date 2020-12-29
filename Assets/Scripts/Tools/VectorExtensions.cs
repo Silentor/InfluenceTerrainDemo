@@ -48,6 +48,11 @@ namespace TerrainDemo.Tools
 	        return new Vector3(v.X, yValue, v.Y);
         }
 
+        public static UnityEngine.Vector3 ToUnityVector3(this OpenTK.Vector2 v, float yValue = 0)
+        {
+	        return new Vector3(v.X, yValue, v.Y);
+        }
+
         public static string ToString(this OpenTK.Vector2 v, int precision)
         {
 	        switch (precision)

@@ -16,7 +16,7 @@ namespace TerrainDemo.Tests.Editor
 
             //Create first node
             grid[HexPos.Zero] = HexPos.Zero;
-            var edges = grid.GetEdgesData( HexPos.Zero );
+            var edges = grid.GetEdgesValue( HexPos.Zero );
             edges[HexDir.QPlus] = 1;
 
             //Create second node
@@ -24,7 +24,7 @@ namespace TerrainDemo.Tests.Editor
             grid[neighbor] = neighbor;
 
             //Assert that edge is shared
-            Assert.IsTrue( grid.GetEdgesData( neighbor )[HexDir.QMinus] == 1 );
+            Assert.IsTrue( grid.GetEdgesValue( neighbor )[HexDir.QMinus] == 1 );
         }
 
         [Test]
@@ -34,7 +34,7 @@ namespace TerrainDemo.Tests.Editor
 
 	        //Create first node
 	        grid[HexPos.Zero] = HexPos.Zero;
-	        var vertices = grid.GetVerticesData( HexPos.Zero );
+	        var vertices = grid.GetVerticesValue( HexPos.Zero );
 	        vertices[1] = 1;
 
 	        //Create second node
@@ -43,9 +43,9 @@ namespace TerrainDemo.Tests.Editor
 
 	        //Assert that vertex is shared
             //Assigned node
-	        Assert.IsTrue( grid.GetVertexData( HexPos.Zero + HexPos.SPlus, 5 ) == 1 );
+	        Assert.IsTrue( grid.GetVerticesValue( HexPos.Zero + HexPos.SPlus)[5] == 1 );
             //Unassigned node
-	        Assert.IsTrue( grid.GetVertexData( HexPos.Zero + HexPos.QPlus, 3 ) == 1 );
+	        Assert.IsTrue( grid.GetVerticesValue( HexPos.Zero + HexPos.QPlus)[3] == 1 );
         }
 
 

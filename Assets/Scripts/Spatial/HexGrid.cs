@@ -32,7 +32,7 @@ namespace TerrainDemo.Spatial
 		public HexGrid( float hexSide, int gridRadius )
 		{
 			Size = hexSide;
-			Width = Sqrt3 * Size ;
+			Width = (float)(Sqrt3 * Size) ;
 			Height = Size * 2;
 			QBasis = new Vector2d(Width,     0);
 			RBasis = new Vector2d(Width / 2, 3d /4 *Height);
@@ -235,7 +235,7 @@ namespace TerrainDemo.Spatial
 		private readonly CellHolder[,] _faces;
 		private readonly Vector2d	QBasis ;
 		private readonly Vector2d	RBasis ;
-		private const           float		Sqrt3  = 1.732050807568877f;
+		private const           double		Sqrt3  = 1.732050807568877d;
 		private readonly Bound2i _gridBound;
 		private readonly Bound2i _blockBound;
 
