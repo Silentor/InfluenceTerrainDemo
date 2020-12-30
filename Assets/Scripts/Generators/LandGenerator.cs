@@ -284,7 +284,7 @@ namespace TerrainDemo.Generators
 
 	        foreach ( var hex in layout )
 	        {
-		        if ( layout[hex].Owner == null )
+		        if ( layout[hex].IsEmpty )
 		        {
 			        var biome    = _random.Item(_settings.Biomes);
 			        var zoneGenerator = GetZoneGenerator( _random.NextInt32( ), biome );

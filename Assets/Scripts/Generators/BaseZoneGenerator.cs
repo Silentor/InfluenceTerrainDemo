@@ -49,7 +49,7 @@ namespace TerrainDemo.Generators
 
         public bool GenerateLayout( HexPos startCell, LayoutGrid layout )
         {
-            Assert.IsTrue( layout[startCell].Equals( default ) );
+            Assert.IsTrue( layout[startCell].IsEmpty );
 
             var zoneSize      = _zoneRandom.Range(_zoneSettings.SizeRange);
             var zonePositions = layout.FloodFill(startCell, (_, cell) => cell.IsEmpty ).Take(zoneSize).ToArray();

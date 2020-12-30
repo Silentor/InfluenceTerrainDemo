@@ -308,7 +308,7 @@ namespace TerrainDemo.Spatial
 
 			if ( x < 0 || x >= _gridBound.Size.X || y < 0 || y >= _gridBound.Size.Z ) 
 				throw new ArgumentOutOfRangeException( "hex", new HexPos(q, r), 
-				                                       "out of range" );
+				                                       $"out of range <0, {_gridBound.Size.X}> <0, {_gridBound.Size.Z}>" );
 		}
 		private void CheckHexPosition( HexPos pos )
 		{

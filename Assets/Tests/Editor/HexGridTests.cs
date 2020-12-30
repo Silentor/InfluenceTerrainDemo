@@ -58,7 +58,7 @@ namespace TerrainDemo.Tests.Editor
             grid[HexPos.Zero + HexPos.QMinus] = HexPos.Zero + HexPos.QMinus;
 
             Assert.That( 
-	            grid.GetNeighbors(HexPos.Zero).ToArray(  ), 
+	            grid.GetNeighborsValue(HexPos.Zero).ToArray(  ), 
 	            Is.EquivalentTo( new HexPos?[]
 	                             {
 		                             HexPos.Zero + HexPos.QPlus, null, null, HexPos.Zero + HexPos.QMinus, null, null
