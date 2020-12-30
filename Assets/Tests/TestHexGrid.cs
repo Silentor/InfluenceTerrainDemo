@@ -46,14 +46,10 @@ namespace TerrainDemo.Tests
 			var labelStyle = new GUIStyle(GUI.skin.label);
 			labelStyle.active.textColor = Color.magenta;
 
-			var storage = _hex.GetInternalStorage( );
-			for ( int x = 0; x < storage.GetLength( 0 ); x++ )
-				for ( int z = 0; z < storage.GetLength( 1 ); z++ )
-				{
-					var h = storage[x, z];
-					if(h != null)
-						DrawHex( h.Pos, Color.magenta );
-				}
+			foreach ( var pos in _hex )
+			{
+				DrawHex( pos, Color.magenta );
+			}
 
 			//Show rasterized line
 			Handles.color = Color.white;

@@ -340,7 +340,7 @@ namespace TerrainDemo.Editor
 			//Draw all macro map cells
 			foreach (var meshCell in MacroMap.Cells)
 			{
-				DrawMap.DrawMacroCell(meshCell, input.View);
+				DrawMap.DrawMacroCell( MacroMap, meshCell, input.View );
 			}
 
 			//Draw all zones
@@ -350,10 +350,10 @@ namespace TerrainDemo.Editor
 			}
 
 			//Draw selected macrocell and zone
-			if (_input.HoveredMacroCell != null)
+			if ( _input.HoveredMacroCell != null )
 			{
-				DrawMap.DrawMacroCell(_input.HoveredMacroCell, Active, input.View, 5, true, true);
-				DrawMacroZone(_input.HoveredMacroCell.Zone, _input.HoveredMacroCell.Zone.Biome.LayoutColor, 10);
+				DrawMap.DrawMacroCell( MacroMap, _input.HoveredMacroCell, Active, input.View, 5, true, true );
+				DrawMacroZone( _input.HoveredMacroCell.Zone, _input.HoveredMacroCell.Zone.Biome.LayoutColor, 10 );
 			}
 		}
 
@@ -619,11 +619,11 @@ namespace TerrainDemo.Editor
 			if (input.HoveredHeightVertex.HasValue && input.HoveredHeightVertex != input.SelectedHeightVertex)
 				ShowHeightVertexInfo(input.HoveredHeightVertex.Value, false);
 		}
-		private void ShowMacroModeContent(Input input)
+		private void ShowMacroModeContent( Input input)
 		{
 			if (input.HoveredMacroCell != null)
 			{
-				ShowMacroCellInfo(_input.HoveredMacroCell);
+				ShowMacroCellInfo(MacroMap, _input.HoveredMacroCell);
 				ShowMacroZoneInfo(_input.HoveredMacroCell.Zone);
 			}
 		}
@@ -657,11 +657,12 @@ namespace TerrainDemo.Editor
 			GUILayout.Label($"Biome: {zone.Biome.name}");
 		}
 
-		private void ShowMacroCellInfo(Cell cell)
+		private void ShowMacroCellInfo(MacroMap map, Cell cell)
 		{
 			GUILayout.Label($"Macro.Cell {cell.HexPos}", EditorStyles.boldLabel);
 			GUILayout.Label($"Zone: {cell.ZoneId} - {cell.Biome.name}");
-			GUILayout.Label($"Height: {cell.DesiredHeight} desired, {cell.CenterPoint.Y:F1} true");
+			var height = map.GetHeight( cell.Center ).Nominal;
+			GUILayout.Label($"Height: {cell.DesiredHeight} desired, {height:F1} true");
 		}
 
 		private void ShowTriVertInfo(MacroVert vert, float distance)

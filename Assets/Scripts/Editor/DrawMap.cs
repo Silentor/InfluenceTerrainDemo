@@ -28,12 +28,12 @@ namespace TerrainDemo.Editor
 				DrawLabel( node.ToString(  ), node.Position3d, color, 10 );
 		}
 
-		public static void DrawMacroCell(Cell cell, Spatial.Ray view)
+		public static void DrawMacroCell(MacroMap map, Cell cell, Spatial.Ray view)
 		{
-			DrawMacroCell(cell, cell.Biome.LayoutColor, view, 0, false, false);
+			DrawMacroCell(map, cell, cell.Biome.LayoutColor, view, 0, false, false);
 		}
 
-		public static void DrawMacroCell(Cell cell, Color color, Spatial.Ray view, int width, bool labelVertices, bool filled)
+		public static void DrawMacroCell(MacroMap map, Cell cell, Color color, Spatial.Ray view, int width, bool labelVertices, bool filled)
 		{
 			var oldzTest = Handles.zTest;
 
@@ -49,6 +49,7 @@ namespace TerrainDemo.Editor
 				             VertexToPosition( cell.Vertices[5] ),
 			             };
 			DrawPolyline.ForHandle( points, color, width, filled );
+			var cellCenter = cell.Center.ToUnityVector3( map.GetHeight( cell.Center ).Nominal );
 
 			var cellDistance = Vector3.Distance((Vector3)cell.Center, view.Origin);
 
@@ -62,26 +63,26 @@ namespace TerrainDemo.Editor
 				//var contrastColor = (new Color(1, 1, 1, 2) - cell.Biome.LayoutColor) * 2;
 				colorLabelStyle.normal.textColor = color;
 				colorLabelStyle.fontSize = fontSize;
-				Handles.Label(  cell.CenterPoint, cell.HexPos.ToString(), colorLabelStyle);
+				Handles.Label(  cellCenter, cell.HexPos.ToString(), colorLabelStyle);
 				Handles.color = color;
-				Handles.DrawWireDisc(cell.CenterPoint, view.Direction, 0.1f);
+				Handles.DrawWireDisc(cellCenter, view.Direction, 0.1f);
 
 				Handles.zTest = CompareFunction.Greater;
 				colorLabelStyle.normal.textColor /= 3;
-				Handles.Label(cell.CenterPoint, cell.HexPos.ToString(), colorLabelStyle);
+				Handles.Label(cellCenter, cell.HexPos.ToString(), colorLabelStyle);
 				Handles.color /= 3;
-				Handles.DrawWireDisc(cell.CenterPoint, view.Direction, 0.1f);
+				Handles.DrawWireDisc(cellCenter, view.Direction, 0.1f);
 
 				if (labelVertices)
 				{
 					Handles.zTest = CompareFunction.Always;
 					Handles.color = color;
-					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[0]), cell.CenterPoint, 0.2f), cell.Vertices[0].ToString(), colorLabelStyle);
-					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[1]), cell.CenterPoint, 0.2f), cell.Vertices[1].ToString(), colorLabelStyle);
-					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[2]), cell.CenterPoint, 0.2f), cell.Vertices[2].ToString(), colorLabelStyle);
-					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[3]), cell.CenterPoint, 0.2f), cell.Vertices[3].ToString(), colorLabelStyle);
-					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[4]), cell.CenterPoint, 0.2f), cell.Vertices[4].ToString(), colorLabelStyle);
-					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[5]), cell.CenterPoint, 0.2f), cell.Vertices[5].ToString(), colorLabelStyle);
+					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[0]), cellCenter, 0.2f), cell.Vertices[0].ToString(), colorLabelStyle);
+					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[1]), cellCenter, 0.2f), cell.Vertices[1].ToString(), colorLabelStyle);
+					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[2]), cellCenter, 0.2f), cell.Vertices[2].ToString(), colorLabelStyle);
+					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[3]), cellCenter, 0.2f), cell.Vertices[3].ToString(), colorLabelStyle);
+					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[4]), cellCenter, 0.2f), cell.Vertices[4].ToString(), colorLabelStyle);
+					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[5]), cellCenter, 0.2f), cell.Vertices[5].ToString(), colorLabelStyle);
 				}
 			}
 

@@ -33,7 +33,7 @@ namespace TerrainDemo.Spatial
 		Blocked			= Incline.Blocked,
 	}
 
-	internal static class CreateIncline
+	public static class CreateIncline
 	{
 		public static LocalIncline FromSlope ( float slopeRatio )
 		{
