@@ -1,7 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Linq;
 using NUnit.Framework;
 using TerrainDemo.Spatial;
+using TerrainDemo.Tools;
+using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace TerrainDemo.Tests.Editor
@@ -30,7 +33,7 @@ namespace TerrainDemo.Tests.Editor
         [Test]
         public void TestVertex()
         {
-	        var grid = new HexGrid<HexPos, int, int>( 10, 2 );
+	        var grid = new HexGrid<HexPos, int, int>( 10, 4 );
 
 	        //Create first node
 	        grid[HexPos.Zero] = HexPos.Zero;
@@ -52,7 +55,7 @@ namespace TerrainDemo.Tests.Editor
         [Test]
         public void TestNeighbors( )
         {
-	        var grid = new HexGrid<HexPos?, int, int>( 10, 2 );
+	        var grid = new HexGrid<HexPos?, int, int>( 10, 4 );
             grid[HexPos.Zero] = HexPos.Zero;
             grid[HexPos.Zero + HexPos.QPlus] = HexPos.Zero + HexPos.QPlus;
             grid[HexPos.Zero + HexPos.QMinus] = HexPos.Zero + HexPos.QMinus;
@@ -91,6 +94,21 @@ namespace TerrainDemo.Tests.Editor
             var dest2 = grid.Array2dToHex( dest.x, dest.y );
 
             Assert.IsTrue( source.Q == dest2.q && source.R == dest2.r );
+        }
+
+        [Test]
+        public void TestEnumeration( )
+        {
+	        var grid         = new HexGrid<HexPos, int, int>( 10, 4 );
+	        var allPositions = grid.ToArray( );
+
+	        Debug.Log( allPositions.ToJoinedString() );
+
+	        Assert.That( allPositions.Count, Is.EqualTo( 16 ) );
+	        Assert.IsTrue( allPositions.Contains( new HexPos(-1, -1)) );
+	        Assert.IsTrue( allPositions.Contains( new HexPos(-2, 2)) ) ;
+	        Assert.IsTrue( allPositions.Contains( new HexPos(2, -1)) ) ;
+	        Assert.IsTrue( allPositions.Contains( new HexPos(1, 2)) ) ;
         }
 
     }

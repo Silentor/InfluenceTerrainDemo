@@ -29,21 +29,26 @@ namespace TerrainDemo.Spatial
 
 		public int CellsCount => _faces.Length;
 
-		public HexGrid( float hexSide, int gridRadius )
+		public HexGrid( float hexSide, int gridSide )
 		{
+			if ( gridSide <= 0 ) throw new ArgumentOutOfRangeException( nameof( gridSide ) );
+			if ( hexSide  <= 0 ) throw new ArgumentOutOfRangeException( nameof( hexSide ) );
+
 			Size = hexSide;
 			Width = (float)(Sqrt3 * Size) ;
 			Height = Size * 2;
 			QBasis = new Vector2d(Width,     0);
 			RBasis = new Vector2d(Width / 2, 3d /4 *Height);
 
-			_faces = new CellHolder[ (gridRadius + 1) * 2, (gridRadius + 1) * 2 ];
-			_gridBound = new Bound2i( GridPos.Zero, gridRadius );
+			_faces = new CellHolder[ gridSide, gridSide ];
+			var minX = gridSide / 3;
+			var minZ = gridSide / 3;
+			_gridBound = new Bound2i( new GridPos(-minX, -minZ), gridSide, gridSide );
 
 			var bound1 = GetHexBound( new HexPos(Array2dToHex( 0, 0 )) );
-			var bound2 = GetHexBound( new HexPos(Array2dToHex( gridRadius * 2 - 1, 0 )) );
-			var bound3 = GetHexBound( new HexPos(Array2dToHex( 0, gridRadius * 2 - 1 )) );
-			var bound4 = GetHexBound( new HexPos(Array2dToHex( gridRadius * 2 - 1, gridRadius * 2 - 1 )) );
+			var bound2 = GetHexBound( new HexPos(Array2dToHex( gridSide * 2 - 1, 0 )) );
+			var bound3 = GetHexBound( new HexPos(Array2dToHex( 0, gridSide * 2 - 1 )) );
+			var bound4 = GetHexBound( new HexPos(Array2dToHex( gridSide * 2 - 1, gridSide * 2 - 1 )) );
 			_blockBound = bound1.Add( bound2 ).Add( bound3 ).Add( bound4 );
 		}
 
@@ -64,16 +69,16 @@ namespace TerrainDemo.Spatial
 			return new CellsValue(_faces);
 		}
 
-		public IEnumerable<CellHolder> GetNeighbors( HexPos hex )
-		{
-			for ( var i = 0; i < HexPos.Directions.Length; i++ )
-			{
-				var dir      = HexPos.Directions[i];
-				var neighPos		= hex + dir;
-				if ( IsContains( neighPos ) )
-					yield return GetOrCreateHolder( neighPos.Q, neighPos.R );
-			}
-		}
+		//public IEnumerable<CellHolder> GetNeighbors( HexPos hex )
+		//{
+		//	for ( var i = 0; i < HexPos.Directions.Length; i++ )
+		//	{
+		//		var dir      = HexPos.Directions[i];
+		//		var neighPos		= hex + dir;
+		//		if ( IsContains( neighPos ) )
+		//			yield return GetOrCreateHolder( neighPos.Q, neighPos.R );
+		//	}
+		//}
 		public IEnumerable<TCell> GetNeighborsValue( HexPos hex )
 		{
 			for ( var i = 0; i < HexPos.Directions.Length; i++ )
@@ -84,7 +89,7 @@ namespace TerrainDemo.Spatial
 					yield return GetOrCreateHolder( neighPos.Q, neighPos.R ).Value;
 			}
 		}
-		public Edges GetEdges( HexPos pos )
+		private Edges GetEdges( HexPos pos )
 		{
 			var holder = GetHolder( pos );
 			if(holder != null)
@@ -95,7 +100,7 @@ namespace TerrainDemo.Spatial
 
 		public EdgesData GetEdgesValue( HexPos pos )
 		{
-			var holder = GetHolder( pos );
+			var holder = GetOrCreateHolder( pos.Q, pos.R );
 			if(holder != null)
 				return new EdgesData( holder.Edges );
 
@@ -104,7 +109,7 @@ namespace TerrainDemo.Spatial
 
 		public VerticesData GetVerticesValue( HexPos pos )
 		{
-			var holder = GetHolder( pos );
+			var holder = GetOrCreateHolder( pos.Q, pos.R );
 			if(holder != null)
 				return new VerticesData( holder.Vertices );
 
@@ -475,7 +480,7 @@ namespace TerrainDemo.Spatial
 				throw new ArgumentOutOfRangeException(  );
 			}
 
-			public EdgeHolder( HexPos cell, int index, HexGrid<TCell, TEdge, TVertex> grid )
+			internal EdgeHolder( HexPos cell, int index, HexGrid<TCell, TEdge, TVertex> grid )
 			{
 				Assert.IsTrue( index >= 0 && index < 6);
 
@@ -505,7 +510,7 @@ namespace TerrainDemo.Spatial
 
 			public TVertex Data;
 
-			public VertexHolder( HexPos cell, int index, HexGrid<TCell, TEdge, TVertex> grid )
+			internal VertexHolder( HexPos cell, int index, HexGrid<TCell, TEdge, TVertex> grid )
 			{
 				Assert.IsTrue( index >= 0 && index < 6);
 

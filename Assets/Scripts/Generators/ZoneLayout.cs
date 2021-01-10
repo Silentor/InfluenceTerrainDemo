@@ -10,7 +10,7 @@ namespace TerrainDemo.Generators
 {
 	public class LayoutGrid : HexGrid<CapturedCell, bool, bool>
 	{
-		public LayoutGrid( float hexSide, int gridRadius ) : base( hexSide, gridRadius )
+		public LayoutGrid( float hexSide, int gridSide ) : base( hexSide, gridSide )
 		{
 		}
 	}

@@ -22,7 +22,7 @@ namespace TerrainDemo.Macro
         public const int InvalidCellId = -1;
 
         public HexPos HexPos => _cell.Pos;
-        public int ZoneId = Zone.InvalidId;
+        public int    ZoneId = Zone.InvalidId;
 
         //public readonly MacroMap Map;
         public readonly Box2 Bound;
@@ -41,7 +41,7 @@ namespace TerrainDemo.Macro
         /// </summary>
         public Heights DesiredHeight;
 
-        public Vector2 Center => _cell.Center;
+        public Vector2 Center => _grid.GetHexCenter( HexPos );
 
         public Zone Zone { get; }
 
@@ -95,10 +95,11 @@ namespace TerrainDemo.Macro
         }
         */
 
-		public Cell( MacroGrid.CellHolder cell, Zone zone )
-        {
-	        _cell = cell;
-	        Zone = zone;
+		public Cell( MacroGrid.CellHolder cell, Zone zone, MacroGrid macroGrid )
+		{
+			_cell  = cell;
+	        Zone   = zone;
+	        _grid  = macroGrid;
         }   
 
         
@@ -127,12 +128,9 @@ namespace TerrainDemo.Macro
         }
         */
 
-        /// Quad-cell version
-        /// <param name="point"></param>
-        /// <returns></returns>
-        public bool Contains(Vector2 point)
+        public bool Contains(Vector2 position )
         {
-	        return _cell.IsContains( point );
+	        return _cell.IsContains( position );
         }
 
         //public Vector3? Raycast(Ray ray)
@@ -157,12 +155,12 @@ namespace TerrainDemo.Macro
             return $"TriCell {HexPos}({n[0]?.HexPos.ToString() ?? "?"}, {n[1]?.HexPos.ToString() ?? "?"}, {n[2]?.HexPos.ToString() ?? "?"}, {n[3]?.HexPos.ToString() ?? "?"}, {n[4]?.HexPos.ToString() ?? "?"}, {n[5]?.HexPos.ToString() ?? "?"})";
         }
 
-        private readonly MacroGrid.CellHolder _cell;
-        private Zone _zone;
-        private double[] _influence;
-        private OpenToolkit.Mathematics.Vector3? _centerPoint;
-        private OpenToolkit.Mathematics.Vector3[] _corners;
-        private readonly MacroGrid _grid;
+        private          Zone                              _zone;
+        private          double[]                          _influence;
+        private          OpenToolkit.Mathematics.Vector3?  _centerPoint;
+        private          OpenToolkit.Mathematics.Vector3[] _corners;
+        private readonly MacroGrid                         _grid;
+        private readonly MacroGrid.CellHolder               _cell;
 
 
         /*

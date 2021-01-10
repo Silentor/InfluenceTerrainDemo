@@ -4,7 +4,7 @@ namespace TerrainDemo.Macro
 {
 	public class MacroGrid : HexGrid<Cell, MacroEdge, MacroVert>
 	{
-		public MacroGrid( float hexSide, int gridRadius ) : base( hexSide, gridRadius )
+		public MacroGrid( float hexSide, int gridSide ) : base( hexSide, gridSide )
 		{
 		}
 	}

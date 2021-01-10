@@ -3,6 +3,9 @@ using OpenToolkit.Mathematics;
 
 namespace TerrainDemo.Spatial
 {
+	/// <summary>
+	/// Rectangular grid position
+	/// </summary>
 	public struct GridPos : IEquatable<GridPos>
 	{  
 		public readonly short X;
@@ -89,7 +92,7 @@ namespace TerrainDemo.Spatial
 		{
 			unchecked
 			{
-				return ( X << 16 | Z);
+				return ( (ushort)X << 16 | (ushort)Z);
 			}
 		}
 		public static bool operator ==( GridPos left, GridPos right )

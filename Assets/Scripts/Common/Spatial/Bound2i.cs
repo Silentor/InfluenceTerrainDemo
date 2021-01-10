@@ -10,6 +10,9 @@ using Vector3 = UnityEngine.Vector3;
 
 namespace TerrainDemo.Spatial
 {
+    /// <summary>
+    /// Inclusive bound on square grid
+    /// </summary>
     public readonly struct Bound2i : IEnumerable<GridPos>, IEquatable<Bound2i>
     {
         public readonly GridPos Min;
@@ -85,8 +88,8 @@ namespace TerrainDemo.Spatial
 
 	        var minX = Math.Min( Min.X, another.Min.X );
 	        var minZ = Math.Min( Min.Z, another.Min.Z );
-	        var maxX = Math.Min( Max.X, another.Max.X );
-	        var maxZ = Math.Min( Max.Z, another.Max.Z );
+	        var maxX = Math.Max( Max.X, another.Max.X );
+	        var maxZ = Math.Max( Max.Z, another.Max.Z );
 
             return new Bound2i((minX, minZ), (maxX, maxZ));
         }
