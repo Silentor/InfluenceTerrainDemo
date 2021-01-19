@@ -16,19 +16,19 @@ namespace TerrainDemo.Generators
 {
     public class DesertGenerator : BaseZoneGenerator
     {
-        public DesertGenerator(MacroMap macroMap, IEnumerable<Cell> zoneCells, int id, BiomeSettings biome, TriRunner settings) : base(macroMap, zoneCells, id, biome, settings)
+        public DesertGenerator( uint index, int seed, MacroMap map, BiomeSettings zoneSettings, TriRunner gameResources ) : base( index, seed, zoneSettings, gameResources )
         {
-            Assert.IsTrue(biome.Type == BiomeType.Desert);
+            Assert.IsTrue(zoneSettings.Type == BiomeType.Desert);
 
             _dunesNoise = new FastNoise(_zoneRandom.Seed);
             _dunesNoise.SetFrequency(1);
 
             _hillsOrientation = _zoneRandom.Range(0, 180f);
-            _stoneBlock = settings.AllBlocks.First(b => b.Block == BlockType.Stone);
+            _stoneBlock = gameResources.AllBlocks.First(b => b.Block == BlockType.Stone);
             _globalZoneHeight = _zoneRandom.Range(1, 3);
         }
 
-        public override Macro.Zone GenerateMacroZone()
+        public override Macro.Zone GenerateMacroZone( MacroMap map )
         {
             foreach (var cell in Zone.Cells)
             {

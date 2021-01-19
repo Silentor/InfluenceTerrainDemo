@@ -23,7 +23,7 @@ namespace TerrainDemo.Generators
             _generator.SetFrequency(1);
         }
 
-        public override Macro.Zone GenerateMacroZone()
+        public override Macro.Zone GenerateMacroZone( MacroMap map )
         {
             if (Zone.Biome.Type == BiomeType.TestOnlyMacroHigh)
             {

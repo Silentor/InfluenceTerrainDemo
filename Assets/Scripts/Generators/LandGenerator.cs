@@ -49,7 +49,7 @@ namespace TerrainDemo.Generators
 
             foreach ( var generator in _generators )
             {
-	            var zone = generator.GenerateMacroZone( );
+	            var zone = generator.GenerateMacroZone( result );
                 result.Zones.Add( zone );
             }
 
@@ -280,19 +280,25 @@ namespace TerrainDemo.Generators
 
         private LayoutGrid DivideGrid( )
         {
-            var layout = new LayoutGrid( _settings.CellSide, (int)_settings.LandSize );
+            var  layout = new LayoutGrid( _settings.CellSide, (int)_settings.LandSize );
+            uint index  = 0;
 
 	        foreach ( var hex in layout )
 	        {
 		        if ( layout[hex].IsEmpty )
 		        {
 			        var biome    = _random.Item(_settings.Biomes);
-			        var zoneGenerator = GetZoneGenerator( _random.NextInt32( ), biome );
+			        var zoneGenerator = GetZoneGenerator( index , _random.NextInt32( ), biome, _settings );
 
-                    if( !zoneGenerator.GenerateLayout( hex, layout ) )
-                        Debug.Log( "Zone layout generation is failed" );
-                    else
-                        _generators.Add( zoneGenerator );
+			        if ( !zoneGenerator.GenerateLayout( hex, layout ) )
+			        {
+				        Debug.Log( "Zone layout generation is failed" );
+			        }
+			        else
+			        {
+				        _generators.Add( zoneGenerator );
+				        index++;
+			        }
 		        }
 	        }
 
@@ -301,32 +307,13 @@ namespace TerrainDemo.Generators
 	        return layout;
         }
 
-        private BaseZoneGenerator GetZoneGenerator(int seed, BiomeSettings biome)
+        private BaseZoneGenerator GetZoneGenerator( uint index, int seed, BiomeSettings biome, TriRunner gameResources )
         {
-            switch (biome.Type)
-            {
-                default:
-	                return new MountainsGenerator( seed, biome );
-
-                //case BiomeType.Mountain:
-                //    return new MountainsGenerator( seed, biome );
-                //case BiomeType.Forest:
-                //    return new ForestGenerator(map, cells, zoneId, biome, settings);
-                //case BiomeType.Desert:
-                //    return new DesertGenerator(map, cells, zoneId, biome, settings);
-                //case BiomeType.Caves:
-                //    return new CavesGenerator(map, cells, zoneId, biome, settings);
-                //case BiomeType.TestNavigation:
-                //    return new NavigationTestGenerator(map, cells, zoneId, biome, settings);
-
-                //default:
-                //{
-                //    if(biome.Type >= BiomeType.TestBegin && biome.Type <= BiomeType.TestEnd)
-                //        return new TestZoneGenerator(map, cells, zoneId, biome, settings);
-                //    else
-                //        return new BaseZoneGenerator(map, cells, zoneId, biome, settings);
-                //}
-            }
+	        return biome.Type switch
+	        {
+		        BiomeType.Plains => new BaseZoneGenerator( index, seed, biome, gameResources ),
+		        _ => new MountainsGenerator( index, seed, biome, gameResources )
+	        };
         }
 
         /// <summary>
@@ -389,7 +376,7 @@ namespace TerrainDemo.Generators
 
             averageDiff /= map.Cells.Count * Heights.LayersCount;
 
-            Debug.LogFormat("Average diff {0}, max diff {1} on cell {2}", averageDiff, maxDiff, maxDiffCell?.HexPos);
+            Debug.LogFormat("Average diff {0}, max diff {1} on cell {2}", averageDiff, maxDiff, maxDiffCell?.Position);
         }
 
         protected GridPos World2Local(GridPos worldPosition, Bound2i bounds)

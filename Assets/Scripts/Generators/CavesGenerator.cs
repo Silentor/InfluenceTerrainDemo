@@ -18,15 +18,15 @@ namespace TerrainDemo.Generators
 {
     public class CavesGenerator : BaseZoneGenerator
     {
-        public CavesGenerator(MacroMap macroMap, IEnumerable<Cell> zoneCells, int id, BiomeSettings biome, TriRunner settings) : base(macroMap, zoneCells, id, biome, settings)
+        public CavesGenerator( uint index, int seed, BiomeSettings zoneSettings, TriRunner gameResources ) : base( index, seed, zoneSettings, gameResources )
         {
-            Assert.IsTrue(biome.Type == BiomeType.Caves);
+            Assert.IsTrue(zoneSettings.Type == BiomeType.Caves);
 
-            _cavesNoise = new FastNoise(_zoneRandom.Seed);
+            _cavesNoise = new FastNoise( seed );
             _cavesNoise.SetFrequency(0.1);
         }
 
-        public override Macro.Zone GenerateMacroZone()
+        public override Macro.Zone GenerateMacroZone( MacroMap map )
         {
             foreach (var cell in Zone.Cells)
             {

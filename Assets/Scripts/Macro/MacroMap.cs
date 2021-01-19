@@ -26,6 +26,8 @@ namespace TerrainDemo.Macro
         public          IReadOnlyList<Cell>     Cells => _mesh.GetCellsValue( );
         public readonly List<Zone>              Zones      = new List<Zone>();
 
+        public Macro.Cell GetCell( HexPos position ) => _mesh[position];
+
         public MacroMap(TriRunner settings, Random random)
         {
             _settings = settings;
@@ -92,7 +94,7 @@ namespace TerrainDemo.Macro
 
         public MacroGrid.Cluster GetSubmesh(IEnumerable<Cell> cells)
         {
-            return _mesh.GetCluster(cells.Select ( c => c.HexPos ));
+            return _mesh.GetCluster(cells.Select ( c => c.Position ));
         }
 
         public string InfluenceToString(double[] influence)

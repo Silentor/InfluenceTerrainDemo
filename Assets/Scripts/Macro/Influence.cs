@@ -133,7 +133,7 @@ namespace TerrainDemo.Macro
             return _maxInfluenceIndex;
         }
 
-        public Influence(int id)
+        public Influence(uint id)
         {
             Zone1Id = (byte)id;
             Zone1Weight = 1;

@@ -10,14 +10,14 @@ namespace TerrainDemo.Generators
 {
     public class ForestGenerator : BaseZoneGenerator
     {
-        public ForestGenerator(MacroMap macroMap, IEnumerable<Cell> zoneCells, int id, BiomeSettings biome, TriRunner settings) : base(macroMap, zoneCells, id, biome, settings)
+        public ForestGenerator( uint index, int seed, BiomeSettings zoneSettings, TriRunner gameResources ) : base( index, seed, zoneSettings, gameResources )
         {
-            Assert.IsTrue(biome.Type == BiomeType.Forest);
+            Assert.IsTrue(zoneSettings.Type == BiomeType.Forest);
 
 	        _globalZoneHeight = _zoneRandom.Range(1, 3);
         }
 
-        public override Macro.Zone GenerateMacroZone()
+        public override Macro.Zone GenerateMacroZone( MacroMap map )
         {
             foreach (var cell in Zone.Cells)
             {

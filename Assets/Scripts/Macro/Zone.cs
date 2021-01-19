@@ -10,7 +10,7 @@ namespace TerrainDemo.Macro
     {
         public const int InvalidId = -1;
 
-        public readonly int Id;
+        public readonly uint Id;
 
         public readonly MacroGrid.Cluster Cluster;
 
@@ -28,7 +28,7 @@ namespace TerrainDemo.Macro
 
         public BiomeSettings Biome { get; private set; }
 
-        public Zone( int id, MacroGrid.Cluster cells, BiomeSettings biome )
+        public Zone( uint id, MacroGrid.Cluster cells, BiomeSettings biome )
         {
             Cluster = cells;
             Id = id;

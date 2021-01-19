@@ -43,7 +43,7 @@ RenderSettings:
 --- !u!157 &4
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 11
+  serializedVersion: 12
   m_GIWorkflowMode: 1
   m_GISettings:
     serializedVersion: 2
@@ -98,7 +98,7 @@ LightmapSettings:
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
   m_LightingDataAsset: {fileID: 0}
-  m_UseShadowmask: 0
+  m_LightingSettings: {fileID: 4890085278179872738, guid: e1df59ecada6af3419dc70141da07f12, type: 2}
 --- !u!196 &5
 NavMeshSettings:
   serializedVersion: 2
@@ -118,6 +118,8 @@ NavMeshSettings:
     manualTileSize: 0
     tileSize: 256
     accuratePlacement: 0
+    maxJobWorkers: 0
+    preserveTilesOutsideBounds: 0
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
@@ -179,7 +181,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Seed: 181948769
   RandomizeSeed: 0
-  LandSize: 100
+  LandSize: 10
   CellSide: 10
   GridPerturbFreq: 0.01
   GridPerturbPower: 0
@@ -187,19 +189,15 @@ MonoBehaviour:
   InfluencePerturbPower: 3
   Biomes:
   - {fileID: 11400000, guid: 4757fe4311966e740b7ceb0d4952327a, type: 2}
-  - {fileID: 11400000, guid: 058fe3856150a044c974a3864778f4f7, type: 2}
   RenderLayer: 2
   MacroCellInfluenceVisualization: 0
   VertexColoredMat: {fileID: 2100000, guid: 5ae6f60a03e107e4d9e469815a34517d, type: 2}
   TextureMode: 3
   TexturedMat: {fileID: 2100000, guid: cf4bbfe466f303742b1c4030ee57c04b, type: 2}
   ObstaclesMat: {fileID: 2100000, guid: 58b91be52d62b6a49a54b6e201c5d04b, type: 2}
-  SmallBipedActorPrefab: {fileID: 9121655701841352804, guid: a105e9423a64e034b98b3ada25489814,
-    type: 3}
-  MedBipedActorPrefab: {fileID: 5915516888473377848, guid: 0b4dcde6ee5b7bb4a924c5b97d87c41b,
-    type: 3}
-  BigBipedActorPrefab: {fileID: 3066626669603308457, guid: 6a5d65499ca4d3b47a6ab856226c6bd7,
-    type: 3}
+  SmallBipedActorPrefab: {fileID: 9121655701841352804, guid: a105e9423a64e034b98b3ada25489814, type: 3}
+  MedBipedActorPrefab: {fileID: 5915516888473377848, guid: 0b4dcde6ee5b7bb4a924c5b97d87c41b, type: 3}
+  BigBipedActorPrefab: {fileID: 3066626669603308457, guid: 6a5d65499ca4d3b47a6ab856226c6bd7, type: 3}
 --- !u!1 &577932777
 GameObject:
   m_ObjectHideFlags: 0
@@ -333,8 +331,7 @@ MonoBehaviour:
   Speed: 10
   RotationSpeed: 180
   DebugDraw: 0
-  CursorObjectPrefab: {fileID: 1909514786901776, guid: bab1c6060d571244fbea5e98882c1d87,
-    type: 3}
+  CursorObjectPrefab: {fileID: 1909514786901776, guid: bab1c6060d571244fbea5e98882c1d87, type: 3}
   CameraHeight: 3
   CameraDistance: 5
   ZoomSpeed: 25
@@ -397,6 +394,7 @@ Light:
   m_UseColorTemperature: 0
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
   m_ShadowAngle: 0
 --- !u!20 &1293065049
@@ -700,6 +698,7 @@ Light:
   m_UseColorTemperature: 0
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
   m_ShadowAngle: 0
 --- !u!4 &1902875636

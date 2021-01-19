@@ -12,7 +12,7 @@ namespace TerrainDemo.Generators
 {
     public class MountainsGenerator : BaseZoneGenerator
     {
-	    public MountainsGenerator( int seed, BiomeSettings zoneSettings ) : base( seed, zoneSettings )
+	    public MountainsGenerator( uint index, int seed, BiomeSettings zoneSettings, TriRunner gameResources ) : base( index, seed, zoneSettings, gameResources )
 	    {
 		    _microReliefNoise = new FastNoise(_zoneRandom.Seed);
 		    _microReliefNoise.SetFrequency(1);
@@ -25,7 +25,7 @@ namespace TerrainDemo.Generators
             _microReliefNoise.SetFrequency(1);
         }
 
-        public override Macro.Zone GenerateMacroZone()
+        public override Macro.Zone GenerateMacroZone( MacroMap map )
         {
             //Select some center zone as mountain top
             

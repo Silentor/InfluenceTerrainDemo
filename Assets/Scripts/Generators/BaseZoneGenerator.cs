@@ -11,6 +11,8 @@ using Cell = TerrainDemo.Macro.Cell;
 using Random = TerrainDemo.Tools.Random;
 using Vector2 = OpenToolkit.Mathematics.Vector2;
 
+#nullable enable
+
 namespace TerrainDemo.Generators
 {
     //Зон Генератор не пытается юзать соседние Зон Генераторы и смешивать пограничные блоки. Он просто генерит
@@ -22,29 +24,33 @@ namespace TerrainDemo.Generators
     /// </summary>
     public class BaseZoneGenerator
     {
-	    private readonly BiomeSettings _zoneSettings;
-	    protected readonly MacroMap _macroMap;
-        protected readonly TriRunner _settings;
-        private HexPos[] _cells;
-        public readonly Macro.Zone Zone;
-        protected readonly Random _zoneRandom;
+	    private readonly   BiomeSettings _zoneSettings;
+        protected readonly TriRunner     _settings;
+        private            HexPos[]      _cells;
+        public             Macro.Zone    Zone { get; private set; }
+        private            HexPos[]      _zonePositions;
+        protected readonly Random        _zoneRandom;
+        private readonly   uint           _index;
 
 
         public BaseZoneGenerator(MacroMap macroMap, IEnumerable<Cell> zoneCells, int id, BiomeSettings biome, TriRunner settings)
         {
-            _macroMap = macroMap;
-            _settings = settings;
-            _zoneRandom = new Random(unchecked (settings.Seed + id));
+            //_macroMap = macroMap;
+            //_settings = settings;
+            //_zoneRandom = new Random(unchecked (settings.Seed + id));
 
-            Assert.IsTrue(zoneCells.All(c => c.ZoneId == id));
+            //Assert.IsTrue(zoneCells.All(c => c.ZoneId == id));
 
-            Zone = new Macro.Zone( id, _macroMap.GetSubmesh(zoneCells), biome );
+            //Zone = new Macro.Zone( id, _macroMap.GetSubmesh(zoneCells), biome );
         }
 
-        public BaseZoneGenerator( int seed, BiomeSettings zoneSettings )
+        public BaseZoneGenerator( uint index, int seed, BiomeSettings zoneSettings, TriRunner gameResources )
         {
-            _zoneRandom = new Random( seed );
+	        _index        = index;
+            _zoneRandom   = new Random( seed );
 	        _zoneSettings = zoneSettings;
+	        _settings     = gameResources;
+
         }
 
         public bool GenerateLayout( HexPos startCell, LayoutGrid layout )
@@ -59,6 +65,8 @@ namespace TerrainDemo.Generators
 				layout[zonePosition] = new CapturedCell( _zoneSettings.DefaultCell, this );
 			}
 
+			_zonePositions = zonePositions;
+
 			return true;
         }
 
@@ -67,25 +75,31 @@ namespace TerrainDemo.Generators
         /// <summary>
         /// Generate zone layout on given mesh
         /// </summary>
-        public virtual Macro.Zone GenerateMacroZone()
+        public virtual Macro.Zone GenerateMacroZone( MacroMap map )
         {
-            foreach (var cell in Zone.Cells)
+	        var cells       = _zonePositions.Select( p => map.GetCell( p ) ).ToArray(  );
+	        var submesh     = map.GetSubmesh(cells);
+	        var borderCells = submesh.GetBorderCells( ).ToArray(  );
+	        var result      = new Macro.Zone( _index, submesh, _zoneSettings );
+
+            foreach (var cell in cells)
             {
-                if (Zone.Biome.Type == BiomeType.Plains)
+                if (_zoneSettings.Type == BiomeType.Plains)
                 {
                     var baseHeight = _zoneRandom.Range(-5f, -1);
                     cell.DesiredHeight = new Heights(_zoneRandom.Range(0f, 1f), _zoneRandom.Value() > 0.8 ? baseHeight + 2 : baseHeight - 2, baseHeight);
                 }
-                else if (Zone.Biome.Type == BiomeType.Hills)
+                else if (_zoneSettings.Type == BiomeType.Hills)
                 {
                     var baseHeight = _zoneRandom.Range(-12f, -5);
                     cell.DesiredHeight = new Heights(_zoneRandom.Range(1f, 3), _zoneRandom.Range(baseHeight - 2, baseHeight + 2), baseHeight);
                 }
-                else if (Zone.Biome.Type == BiomeType.Lake)
-                    cell.DesiredHeight = new Heights(Zone.Border.Contains(cell) ? 0f : -10, -100, Zone.Border.Contains(cell) ? -12f : -15);
+                else if (_zoneSettings.Type == BiomeType.Lake)
+                    cell.DesiredHeight = new Heights(borderCells.Contains(cell.Position) ? 0f : -10, -100, Zone.Border.Contains(cell) ? -12f : -15);
             }
 
-            return Zone;
+            Zone = result;
+            return result;
         }
 
         #endregion

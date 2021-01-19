@@ -14,13 +14,15 @@ using Vector2 = OpenToolkit.Mathematics.Vector2;
 using Vector3 = OpenToolkit.Mathematics.Vector3;
 using Quaternion = OpenToolkit.Mathematics.Quaternion;
 
+#nullable enable
+
 namespace TerrainDemo.Generators
 {
     public class NavigationTestGenerator : BaseZoneGenerator
     {
-        public NavigationTestGenerator(MacroMap macroMap, IEnumerable<Cell> zoneCells, int id, BiomeSettings biome, TriRunner settings) : base(macroMap, zoneCells, id, biome, settings)
+        public NavigationTestGenerator( uint index, int seed, BiomeSettings zoneSettings, TriRunner gameResources ) : base( index, seed, zoneSettings, gameResources )
         {
-            Assert.IsTrue(biome.Type == BiomeType.TestNavigation);
+            Assert.IsTrue(zoneSettings.Type == BiomeType.TestNavigation);
 
             _mountNoise = new FastNoise(_zoneRandom.Seed);
             _mountNoise.SetFrequency(0.2);
@@ -32,7 +34,7 @@ namespace TerrainDemo.Generators
             _globalZoneHeight = _zoneRandom.Range(1, 3);
         }
 
-        public override Macro.Zone GenerateMacroZone()
+        public override Macro.Zone GenerateMacroZone( MacroMap map )
         {
             //Random mounts, trenches and flats
             foreach (var cell in Zone.Cells)

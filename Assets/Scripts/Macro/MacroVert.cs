@@ -56,7 +56,7 @@ namespace TerrainDemo.Macro
 	        _vertex = vertex;
         }
 
-        public override string ToString() => $"Vert, cells: {Cells?.ToJoinedString(c => c.HexPos.ToString())}";
+        public override string ToString() => $"Vert, cells: {Cells?.ToJoinedString(c => c.Position.ToString())}";
 
         private readonly MacroMap                      _map;
         private readonly MacroGrid                     _grid;

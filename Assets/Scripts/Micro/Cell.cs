@@ -21,7 +21,7 @@ namespace TerrainDemo.Micro
 
         public Cell(Macro.Cell macro, MicroMap map)
         {
-            Id = macro.HexPos;
+            Id = macro.Position;
             Macro = macro;
             Center = (GridPos)macro.Center;
             _map = map;

@@ -21,7 +21,7 @@ namespace TerrainDemo.Macro
         public const int MaxNeighborsCount = 6;
         public const int InvalidCellId = -1;
 
-        public HexPos HexPos => _cell.Pos;
+        public HexPos Position => _cell.Pos;
         public int    ZoneId = Zone.InvalidId;
 
         //public readonly MacroMap Map;
@@ -31,9 +31,9 @@ namespace TerrainDemo.Macro
 
         public IEnumerable<Cell> NeighborsSafe => Neighbors.Where(n => n != null);
 
-        public IEnumerable<Cell> Neighbors => _grid.GetNeighborsValue ( HexPos );
+        public IEnumerable<Cell> Neighbors => _grid.GetNeighborsValue ( Position );
 
-        public MacroGrid.VerticesData Vertices => _grid.GetVerticesValue( HexPos );
+        public MacroGrid.VerticesData Vertices => _grid.GetVerticesValue( Position );
 
        
         /// <summary>
@@ -41,7 +41,7 @@ namespace TerrainDemo.Macro
         /// </summary>
         public Heights DesiredHeight;
 
-        public Vector2 Center => _grid.GetHexCenter( HexPos );
+        public Vector2 Center => _grid.GetHexCenter( Position );
 
         public Zone Zone { get; }
 
@@ -152,7 +152,7 @@ namespace TerrainDemo.Macro
         public override string ToString()
         {
 	        var n = Neighbors.ToArray( );
-            return $"TriCell {HexPos}({n[0]?.HexPos.ToString() ?? "?"}, {n[1]?.HexPos.ToString() ?? "?"}, {n[2]?.HexPos.ToString() ?? "?"}, {n[3]?.HexPos.ToString() ?? "?"}, {n[4]?.HexPos.ToString() ?? "?"}, {n[5]?.HexPos.ToString() ?? "?"})";
+            return $"TriCell {Position}({n[0]?.Position.ToString() ?? "?"}, {n[1]?.Position.ToString() ?? "?"}, {n[2]?.Position.ToString() ?? "?"}, {n[3]?.Position.ToString() ?? "?"}, {n[4]?.Position.ToString() ?? "?"}, {n[5]?.Position.ToString() ?? "?"})";
         }
 
         private          Zone                              _zone;
@@ -203,7 +203,7 @@ namespace TerrainDemo.Macro
         {
             if (other is null) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Equals(HexPos, other.HexPos);
+            return Equals(Position, other.Position);
         }
 
         public override bool Equals(object obj)
@@ -216,7 +216,7 @@ namespace TerrainDemo.Macro
 
         public override int GetHashCode()
         {
-            return HexPos.GetHashCode();
+            return Position.GetHashCode();
         }
 
         public static bool operator ==(Cell left, Cell right)
