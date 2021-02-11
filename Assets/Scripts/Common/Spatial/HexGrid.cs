@@ -180,11 +180,10 @@ namespace TerrainDemo.Spatial
 		public Cluster GetCluster( IEnumerable<HexPos> cluster )
 		{
 			var result = new Cluster( this );
-			if(cluster != null)
-				foreach ( var hexPos in cluster )
-				{
-					result.Add( hexPos );
-				}
+			foreach ( var hexPos in cluster )
+			{
+				result.Add( hexPos );
+			}
 
 			return result;
 		}

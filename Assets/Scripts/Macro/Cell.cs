@@ -21,7 +21,7 @@ namespace TerrainDemo.Macro
         public const int MaxNeighborsCount = 6;
         public const int InvalidCellId = -1;
 
-        public HexPos Position => _cell.Pos;
+        public HexPos Position { get; }
         public int    ZoneId = Zone.InvalidId;
 
         //public readonly MacroMap Map;
@@ -45,7 +45,7 @@ namespace TerrainDemo.Macro
 
         public Zone Zone { get; }
 
-        public BiomeSettings Biome => Zone?.Biome;
+        public BiomeSettings Biome => Zone.Biome;
 
         //Ready after Macromap building completed
         #region 3D properties   
@@ -95,11 +95,11 @@ namespace TerrainDemo.Macro
         }
         */
 
-		public Cell( MacroGrid.CellHolder cell, Zone zone, MacroGrid macroGrid )
+		public Cell( HexPos position, Zone zone, MacroGrid macroGrid )
 		{
-			_cell  = cell;
-	        Zone   = zone;
-	        _grid  = macroGrid;
+			Position = position;
+	        Zone     = zone;
+	        _grid    = macroGrid;
         }   
 
         
@@ -130,7 +130,7 @@ namespace TerrainDemo.Macro
 
         public bool Contains(Vector2 position )
         {
-	        return _cell.IsContains( position );
+	        return _grid.BlockToHex( (GridPos) position ) == Position;
         }
 
         //public Vector3? Raycast(Ray ray)
@@ -160,7 +160,6 @@ namespace TerrainDemo.Macro
         private          OpenToolkit.Mathematics.Vector3?  _centerPoint;
         private          OpenToolkit.Mathematics.Vector3[] _corners;
         private readonly MacroGrid                         _grid;
-        private readonly MacroGrid.CellHolder               _cell;
 
 
         /*

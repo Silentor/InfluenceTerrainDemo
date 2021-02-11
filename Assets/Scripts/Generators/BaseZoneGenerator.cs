@@ -77,13 +77,16 @@ namespace TerrainDemo.Generators
         /// </summary>
         public virtual Macro.Zone GenerateMacroZone( MacroMap map )
         {
-	        var cells       = _zonePositions.Select( p => map.GetCell( p ) ).ToArray(  );
-	        var submesh     = map.GetSubmesh(cells);
+	        var submesh     = map.GetSubmesh(_zonePositions);
 	        var borderCells = submesh.GetBorderCells( ).ToArray(  );
 	        var result      = new Macro.Zone( _index, submesh, _zoneSettings );
 
-            foreach (var cell in cells)
+            foreach (var position in _zonePositions)
             {
+                Assert.IsTrue( map.GetCell(position) == null );
+                var cell = map.AddCell( position, result );
+                Assert.IsFalse( map.GetCell(position) == null );
+
                 if (_zoneSettings.Type == BiomeType.Plains)
                 {
                     var baseHeight = _zoneRandom.Range(-5f, -1);

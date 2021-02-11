@@ -1,6 +1,6 @@
 {
     "name": "Common",
-    "rootNamespace": "",
+    "rootNamespace": "TerrainDemo.Common",
     "references": [
         "GUID:b11ccfbab6057274abb00b0786631366",
         "GUID:2f3d37d9b46bf2e418613d89adfa6826"
@@ -8,7 +8,7 @@
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
+    "overrideReferences": true,
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],

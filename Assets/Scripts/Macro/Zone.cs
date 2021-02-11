@@ -6,6 +6,9 @@ using TerrainDemo.Settings;
 
 namespace TerrainDemo.Macro
 {
+    /// <summary>
+    /// COllection of Macro Cells
+    /// </summary>
     public class Zone : IReadOnlyCollection<Cell>
     {
         public const int InvalidId = -1;

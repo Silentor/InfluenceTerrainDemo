@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 using OpenToolkit.Mathematics;
 using TerrainDemo.Generators;
 using TerrainDemo.Micro;
@@ -15,6 +16,8 @@ using Vector2 = OpenToolkit.Mathematics.Vector2;
 using Vector3 = OpenToolkit.Mathematics.Vector3;
 using Vector4 = OpenToolkit.Mathematics.Vector4;
 
+#nullable enable
+
 namespace TerrainDemo.Macro
 {
     /// <summary>
@@ -26,7 +29,7 @@ namespace TerrainDemo.Macro
         public          IReadOnlyList<Cell>     Cells => _mesh.GetCellsValue( );
         public readonly List<Zone>              Zones      = new List<Zone>();
 
-        public Macro.Cell GetCell( HexPos position ) => _mesh[position];
+        public Macro.Cell? GetCell( HexPos position ) => _mesh[position];
 
         public MacroMap(TriRunner settings, Random random)
         {
@@ -45,9 +48,11 @@ namespace TerrainDemo.Macro
             _influenceTurbulancePower = settings.InfluencePerturbPower;
         }
 
-        public void AddZone( )
+        public Cell AddCell( HexPos position, Zone zone  )
         {
-            
+	        var newCell = new Cell( position, zone, _mesh );
+	        _mesh[position] = newCell;
+	        return newCell;
         }
 
         public Influence GetInfluence(Vector2 worldPosition)
@@ -60,7 +65,7 @@ namespace TerrainDemo.Macro
             return GetIDWHeight(worldPosition);
         }
 
-        public Cell GetCellAt(Vector2 position)
+        public Cell? GetCellAt(Vector2 position)
         {
 	        var gridPos = (GridPos) position;
 	        var hexPos = _mesh.BlockToHex( gridPos );
@@ -92,9 +97,9 @@ namespace TerrainDemo.Macro
             return _mesh.FloodFill(startCell, fillCondition ).Select ( hex =>_mesh[hex] );
         }
 
-        public MacroGrid.Cluster GetSubmesh(IEnumerable<Cell> cells)
+        public MacroGrid.Cluster GetSubmesh( IEnumerable<HexPos> cells )
         {
-            return _mesh.GetCluster(cells.Select ( c => c.Position ));
+	        return _mesh.GetCluster( cells );
         }
 
         public string InfluenceToString(double[] influence)
