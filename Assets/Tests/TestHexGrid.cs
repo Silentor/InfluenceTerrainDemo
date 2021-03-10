@@ -59,21 +59,21 @@ namespace TerrainDemo.Tests
 				var linePos = line[i];
 				DrawHex( linePos, Color.white );
 
-				Handles.DrawLine( _hex.GetHexCenter(line[i]).ToVector3( ), _hex.GetHexCenter(line[i + 1]).ToVector3(  ) );
+				Handles.DrawLine( _hex.GetFaceCenter(line[i]).ToVector3( ), _hex.GetFaceCenter(line[i + 1]).ToVector3(  ) );
 			}
 			DrawHex( line.Last(), Color.white );
 		}
 		private void DrawHex( HexPos hexPos, Color color )
 		{
 			Handles.color = color;
-			var hexCenter = _hex.GetHexCenter( hexPos );
+			var hexCenter = _hex.GetFaceCenter( hexPos );
 			Handles.Label( hexCenter.ToVector3( ), hexPos.ToString( ) );
 			Handles.SphereHandleCap( 0, hexCenter, Quaternion.identity, 0.5f, EventType.Repaint );
 
-			var hexCenterBlock = _hex.GetHexCenterBlock( hexPos );
+			var hexCenterBlock = (GridPos)_hex.GetFaceCenter( hexPos );
 			DrawRectangle.ForHandle( new Bound2i( hexCenterBlock, 0 ), color );
 
-			var hexVertices = _hex.GetHexVerticesPosition( hexPos );
+			var hexVertices = _hex.GetFaceVerticesPosition( hexPos );
 			Handles.DrawPolyLine( hexVertices.Select( v => (Vector3) v ).ToArray( ) );
 		}
 

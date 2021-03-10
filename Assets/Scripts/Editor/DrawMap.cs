@@ -39,14 +39,15 @@ namespace TerrainDemo.Editor
 
 			Handles.color = color;
 
+			var cellVertices = cell.Vertices;
 			var points = new[]
 			             {
-				             VertexToPosition( cell.Vertices[0] ),
-				             VertexToPosition( cell.Vertices[1] ),
-				             VertexToPosition( cell.Vertices[2] ),
-				             VertexToPosition( cell.Vertices[3] ),
-				             VertexToPosition( cell.Vertices[4] ),
-				             VertexToPosition( cell.Vertices[5] ),
+				             VertexToPosition( cellVertices[0] ),
+				             VertexToPosition( cellVertices[1] ),
+				             VertexToPosition( cellVertices[2] ),
+				             VertexToPosition( cellVertices[3] ),
+				             VertexToPosition( cellVertices[4] ),
+				             VertexToPosition( cellVertices[5] ),
 			             };
 			DrawPolyline.ForHandle( points, color, width, filled );
 			var cellCenter = cell.Center.ToUnityVector3( map.GetHeight( cell.Center ).Nominal );
@@ -77,12 +78,12 @@ namespace TerrainDemo.Editor
 				{
 					Handles.zTest = CompareFunction.Always;
 					Handles.color = color;
-					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[0]), cellCenter, 0.2f), cell.Vertices[0].ToString(), colorLabelStyle);
-					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[1]), cellCenter, 0.2f), cell.Vertices[1].ToString(), colorLabelStyle);
-					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[2]), cellCenter, 0.2f), cell.Vertices[2].ToString(), colorLabelStyle);
-					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[3]), cellCenter, 0.2f), cell.Vertices[3].ToString(), colorLabelStyle);
-					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[4]), cellCenter, 0.2f), cell.Vertices[4].ToString(), colorLabelStyle);
-					Handles.Label(Vector3.Lerp(VertexToPosition(cell.Vertices[5]), cellCenter, 0.2f), cell.Vertices[5].ToString(), colorLabelStyle);
+					Handles.Label(Vector3.Lerp(VertexToPosition(cellVertices[0]), cellCenter, 0.2f), cellVertices[0].ToString(), colorLabelStyle);
+					Handles.Label(Vector3.Lerp(VertexToPosition(cellVertices[1]), cellCenter, 0.2f), cellVertices[1].ToString(), colorLabelStyle);
+					Handles.Label(Vector3.Lerp(VertexToPosition(cellVertices[2]), cellCenter, 0.2f), cellVertices[2].ToString(), colorLabelStyle);
+					Handles.Label(Vector3.Lerp(VertexToPosition(cellVertices[3]), cellCenter, 0.2f), cellVertices[3].ToString(), colorLabelStyle);
+					Handles.Label(Vector3.Lerp(VertexToPosition(cellVertices[4]), cellCenter, 0.2f), cellVertices[4].ToString(), colorLabelStyle);
+					Handles.Label(Vector3.Lerp(VertexToPosition(cellVertices[5]), cellCenter, 0.2f), cellVertices[5].ToString(), colorLabelStyle);
 				}
 			}
 

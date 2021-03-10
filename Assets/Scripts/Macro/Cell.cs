@@ -22,7 +22,7 @@ namespace TerrainDemo.Macro
         public const int InvalidCellId = -1;
 
         public HexPos Position { get; }
-        public int    ZoneId = Zone.InvalidId;
+        public uint    ZoneId => Zone.Id;
 
         //public readonly MacroMap Map;
         public readonly Box2 Bound;
@@ -41,7 +41,7 @@ namespace TerrainDemo.Macro
         /// </summary>
         public Heights DesiredHeight;
 
-        public Vector2 Center => _grid.GetHexCenter( Position );
+        public Vector2 Center => _grid.GetFaceCenter( Position );
 
         public Zone Zone { get; }
 
@@ -100,7 +100,8 @@ namespace TerrainDemo.Macro
 			Position = position;
 	        Zone     = zone;
 	        _grid    = macroGrid;
-        }   
+	        Bound   = macroGrid.GetFaceBound( position );
+		}   
 
         
         /*

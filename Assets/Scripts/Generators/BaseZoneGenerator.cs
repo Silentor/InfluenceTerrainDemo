@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Xml.XPath;
 using TerrainDemo.Macro;
@@ -60,14 +62,21 @@ namespace TerrainDemo.Generators
             var zoneSize      = _zoneRandom.Range(_zoneSettings.SizeRange);
             var zonePositions = layout.FloodFill(startCell, (_, cell) => cell.IsEmpty ).Take(zoneSize).ToArray();
 			//todo check for minimum zone size, discard zone, return false
-			foreach ( var zonePosition in zonePositions )
+			if ( zonePositions.Any( ) )
 			{
-				layout[zonePosition] = new CapturedCell( _zoneSettings.DefaultCell, this );
+				foreach ( var zonePosition in zonePositions )
+				{
+					layout[zonePosition] = new CapturedCell( _zoneSettings.DefaultCell, this );
+				}
+
+				_zonePositions = zonePositions;
+
+				return true;
 			}
-
-			_zonePositions = zonePositions;
-
-			return true;
+			else
+			{
+				return false;
+			}
         }
 
         #region Macrolevel generation

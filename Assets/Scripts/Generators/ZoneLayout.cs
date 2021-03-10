@@ -17,12 +17,12 @@ namespace TerrainDemo.Generators
 
 	public readonly struct CapturedCell
 	{
-		public readonly MacroCellType Type;
+		public readonly BiomeType Type;
 		public readonly BaseZoneGenerator Owner;
 
 		public Boolean IsEmpty				=> Owner == null;
 
-		public CapturedCell( MacroCellType type, [NotNull] BaseZoneGenerator owner  )
+		public CapturedCell( BiomeType type, [NotNull] BaseZoneGenerator owner  )
 		{
 			Type  = type;
 			Owner = owner ?? throw new ArgumentNullException( nameof( owner ) );

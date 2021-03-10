@@ -86,7 +86,7 @@ namespace TerrainDemo.Spatial
 				HexPos minHex      = _cluster.First();
 				foreach ( var hex2 in _cluster )
 				{
-					var cellCenter = Grid.GetHexCenter( hex2 );
+					var cellCenter = Grid.GetFaceCenter( hex2 );
 					var distance   = Vector2.DistanceSquared( pos, cellCenter );
 					if ( distance < minDistance )
 					{

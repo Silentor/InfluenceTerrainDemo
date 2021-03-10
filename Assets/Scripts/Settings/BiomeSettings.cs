@@ -24,7 +24,7 @@ namespace TerrainDemo.Settings
         /// <summary>
         /// Default macro cell
         /// </summary>
-        public MacroCellType DefaultCell = MacroCellType.Field;
+        public BiomeType DefaultCell = BiomeType.Plains;
 
         //Add some settings about general biome look and feel
         public BlockSettings DefaultMainBlock;

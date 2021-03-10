@@ -14,7 +14,7 @@ using UnityEngine.Assertions;
 namespace TerrainDemo.Spatial
 {
 	/// <summary>
-	/// Regular hexagonal grid (top-pointed) optimized to block rasterization
+	/// Regular hexagonal grid (top-pointed)
 	/// </summary>
 	public partial class HexGrid<TCell, TEdge, TVertex> : IEnumerable<HexPos>
 	{
@@ -25,7 +25,7 @@ namespace TerrainDemo.Spatial
 		/// <summary>
 		/// Block bound of grid
 		/// </summary>
-		public Bound2i Bound => _blockBound;
+		public Box2 Bound => _bound;
 
 		public int CellsCount => _faces.Length;
 
@@ -45,11 +45,11 @@ namespace TerrainDemo.Spatial
 			var minZ = gridSide / 3;
 			_gridBound = new Bound2i( new GridPos(-minX, -minZ), gridSide, gridSide );
 
-			var bound1 = GetHexBound( new HexPos(Array2dToHex( 0, 0 )) );
-			var bound2 = GetHexBound( new HexPos(Array2dToHex( gridSide * 2 - 1, 0 )) );
-			var bound3 = GetHexBound( new HexPos(Array2dToHex( 0, gridSide * 2 - 1 )) );
-			var bound4 = GetHexBound( new HexPos(Array2dToHex( gridSide * 2 - 1, gridSide * 2 - 1 )) );
-			_blockBound = bound1.Add( bound2 ).Add( bound3 ).Add( bound4 );
+			var bound1 = GetFaceBound( new HexPos(Array2dToHex( 0, 0 )) );
+			var bound2 = GetFaceBound( new HexPos(Array2dToHex( gridSide * 2 - 1, 0 )) );
+			var bound3 = GetFaceBound( new HexPos(Array2dToHex( 0, gridSide * 2 - 1 )) );
+			var bound4 = GetFaceBound( new HexPos(Array2dToHex( gridSide * 2 - 1, gridSide * 2 - 1 )) );
+			_bound = bound1.Inflated( bound2 ).Inflated( bound3 ).Inflated( bound4 );
 		}
 
 		public TCell this[ HexPos position ]
@@ -190,14 +190,9 @@ namespace TerrainDemo.Spatial
 
 #region Layout
 
-		public Vector2 GetHexCenter( HexPos hex )
+		public Vector2 GetFaceCenter( HexPos hex )
 		{
 			return (Vector2)(hex.Q * QBasis + hex.R * RBasis);
-		}
-
-		public GridPos GetHexCenterBlock( HexPos hex )
-		{
-			return (GridPos)GetHexCenter( hex );
 		}
 
 		/// <summary>
@@ -206,10 +201,10 @@ namespace TerrainDemo.Spatial
 		/// <param name="hex"></param>
 		/// <returns></returns>
 		[NotNull]
-		public Vector2[] GetHexVerticesPosition( HexPos hex )
+		public Vector2[] GetFaceVerticesPosition( HexPos hex )
 		{
 			var result = new Vector2[6];
-			var center = GetHexCenter( hex );
+			var center = GetFaceCenter( hex );
 			for ( var i = 0; i < 6; i++ )
 			{
 				var angleDeg =  30 - 60f * i;
@@ -220,17 +215,17 @@ namespace TerrainDemo.Spatial
 			return result;
 		}
 
-		public Bound2i GetHexBound( HexPos hex )
+		public Box2 GetFaceBound( HexPos hex )
 		{
 			//Get extreme vertices (internal knowledge)
-			var vertices = GetHexVerticesPosition( hex );
+			var vertices = GetFaceVerticesPosition( hex );
 
 			var xMax = vertices[0].X;
 			var zMin = vertices[2].Y;
 			var xMin = vertices[3].X;
 			var zMax = vertices[5].Y;
 
-			return new Bound2i(new GridPos(xMin, zMin), new GridPos(xMax, zMax));
+			return new Box2(new Vector2(xMin, zMin), new Vector2(xMax, zMax));
 		}
 
 		#endregion
@@ -241,7 +236,7 @@ namespace TerrainDemo.Spatial
 		private readonly Vector2d	RBasis ;
 		private const           double		Sqrt3  = 1.732050807568877d;
 		private readonly Bound2i _gridBound;
-		private readonly Bound2i _blockBound;
+		private readonly Box2	_bound;
 
 		[MethodImpl( MethodImplOptions.AggressiveInlining)]
 		private CellHolder Set( int q, int r, TCell data )
@@ -384,7 +379,7 @@ namespace TerrainDemo.Spatial
 			public readonly Edges			Edges;
 			public readonly Vertices		Vertices;
 
-			public			Vector2			Center		=> _grid.GetHexCenter ( Pos );
+			public			Vector2			Center		=> _grid.GetFaceCenter ( Pos );
 
 			public bool IsContains( Vector2 position )
 			{
@@ -505,7 +500,7 @@ namespace TerrainDemo.Spatial
 
 			public readonly HexGrid<TCell, TEdge, TVertex> Grid;
 
-			public Vector2 Position => Grid.GetHexVerticesPosition(Cell1)[Index];
+			public Vector2 Position => Grid.GetFaceVerticesPosition(Cell1)[Index];
 
 			public TVertex Data;
 
@@ -722,7 +717,7 @@ namespace TerrainDemo.Spatial
 			}
 		}
 
-		public struct VerticesData : IEnumerable<TVertex>
+		public struct VerticesData : IReadOnlyList<TVertex>
 		{
 			public int Count => _vertices.Count;
 

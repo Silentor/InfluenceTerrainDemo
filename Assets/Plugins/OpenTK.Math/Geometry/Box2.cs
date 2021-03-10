@@ -254,6 +254,21 @@ namespace OpenToolkit.Mathematics
         }
 
         /// <summary>
+        /// Inflate this Box2 to encapsulate a given point.
+        /// </summary>
+        /// <param name="point">The point to query.</param>
+        /// <returns>The inflated box.</returns>
+        [Pure]
+        public Box2 Inflated( Box2 point)
+        {
+	        // create a local copy of this box
+	        Box2 box = this;
+	        box.Inflate(point.Min);
+	        box.Inflate(point.Max);
+	        return box;
+        }
+
+        /// <summary>
         /// Equality comparator.
         /// </summary>
         /// <param name="left">The left operand.</param>
