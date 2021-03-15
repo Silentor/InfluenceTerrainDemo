@@ -53,6 +53,8 @@ namespace TerrainDemo.Generators
                 result.Zones.Add( zone );
             }
 
+            result.FillVertices(  );
+            
             timer.Stop();
 
             Debug.LogFormat("Created macromap in {0} msec", timer.ElapsedMilliseconds);

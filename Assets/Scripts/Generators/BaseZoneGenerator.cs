@@ -26,13 +26,12 @@ namespace TerrainDemo.Generators
     /// </summary>
     public class BaseZoneGenerator
     {
-	    private readonly   BiomeSettings _zoneSettings;
+	    protected readonly   BiomeSettings _zoneSettings;
         protected readonly TriRunner     _settings;
-        private            HexPos[]      _cells;
-        public             Macro.Zone    Zone { get; private set; }
-        private            HexPos[]      _zonePositions;
+        public             Macro.Zone    Zone { get; protected set; }
+        protected            HexPos[]      _zonePositions;
         protected readonly Random        _zoneRandom;
-        private readonly   uint           _index;
+        protected readonly   uint           _index;
 
 
         public BaseZoneGenerator(MacroMap macroMap, IEnumerable<Cell> zoneCells, int id, BiomeSettings biome, TriRunner settings)

@@ -55,6 +55,15 @@ namespace TerrainDemo.Macro
 	        return newCell;
         }
 
+        public void FillVertices( )
+        {
+            _mesh.EnumerateVertices( v =>
+                                     {
+                                         v.Data = new MacroVert( this, _mesh, v );
+                                     } );
+        }
+            
+        
         public Influence GetInfluence(Vector2 worldPosition)
         {
             return GetIDWInfluence(worldPosition);

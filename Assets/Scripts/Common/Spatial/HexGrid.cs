@@ -107,6 +107,15 @@ namespace TerrainDemo.Spatial
 			throw new ArgumentOutOfRangeException(nameof(pos), pos, "Not in hexgrid");
 		}
 
+		private Vertices GetVertices( HexPos pos )
+		{
+			var holder = GetHolder( pos );
+			if(holder != null)
+				return holder.Vertices;
+
+			return Vertices.Empty;
+		}
+		
 		public VerticesData GetVerticesValue( HexPos pos )
 		{
 			var holder = GetOrCreateHolder( pos.Q, pos.R );
@@ -188,6 +197,27 @@ namespace TerrainDemo.Spatial
 			return result;
 		}
 
+		public void EnumerateVertices( Action<VertexHolder> visitor )
+		{
+			HashSet<VertexHolder> processedVertices = new HashSet<VertexHolder>( );
+			
+			foreach ( var facePosition in this )
+			{
+				var vertices = GetVertices( facePosition );
+				if ( vertices.Count > 0 )
+				{
+					for ( int i = 0; i < vertices.Count; i++ )
+					{
+						if ( !processedVertices.Contains( vertices[i] ) )
+						{
+							processedVertices.Add( vertices[i] );
+							visitor( vertices[i] );
+						}
+					}
+				}
+			}
+		}
+		
 #region Layout
 
 		public Vector2 GetFaceCenter( HexPos hex )
@@ -668,6 +698,8 @@ namespace TerrainDemo.Spatial
 			public readonly VertexHolder Vertex5;
 			public readonly VertexHolder Vertex6;
 
+			public static readonly Vertices Empty = new Vertices();
+			
 			public int Count { get; }
 
 			public VertexHolder this[int index]
@@ -717,7 +749,7 @@ namespace TerrainDemo.Spatial
 			}
 		}
 
-		public struct VerticesData : IReadOnlyList<TVertex>
+		public readonly struct VerticesData : IReadOnlyList<TVertex>
 		{
 			public int Count => _vertices.Count;
 

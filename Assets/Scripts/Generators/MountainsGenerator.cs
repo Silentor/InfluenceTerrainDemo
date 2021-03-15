@@ -27,14 +27,22 @@ namespace TerrainDemo.Generators
 
         public override Macro.Zone GenerateMacroZone( MacroMap map )
         {
+            var submesh     = map.GetSubmesh(_zonePositions);
+            var borderCells = submesh.GetBorderCells( ).ToArray(  );
+            Zone      = new Macro.Zone( _index, submesh, _zoneSettings );
+
+            //Fill cells
+            foreach ( var position in _zonePositions )
+            {
+                map.AddCell( position, Zone );
+            }
+
             //Select some center zone as mountain top
-            
             Vector2 zoneAverageCenterPoint = Vector2.Zero;
-            foreach (var cell in Zone.Cells)
+            foreach (var cell in Zone )
             {
                 zoneAverageCenterPoint += cell.Center;
             }
-
             zoneAverageCenterPoint /= Zone.Cells.Count;
 
             var peak = Zone.Cluster.GetNearestCell((GridPos)zoneAverageCenterPoint);

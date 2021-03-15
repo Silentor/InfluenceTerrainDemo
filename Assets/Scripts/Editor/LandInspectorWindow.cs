@@ -337,6 +337,9 @@ namespace TerrainDemo.Editor
 
 		private void DrawMacroModeHandles(Input input)
 		{
+			if( MacroMap == null )
+				return;
+			
 			//Draw all macro map cells
 			foreach (var meshCell in MacroMap.Cells)
 			{
@@ -352,7 +355,7 @@ namespace TerrainDemo.Editor
 			//Draw selected macrocell and zone
 			if ( _input.HoveredMacroCell != null )
 			{
-				DrawMap.DrawMacroCell( MacroMap, _input.HoveredMacroCell, Active, input.View, 5, true, true );
+				DrawMap.DrawMacroCell( MacroMap, _input.HoveredMacroCell, Active, input.View, 5, false, true );
 				DrawMacroZone( _input.HoveredMacroCell.Zone, _input.HoveredMacroCell.Zone.Biome.LayoutColor, 10 );
 			}
 		}
