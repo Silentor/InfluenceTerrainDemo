@@ -258,8 +258,8 @@ namespace TerrainDemo.Macro
             Assert.IsTrue(distance <= searchRadius);
 
             var ratio = 1 - distance / searchRadius;        //Inverse lerp
-            return Interpolation.SmoothStep(ratio);
-            //return InQuad(ratio);
+            //return Interpolation.SmoothStep(ratio);
+            return Interpolation.InQuad( ratio );
         }
 
         private Vector4 InfluenceToVector4(double[] influence)

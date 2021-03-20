@@ -179,7 +179,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfe8cbee957a471faca6d4f7bc77070c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Seed: 1
+  Seed: 2
   RandomizeSeed: 0
   LandSize: 10
   CellSide: 10
@@ -189,6 +189,7 @@ MonoBehaviour:
   InfluencePerturbPower: 3
   Biomes:
   - {fileID: 11400000, guid: b0bde4e1a0e0d9343bea7f8586c7fbcb, type: 2}
+  - {fileID: 11400000, guid: 4757fe4311966e740b7ceb0d4952327a, type: 2}
   RenderLayer: 2
   MacroCellInfluenceVisualization: 0
   VertexColoredMat: {fileID: 2100000, guid: 5ae6f60a03e107e4d9e469815a34517d, type: 2}

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using OpenToolkit.Mathematics;
 using TerrainDemo.Macro;
@@ -28,12 +29,12 @@ namespace TerrainDemo.Editor
 				DrawLabel( node.ToString(  ), node.Position3d, color, 10 );
 		}
 
-		public static void DrawMacroCell(MacroMap map, Cell cell, Spatial.Ray view)
+		public static void DrawMacroCell( Cell cell, Spatial.Ray view)
 		{
-			DrawMacroCell(map, cell, cell.Biome.LayoutColor, view, 0, false, false);
+			DrawMacroCell( cell, cell.Biome.LayoutColor, view, 0, false, false);
 		}
 
-		public static void DrawMacroCell(MacroMap map, Cell cell, Color color, Spatial.Ray view, int width, bool labelVertices, bool filled)
+		public static void DrawMacroCell( Cell cell, Color color, Spatial.Ray view, int width, bool labelVertices, bool filled)
 		{
 			var oldzTest = Handles.zTest;
 
@@ -49,10 +50,11 @@ namespace TerrainDemo.Editor
 				             VertexToPosition( cellVertices[4] ),
 				             VertexToPosition( cellVertices[5] ),
 			             };
-			DrawPolyline.ForHandle( points, color, width, filled );
-			var cellCenter = cell.Center.ToUnityVector3( map.GetHeight( cell.Center ).Nominal );
-
-			var cellDistance = Vector3.Distance((Vector3)cell.Center, view.Origin);
+			var cellCenter  = cell.Center.ToVector3( cell.DesiredHeight.Nominal );
+			var centerPoint = filled ? (Vector3?)cellCenter : null;
+			DrawPolyline.ForHandle( points, color, width, centerPoint );
+			
+			var cellDistance = Vector3.Distance( cellCenter, view.Origin );
 
 			//Scale font size based on cell-camera distance
 			var fontSize = Mathf.RoundToInt(Mathf.Lerp(10, 25, Mathf.InverseLerp(100, 3, cellDistance)));

@@ -44,7 +44,7 @@ namespace TerrainDemo.Tools
                 Debug.DrawLine(line[line.Length - 1], line[0], color, 0);
         }
 
-        public static void ForHandle(Vector3[] points, Color color, int width, bool filled )
+        public static void ForHandle(Vector3[] points, Color color, int width, Vector3? fillCenter = null )
         {
 	        var oldzTest = Handles.zTest;
 	        Handles.color = color;
@@ -69,11 +69,17 @@ namespace TerrainDemo.Tools
 		        Handles.DrawAAPolyLine( width, points );
 	        }
 
-	        if ( filled )
+	        if ( fillCenter.HasValue )
 	        {
-				var centerPoint = points.Aggregate( (a, b) => a + b) / points.Length ;
-				var fill = points.SelectMany( p => new[] {p, centerPoint} ).ToArray( );
+		        var centerPoint = fillCenter.Value ;
+		        var fill        = points.SelectMany( p => new[] {p, centerPoint} ).ToArray( );
+		        
+		        Handles.zTest = CompareFunction.LessEqual;
+		        Handles.color = color;
 		        Handles.DrawLines( fill );
+		        Handles.zTest = CompareFunction.Greater;
+		        Handles.color = color / 2;
+		        Handles.DrawAAPolyLine( width, points );
 	        }
 
 	        Handles.zTest = oldzTest;
