@@ -159,7 +159,7 @@ namespace TerrainDemo.Generators
 
 		        foreach ( var macroCell in zoneGenerator.Zone.Cells )
 		        {
-			        var microcell = outputMap.Cells.First( c => c.Macro == macroCell );
+			        var microcell = outputMap[macroCell.Position];
 
 			        //Prepare buffers for microcell
 			        var bufferSize    = microcell.Bounds;

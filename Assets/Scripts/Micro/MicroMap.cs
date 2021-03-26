@@ -25,8 +25,10 @@ namespace TerrainDemo.Micro
     /// </summary>
     public sealed class MicroMap : BaseBlockMap
     {
-        public readonly Cell[] Cells;
+        public Cell this[ HexPos position ] => _grid[position];
 
+        public MicroHexGrid.CellsValue Cells => _grid.GetCellsValue(  );
+        
         public IEnumerable<BaseBlockMap> Childs => _childs;
 
         public IEnumerable<Actor> Actors => _actors;
@@ -36,15 +38,14 @@ namespace TerrainDemo.Micro
         {
             _macromap = macromap;
             _settings = settings;
+            _grid     = new MicroHexGrid( settings.CellSide, (int) settings.LandSize );
 
-            Cells = new Cell[macromap.Cells.Count];
-            for (var i = 0; i < macromap.Cells.Count; i++)
+            foreach ( var macroCell in macromap.Cells )
             {
-                var macroCell = macromap.Cells[i];
                 var microCell = new Cell(macroCell, this);
-                Cells[i] = microCell;
+                _grid[macroCell.Position] = microCell;
             }
-
+            
             foreach (var blockSettingse in settings.AllBlocks) 
 	            _blockSettings[blockSettingse.Block] = blockSettingse;
         }
@@ -63,16 +64,13 @@ namespace TerrainDemo.Micro
         {
             if (cell == null) throw new ArgumentNullException(nameof(cell));
 
-            return Cells.First(c => c.Macro == cell);
+            return _grid[cell.Position];
         }
 
         public Cell GetCell(GridPos position)
         {
-            foreach (var cell in Cells)
-                if (cell.Bounds.Contains(position) && cell.BlockPositions.Contains(position))
-                        return cell;
-
-            return null;
+            var cellPos = _grid.BlockToHex( position );
+            return _grid[cellPos];
         }
 
 
@@ -320,8 +318,9 @@ namespace TerrainDemo.Micro
 	        }
         }
 
-        private readonly MacroMap _macromap;
-        private readonly TriRunner _settings;
+        private readonly MicroHexGrid                         _grid;
+        private readonly MacroMap                             _macromap;
+        private readonly TriRunner                            _settings;
         private readonly Dictionary<BlockType, BlockSettings> _blockSettings = new Dictionary<BlockType, BlockSettings>();
 
 

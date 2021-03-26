@@ -16,9 +16,9 @@ namespace TerrainDemo.Navigation
 	/// Macro level navigation: A* compartible graph of macro cells. NavNode = macro cell, NavEdge - 6 edges of macro cell
 	/// todo implement more detailed NavGraph - NavNode = each edge of macro cell, so we can create a much more detailed macro path. But amount of nodes/edges is much more then in former case
 	/// </summary>
-	public class NavGraph : Graph<NavNode, NavEdge>
+	public class NavGraph : HexGrid<NavNode, NavEdge, NavVertex>
 	{
-		public NavGraph( MacroMap macromap, MicroMap micromap, TriRunner settings )
+		public NavGraph( MacroMap macromap, MicroMap micromap, TriRunner settings ) : base( settings.CellSide, (int)settings.LandSize )
 		{
 			var navNodes = new List<NavNode>();
 
@@ -185,5 +185,10 @@ namespace TerrainDemo.Navigation
 		    From = from;
 		    To   = to;
 	    }
+    }
+
+    public class NavVertex
+    {
+	    
     }
 }

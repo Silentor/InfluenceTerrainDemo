@@ -26,10 +26,10 @@ namespace TerrainDemo.Macro
     public class MacroMap
     {
         public readonly Box2                    Bounds;
-        public          IReadOnlyList<Cell>     Cells => _mesh.GetCellsValue( );
+        public          MacroGrid.CellsValue    Cells => _grid.GetCellsValue( );
         public readonly List<Zone>              Zones      = new List<Zone>();
 
-        public Macro.Cell? GetCell( HexPos position ) => _mesh[position];
+        public Macro.Cell? GetCell( HexPos position ) => _grid[position];
 
         public MacroMap(TriRunner settings, Random random)
         {
@@ -37,9 +37,9 @@ namespace TerrainDemo.Macro
             _random = random;
             _side = settings.CellSide;
 
-            _mesh = new MacroGrid( _settings.CellSide, (int)_settings.LandSize );
+            _grid = new MacroGrid( _settings.CellSide, (int)_settings.LandSize );
 
-            Bounds = (Box2)_mesh.Bound;
+            Bounds = (Box2)_grid.Bound;
 
             EmptyInfluence = new double[_settings.Biomes.Length];
 
@@ -50,16 +50,16 @@ namespace TerrainDemo.Macro
 
         public Cell AddCell( HexPos position, Zone zone  )
         {
-	        var newCell = new Cell( position, zone, _mesh );
-	        _mesh[position] = newCell;
+	        var newCell = new Cell( position, zone, _grid );
+	        _grid[position] = newCell;
 	        return newCell;
         }
 
         public void FillVertices( )
         {
-            _mesh.EnumerateVertices( v =>
+            _grid.EnumerateVertices( v =>
                                      {
-                                         v.Data = new MacroVert( this, _mesh, v );
+                                         v.Data = new MacroVert( this, _grid, v );
                                      } );
         }
             
@@ -77,10 +77,10 @@ namespace TerrainDemo.Macro
         public Cell? GetCellAt(Vector2 position)
         {
 	        var gridPos = (GridPos) position;
-	        var hexPos = _mesh.BlockToHex( gridPos );
+	        var hexPos = _grid.BlockToHex( gridPos );
 
-	        if ( _mesh.IsContains( hexPos ) )
-		        return _mesh[hexPos];
+	        if ( _grid.IsContains( hexPos ) )
+		        return _grid[hexPos];
 	        else
 	        {
 		        return null;
@@ -103,12 +103,12 @@ namespace TerrainDemo.Macro
 
         public IEnumerable<Cell> FloodFill(HexPos startCell, MacroGrid.CheckCellPredicate fillCondition = null)
         {
-            return _mesh.FloodFill(startCell, fillCondition ).Select ( hex =>_mesh[hex] );
+            return _grid.FloodFill(startCell, fillCondition ).Select ( hex =>_grid[hex] );
         }
 
         public MacroGrid.Cluster GetSubmesh( IEnumerable<HexPos> cells )
         {
-	        return _mesh.GetCluster( cells );
+	        return _grid.GetCluster( cells );
         }
 
         public string InfluenceToString(double[] influence)
@@ -134,7 +134,7 @@ namespace TerrainDemo.Macro
         private int[] _nearestCellsTags = new int[0];
         private readonly double[] EmptyInfluence;
         private readonly List<(Cell, float)> _getInfluenceBuffer = new List<(Cell, float)>();
-        private readonly MacroGrid _mesh;
+        private readonly MacroGrid _grid;
 
         private Vector2 PerturbGridPoint(Vector2 point, FastNoise gridPerturbator)
         {
@@ -143,48 +143,27 @@ namespace TerrainDemo.Macro
             return point + new Vector2(xPerturb, zPerturb);
         }
 
-        private void PrepareLandIDW()
-        {
-            if (_idwInfluence == null)
-            {
-                var positions = new double[_mesh.CellsCount, 2];
-                var tags = new int[_mesh.CellsCount];
-
-                for (int i = 0; i < _mesh.CellsCount; i++)
-                {
-                    positions[i, 0] = Cells[i].Center.X;
-                    positions[i, 1] = Cells[i].Center.Y;
-                    tags[i] = i;
-                }
-
-                alglib.kdtreebuildtagged(positions, tags, _mesh.CellsCount, 2, 0, 2, out _idwInfluence);
-            }
-        }
-
         private Heights GetIDWHeight(Vector2 worldPosition)
         {
-            PrepareLandIDW();
-
             const float searchRadius = 25f;
-            var nearestCellsCount = alglib.kdtreequeryrnn(_idwInfluence, new double[] { worldPosition.X, worldPosition.Y }, searchRadius, true);
-
-            alglib.kdtreequeryresultstags(_idwInfluence, ref _nearestCellsTags);
-
+            var nearestCells = _grid.FindNearestNeighbors( worldPosition, searchRadius ).ToArray( );
+            
+            
             //Calculate height in the point
-            Vector3d[] cellsHeights = new Vector3d[nearestCellsCount];
-            double[] cellsWeights = new double[nearestCellsCount];
-            double weightsSum = 0;
-            for (int i = 0; i < nearestCellsCount; i++)
+            Vector3d[] cellsHeights = new Vector3d[nearestCells.Length];
+            double[]   cellsWeights = new double[nearestCells.Length];
+            double     weightsSum   = 0;
+            for (int i = 0; i < nearestCells.Length; i++)
             {
-                var cell = Cells[_nearestCellsTags[i]];
-
-                cellsHeights[i] = (Vector3d)cell.DesiredHeight;
-                cellsWeights[i] = IDWLocalShepard2(cell.Center, worldPosition, searchRadius);
-                weightsSum += cellsWeights[i];
+                var cell  = nearestCells[i];
+                var cellData = _grid[cell];
+                cellsHeights[i] =  (Vector3d)cellData.DesiredHeight;
+                cellsWeights[i] =  IDWLocalShepard2( cellData.Center, worldPosition, searchRadius);
+                weightsSum      += cellsWeights[i];
             }
 
             var result = Vector3d.Zero;
-            for (int i = 0; i < nearestCellsCount; i++)
+            for (int i = 0; i < nearestCells.Length; i++)
             {
                 result += cellsHeights[i] * (cellsWeights[i] / weightsSum);
             }
@@ -194,43 +173,42 @@ namespace TerrainDemo.Macro
 
         private Influence GetIDWInfluence(Vector2 worldPosition)
         {
-            PrepareLandIDW();
-
             //Turbulate position
             worldPosition = new Vector2(
                 worldPosition.X + (float)_influenceTurbulance.GetSimplex(worldPosition.X, worldPosition.Y) * _influenceTurbulancePower, 
                 worldPosition.Y + (float)_influenceTurbulance.GetSimplex(worldPosition.X + 1000, worldPosition.Y - 1000) * _influenceTurbulancePower);
 
             const float searchRadius = 25;
-            var nearestCellsCount = alglib.kdtreequeryrnn(_idwInfluence, new double[] { worldPosition.X, worldPosition.Y }, searchRadius, true);
-            alglib.kdtreequeryresultstags(_idwInfluence, ref _nearestCellsTags);
-
+            var         nearestCells = _grid.FindNearestNeighbors( worldPosition, searchRadius ).ToArray( );
+            
             //Short path - no cells in search radius, return influence of nearest cell
-            if (nearestCellsCount == 0)
+            if (nearestCells.Length == 0)
             {
-                nearestCellsCount = alglib.kdtreequeryknn(_idwInfluence, new double[] {worldPosition.X, worldPosition.Y}, 1, true);
-                if (nearestCellsCount > 0)
-                {
-                    var cell = Cells[_nearestCellsTags[0]];
-                    return cell.Zone.Influence;
-                }
-
-                throw new InvalidOperationException("Cant calculate influence, no cells found");
+                // nearestCellsCount = alglib.kdtreequeryknn(_idwInfluence, new double[] {worldPosition.X, worldPosition.Y}, 1, true);
+                // if (nearestCellsCount > 0)
+                // {
+                //     var cell = Cells[_nearestCellsTags[0]];
+                //     return cell.Zone.Influence;
+                // }
+                //
+                // throw new InvalidOperationException("Cant calculate influence, no cells found");
+                return Influence.Empty;
             }
 
             _getInfluenceBuffer.Clear();
 
             //Sum up zones influence
-            for (int i = 0; i < nearestCellsCount; i++)
+            for (int i = 0; i < nearestCells.Length; i++)
             {
-                var cell = Cells[_nearestCellsTags[i]];
-                var cellWeight = IDWLocalShepard(cell.Center, worldPosition, searchRadius);
+                var cell       = nearestCells[i];
+                var cellData   = _grid[cell];
+                var cellWeight = IDWLocalShepard(cellData.Center, worldPosition, searchRadius);
 
                 //Cells from that bring very low weight
                 if(cellWeight < 0.01d)
                     break;
 
-                _getInfluenceBuffer.Add((cell, (float)cellWeight));
+                _getInfluenceBuffer.Add((cellData, (float)cellWeight));
             }
 
             return new Influence(_getInfluenceBuffer);

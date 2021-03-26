@@ -10,7 +10,7 @@ namespace TerrainDemo.Spatial
 		{
 			private readonly HexGrid<TCell, TEdge, TVertex> _grid;
 			private readonly List<List<HexPos>>             _neighbors;
-			private readonly CheckCellPredicate				_fillCondition;		//User condition
+			private readonly CheckCellPredicate				_fillCondition;					//User condition
 			private readonly Predicate<HexPos>              _boundCondition;				//System condition (clusters support)
 
 			/// <summary>

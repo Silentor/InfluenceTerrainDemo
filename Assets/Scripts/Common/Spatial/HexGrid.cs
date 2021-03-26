@@ -16,7 +16,7 @@ namespace TerrainDemo.Spatial
 	/// <summary>
 	/// Regular hexagonal grid (top-pointed)
 	/// </summary>
-	public partial class HexGrid<TCell, TEdge, TVertex> : IEnumerable<HexPos>
+	public partial class HexGrid<TCell, TEdge, TVertex> : IReadOnlyHexGrid<TCell>
 	{
 		public readonly float Size;
 		public readonly float Width;
@@ -27,7 +27,7 @@ namespace TerrainDemo.Spatial
 		/// </summary>
 		public Box2 Bound => _bound;
 
-		public int CellsCount => _faces.Length;
+		public int Count => _faces.Length;
 
 		public HexGrid( float hexSide, int gridSide )
 		{
@@ -64,9 +64,9 @@ namespace TerrainDemo.Spatial
 			set => Set( q, r, value );
 		}
 
-		public IReadOnlyList<TCell> GetCellsValue( )
+		public CellsValue GetCellsValue( )
 		{
-			return new CellsValue(_faces);
+			return new CellsValue(this);
 		}
 
 		//public IEnumerable<CellHolder> GetNeighbors( HexPos hex )
@@ -140,9 +140,37 @@ namespace TerrainDemo.Spatial
 			}
 		}
 
+		public IEnumerable<HexPos> FindNearestNeighbors( Vector2 from, float radius )
+		{
+			//Find main cell
+			var centerHexPos = BlockToHex( (GridPos) from );
+			var center       = GetFaceCenter( centerHexPos );
+			
+			//Flood fill around main cell
+			var filler = new FloodFiller( this, centerHexPos, _ => true );
+			for ( int i = 0; i < 10; i++ )
+			{
+				var cells           = filler.GetNeighbors( i );
+				var anyCellInRadius = false;
+				foreach ( var cell in cells )
+				{
+					var cellCenter = GetFaceCenter( cell );
+					if ( Vector2.Distance( center, cellCenter ) <= radius )
+					{
+						anyCellInRadius = true;
+						if ( IsContains( cell ) )
+							yield return cell;
+					}
+				}
+				if( !anyCellInRadius )
+					break;
+			}
+		}
+
 		/// <summary>
 		/// Get hex coords for given block coords
 		/// Based on https://www.redblobgames.com/grids/hexagons/more-pixel-to-hex.html (Branchless method)
+		/// todo consider more detailed algo https://justinpombrio.net/programming/2020/04/28/pixel-to-hex.html
 		/// </summary>
 		/// <param name="pos"></param>
 		/// <returns></returns>
@@ -547,45 +575,32 @@ namespace TerrainDemo.Spatial
 			}
 		}
 
-		public readonly struct CellsValue : IReadOnlyList<TCell>
+		public readonly struct CellsValue : IReadOnlyHexGrid<TCell>
 		{
+			public int Count						=> _owner.Count;
+			public TCell this[ HexPos position ]	=> _owner[position];
+			public TCell this[ int q, int r ]		=> _owner[q, r];
+			
+			IEnumerator<HexPos> IEnumerable<HexPos>.GetEnumerator( )
+			{
+				return _owner.GetEnumerator(  );
+			}
 			public IEnumerator<TCell> GetEnumerator( )
 			{
-				for ( int i = 0; i < _faces.GetUpperBound( 0 ); i++ )
-					for ( int j = 0; j < _faces.GetUpperBound( 1 ); j++ )
-					{
-						if ( _faces[i, j] != null )
-							yield return _faces[i, j].Value;
-						else
-							yield return default;
-					}
+				var ownerCapture = _owner;
+				return _owner.Select( pos => ownerCapture[pos] ).GetEnumerator(  );
 			}
 			IEnumerator IEnumerable.  GetEnumerator( )
 			{
 				return GetEnumerator( );
 			}
-			public int Count => _faces.Length;
 
-			public TCell this[ int index ]
+			internal CellsValue( HexGrid<TCell, TEdge, TVertex> owner )
 			{
-				get
-				{
-					if( index < 0 || index >= Count )
-						throw new ArgumentOutOfRangeException(nameof(index), index, "cell index");
-
-					var i = index % _faces.GetLength( 0 );
-					var j = index / _faces.GetLength( 0 );
-
-					return _faces[i, j] != null ? _faces[i, j].Value : default;
-				}
+				_owner = owner;
 			}
 
-			internal CellsValue( CellHolder[,] faces  )
-			{
-				_faces = faces;
-			}
-
-			private readonly CellHolder[,] _faces;
+			private readonly HexGrid<TCell, TEdge, TVertex> _owner;
 		}
 
 		//[DebuggerDisplay( "Edges of {_cell.Pos}")]
