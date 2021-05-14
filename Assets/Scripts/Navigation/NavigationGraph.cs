@@ -22,14 +22,16 @@ namespace TerrainDemo.Navigation
 		{
 			var navNodes = new List<NavNode>();
 
-			//Prepare navigation graph
-			foreach (var micromapCell in micromap.Cells)
-			{
-				var navCell = CreateNodeFromMicroCell(micromapCell, micromap, settings);
-				AddNode(navCell);
-				navNodes.Add(navCell);
-			}
+			// //Prepare navigation graph
+			// foreach (var micromapCell in micromap.Cells)
+			// {
+			// 	var navCell = CreateNodeFromMicroCell(micromapCell, micromap, settings);
+			// 	this[ micromapCell.Id] =  navCell;
+			// 	navNodes.Add(navCell);
+			// }
 
+			перенести в NavigationGraph и переделать под HexEdge (этот эдж разделяемый)
+			
 			for ( var i = 0; i < navNodes.Count; i++ )
 			{
 				var fromCell = micromap.Cells [ i ];
@@ -73,52 +75,14 @@ namespace TerrainDemo.Navigation
 			return Vector3.Distance( from.Position3d, to.Position3d );
 		}
 
-		private static NavNode CreateNodeFromMicroCell(Cell cell, MicroMap map, TriRunner settings)
-		{
-			var   materialCost    = 0f;
-			var   avgNormal       = Vector3.Zero;
-			var   normalDeviation = 0f;
-			float roughness       = 0;
-			var totalBlocks = 0;
-
-			foreach (var blockPosition in cell.BlockPositions)
-			{
-				//Calculate average material cost for cell
-				ref readonly var block = ref map.GetBlockRef(blockPosition);
-				materialCost += settings.AllBlocksDict[block.Top].MaterialCost;
-
-				//Calculate average normal
-				ref readonly var blockData = ref map.GetBlockData(blockPosition);
-				avgNormal += blockData.Normal;
-				totalBlocks++;
-			}
-
-			materialCost /= totalBlocks;
-			avgNormal    =  (avgNormal / totalBlocks).Normalized();
-			roughness    /= totalBlocks;
-
-			//float normalDispersion = 0f;
-
-			//foreach (var blockPosition in cell.BlockPositions)
-			{
-				//Calculate micro rougness of cell
-				//ref readonly var blockData = ref map.GetBlockData(blockPosition);
-				//var              disp      = Vector3.CalculateAngle(blockData.Normal, avgNormal);
-				//normalDispersion += disp * disp;
-			}
-
-			//normalDeviation = Mathf.Sqrt(normalDispersion / cell.BlockPositions.Length);
-
-			var center = cell.Macro.Center;
-			ref readonly var centerData = ref map.GetBlockData(cell.Center);
-
-			return new NavNode(materialCost, avgNormal, roughness, new Vector3(center.X, centerData.Height, center.Y), cell.BlockPositions, cell.Id.ToString (  ));
-		}
+		
 	}
 
 	
     public class NavNode : IEquatable<NavNode>
     {
+	    public readonly HexPos Position;
+    
 	    /// <summary>
 	    /// Average mat cost of all node blocks
 	    /// </summary>
@@ -142,19 +106,20 @@ namespace TerrainDemo.Navigation
 		/// <summary>
 		/// Nav node center point
 		/// </summary>
-		public readonly GridPos Position;		//todo consider hide position, NavNode more like a navigable area
+		public readonly GridPos CenterPosition;		//todo consider hide position, NavNode more like a navigable area
 
 		public readonly GridArea Area;
 
-		internal NavNode(float materialCost, Vector3 normal, float rougness, Vector3 position, GridArea area, string debugName)
-	    {
-		    MaterialCost = materialCost;
-		    Normal        = normal.Normalized();
-		    Rougness      = rougness;
-		    Position3d		= position;
-		    Position		= (GridPos) position;
-		    Area = area;
-		    _debugName		= debugName;
+		internal NavNode( HexPos position, float materialCost, Vector3 normal, float rougness, Vector3 centerPosition, GridArea area, string debugName)
+		{
+			Position       = position;
+		    MaterialCost   = materialCost;
+		    Normal         = normal.Normalized();
+		    Rougness       = rougness;
+		    Position3d     = centerPosition;
+		    CenterPosition = (GridPos) centerPosition;
+		    Area           = area;
+		    _debugName     = debugName;
 	    }
 
 	    public override string ToString()

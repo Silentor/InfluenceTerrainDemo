@@ -16,8 +16,6 @@ using Vector2 = OpenToolkit.Mathematics.Vector2;
 using Vector3 = OpenToolkit.Mathematics.Vector3;
 using Vector4 = OpenToolkit.Mathematics.Vector4;
 
-#nullable enable
-
 namespace TerrainDemo.Macro
 {
     /// <summary>

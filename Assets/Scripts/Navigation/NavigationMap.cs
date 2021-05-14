@@ -7,6 +7,7 @@ using TerrainDemo.Hero;
 using TerrainDemo.Macro;
 using TerrainDemo.Micro;
 using TerrainDemo.Spatial;
+using Cell = TerrainDemo.Micro.Cell;
 using Vector2 = UnityEngine.Vector2;
 
 namespace TerrainDemo.Navigation
@@ -26,18 +27,29 @@ namespace TerrainDemo.Navigation
 
 			_micromap = micromap;
 
-			NavGrid = new NavigationGrid( micromap );
 			NavGraph = new NavGraph(macromap, micromap, settings);
+			foreach ( var microcell in micromap.Cells )
+			{
+				NavGraph[microcell.Id] = CreateNodeFromMicroCell( microcell, micromap, settings );
+			}
+			
+			
+			
+			
+			NavGrid = new NavigationGrid( micromap );
+			
+			
 			
 			timer.Stop();
 
 			Pathfinder = new Pathfinder(this, _micromap, settings);
 
-			UnityEngine.Debug.Log($"Prepared navigation map in {timer.ElapsedMilliseconds} msec, macrograph nodes {NavGraph.NodesCount}, macrograph edges {NavGraph.EdgesCount}");
+			UnityEngine.Debug.Log($"Prepared navigation map in {timer.ElapsedMilliseconds} msec, macrograph nodes {NavGraph.Count}, macrograph edges {NavGraph.EdgesCount}");
 		}
 
 		public NavNode GetNavNode(GridPos position)
 		{
+			var node = NavGraph.Nodes.FirstOrDefault( n => n.Area.Contains( position ) );
 			var node = NavGraph.Nodes.FirstOrDefault( n => n.Area.Contains( position ) );
 			return node;
 		}
@@ -81,6 +93,48 @@ namespace TerrainDemo.Navigation
 
 		//private readonly Dictionary<PathKey, PathCacheEntry> _sharedPathes = new Dictionary<PathKey, PathCacheEntry>();
 		private readonly MicroMap _micromap;
+		
+		private static NavNode CreateNodeFromMicroCell(Cell cell, MicroMap map, TriRunner settings)
+		{
+			var   materialCost    = 0f;
+			var   avgNormal       = Vector3.Zero;
+			var   normalDeviation = 0f;
+			float roughness       = 0;
+			var   totalBlocks     = 0;
+
+			foreach (var blockPosition in cell.BlockPositions)
+			{
+				//Calculate average material cost for cell
+				ref readonly var block = ref map.GetBlockRef(blockPosition);
+				materialCost += settings.AllBlocksDict[block.Top].MaterialCost;
+
+				//Calculate average normal
+				ref readonly var blockData = ref map.GetBlockData(blockPosition);
+				avgNormal += blockData.Normal;
+				totalBlocks++;
+			}
+
+			materialCost /= totalBlocks;
+			avgNormal    =  (avgNormal / totalBlocks).Normalized();
+			roughness    /= totalBlocks;
+
+			//float normalDispersion = 0f;
+
+			//foreach (var blockPosition in cell.BlockPositions)
+			{
+				//Calculate micro rougness of cell
+				//ref readonly var blockData = ref map.GetBlockData(blockPosition);
+				//var              disp      = Vector3.CalculateAngle(blockData.Normal, avgNormal);
+				//normalDispersion += disp * disp;
+			}
+
+			//normalDeviation = Mathf.Sqrt(normalDispersion / cell.BlockPositions.Length);
+
+			var              center     = cell.Macro.Center;
+			ref readonly var centerData = ref map.GetBlockData(cell.Center);
+
+			return new NavNode( cell.Id, materialCost, avgNormal, roughness, new Vector3(center.X, centerData.Height, center.Y), cell.BlockPositions, cell.Id.ToString (  ));
+		}
 		
 		private struct PathKey : IEquatable<PathKey>
 		{

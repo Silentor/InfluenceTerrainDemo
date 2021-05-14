@@ -444,10 +444,10 @@ namespace TerrainDemo.Spatial
 				return _grid.BlockToHex( (GridPos) position ) == Pos;
 			}
 
-			internal CellHolder( HexPos position, HexGrid<TCell, TEdge, TVertex> owner )
+			internal CellHolder( HexPos position, HexGrid<TCell, TEdge, TVertex> grid )
 			{
 				Pos = position;
-				_grid = owner;
+				_grid = grid;
 
 				//Populate edges
 				var edges = new EdgeHolder[6];
@@ -457,14 +457,14 @@ namespace TerrainDemo.Spatial
 					var neighPos = position + dir;
 
 					CellHolder neigh;
-					if(owner.IsContains( neighPos ) && (neigh = owner.GetHolder( neighPos.Q, neighPos.R )) != null)
+					if(grid.IsContains( neighPos ) && (neigh = grid.GetHolder( neighPos.Q, neighPos.R )) != null)
 					{
 						var oppositeIndex = ( i + 3 ) % 6;
 						edges[i] = neigh.Edges[oppositeIndex];
 					}
 					else
 					{
-						edges[i] = new EdgeHolder( position, i, owner );
+						edges[i] = new EdgeHolder( position, i, grid );
 					}
 				}
 				Edges = new Edges( edges );
@@ -477,7 +477,7 @@ namespace TerrainDemo.Spatial
 					var neighPos = position + dir;
 
 					CellHolder neigh;
-					if ( owner.IsContains( neighPos ) && ( neigh = owner.GetHolder( neighPos.Q, neighPos.R )) != null )
+					if ( grid.IsContains( neighPos ) && ( neigh = grid.GetHolder( neighPos.Q, neighPos.R )) != null )
 					{
 						var vert1 = i;
 						var vert2 = ( i + 1 ) % 6;
@@ -494,12 +494,12 @@ namespace TerrainDemo.Spatial
 
 						if ( vertices[vert1] == null )
 						{
-							vertices[vert1] = new VertexHolder( position, vert1, owner );
+							vertices[vert1] = new VertexHolder( position, vert1, grid );
 						}
 
 						if ( vertices[vert2] == null )
 						{
-							vertices[vert2] = new VertexHolder( position, vert2, owner );
+							vertices[vert2] = new VertexHolder( position, vert2, grid );
 						}
 					}
 				}
