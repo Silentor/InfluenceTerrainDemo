@@ -50,7 +50,7 @@ namespace TerrainDemo.Visualization
             var colors = new List<Color>();
             var indices = new List<int>();
 
-            foreach (var cell in mapMesh.Cells)
+            foreach (var cell in mapMesh )
             {
                 CreateMacroCell( vertices, colors, indices, cell, influence, mapMesh );
             }
@@ -868,12 +868,12 @@ namespace TerrainDemo.Visualization
             var baseIndex = vertices.Count;
 
             vertices.Add( cell.Center.ToUnityVector3( map.GetHeight( cell.Center ).Nominal ) );
-            vertices.Add(cell.Vertices[0].Position.ToUnityVector3( cell.Vertices[0].Height.Nominal ));
-            vertices.Add(cell.Vertices[1].Position.ToUnityVector3( cell.Vertices[1].Height.Nominal ));
-            vertices.Add(cell.Vertices[2].Position.ToUnityVector3( cell.Vertices[2].Height.Nominal ));
-            vertices.Add(cell.Vertices[3].Position.ToUnityVector3( cell.Vertices[3].Height.Nominal ));
-            vertices.Add(cell.Vertices[4].Position.ToUnityVector3( cell.Vertices[4].Height.Nominal ));
-            vertices.Add(cell.Vertices[5].Position.ToUnityVector3( cell.Vertices[5].Height.Nominal ));
+            vertices.Add(cell.CellVertices[0].Position.ToUnityVector3( cell.CellVertices[0].Value.Height.Nominal ));
+            vertices.Add(cell.CellVertices[1].Position.ToUnityVector3( cell.CellVertices[1].Value.Height.Nominal ));
+            vertices.Add(cell.CellVertices[2].Position.ToUnityVector3( cell.CellVertices[2].Value.Height.Nominal ));
+            vertices.Add(cell.CellVertices[3].Position.ToUnityVector3( cell.CellVertices[3].Value.Height.Nominal ));
+            vertices.Add(cell.CellVertices[4].Position.ToUnityVector3( cell.CellVertices[4].Value.Height.Nominal ));
+            vertices.Add(cell.CellVertices[5].Position.ToUnityVector3( cell.CellVertices[5].Value.Height.Nominal ));
 
             indices.Add(baseIndex);
             indices.Add(baseIndex + 1);
@@ -895,14 +895,14 @@ namespace TerrainDemo.Visualization
             indices.Add(baseIndex + 1);
 
             if (influence == Renderer.MacroCellInfluenceMode.Interpolated)
-            {
+            {                                                                    
                 colors.Add(cell.Zone.Biome.LayoutColor);
-                colors.Add(InfluenceToColorSmooth(cell.Vertices[0].Influence));
-                colors.Add(InfluenceToColorSmooth(cell.Vertices[1].Influence));
-                colors.Add(InfluenceToColorSmooth(cell.Vertices[2].Influence));
-                colors.Add(InfluenceToColorSmooth(cell.Vertices[3].Influence));
-                colors.Add(InfluenceToColorSmooth(cell.Vertices[4].Influence));
-                colors.Add(InfluenceToColorSmooth(cell.Vertices[5].Influence));
+                colors.Add(InfluenceToColorSmooth(cell.CellVertices[0].Value.Influence));
+                colors.Add(InfluenceToColorSmooth(cell.CellVertices[1].Value.Influence));
+                colors.Add(InfluenceToColorSmooth(cell.CellVertices[2].Value.Influence));
+                colors.Add(InfluenceToColorSmooth(cell.CellVertices[3].Value.Influence));
+                colors.Add(InfluenceToColorSmooth(cell.CellVertices[4].Value.Influence));
+                colors.Add(InfluenceToColorSmooth(cell.CellVertices[5].Value.Influence));
             }
             else
             {

@@ -17,8 +17,8 @@ namespace TerrainDemo.Tools
             if (cell == null) throw new ArgumentNullException("cell");
 
             Gizmos.color = color;
-            for (int i = 0; i < cell.Vertices.Count - 1; i++)
-                Gizmos.DrawLine(Convert(cell.Vertices[i].Position), Convert(cell.Vertices[i + 1].Position));
+            for (int i = 0; i < cell.CellVertices.Count - 1; i++)
+                Gizmos.DrawLine(Convert(cell.CellVertices[i].Position), Convert(cell.CellVertices[i + 1].Position));
         }
 
         public static void ForDebug([NotNull] Cell cell)
@@ -30,8 +30,8 @@ namespace TerrainDemo.Tools
         {
             if (cell == null) throw new ArgumentNullException("cell");
 
-            for (int i = 0; i < cell.Vertices.Count - 1; i++)
-                Debug.DrawLine(Convert(cell.Vertices[i].Position), Convert(cell.Vertices[i + 1].Position), color);
+            for (int i = 0; i < cell.CellVertices.Count - 1; i++)
+                Debug.DrawLine(Convert(cell.CellVertices[i].Position), Convert(cell.CellVertices[i + 1].Position), color);
 
         }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
@@ -21,11 +22,13 @@ namespace TerrainDemo.Macro
     /// <summary>
     /// Сетка макроячеек, вершин и сторон
     /// </summary>
-    public class MacroMap
+    public class MacroMap : IEnumerable<Cell>
     {
         public readonly Box2                    Bounds;
-        public          MacroGrid.CellsValue    Cells => _grid.GetCellsValue( );
+        //public          MacroGrid.CellsValue    Cells => _grid.GetCellsValue( );
         public readonly List<Zone>              Zones      = new List<Zone>();
+
+        public int Count => _grid.Count;
 
         public Macro.Cell? GetCell( HexPos position ) => _grid[position];
 
@@ -49,16 +52,16 @@ namespace TerrainDemo.Macro
         public Cell AddCell( HexPos position, Zone zone  )
         {
 	        var newCell = new Cell( position, zone, _grid );
-	        _grid[position] = newCell;
+	        _grid[position].Value = newCell;
 	        return newCell;
         }
 
         public void FillVertices( )
         {
-            _grid.EnumerateVertices( v =>
-                                     {
-                                         v.Data = new MacroVert( this, _grid, v );
-                                     } );
+            foreach ( var vertexHolder in _grid.Vertices )
+            {
+                vertexHolder.Value = new MacroVert( this, _grid, vertexHolder );
+            }
         }
             
         
@@ -101,7 +104,7 @@ namespace TerrainDemo.Macro
 
         public IEnumerable<Cell> FloodFill(HexPos startCell, MacroGrid.CheckCellPredicate fillCondition = null)
         {
-            return _grid.FloodFill(startCell, fillCondition ).Select ( hex =>_grid[hex] );
+            return _grid.FloodFill(startCell, fillCondition ).Select ( hex =>_grid[hex].Value );
         }
 
         public MacroGrid.Cluster GetSubmesh( IEnumerable<HexPos> cells )
@@ -155,7 +158,7 @@ namespace TerrainDemo.Macro
             {
                 var cell  = nearestCells[i];
                 var cellData = _grid[cell];
-                cellsHeights[i] =  (Vector3d)cellData.DesiredHeight;
+                cellsHeights[i] =  (Vector3d)cellData.Value.DesiredHeight;
                 cellsWeights[i] =  IDWLocalShepard2( cellData.Center, worldPosition, searchRadius);
                 weightsSum      += cellsWeights[i];
             }
@@ -279,32 +282,41 @@ namespace TerrainDemo.Macro
         }
 
         //Clockwise from "right" vertice (angle = 0)
-        private Vector2[] CalcVertsPosition(Vector2 center, double radius)
-        {
-            var result = new Vector2[6];
-            for (int i = 0; i < Cell.MaxNeighborsCount; i++)
-            {
-                const double deg2rad = Math.PI / 180;
-                var angle = deg2rad * (360 - i * 360d / Cell.MaxNeighborsCount);
-                result[i] = 
-                    new Vector2((float) (center.X + radius * Math.Cos(angle)), (float) (center.Y + radius * Math.Sin(angle)));
-            }
+        // private Vector2[] CalcVertsPosition(Vector2 center, double radius)
+        // {
+        //     var result = new Vector2[6];
+        //     for (int i = 0; i < Cell.MaxNeighborsCount; i++)
+        //     {
+        //         const double deg2rad = Math.PI / 180;
+        //         var angle = deg2rad * (360 - i * 360d / Cell.MaxNeighborsCount);
+        //         result[i] = 
+        //             new Vector2((float) (center.X + radius * Math.Cos(angle)), (float) (center.Y + radius * Math.Sin(angle)));
+        //     }
+        //
+        //     return result;
+        // }
 
-            return result;
+        // private Vector2[] CalcNeighborCellsPosition(Vector2 centerCell, double radius)
+        // {
+        //     var result = new Vector2[Cell.MaxNeighborsCount];
+        //     for (int i = 0; i < Cell.MaxNeighborsCount; i++)
+        //     {
+        //         const double deg2rad = Math.PI / 180;
+        //         var angle = deg2rad * (90 - (i * 360d / Cell.MaxNeighborsCount));          //Start with Z+ axis (top)
+        //         result[i] = new Vector2((float)(centerCell.X + radius * Math.Cos(angle)), (float)(centerCell.Y + radius * Math.Sin(angle)));
+        //     }
+        //
+        //     return result;
+        // }
+
+        public IEnumerator<Cell> GetEnumerator( )
+        {
+            return _grid.Select( pos => _grid[ pos ].Value ).GetEnumerator();
         }
 
-        private Vector2[] CalcNeighborCellsPosition(Vector2 centerCell, double radius)
+        IEnumerator IEnumerable.GetEnumerator( )
         {
-            var result = new Vector2[Cell.MaxNeighborsCount];
-            for (int i = 0; i < Cell.MaxNeighborsCount; i++)
-            {
-                const double deg2rad = Math.PI / 180;
-                var angle = deg2rad * (90 - (i * 360d / Cell.MaxNeighborsCount));          //Start with Z+ axis (top)
-                result[i] = new Vector2((float)(centerCell.X + radius * Math.Cos(angle)), (float)(centerCell.Y + radius * Math.Sin(angle)));
-            }
-
-            return result;
+            return GetEnumerator();
         }
-
     }
 }

@@ -23,55 +23,57 @@ namespace TerrainDemo.Navigation
 			var navNodes = new List<NavNode>();
 
 			// //Prepare navigation graph
-			foreach (var micromapCell in micromap.Cells)
+			foreach (var micromapCell in micromap)
 			{
 				var navCell = CreateNodeFromMicroCell(micromapCell, micromap, settings);
-				this[ micromapCell.Id] =  navCell;
+				this[ micromapCell.Id].Value =  navCell;
 			}
 
-			foreach ( var hexPos in this )
-			{
-				if( this.get)
-			}
+			//перенести в NavigationGraph и переделать под HexEdge (этот эдж разделяемый, а нужно хранить инфу в обе стороны)
 			
-			перенести в NavigationGraph и переделать под HexEdge (этот эдж разделяемый)
-			
-			for ( var i = 0; i < navNodes.Count; i++ )
-			{
-				var fromCell = micromap.Cells [ i ];
-				var fromNode = navNodes [ i ];
-				foreach ( var neighbor in fromCell.Macro.NeighborsSafe )
-				{
-					var toIndex = macromap.Cells.IndexOf(neighbor);
-					var toNode = navNodes[toIndex];
-					AddEdge ( fromNode, toNode, new NavEdge ( fromNode, toNode ) );
-				}
-			}
-
-			foreach (var edge in Edges)
-			{
-				var from       = edge.from.Position3d;
-				var to         = edge.to.Position3d;
-				var distance   = Vector2.Distance(@from.Xz, to.Xz);
-				var slopeRatio = (to.Y - from.Y) / distance;
-				edge.edge.Slopeness = CreateIncline.FromSlope( slopeRatio );
-				edge.edge.Distance  = distance;
-			}
+			// for ( var i = 0; i < navNodes.Count; i++ )
+			// {
+			// 	var fromCell = micromap.Cells [ i ];
+			// 	var fromNode = navNodes [ i ];
+			// 	foreach ( var neighbor in fromCell.Macro.NeighborsSafe )
+			// 	{
+			// 		var toIndex = macromap.Cells.IndexOf(neighbor);
+			// 		var toNode = navNodes[toIndex];
+			// 		AddEdge ( fromNode, toNode, new NavEdge ( fromNode, toNode ) );
+			// 	}
+			// }
+			//
+			// foreach (var edge in Edges)
+			// {
+			// 	var from       = edge.from.Position3d;
+			// 	var to         = edge.to.Position3d;
+			// 	var distance   = Vector2.Distance(@from.Xz, to.Xz);
+			// 	var slopeRatio = (to.Y - from.Y) / distance;
+			// 	edge.edge.Slopeness = CreateIncline.FromSlope( slopeRatio );
+			// 	edge.edge.Distance  = distance;
+			// }
 		}
 
-		public IEnumerable<(NavNode neighbor, float neighborCost)> Neighbors( BaseLocomotor loco, NavNode node )
+		public IEnumerable<(NavEdge neighbor, float neighborCost)> GetNeighbors( BaseLocomotor loco, NavNode node )
 		{
-			foreach ( var (edge, neighbor) in GetNeighbors(node) )
+			var edges = node.CellEdges;
+			var neighbors = node.Neighbors;
+			foreach ( var direction in HexPos.HexDirections )
 			{
-				var edgeSlopeCost = loco.GetInclineCost( edge.Slopeness );
-				var roughnessCost = loco.GetRoughnessCost( edge.Roughness );
-				var speedCost = neighbor.MaterialCost;
+				var neighbor = neighbors[direction];
+				if ( neighbor != null )
+				{
+					var edge = edges[direction].Value;
+					var edgeSlopeCost = loco.GetInclineCost( edge.Slopeness );
+					var roughnessCost = loco.GetRoughnessCost( edge.Roughness );
+					var speedCost = neighbor.Value. MaterialCost;
 
-				var result = edge.Distance * edgeSlopeCost * roughnessCost * speedCost;
-				if ( float.IsNaN( result ) )
-					continue;
+					var result = edge.Distance * edgeSlopeCost * roughnessCost * speedCost;
+					if ( float.IsNaN( result ) )
+						continue;
 
-				yield return (neighbor, Math.Max(result, 0));
+					yield return (edges[direction].Value, Math.Max(result, 0));
+				}
 			}
 		}
 		public float Heuristic( [NotNull] NavNode @from, [NotNull] NavNode to )
@@ -79,7 +81,7 @@ namespace TerrainDemo.Navigation
 			return Vector3.Distance( from.Position3d, to.Position3d );
 		}
 
-		private static NavNode CreateNodeFromMicroCell(Cell cell, MicroMap map, TriRunner settings)
+		private NavNode CreateNodeFromMicroCell(Cell cell, MicroMap map, TriRunner settings)
 		{
 			var   materialCost    = 0f;
 			var   avgNormal       = Vector3.Zero;
@@ -118,7 +120,7 @@ namespace TerrainDemo.Navigation
 			var              center     = cell.Macro.Center;
 			ref readonly var centerData = ref map.GetBlockData(cell.Center);
 
-			return new NavNode( cell.Id, materialCost, avgNormal, roughness, new Vector3(center.X, centerData.Height, center.Y), cell.BlockPositions, cell.Id.ToString (  ));
+			return new NavNode( cell.Id, materialCost, avgNormal, roughness, new Vector3(center.X, centerData.Height, center.Y), cell.BlockPositions, this, cell.Id.ToString (  ));
 		}
 		
 	}
@@ -155,7 +157,11 @@ namespace TerrainDemo.Navigation
 
 		public readonly GridArea Area;
 
-		internal NavNode( HexPos position, float materialCost, Vector3 normal, float rougness, Vector3 centerPosition, GridArea area, string debugName)
+		public NavGraph.Neighbors Neighbors => _grid[ Position ].Neighbors;
+		public NavGraph.CellEdges CellEdges => _grid[ Position ].CellEdges;
+		public LocalIncline       Slopeness							{ get ; } = LocalIncline.Flat;	//DEBUG
+
+		internal NavNode( HexPos position, float materialCost, Vector3 normal, float rougness, Vector3 centerPosition, GridArea area, NavGraph grid, string debugName)
 		{
 			Position       = position;
 		    MaterialCost   = materialCost;
@@ -164,6 +170,7 @@ namespace TerrainDemo.Navigation
 		    Position3d     = centerPosition;
 		    CenterPosition = (GridPos) centerPosition;
 		    Area           = area;
+		    _grid			= grid;
 		    _debugName     = debugName;
 	    }
 
@@ -179,6 +186,7 @@ namespace TerrainDemo.Navigation
 	    }
 
 	    private readonly String _debugName;
+	    private readonly NavGraph _grid;
     }
 
     public class NavEdge

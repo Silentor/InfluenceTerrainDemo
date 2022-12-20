@@ -66,7 +66,7 @@ namespace TerrainDemo.Navigation
 	            _finishSegment = _startSegment;
 	            _segmentsCount = 1;
             }
-            else if ( map.NavGraph.Nei( fromNode ).Select( n => n.neighbor ).Contains( toNode ) ) 
+            else if ( fromNode.Position.Distance( toNode.Position ) == 1 ) 
             {
 				_startSegment = new Segment( fromNode, from );
 				_finishSegment = new Segment( toNode, to );

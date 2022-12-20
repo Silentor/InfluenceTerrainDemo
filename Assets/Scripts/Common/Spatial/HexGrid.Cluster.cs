@@ -15,7 +15,7 @@ namespace TerrainDemo.Spatial
 		{
 			public readonly HexGrid<TCell, TEdge, TVertex> Grid;
 
-			public TCell this[ HexPos position ]
+			public CellHolder this[ HexPos position ]
 			{
 				get
 				{
@@ -32,12 +32,12 @@ namespace TerrainDemo.Spatial
 				Grid = grid;
 			}
 
-			public bool IsContain( HexPos cell )
+			public bool Contains( HexPos cell )
 			{
 				return _cluster.Contains( cell );
 			}
 
-			public bool NotContain( HexPos cell )
+			public bool NotContains( HexPos cell )
 			{
 				return !_cluster.Contains( cell );
 			}
@@ -57,7 +57,7 @@ namespace TerrainDemo.Spatial
 			{
 				foreach ( var cell in _cluster )
 				{
-					if ( Grid.GetNeighborPositions( cell ).Any( hp => !Grid.IsContains( hp ) ) )
+					if ( Grid.GetNeighborPositions( cell ).Any( hp => !Contains( hp ) ) )
 						yield return cell;
 				}
 			}
@@ -66,8 +66,8 @@ namespace TerrainDemo.Spatial
 			{
 				foreach ( var borderCell in GetBorderCells() )
 				{
-					foreach ( var edge in Grid.GetEdges( borderCell )
-					                          .Where( e => NotContain( e.OppositeCell( borderCell ) ) ) )
+					foreach ( var edge in Grid[borderCell].CellEdges
+					                          .Where( e => NotContains( e.OppositeCell( borderCell ) ) ) )
 					{
 						yield return edge.Value;
 					}
@@ -77,7 +77,7 @@ namespace TerrainDemo.Spatial
 			public HexPos GetNearestCell( GridPos position )
 			{
 				var hex = Grid.BlockToHex( position );
-				if ( IsContain( hex ) )
+				if ( Contains( hex ) )
 					return hex;
 
 				//Check cluster cells
@@ -100,7 +100,7 @@ namespace TerrainDemo.Spatial
 
 			public IEnumerable<HexPos> FloodFill( HexPos start, CheckCellPredicate fillCondition = null )
 			{
-				return Grid.FloodFill( start, IsContain, fillCondition );
+				return Grid.FloodFill( start, Contains, fillCondition );
 			}
 			
 			private readonly HashSet<HexPos> _cluster = new HashSet<HexPos>();

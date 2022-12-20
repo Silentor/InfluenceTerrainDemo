@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -21,14 +22,12 @@ using Vector3 = UnityEngine.Vector3;
 namespace TerrainDemo.Micro
 {
     /// <summary>
-    /// Chunk-based grid-map of land, based on <see cref="MacroMap"/>
+    /// Chunk-based grid-map of land, based on rasterized <see cref="MacroMap"/>
     /// </summary>
-    public sealed class MicroMap : BaseBlockMap
+    public sealed class MicroMap : BaseBlockMap, IEnumerable<Cell>
     {
         public Cell this[ HexPos position ] => _grid[position];
 
-        public MicroHexGrid.CellsValue Cells => _grid.GetCellsValue(  );
-        
         public IEnumerable<BaseBlockMap> Childs => _childs;
 
         public IEnumerable<Actor> Actors => _actors;
@@ -40,10 +39,10 @@ namespace TerrainDemo.Micro
             _settings = settings;
             _grid     = new MicroHexGrid( settings.CellSide, (int) settings.LandSize );
 
-            foreach ( var macroCell in macromap.Cells )
+            foreach ( var macroCell in macromap )
             {
                 var microCell = new Cell(macroCell, this);
-                _grid[macroCell.Position] = microCell;
+                _grid[macroCell.Position].Value = microCell;
             }
             
             foreach (var blockSettingse in settings.AllBlocks) 
@@ -305,9 +304,19 @@ namespace TerrainDemo.Micro
             return _blockSettings[type];
         }
 
+        IEnumerator<Cell> IEnumerable<Cell>.GetEnumerator( )
+        {
+            return _grid.Select( hexpos => _grid[ hexpos ].Value ).GetEnumerator();
+        }
+
         public override string ToString()
         {
             return "Main map";
+        }
+
+        IEnumerator IEnumerable.GetEnumerator( )
+        {
+            return ((IEnumerable<Cell>)this).GetEnumerator();
         }
 
         public void Update( float deltaTime )

@@ -23,7 +23,7 @@ namespace TerrainDemo.Tests
 				{
 					var h = new HexPos(q, r);
 					if ( _hex.IsContains( h ) )
-						_hex[h] = h;
+						_hex[h].Value = h;
 				}
 				
 			}

@@ -7,7 +7,7 @@ using TerrainDemo.Settings;
 namespace TerrainDemo.Macro
 {
     /// <summary>
-    /// COllection of Macro Cells
+    /// Collection of Macro Cells
     /// </summary>
     public class Zone : IReadOnlyCollection<Cell>
     {
@@ -25,7 +25,7 @@ namespace TerrainDemo.Macro
         /// <summary>
         /// Border cells of Zone
         /// </summary>
-        public IEnumerable<Cell> Border => Cluster.GetBorderCells(  ).Select( hx => Cluster[hx] );
+        public IEnumerable<Cell> Border => Cluster.GetBorderCells(  ).Select( hx => Cluster[hx].Value );
 
         public IEnumerable<MacroEdge> Edges => Cluster.GetBorderEdges( );
 
@@ -42,7 +42,7 @@ namespace TerrainDemo.Macro
 
         public IEnumerator<Cell> GetEnumerator( )
         {
-	        return Cluster.Select( pos => Cluster.Grid[pos] ).GetEnumerator( );
+	        return Cluster.Select( pos => Cluster.Grid[pos].Value ).GetEnumerator( );
         }
         public override string ToString()
         {

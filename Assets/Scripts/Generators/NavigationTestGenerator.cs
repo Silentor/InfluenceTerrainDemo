@@ -54,7 +54,7 @@ namespace TerrainDemo.Generators
                 var neigborsCount = 0;
                 if (cellData.Item1 == CellRelief.Mountain)
                 {
-                    foreach (var neighbor in cell.NeighborsSafe)
+                    foreach (var neighbor in cell.Neighbors)
                     {
                         if (_cells.TryGetValue(neighbor, out var neighborData) &&
                             neighborData.Item1 == CellRelief.Mountain)
@@ -67,7 +67,7 @@ namespace TerrainDemo.Generators
                 }
                 else if (cellData.Item1 == CellRelief.Trench)
                 {
-                    foreach (var neighbor in cell.NeighborsSafe)
+                    foreach (var neighbor in cell.Neighbors)
                     {
                         if (_cells.TryGetValue(neighbor, out var neighborData) &&
                             neighborData.Item1 == CellRelief.Trench)

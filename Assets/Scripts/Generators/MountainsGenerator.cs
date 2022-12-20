@@ -53,7 +53,7 @@ namespace TerrainDemo.Generators
             foreach (var cell in cellsInDistanceOrder)
             {
                 var baseHeight = (height - 12f) / 3;
-                cell.DesiredHeight = new Heights(height, UnityEngine.Random.Range(baseHeight - 5, baseHeight + 1), baseHeight);
+                cell.Value.DesiredHeight = new Heights(height, UnityEngine.Random.Range(baseHeight - 5, baseHeight + 1), baseHeight);
                 height -= 5;
             }
 

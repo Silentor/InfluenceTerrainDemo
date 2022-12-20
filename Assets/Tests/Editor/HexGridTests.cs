@@ -13,42 +13,42 @@ namespace TerrainDemo.Tests.Editor
     public class HexGridTests
     {
         [Test]
-        public void TestEdge()
+        public void TestSharedEdge()
         {
             var grid = new HexGrid<HexPos, int, int>( 10, 3 );
 
             //Create first node
-            grid[HexPos.Zero] = HexPos.Zero;
-            var edges = grid.GetEdgesValue( HexPos.Zero );
-            edges[HexDir.QPlus] = 1;
+            grid[HexPos.Zero].Value = HexPos.Zero;
+            var edges = grid[ HexPos.Zero ].CellEdges;
+            edges[HexDir.QPlus].Value = 1;
 
             //Create second node
-            var neighbor = HexPos.Zero + HexPos.QPlus;
-            grid[neighbor] = neighbor;
+            var neighborPosition = HexPos.Zero + HexPos.QPlus;
+            grid[neighborPosition].Value = neighborPosition;
 
             //Assert that edge is shared
-            Assert.IsTrue( grid.GetEdgesValue( neighbor )[HexDir.QMinus] == 1 );
+            Assert.IsTrue( grid[ neighborPosition ].CellEdges[HexDir.QMinus].Value == 1 );
         }
 
         [Test]
-        public void TestVertex()
+        public void TestSharedVertex()
         {
 	        var grid = new HexGrid<HexPos, int, int>( 10, 4 );
 
 	        //Create first node
-	        grid[HexPos.Zero] = HexPos.Zero;
-	        var vertices = grid.GetVerticesValue( HexPos.Zero );
-	        vertices[1] = 1;
+	        grid[HexPos.Zero].Value = HexPos.Zero;
+	        var vertices = grid[ HexPos.Zero ].CellVertices;
+	        vertices[1].Value = 1;
 
 	        //Create second node
 	        var neighbor = HexPos.Zero + HexPos.SPlus;
-	        grid[neighbor] = neighbor;
+	        grid[neighbor].Value = neighbor;
 
 	        //Assert that vertex is shared
             //Assigned node
-	        Assert.IsTrue( grid.GetVerticesValue( HexPos.Zero + HexPos.SPlus)[5] == 1 );
+	        Assert.IsTrue( grid[ HexPos.Zero + HexPos.SPlus].CellVertices[5].Value == 1 );
             //Unassigned node
-	        Assert.IsTrue( grid.GetVerticesValue( HexPos.Zero + HexPos.QPlus)[3] == 1 );
+	        Assert.IsTrue( grid[ HexPos.Zero + HexPos.QPlus].CellVertices[3].Value == 1 );
         }
 
 
@@ -56,12 +56,12 @@ namespace TerrainDemo.Tests.Editor
         public void TestNeighbors( )
         {
 	        var grid = new HexGrid<HexPos?, int, int>( 10, 4 );
-            grid[HexPos.Zero] = HexPos.Zero;
-            grid[HexPos.Zero + HexPos.QPlus] = HexPos.Zero + HexPos.QPlus;
-            grid[HexPos.Zero + HexPos.QMinus] = HexPos.Zero + HexPos.QMinus;
+            grid[HexPos.Zero].Value = HexPos.Zero;
+            grid[HexPos.Zero + HexPos.QPlus].Value = HexPos.Zero + HexPos.QPlus;
+            grid[HexPos.Zero + HexPos.QMinus].Value = HexPos.Zero + HexPos.QMinus;
 
             Assert.That( 
-	            grid.GetNeighborsValue(HexPos.Zero).ToArray(  ), 
+	            grid[HexPos.Zero].Neighbors.ToArray(  ), 
 	            Is.EquivalentTo( new HexPos?[]
 	                             {
 		                             HexPos.Zero + HexPos.QPlus, null, null, HexPos.Zero + HexPos.QMinus, null, null

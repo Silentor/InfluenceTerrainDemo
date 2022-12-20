@@ -5,6 +5,9 @@ using TerrainDemo.Spatial;
 
 namespace TerrainDemo.Navigation
 {
+	/// <summary>
+	/// Microscale navigation 
+	/// </summary>
 	public class NavigationGrid
 	{
 		public readonly Bound2i Bounds;

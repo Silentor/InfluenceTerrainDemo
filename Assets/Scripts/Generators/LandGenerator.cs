@@ -287,9 +287,9 @@ namespace TerrainDemo.Generators
 
 	        foreach ( var hex in layout )
 	        {
-		        if ( layout[hex].IsEmpty )
+		        if ( layout[hex].Value.IsEmpty )
 		        {
-			        var biome    = _random.Item(_settings.Biomes);
+			        var biome    = _random.Item( _settings.Biomes );
 			        var zoneGenerator = GetZoneGenerator( index , _random.NextInt32( ), biome, _settings );
 
 			        if ( !zoneGenerator.GenerateLayout( hex, layout ) )
@@ -304,7 +304,7 @@ namespace TerrainDemo.Generators
 		        }
 	        }
 
-            Assert.IsTrue( layout.All( pos => !layout[pos].IsEmpty ) );
+            Assert.IsTrue( layout.All( pos => !layout[pos].Value.IsEmpty ) );
 
 	        return layout;
         }
@@ -313,8 +313,8 @@ namespace TerrainDemo.Generators
         {
 	        return biome.Type switch
 	        {
-		        BiomeType.Plains => new BaseZoneGenerator( index, seed, biome, gameResources ),
-		        _ => new MountainsGenerator( index, seed, biome, gameResources )
+		        _ => new BaseZoneGenerator( index, seed, biome, gameResources ),
+		        //_ => new MountainsGenerator( index, seed, biome, gameResources )
 	        };
         }
 
@@ -358,7 +358,7 @@ namespace TerrainDemo.Generators
             //Узнаем, на сколько отличается функция макровысоты от заданных высот ячеек
             double maxDiff = 0, averageDiff = 0;
             Cell maxDiffCell = null;
-            foreach (var macroCell in map.Cells)
+            foreach (var macroCell in map)
             {
                 var heightDiff = (Vector3d)macroCell.DesiredHeight - (Vector3d)map.GetHeight(macroCell.Center);
                 if (Math.Abs(maxDiff) < Math.Abs(heightDiff.X))
@@ -376,7 +376,7 @@ namespace TerrainDemo.Generators
                 averageDiff = averageDiff + heightDiff.X + heightDiff.Y + heightDiff.Z;
             }
 
-            averageDiff /= map.Cells.Count * Heights.LayersCount;
+            averageDiff /= map.Count * Heights.LayersCount;
 
             Debug.LogFormat("Average diff {0}, max diff {1} on cell {2}", averageDiff, maxDiff, maxDiffCell?.Position);
         }

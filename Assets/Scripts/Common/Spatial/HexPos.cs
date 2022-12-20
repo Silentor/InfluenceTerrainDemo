@@ -33,9 +33,14 @@ namespace TerrainDemo.Spatial
         //
 
 
-        public static readonly Vector2i[] Directions =
+        public static readonly Vector2i[]   VectorDirections =
         {
 	        QPlus, SPlus, RMinus, QMinus, SMinus, RPlus,
+        };
+        
+        public static readonly HexDir[]     HexDirections =
+        {
+            HexDir.QPlus, HexDir.SPlus, HexDir.RMinus, HexDir.QMinus, HexDir.SMinus, HexDir.RPlus,
         };
 
         public HexPos(int q, int r)
@@ -84,7 +89,7 @@ namespace TerrainDemo.Spatial
         {
             return left.Equals(right);
         }
-
+        
         public static bool operator !=(HexPos left, HexPos right)
         {
             return !left.Equals(right);
@@ -94,11 +99,11 @@ namespace TerrainDemo.Spatial
         {
 	        return new HexPos((short)(position.Q + offset.X), (short)(position.R + offset.Z));
         }
-
-        //public static HexPos operator +(HexPos left, HexPos right)
-        //{
-        //    return new HexPos(left.Q + right.Q, left.R + right.R);
-        //}
+        
+        public static HexPos operator +(HexPos position, HexDir offset)
+        {
+            return position + VectorDirections[ (int)offset ];
+        }
 
         public override string ToString() => $"<{Q}, {R}>";
     }

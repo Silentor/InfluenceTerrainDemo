@@ -18,22 +18,17 @@ namespace TerrainDemo.Macro
     //[DebuggerDisplay("TriCell {Id}({North.Id}, {East.Id}, {South.Id})")]
     public class Cell : IEquatable<Cell>
     {
-        public const int MaxNeighborsCount = 6;
         public const int InvalidCellId = -1;
 
-        public HexPos Position { get; }
+        public HexPos Position							=> _holder.Pos;
         public uint    ZoneId => Zone.Id;
 
         //public readonly MacroMap Map;
         public readonly Box2 Bound;
 
-        //Vertices
+        public MacroGrid.Neighbors Neighbors => _holder.Neighbors;
 
-        public IEnumerable<Cell> NeighborsSafe => Neighbors.Where(n => n != null);
-
-        public IEnumerable<Cell> Neighbors => _grid.GetNeighborsValue ( Position );
-
-        public MacroGrid.VerticesData Vertices => _grid.GetVerticesValue( Position );
+        public MacroGrid.CellVertices CellVertices => _holder.CellVertices;
 
        
         /// <summary>
@@ -97,10 +92,10 @@ namespace TerrainDemo.Macro
 
 		public Cell( HexPos position, Zone zone, MacroGrid macroGrid )
 		{
-			Position = position;
+			_holder = macroGrid[position];
 	        Zone     = zone;
 	        _grid    = macroGrid;
-	        Bound   = macroGrid.GetFaceBound( position );
+	        Bound   = macroGrid.GetFaceBound( _holder.Pos );
 		}   
 
         
@@ -152,8 +147,7 @@ namespace TerrainDemo.Macro
 
         public override string ToString()
         {
-	        var n = Neighbors.ToArray( );
-            return $"TriCell {Position}({n[0]?.Position.ToString() ?? "?"}, {n[1]?.Position.ToString() ?? "?"}, {n[2]?.Position.ToString() ?? "?"}, {n[3]?.Position.ToString() ?? "?"}, {n[4]?.Position.ToString() ?? "?"}, {n[5]?.Position.ToString() ?? "?"})";
+            return $"MacroCell {Position}, zone {ZoneId}, height {DesiredHeight}";
         }
 
         private          Zone                              _zone;
@@ -161,6 +155,7 @@ namespace TerrainDemo.Macro
         private          OpenToolkit.Mathematics.Vector3?  _centerPoint;
         private          OpenToolkit.Mathematics.Vector3[] _corners;
         private readonly MacroGrid                         _grid;
+        private readonly HexGrid<Cell,MacroEdge,MacroVert>.CellHolder _holder;
 
 
         /*

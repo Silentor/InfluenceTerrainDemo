@@ -28,14 +28,6 @@ namespace TerrainDemo.Navigation
 			_micromap = micromap;
 
 			NavGraph = new NavGraph(macromap, micromap, settings);
-			foreach ( var microcell in micromap.Cells )
-			{
-				NavGraph[microcell.Id] = CreateNodeFromMicroCell( microcell, micromap, settings );
-			}
-			
-			
-			
-			
 			NavGrid = new NavigationGrid( micromap );
 			
 			
@@ -44,14 +36,12 @@ namespace TerrainDemo.Navigation
 
 			Pathfinder = new Pathfinder(this, _micromap, settings);
 
-			UnityEngine.Debug.Log($"Prepared navigation map in {timer.ElapsedMilliseconds} msec, macrograph nodes {NavGraph.Count}, macrograph edges {NavGraph.EdgesCount}");
+			UnityEngine.Debug.Log($"Prepared navigation map in {timer.ElapsedMilliseconds} msec, macrograph nodes {NavGraph.Count}, macrograph edges {NavGraph.Edges.Count}");
 		}
 
 		public NavNode GetNavNode(GridPos position)
 		{
-			var node = NavGraph.Nodes.FirstOrDefault( n => n.Area.Contains( position ) );
-			var node = NavGraph.Nodes.FirstOrDefault( n => n.Area.Contains( position ) );
-			return node;
+			return NavGraph[ position ]?.Value;
 		}
 
 		public Path CreatePath(GridPos from, GridPos to, Actor actor)

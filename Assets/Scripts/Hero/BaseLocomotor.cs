@@ -425,17 +425,17 @@ namespace TerrainDemo.Hero
 
 		public IEnumerable<(NavNode neighbor, float neighborCost)> Neighbors( NavNode @from )
 		{
-			foreach ( var (edge, neighbor) in _navMap.NavGraph.GetNeighbors(@from) )
+			foreach ( var (edge, neighborCost) in _navMap.NavGraph.GetNeighbors(this, @from) )
 			{
 				var edgeSlopeCost = GetInclineCost( edge.Slopeness );
-				var roughnessCost = GetRoughnessCost( edge.Roughness );
-				var speedCost     = neighbor.MaterialCost;
+				var roughnessCost = GetRoughnessCost( edge.To.Rougness );
+				var speedCost     = neighborCost;
 
 				var result = edge.Distance * edgeSlopeCost * roughnessCost * speedCost;
 				if ( float.IsNaN( result ) )
 					continue;
 
-				yield return (neighbor, Math.Max(result, 0));
+				yield return (edge.To, Math.Max(result, 0));
 			}
 		}
 		public float Heuristic( NavNode @from, NavNode to )

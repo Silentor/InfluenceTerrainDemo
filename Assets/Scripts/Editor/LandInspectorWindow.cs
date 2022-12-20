@@ -312,9 +312,9 @@ namespace TerrainDemo.Editor
 		{
 			//Draw all navigation nodes (expensive)
 			var navMap = _runner.NavMap;
-			foreach (var navNode in navMap.NavGraph.Nodes)
+			foreach (var navNode in navMap.NavGraph)
 			{
-				DrawMap.DrawNavigationNode(navNode, MicroMap, 0, Color.blue, false);
+				DrawMap.DrawNavigationNode(navMap.NavGraph[navNode], MicroMap, 0, Color.blue, false);
 			}
 
 			//Draw hovered block
@@ -327,9 +327,9 @@ namespace TerrainDemo.Editor
 			{
 				var hoveredNode = input.HoveredNavNode;
 				DrawMap.DrawNavigationNode(hoveredNode, MicroMap, 10, Color.white, true);
-				foreach (var neighbor in navMap.NavGraph.GetNeighbors(hoveredNode))
+				foreach (var (neighbor, _) in navMap.NavGraph.GetNeighbors(null, hoveredNode))
 				{
-					DrawArrow.ForDebug(neighbor.edge.From.Position3d, neighbor.edge.To.Position3d - neighbor.edge.From.Position3d, Color.blue, 0, false);
+					DrawArrow.ForDebug(neighbor.From.Position3d, neighbor.To.Position3d - neighbor.From.Position3d, Color.blue, 0, false);
 					//DrawMap.DrawNavigationNode(neighbor.neighbor, MicroMap, 5, Color.blue, true);
 				}
 			}
@@ -341,7 +341,7 @@ namespace TerrainDemo.Editor
 				return;
 			
 			//Draw all macro map cells
-			foreach (var meshCell in MacroMap.Cells)
+			foreach ( var meshCell in MacroMap )
 			{
 				DrawMap.DrawMacroCell( meshCell, input.View );
 			}
@@ -645,7 +645,7 @@ namespace TerrainDemo.Editor
 				ShowNavigationCellInfo(hoveredNode);
 
 				//Show macro navigate cost info
-				foreach (var (edge, neighbor) in _runner.NavMap.NavGraph.GetNeighbors( hoveredNode ))
+				foreach (var (edge, neighbor) in _runner.NavMap.NavGraph.GetNeighbors( null, hoveredNode ))
 				{
 					GUILayout.Label($"Edge to {neighbor}, distance {edge.Distance:N2}, slope {edge.Slopeness}");
 				}
@@ -949,7 +949,7 @@ namespace TerrainDemo.Editor
 				DrawLandBounds(MacroMap.Bounds, Color.gray);
 
 				//Draw macro cell outlines
-				foreach (var meshCell in MacroMap.Cells)
+				foreach (var meshCell in MacroMap )
 				{
 					//DrawMacroCell(meshCell);
 				}

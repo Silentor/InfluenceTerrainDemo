@@ -8,9 +8,9 @@ namespace TerrainDemo.Macro
 {
     public class MacroEdge : IEquatable<MacroEdge>
     {
-	    public MacroVert Vertex1 => _edge.Vertex1.Data;
+	    public MacroVert Vertex1 => _edge.Vertex1.Value;
 
-        public MacroVert Vertex2 => _edge.Vertex2.Data;
+        public MacroVert Vertex2 => _edge.Vertex2.Value;
 
         public Cell Cell1 => _edge.Grid [ _edge.Cell1 ];
 

@@ -56,7 +56,7 @@ namespace TerrainDemo.Generators
 
         public bool GenerateLayout( HexPos startCell, LayoutGrid layout )
         {
-            Assert.IsTrue( layout[startCell].IsEmpty );
+            Assert.IsTrue( layout[startCell].Value.IsEmpty );
 
             var zoneSize      = _zoneRandom.Range(_zoneSettings.SizeRange);
             var zonePositions = layout.FloodFill(startCell, (_, cell) => cell.IsEmpty ).Take(zoneSize).ToArray();
@@ -65,7 +65,7 @@ namespace TerrainDemo.Generators
 			{
 				foreach ( var zonePosition in zonePositions )
 				{
-					layout[zonePosition] = new CapturedCell( _zoneSettings.DefaultCell, this );
+					layout[zonePosition].Value = new CapturedCell( _zoneSettings.DefaultCell, this );
 				}
 
 				_zonePositions = zonePositions;

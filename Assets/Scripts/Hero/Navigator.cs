@@ -166,9 +166,9 @@ namespace TerrainDemo.Hero
 	                //иначе поиск до точки между следующей и послеследующей нодами
 	                else
 	                {
-		                var next = macroIterator.GetNext.Node;
-		                var next2 = macroIterator.GetNext2.Node;
-		                var midpoint = GridPos.Average( next.Position, next2.Position );
+		                var next     = macroIterator.GetNext.Node;
+		                var next2    = macroIterator.GetNext2.Node;
+		                var midpoint = GridPos.Average( next.CenterPosition, next2.CenterPosition );
 
 		                Func<GridPos, CheckNodeResult> checkPos =
 			                p => next.Area.IsContains( p )
